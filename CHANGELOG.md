@@ -1,5 +1,54 @@
 # Changelog
 
+# 1.8.2
+
+remove left over console debug
+
+# 1.8.1
+
+no code change
+
+# 1.8.0
+
+- [x] the walker functions now use DFS instead of BFS
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) mixin inside rules or nested groups 
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#mixin-rule) layer inside mixin
+- [x] [disallow](https://drafts.csswg.org/css-mixins-1/#contents-rule) contents outside mixin
+- [x] support dashed indent as unit
+
+```css
+.module {
+  margin-block: 1.5--bs;
+  border-block: .5--bs;
+  /* gives a vertical margin of 12px,
+     and vertical border of 4px */
+}
+```
+
+is rendered as 
+
+```css
+.module {
+ margin-block: 1.5--bs;
+ border-block: .5--bs
+}
+```
+
+# v1.7.0
+
+- [x] implement CSS [Custom Functions and Mixins Modules and Level 1](https://drafts.csswg.org/css-mixins/#apply-rule)  
+- [x] allow \<or\> [outside parenthesis](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using#testing_for_multiple_features_with_or)
+
+```ts
+@media ((color) and (hover)) or (monochrome) {
+  /* … */
+}
+```
+
+# v1.6.9
+
+fix import path #166 from package.json
+
 # v1.6.8
 
 - [x] allow a visitor to visit all nodes

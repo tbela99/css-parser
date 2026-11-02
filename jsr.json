@@ -23,6 +23,7 @@
       "docs",
       "llms.txt",
       "package-lock.json",
+      "CONTRIBUTING.md",
       "ROADMAP.md",
       "rollup.config.js",
       "scripts",
