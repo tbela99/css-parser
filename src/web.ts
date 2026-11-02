@@ -51,7 +51,8 @@ export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.t
 export { parseDeclarations } from "./lib/parser/parse.ts";
 export { find, findLast, findByValue, findAll, findValue } from "./lib/ast/find.ts";
 export { cloneNode, cloneValue } from "./lib/ast/clone.ts";
-export { Arena, AstArena, TokenField } from "./lib/ast/arena.ts";
+export { Arena, AstArena, TokenField, arenaColumns } from "./lib/ast/arena.ts";
+export type { ArenaProperties, ArenaTransferables } from "./lib/ast/arena.ts";
 export { replaceNodeOrValue, replaceNode } from "./lib/parser/utils/token.ts";
 export { PropertyList } from "./lib/parser/declaration/list.ts";
 export {

@@ -18,23 +18,21 @@ function parseAtRuleContainerQueryList(arena, stream, context, options = {}) {
     const errors = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-    const parts = stream.reduce((acc, t) => {
-        if (arena.dataTypes[t] === EnumToken.CommaTokenType && matchCount === 0) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of stream) {
+        const type = arena.dataTypes[token];
+        if (type === EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
         }
-        else {
-            acc[acc.length - 1].push(t);
-            if (arena.dataTypes[t] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[t] === EnumToken.EndParensTokenType) {
-                if (matchCount > 0) {
-                    matchCount--;
-                }
-            }
+        parts[parts.length - 1].push(token);
+        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
         }
-        return acc;
-    }, [[]]);
+        else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
     const result = matchAllSyntaxes(arena, syntax, createValidationContext(arena, stream), options);
     if (!result.success) {
         for (const error of result.errors) {
@@ -336,14 +334,14 @@ function parseAtRuleContainerQueryList(arena, stream, context, options = {}) {
         }
     }
     stream.length = 0;
-    stream.push(...parts
-        .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== EnumToken.InvalidMediaQueryTokenType)
-        .reduce((acc, b) => {
-        for (const token of b) {
-            acc.push(token);
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+            continue;
         }
-        return acc;
-    }, []));
+        for (const token of part) {
+            stream.push(token);
+        }
+    }
     return {
         success: true,
         errors,

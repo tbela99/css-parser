@@ -29,7 +29,7 @@ export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 export { find, findAll, findByValue, findLast, findValue } from './lib/ast/find.js';
 export { cloneNode, cloneValue } from './lib/ast/clone.js';
-export { Arena, AstArena, TokenField } from './lib/ast/arena.js';
+export { Arena, AstArena, TokenField, arenaColumns } from './lib/ast/arena.js';
 export { replaceNode, replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';

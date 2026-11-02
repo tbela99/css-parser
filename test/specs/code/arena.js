@@ -1,5 +1,5 @@
 import { EnumToken, EnumAstNodeStatus, ColorType } from "../../../dist/src/lib/ast/types.js";
-import { Arena, AstArena, TokenField } from "../../../dist/src/lib/ast/arena.js";
+import { Arena, AstArena, TokenField, arenaColumns } from "../../../dist/src/lib/ast/arena.js";
 import { walk } from "../../../dist/src/lib/ast/walk.js";
 import { cloneNode } from "../../../dist/src/lib/ast/clone.js";
 import { parseDeclarations, parseString } from "../../../dist/src/lib/parser/parse.js";
@@ -559,6 +559,74 @@ h1 { font-size: 2em }
             expect(mapping.length).equals(before + 1);
             expect(mapping[other.ast]).equals(other.ast);
             expect(render(other.arena, other.ast).code).equals(".a{color:red}");
+        });
+
+        it("the arena is transferable #19", async function () {
+            const result = await parse(css, { minify: false });
+            const arena = result.arena;
+            const expected = render(arena, result.ast).code;
+            const location = arena.getLocation(arena.firstChild[arena.getChildAt(result.ast, 2)]);
+            const [properties, transferables] = AstArena.toTransferableArenaObject(arena);
+
+            expect(properties.kind).equals("AstArena");
+            expect(properties.current).equals(arena.current);
+            expect(transferables.length).equals(arenaColumns.length);
+            expect(transferables[0]).equals(arena.dataTypes.buffer);
+            expect(transferables.every((buffer) => buffer instanceof ArrayBuffer)).equals(true);
+
+            // the properties are cloned, the buffers are moved (zero copy)
+            const message = structuredClone({ ast: result.ast, properties, transferables }, { transfer: transferables });
+
+            expect(arena.transferred).equals(true);
+            expect(arena.dataTypes.length).equals(0);
+            expect(message.transferables[0].byteLength).to.be.above(0);
+
+            const copy = AstArena.fromTransferableArenaObjects(message.properties, message.transferables);
+
+            expect(copy).to.be.instanceOf(AstArena);
+            expect(copy.transferred).equals(false);
+            expect(copy.current).equals(properties.current);
+            // the columns are views on the transferred buffers
+            expect(copy.dataTypes.buffer).equals(message.transferables[0]);
+            expect(copy.strings).deep.equals(properties.strings);
+            expect(copy.internString("color")).equals(copy.name[copy.firstChild[copy.firstChild[copy.getChildAt(message.ast, 2)]]]);
+            expect(render(copy, message.ast).code).equals(expected);
+
+            // the arena is fully functional
+            const rule = copy.firstChild[copy.getChildAt(message.ast, 2)];
+
+            copy.setSelector(rule, ".baz");
+            copy.appendChildren(
+                rule,
+                copy.createDeclaration(EnumToken.DeclarationNodeType, "margin", [copy.createToken(EnumToken.NumberTokenType, 0)], null, null),
+            );
+            expect(render(copy, message.ast).code).equals(
+                "@import 'foo.css';@media screen{.baz{color:red;width:calc(1px + 2px);margin:0}}h1{font-size:2em}",
+            );
+            // the packed locations are preserved
+            expect(copy.getLocation(rule)).deep.equals(location);
+
+            // without a transfer list the buffers are copied
+            const cloned = structuredClone({ properties: AstArena.toTransferableArenaObject(copy)[0], transferables: AstArena.toTransferableArenaObject(copy)[1] });
+
+            expect(copy.transferred).equals(false);
+            expect(render(AstArena.fromTransferableArenaObjects(cloned.properties, cloned.transferables), message.ast).code).equals(
+                render(copy, message.ast).code,
+            );
+
+            // the base arena class can be transferred too
+            const base = new Arena(16);
+
+            base.dataTypes[base.allocate()] = EnumToken.CommentTokenType;
+
+            const [baseProperties, baseTransferables] = Arena.toTransferableArenaObject(base);
+            const baseCopy = Arena.fromTransferableArenaObjects(baseProperties, baseTransferables);
+
+            expect(baseProperties.kind).equals("Arena");
+            expect(baseCopy).to.be.instanceOf(Arena);
+            expect(baseCopy).not.to.be.instanceOf(AstArena);
+            expect(baseCopy.dataTypes[2]).equals(EnumToken.CommentTokenType);
+            expect(baseCopy.current).equals(2);
         });
 
         it("the arena is trimmed after parsing #14", async function () {

@@ -29,13 +29,16 @@ import {parse, render} from '@tbela99/css-parser';
 const css = `...`;
 
 const result = await parse(css); // or parse({input: css});
-console.debug(result.ast);
+console.debug(result.ast); // the id of the stylesheet node in result.arena
+console.debug(result.arena.toObject(result.ast)); // the ast as a plain object
 console.debug(result.stats);
 
-const rendered = render(result.ast);
+const rendered = render(result.arena, result.ast);
 console.debug(rendered.code);
 console.debug(result.stats);
 ````
+
+The ast nodes are allocated in an arena (`result.arena`) and referenced by their node id. See [Ast Manipulation](./ast.md).
 
 or
 
@@ -45,7 +48,7 @@ import {transform} from '@tbela99/css-parser';
 const css = `...`;
 
 const result = await transform(css); // or transform({input: css});
-console.debug(result.ast);
+console.debug(result.ast); // the id of the stylesheet node in result.arena
 console.debug(result.code);
 console.debug(result.stats);
 ````
@@ -107,7 +110,7 @@ import {Readable} from "node:stream";
 const readableStream = Readable.toWeb(process.stdin);
 const result = await parse(readableStream, {beautify: true}); // or  parse({input: readableStream, beautify: true})
 
-console.log(result.ast);
+console.log(result.arena.toObject(result.ast));
 ```
 
 A response body object can also be passed to parse() or transform() functions. 
@@ -129,7 +132,7 @@ For more information about the available transform options, see the TypeScript d
 ### Usage
 
 ```javascript
-render(ast, RenderOptions = {});
+render(arena, ast, RenderOptions = {});
 ```
 
 ### Examples
@@ -152,13 +155,17 @@ const css = `
 `;
 
 const result = await parse(css, options);
+const arena = result.arena;
+
+// @media -> .a -> width
+const declaration = arena.getChildAt(arena.getChildAt(arena.getChildAt(result.ast, 0), 1), 1);
 
 // print declaration without parents
-console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
+console.error(render(arena, declaration, {withParents: false}));
 // -> width:3px
 
 // print declaration with parents
-console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+console.debug(render(arena, declaration, {withParents: true}));
 // -> @media screen and (min-width:40em){.a{width:3px}}
 
 ```
@@ -169,7 +176,7 @@ By default, CSS output is minified. That behavior can be changed by passing the 
 ```ts
 
 const result = await transform(css, {beautify: true}); 
-// or render(ast, {beautify: true})
+// or render(arena, ast, {beautify: true})
 
 console.log(result.code);
 

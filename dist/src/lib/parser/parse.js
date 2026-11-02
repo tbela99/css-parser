@@ -684,7 +684,7 @@ function doParseSync(tokenizer, options = {}) {
             (itemType === EnumToken.SemiColonTokenType ||
                 itemType === EnumToken.BlockStartTokenType ||
                 itemType === EnumToken.EOFTokenType)) {
-            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             if (node != null) {
                 if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                     stack.push(node);
@@ -718,7 +718,7 @@ function doParseSync(tokenizer, options = {}) {
             tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             arena.setSpanEnd(context, arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
@@ -734,7 +734,7 @@ function doParseSync(tokenizer, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
         if (node != null) {
             if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                 stack.push(node);
@@ -1144,15 +1144,16 @@ function doParseSync(tokenizer, options = {}) {
                                             const val = arena.strings[arena.stringValue[tk]].slice(1);
                                             if (val in revMapping) {
                                                 const key = revMapping[val];
+                                                const composedNames = [];
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-                                                            return acc;
-                                                        }, []),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -1547,7 +1548,7 @@ async function doParse(iter, options = {}) {
             (itemType === EnumToken.SemiColonTokenType ||
                 itemType === EnumToken.BlockStartTokenType ||
                 itemType === EnumToken.EOFTokenType)) {
-            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             if (node != null) {
                 if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                     stack.push(node);
@@ -1585,7 +1586,7 @@ async function doParse(iter, options = {}) {
             tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             arena.setSpanEnd(context, arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
@@ -1602,7 +1603,7 @@ async function doParse(iter, options = {}) {
         // }
     }
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
         if (node != null) {
             if (arena.dataTypes[node] == EnumToken.AtRuleNodeType &&
                 "import" === arena.strings[arena.stringValue[node]]) {
@@ -2168,15 +2169,16 @@ async function doParse(iter, options = {}) {
                                             const val = arena.strings[arena.stringValue[tk]].slice(1);
                                             if (val in revMapping) {
                                                 const key = revMapping[val];
+                                                const composedNames = [];
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-                                                            return acc;
-                                                        }, []),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -2467,28 +2469,21 @@ async function doParse(iter, options = {}) {
     }
     return result;
 }
-function parseNode(arena, tokens, context, options, errors, stats, invalidNodes) {
+function parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch) {
     let i = 0;
     const contextType = arena.dataTypes[context];
-    if (arena.typeOf(tokens.at(-1)) === EnumToken.EOFTokenType) {
+    const dataTypes = arena.dataTypes;
+    const lastToken = tokens[tokens.length - 1];
+    if (lastToken != null && dataTypes[lastToken] === EnumToken.EOFTokenType) {
         tokens.pop();
         // check parenthesis are balanced
-        let matchCount = 0;
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[token] === EnumToken.EndParensTokenType) {
-                matchCount--;
-            }
-        }
+        let matchCount = parensMatch;
         if (matchCount > 0) {
             let k = tokens.length;
             while (k-- > 0 &&
-                (arena.dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[k]] === EnumToken.CommentTokenType))
+                (dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType || dataTypes[tokens[k]] === EnumToken.CommentTokenType))
                 ;
-            if (arena.dataTypes[tokens[k]] == EnumToken.SemiColonTokenType) {
+            if (dataTypes[tokens[k]] == EnumToken.SemiColonTokenType) {
                 matchCount = 0;
             }
             while (matchCount > 0) {
@@ -2549,7 +2544,7 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes)
     if (tokens.length == 0) {
         return null;
     }
-    let delim = tokens.at(-1);
+    let delim = tokens[tokens.length - 1];
     if (arena.dataTypes[delim] == EnumToken.SemiColonTokenType ||
         arena.dataTypes[delim] == EnumToken.BlockStartTokenType ||
         arena.dataTypes[delim] == EnumToken.BlockEndTokenType) {

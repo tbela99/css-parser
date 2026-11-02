@@ -30,26 +30,24 @@ export function parseMediaqueryList(
     let matchCount: number = 0;
     const errors: ErrorDescription[] = [];
     let hasErrors: boolean = false;
-    const parts = stream.reduce(
-        (acc, t) => {
-            if (arena.dataTypes[t] === EnumToken.CommaTokenType && matchCount === 0) {
-                acc.push([]);
-            } else {
-                acc[acc.length - 1].push(t);
+    const parts: Token[][] = [[]];
 
-                if (arena.dataTypes[t] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                    matchCount++;
-                } else if (arena.dataTypes[t] === EnumToken.EndParensTokenType) {
-                    if (matchCount > 0) {
-                        matchCount--;
-                    }
-                }
-            }
+    for (const token of stream) {
+        const type: EnumToken = arena.dataTypes[token];
 
-            return acc;
-        },
-        [[]] as Token[][],
-    );
+        if (type === EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
+        }
+
+        parts[parts.length - 1].push(token);
+
+        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
+        } else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
 
     {
         for (const stream of parts.slice()) {
@@ -574,21 +572,23 @@ export function parseMediaqueryList(
     }
 
     stream.length = 0;
-    stream.push(
-        ...parts
-            .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== EnumToken.InvalidMediaQueryTokenType)
-            .reduce((acc, b) => {
-                if (acc.length > 0) {
-                    acc.push(arena.createToken(EnumToken.CommaTokenType));
-                }
+    let hasPart: boolean = false;
 
-                for (const t of b) {
-                    acc.push(t);
-                }
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+            continue;
+        }
 
-                return acc;
-            }, []),
-    );
+        if (hasPart) {
+            stream.push(arena.createToken(EnumToken.CommaTokenType));
+        }
+
+        for (const token of part) {
+            stream.push(token);
+        }
+
+        hasPart = true;
+    }
 
     return {
         success:

@@ -74,6 +74,46 @@ const structuredTokenTypes = new Set([
  */
 const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] == 1;
 /**
+ * arena columns stored as typed arrays, in the order of the transferable buffers
+ */
+const arenaColumns = [
+    "dataTypes",
+    "parents",
+    "nextSibling",
+    "previousSibling",
+    "firstToken",
+    "lastToken",
+    "firstChild",
+    "lastChild",
+    "name",
+    "stringValue",
+    "numericValue",
+    "unit",
+    "flags",
+    "colorType",
+    "spans",
+];
+/**
+ * typed array constructor of each column
+ */
+const arenaColumnTypes = {
+    dataTypes: Uint8Array,
+    parents: Uint32Array,
+    nextSibling: Uint32Array,
+    previousSibling: Uint32Array,
+    firstToken: Uint32Array,
+    lastToken: Uint32Array,
+    firstChild: Uint32Array,
+    lastChild: Uint32Array,
+    name: Uint32Array,
+    stringValue: Uint32Array,
+    numericValue: Float64Array,
+    unit: Uint32Array,
+    flags: Uint32Array,
+    colorType: Uint8Array,
+    spans: BigUint64Array,
+};
+/**
  * Arena memory manager
  */
 class Arena {
@@ -180,6 +220,93 @@ class Arena {
         this.spans = new BigUint64Array(size);
         this.spans32 = new Uint32Array(this.spans.buffer);
         this.dataTypes[this.root] = EnumToken.StyleSheetNodeType;
+    }
+    /**
+     * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
+     * to a worker (or back to the main thread) without copying the node data.
+     *
+     * The properties (strings, errors, ...) are cloned by `postMessage()`, the column buffers are moved when they are
+     * passed as the transfer list: the source arena must not be used afterwards (its columns are detached).
+     * The buffers are copied instead when the transfer list is omitted.
+     *
+     * ```ts
+     * // main thread
+     * const [properties, transferables] = AstArena.toTransferableArenaObject(result.arena);
+     *
+     * worker.postMessage({ ast: result.ast, properties, transferables }, transferables);
+     *
+     * // worker
+     * const { ast, properties, transferables } = event.data;
+     * const arena = AstArena.fromTransferableArenaObjects(properties, transferables);
+     * ```
+     *
+     * @param arena
+     * @returns the arena properties and the column buffers, see {@link ArenaProperties} and {@link ArenaTransferables}
+     */
+    static toTransferableArenaObject(arena) {
+        return [arena.exportProperties(), arena.exportTransferables()];
+    }
+    /**
+     * Create an arena from the objects produced by {@link Arena.toTransferableArenaObject}. The column buffers are
+     * used as is (zero copy): the typed arrays are views on the given buffers.
+     *
+     * @param properties arena properties
+     * @param transferables column buffers
+     * @returns an `Arena` or an `AstArena` depending on the class the method is called on
+     */
+    static fromTransferableArenaObjects(properties, transferables) {
+        const arena = new this(0);
+        arena.importProperties(properties, transferables);
+        return arena;
+    }
+    /**
+     * true when the column buffers have been transferred to another thread: the arena can no longer be used
+     */
+    get transferred() {
+        return this.dataTypes.length == 0 && this.current > 0;
+    }
+    /**
+     * structured-cloneable properties of the arena
+     */
+    exportProperties() {
+        return {
+            kind: "Arena",
+            current: this.current,
+            strings: this.strings,
+            errors: [...this.errors.entries()],
+        };
+    }
+    /**
+     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+     */
+    exportTransferables() {
+        const buffers = [];
+        for (const column of arenaColumns) {
+            const array = this[column];
+            // the columns always own their buffer: no offset or partial view
+            buffers.push(array.buffer);
+        }
+        return buffers;
+    }
+    /**
+     * initialize the arena from exported properties and column buffers
+     * @param properties
+     * @param transferables
+     */
+    importProperties(properties, transferables) {
+        if (transferables.length != arenaColumns.length) {
+            throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
+        }
+        for (let i = 0; i < arenaColumns.length; i++) {
+            const column = arenaColumns[i];
+            // @ts-ignore
+            this[column] = new arenaColumnTypes[column](transferables[i]);
+        }
+        this.spans32 = new Uint32Array(this.spans.buffer);
+        this.current = properties.current;
+        this.strings = properties.strings.slice();
+        this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
+        this.errors = new Map(properties.errors);
     }
     allocate() {
         const id = ++this.current;
@@ -1422,6 +1549,27 @@ class AstArena extends Arena {
     /**
      * @inheritDoc
      */
+    exportProperties() {
+        return {
+            ...super.exportProperties(),
+            kind: "AstArena",
+            sources: this.sources,
+            raw: this.raw,
+            optimized: this.optimized,
+        };
+    }
+    /**
+     * @inheritDoc
+     */
+    importProperties(properties, transferables) {
+        super.importProperties(properties, transferables);
+        this.sources = properties.sources?.slice() ?? [];
+        this.raw = properties.raw?.slice() ?? [];
+        this.optimized = properties.optimized?.slice() ?? [];
+    }
+    /**
+     * @inheritDoc
+     */
     trim() {
         super.trim();
         const size = this.dataTypes.length;
@@ -2065,7 +2213,11 @@ class AstArena extends Arena {
                     continue;
                 }
                 const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
-                this.setField(id, field, ...values.map((value) => (typeof value == "number" ? value : this.fromObject(value))));
+                const fieldTokens = [];
+                for (const value of values) {
+                    fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
+                }
+                this.setField(id, field, ...fieldTokens);
             }
         }
         const loc = plain.loc;
@@ -2122,11 +2274,17 @@ class AstArena extends Arena {
                 break;
             default:
                 node.nam = this.strings[this.name[id]];
-                node.val = this.tokens(id).map((token) => this.tokenToObject(token));
+                node.val = [];
+                for (const token of this.tokens(id)) {
+                    node.val.push(this.tokenToObject(token));
+                }
                 break;
         }
         if (flags & EnumAstNodeStatus.HasChildren) {
-            node.chi = this.children(id).map((child) => this.toObject(child));
+            node.chi = [];
+            for (const child of this.children(id)) {
+                node.chi.push(this.toObject(child));
+            }
         }
         if (flags & EnumAstNodeStatus.HasLocation) {
             node.loc = this.getLocation(id);
@@ -2135,7 +2293,10 @@ class AstArena extends Arena {
             node.state = flags & EnumAstNodeStatus.StateMask;
         }
         if ((flags & EnumAstNodeStatus.HasValues) == 0 && this.firstToken[id] != 0) {
-            node.tokens = this.tokens(id).map((token) => this.tokenToObject(token));
+            node.tokens = [];
+            for (const token of this.tokens(id)) {
+                node.tokens.push(this.tokenToObject(token));
+            }
         }
         if (this.errors.has(id)) {
             node.errors = this.errors.get(id);
@@ -2191,7 +2352,10 @@ class AstArena extends Arena {
             token.kin = this.colorType[id];
         }
         if (this.firstToken[id] != 0) {
-            const tokens = this.tokens(id).map((child) => this.tokenToObject(child));
+            const tokens = [];
+            for (const child of this.tokens(id)) {
+                tokens.push(this.tokenToObject(child));
+            }
             if (typ == EnumToken.DeclarationNodeType ||
                 typ == EnumToken.CssVariableTokenType ||
                 typ == EnumToken.CssVariableImportTokenType) {
@@ -2224,7 +2388,10 @@ class AstArena extends Arena {
                 if (list == null) {
                     continue;
                 }
-                const values = this.tokens(list).map((child) => this.tokenToObject(child));
+                const values = [];
+                for (const child of this.tokens(list)) {
+                    values.push(this.tokenToObject(child));
+                }
                 token[key] = isSingle ? (values[0] ?? null) : values;
             }
         }
@@ -2476,4 +2643,4 @@ class AstArena extends Arena {
     }
 }
 
-export { Arena, AstArena, TokenField, numericTokenTypes, structuredTokenTypes };
+export { Arena, AstArena, TokenField, arenaColumns, numericTokenTypes, structuredTokenTypes };

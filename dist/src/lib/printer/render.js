@@ -299,10 +299,14 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
     const indentSub = indents[level + 1];
     const typ = arena.dataTypes[data];
     switch (typ) {
-        case EnumToken.DeclarationNodeType:
-            return `${arena.strings[arena.name[data]]}:${options.indent}${(options.minifyValues
-                ? filterValues(arena, arena.tokens(data))
-                : arena.tokens(data)).reduce(reducer, "")}`;
+        case EnumToken.DeclarationNodeType: {
+            const values = options.minifyValues ? filterValues(arena, arena.tokens(data)) : arena.tokens(data);
+            let rendered = "";
+            for (const value of values) {
+                rendered = reducer(rendered, value);
+            }
+            return `${arena.strings[arena.name[data]]}:${options.indent}${rendered}`;
+        }
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType: {
             const val = arena.strings[arena.stringValue[data]];
@@ -359,11 +363,12 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                             : comment;
                 }
                 else if (nodeType == EnumToken.DeclarationNodeType) {
-                    str = `${arena.strings[arena.name[node]]}:${options.indent}${(options.minifyValues
-                        ? filterValues(arena, arena.tokens(node))
-                        : arena.tokens(node))
-                        .reduce(reducer, "")
-                        .trimEnd()};`;
+                    const values = options.minifyValues ? filterValues(arena, arena.tokens(node)) : arena.tokens(node);
+                    let rendered = "";
+                    for (const value of values) {
+                        rendered = reducer(rendered, value);
+                    }
+                    str = `${arena.strings[arena.name[node]]}:${options.indent}${rendered.trimEnd()};`;
                 }
                 else {
                     str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
@@ -415,6 +420,13 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             return "";
     }
 }
+function renderTokenList(tokens, reducer) {
+    let result = "";
+    for (const token of tokens) {
+        result = reducer(result, token);
+    }
+    return result;
+}
 /**
  * render ast token
  * @param token
@@ -460,8 +472,13 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case EnumToken.CustomFunctionTokenDefType:
         case EnumToken.WildCardFunctionTokenDefType:
             return arena.strings[arena.stringValue[token]] + "(";
-        case EnumToken.ListToken:
-            return arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), "");
+        case EnumToken.ListToken: {
+            let result = "";
+            for (const curr of arena.tokens(token)) {
+                result += renderValue(arena, curr, options, cache);
+            }
+            return result;
+        }
         case EnumToken.BinaryExpressionTokenType: {
             const op = arena.numericValue[token];
             const l = arena.getLeft(token)[0];
@@ -511,21 +528,26 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
             return "*";
         case EnumToken.Div:
             return "/";
-        case EnumToken.WrappedValuesTokenType:
-            return ("{" +
-                arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), "") +
-                "}");
+        case EnumToken.WrappedValuesTokenType: {
+            let result = "";
+            for (const curr of arena.tokens(token)) {
+                result += renderValue(arena, curr, options, cache);
+            }
+            return "{" + result + "}";
+        }
         case EnumToken.ColorTokenType:
             if (arena.colorType[token] == ColorType.LIGHT_DARK ||
                 (arena.firstToken[token] != 0 && options.convertColor === false && arena.tokenCount(token) == 2)) {
+                let result = "";
+                for (const curr of arena.tokens(token)) {
+                    if (arena.dataTypes[curr] === EnumToken.IdenTokenType) {
+                        parseColor(arena, curr);
+                    }
+                    result += renderValue(arena, curr, options, cache);
+                }
                 return (arena.strings[arena.stringValue[token]] +
                     "(" +
-                    arena.tokens(token).reduce((acc, curr) => {
-                        if (arena.dataTypes[curr] === EnumToken.IdenTokenType) {
-                            parseColor(arena, curr);
-                        }
-                        return acc + renderValue(arena, curr, options, cache);
-                    }, "") +
+                    result +
                     ")");
             }
             if (options.convertColor !== false) {
@@ -565,31 +587,37 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                     "lch",
                 ].includes(fnName);
                 const useAlpha = (hasAlpha && chi.length == (isLegacy ? 7 : 4)) || ("color" == fnName && chi.length == 5);
+                let result = "";
+                for (let index = 0; index < chi.length; index++) {
+                    const curr = chi[index];
+                    if (/[,/]\s*$/.test(result)) {
+                        if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+                            result = result.trimEnd();
+                            continue;
+                        }
+                        result = result.trimStart() + renderValue(arena, curr, options, cache);
+                        continue;
+                    }
+                    if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
+                        result = result.trimEnd() + " ";
+                    }
+                    else if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+                        result = result.trimEnd() + " ";
+                    }
+                    else if (arena.dataTypes[curr] == EnumToken.CommaTokenType ||
+                        (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
+                        result = result.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
+                    }
+                    else {
+                        result =
+                            result.trimEnd() +
+                                (useAlpha && index == chi.length - 1 ? "/" : " ") +
+                                renderValue(arena, curr, options, cache);
+                    }
+                }
                 return ((hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
-                    chi
-                        .reduce((acc, curr, index, array) => {
-                        if (/[,/]\s*$/.test(acc)) {
-                            if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                                return acc.trimEnd();
-                            }
-                            return acc.trimStart() + renderValue(arena, curr, options, cache);
-                        }
-                        if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
-                            return acc.trimEnd() + " ";
-                        }
-                        if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                            return acc.trimEnd() + " ";
-                        }
-                        if (arena.dataTypes[curr] == EnumToken.CommaTokenType ||
-                            (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
-                            return acc.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
-                        }
-                        return (acc.trimEnd() +
-                            (useAlpha && index == array.length - 1 ? "/" : " ") +
-                            renderValue(arena, curr, options, cache));
-                    }, "")
-                        .trimStart() +
+                    result.trimStart() +
                     ")");
             }
         case EnumToken.UrlFunctionTokenType:
@@ -1040,7 +1068,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                         }
                         break;
                 }
-                return arena.strings[arena.stringValue[token]] + "(" + slice.reduce(reducer, "") + ")";
+                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer) + ")";
             }
         case EnumToken.TimingFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
@@ -1059,11 +1087,11 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                 !arena.hasFraction(arena.firstToken[token])) {
                 return (arena.strings[arena.stringValue[token]] +
                     "(" +
-                    arena.tokens(token).reduce((acc, curr) => acc +
-                        renderValue(arena, curr, arena.dataTypes[token] == EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer), "") +
+                    renderTokenList(arena.tokens(token), (acc, curr) => acc +
+                        renderValue(arena, curr, arena.dataTypes[token] == EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer)) +
                     ")");
             }
-            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + arena.tokens(token).reduce(reducer, "") + ")";
+            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderTokenList(arena.tokens(token), reducer) + ")";
         case EnumToken.BlockStartTokenType:
             return "{";
         case EnumToken.BlockEndTokenType:
@@ -1123,7 +1151,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
-            return "[" + arena.tokens(token).reduce(reducer, "") + "]";
+            return "[" + renderTokenList(arena.tokens(token), reducer) + "]";
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
         case EnumToken.LengthTokenType:
@@ -1256,38 +1284,29 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case EnumToken.NestingSelectorTokenType:
             return "&";
         case EnumToken.InvalidAttrTokenType:
-            return ("[" +
-                arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), ""));
+            return "[" + renderTokenList(arena.tokens(token), (acc, curr) => acc + renderValue(arena, curr, options, cache));
         case EnumToken.InvalidClassSelectorTokenType:
             return arena.strings[arena.stringValue[token]];
         case EnumToken.SupportsQueryUnaryConditionTokenType:
         case EnumToken.WhenElseUnaryConditionTokenType:
             return (renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.SupportsQueryConditionTokenType:
         case EnumToken.WhenElseQueryConditionTokenType:
-            return (arena
-                .fieldTokens(token, TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 " " +
                 renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.IfConditionTokenType: {
             const l = arena.fieldTokens(token, TokenField.L);
             return l.length == 0
                 ? ""
-                : l.reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+                : renderTokenList(l, (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                     ":" +
                     (options.indent ?? "") +
-                    arena
-                        .fieldTokens(token, TokenField.R)
-                        .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "");
+                    renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer));
         }
         case EnumToken.IfElseConditionTokenType:
             return (renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer) +
@@ -1296,13 +1315,11 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case EnumToken.DeclarationNodeType:
             return (arena.strings[arena.name[token]] +
                 ":" +
-                (options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token)).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.MediaQueryUnaryFeatureTokenType:
             return (renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.MediaQueryConditionTokenType: {
             const op = arena.field(token, TokenField.Op);
             const opType = arena.dataTypes[op];
@@ -1314,28 +1331,18 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                 opType == EnumToken.GteTokenType
                 ? ""
                 : " ";
-            return (arena
-                .fieldTokens(token, TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 indent +
                 renderValue(arena, op, options, cache, reducer) +
                 indent +
-                arena
-                    .fieldTokens(token, TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         }
         case EnumToken.MediaRangeQueryTokenType:
-            return (arena
-                .fieldTokens(token, TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer) +
-                arena
-                    .fieldTokens(token, TokenField.Val)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+                renderTokenList(arena.fieldTokens(token, TokenField.Val), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 renderValue(arena, arena.field(token, TokenField.Op2), options, cache, reducer) +
-                arena
-                    .fieldTokens(token, TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.MediaFeatureTokenType:
             return arena.strings[arena.stringValue[token]];
         case EnumToken.NotTokenType:
@@ -1355,7 +1362,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case EnumToken.EOFTokenType:
             return "";
         case EnumToken.ComposesSelectorNodeType:
-            return `${arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "")}${!arena.hasField(token, TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer)}`;
+            return `${renderTokenList(arena.fieldTokens(token, TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer))}${!arena.hasField(token, TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer)}`;
         default:
             throw new Error(`Unsupported token type for ${EnumToken[arena.dataTypes[token]]}`);
     }

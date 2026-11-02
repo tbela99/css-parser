@@ -4,6 +4,10 @@
 
 # css-parser
 
+> [!caution] This new version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
+
+> [!important] This branch is a work in progress and it might contain bugs.
+
 An all-in-one CSS parsing solution for Node.js and the browser, covering parsing, validation, transformation, minification, and AST-based tooling.
 
 The library always fully parses the stylesheet into a structured AST, and token values are exposed as typed data so custom transforms, plugins, and analysis can work with reliable, semantic input instead of raw strings.
@@ -138,47 +142,75 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
   
 ## AST
 
+Ast nodes and value tokens are allocated in an arena (`AstArena`) and referenced by their id (a number). The node data is stored
+column-wise in typed arrays (structure of arrays) and is read / written through the arena. The parser does not allocate
+node or token objects:
+
+```ts
+import {parse, render, EnumToken} from '@tbela99/css-parser';
+
+const {arena, ast} = await parse(`.foo { color: red }`);
+const rule = arena.firstChild[ast];
+const declaration = arena.firstChild[rule];
+
+console.log(arena.dataTypes[rule] == EnumToken.RuleNodeType, arena.getSelector(rule)); // true '.foo'
+console.log(arena.getName(declaration)); // 'color'
+console.log(arena.tokens(declaration).map((token) => [EnumToken[arena.dataTypes[token]], arena.str(token)])); // [['Color', 'red']]
+console.log(render(arena, ast).code); // .foo{color:red}
+```
+
 ### Comment
 
-- typ: number
-- val: string, the comment
+- `arena.dataTypes[n]`: EnumToken.CommentNodeType
+- `arena.getValue(n)`: string, the comment
 
-### AtRuleStyleSheet
+### StyleSheet
 
-- typ: number
-- chi: array of children
+- `arena.dataTypes[n]`: EnumToken.StyleSheetNodeType
+- `arena.children(n)`: array of children ids
 
 ### Declaration
 
-- typ: number
-- nam: string, declaration name
-- val: array of tokens
-- state: EnumAstNodeStatus, validation state
-- errors: ErrorDescription[], validation errors
+- `arena.dataTypes[n]`: EnumToken.DeclarationNodeType
+- `arena.getName(n)`: string, declaration name
+- `arena.tokens(n)`: array of token ids, the declaration value
+- `arena.getState(n)`: EnumAstNodeStatus, validation state
+- `arena.getErrors(n)`: ErrorDescription[], validation errors
 
-### Rule
+### Rule and KeyframesRule
 
-- typ: number
-- sel: string, css selector
-- chi: array of children
-- state: EnumAstNodeStatus, validation state
-- errors: ErrorDescription[], validation errors
+- `arena.dataTypes[n]`: EnumToken.RuleNodeType or EnumToken.KeyframesRuleNodeType
+- `arena.getSelector(n)`: string, css selector
+- `arena.tokens(n)`: array of token ids, the parsed selector
+- `arena.children(n)`: array of children ids
+- `arena.getState(n)`: EnumAstNodeStatus, validation state
+- `arena.getErrors(n)`: ErrorDescription[], validation errors
 
 ### AtRule and KeyframesAtRule
 
-- typ: number
-- nam: string. AtRule name
-- val: rule prelude
-- state: EnumAstNodeStatus, validation state
-- errors: ErrorDescription[], validation errors
+- `arena.dataTypes[n]`: EnumToken.AtRuleNodeType or EnumToken.KeyframesAtRuleNodeType
+- `arena.getName(n)`: string. AtRule name
+- `arena.getValue(n)`: rule prelude
+- `arena.tokens(n)`: array of token ids, the parsed prelude
+- `arena.children(n)`: array of children ids (at-rules with a block)
+- `arena.getState(n)`: EnumAstNodeStatus, validation state
+- `arena.getErrors(n)`: ErrorDescription[], validation errors
 
-### KeyframesRule
+### Workers
 
-- typ: number
-- sel: string, css selector
-- chi: array of children
-- state: EnumAstNodeStatus, validation state
-- errors: ErrorDescription[], validation errors
+The arena can be moved to a worker (and back) without copying the node data:
+
+```ts
+// main thread
+const [properties, transferables] = AstArena.toTransferableArenaObject(result.arena);
+worker.postMessage({ast: result.ast, properties, transferables}, transferables);
+
+// worker
+const arena = AstArena.fromTransferableArenaObjects(event.data.properties, event.data.transferables);
+console.log(render(arena, event.data.ast).code);
+```
+
+See [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html).
 
 ## Sourcemap
 

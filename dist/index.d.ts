@@ -1438,6 +1438,47 @@ declare enum TokenField {
     Val = 4
 }
 /**
+ * Plain (structured-cloneable) properties of an arena. See {@link Arena.toTransferableArenaObject}
+ */
+interface ArenaProperties {
+    /**
+     * arena class name: `Arena` or `AstArena`
+     */
+    kind: string;
+    /**
+     * last allocated id
+     */
+    current: number;
+    /**
+     * interned strings
+     */
+    strings: string[];
+    /**
+     * validation errors by node id
+     */
+    errors: Array<[number, ErrorDescription[]]>;
+    /**
+     * source ids ({@link AstArena})
+     */
+    sources?: number[];
+    /**
+     * raw selectors cache ({@link AstArena})
+     */
+    raw?: Array<RawSelectorTokens | null | undefined>;
+    /**
+     * optimized selectors cache ({@link AstArena})
+     */
+    optimized?: Array<OptimizedSelector | null | undefined>;
+}
+/**
+ * Column buffers of an arena, in the order of {@link arenaColumns}. See {@link Arena.toTransferableArenaObject}
+ */
+type ArenaTransferables = ArrayBuffer[];
+/**
+ * arena columns stored as typed arrays, in the order of the transferable buffers
+ */
+declare const arenaColumns: readonly ["dataTypes", "parents", "nextSibling", "previousSibling", "firstToken", "lastToken", "firstChild", "lastChild", "name", "stringValue", "numericValue", "unit", "flags", "colorType", "spans"];
+/**
  * Arena memory manager
  */
 declare class Arena {
@@ -1528,6 +1569,56 @@ declare class Arena {
      */
     errors: Map<number, ErrorDescription[]>;
     constructor(size?: number);
+    /**
+     * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
+     * to a worker (or back to the main thread) without copying the node data.
+     *
+     * The properties (strings, errors, ...) are cloned by `postMessage()`, the column buffers are moved when they are
+     * passed as the transfer list: the source arena must not be used afterwards (its columns are detached).
+     * The buffers are copied instead when the transfer list is omitted.
+     *
+     * ```ts
+     * // main thread
+     * const [properties, transferables] = AstArena.toTransferableArenaObject(result.arena);
+     *
+     * worker.postMessage({ ast: result.ast, properties, transferables }, transferables);
+     *
+     * // worker
+     * const { ast, properties, transferables } = event.data;
+     * const arena = AstArena.fromTransferableArenaObjects(properties, transferables);
+     * ```
+     *
+     * @param arena
+     * @returns the arena properties and the column buffers, see {@link ArenaProperties} and {@link ArenaTransferables}
+     */
+    static toTransferableArenaObject(arena: Arena): [ArenaProperties, ArenaTransferables];
+    /**
+     * Create an arena from the objects produced by {@link Arena.toTransferableArenaObject}. The column buffers are
+     * used as is (zero copy): the typed arrays are views on the given buffers.
+     *
+     * @param properties arena properties
+     * @param transferables column buffers
+     * @returns an `Arena` or an `AstArena` depending on the class the method is called on
+     */
+    static fromTransferableArenaObjects<T extends Arena>(this: new (size?: number) => T, properties: ArenaProperties, transferables: ArenaTransferables): T;
+    /**
+     * true when the column buffers have been transferred to another thread: the arena can no longer be used
+     */
+    get transferred(): boolean;
+    /**
+     * structured-cloneable properties of the arena
+     */
+    protected exportProperties(): ArenaProperties;
+    /**
+     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+     */
+    protected exportTransferables(): ArenaTransferables;
+    /**
+     * initialize the arena from exported properties and column buffers
+     * @param properties
+     * @param transferables
+     */
+    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
     allocate(): number;
     /**
      * Interns a string and returns its unique ID. If the string has already been interned, it returns the existing ID.
@@ -1840,6 +1931,14 @@ declare class AstArena extends Arena {
      */
     sources: number[];
     constructor(size?: number);
+    /**
+     * @inheritDoc
+     */
+    protected exportProperties(): ArenaProperties;
+    /**
+     * @inheritDoc
+     */
+    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
     /**
      * @inheritDoc
      */
@@ -7861,5 +7960,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { Arena, AstArena, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, cloneValue, convertColor, dirname, expand, find, findAll, findByValue, findLast, findValue, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, parseSyntax, render, renderValue as renderToken, replaceNode, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
+export { Arena, AstArena, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, ValidationLevel, WalkerEvent, WalkerOptionEnum, arenaColumns, cloneNode, cloneValue, convertColor, dirname, expand, find, findAll, findByValue, findLast, findValue, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, parseSyntax, render, renderValue as renderToken, replaceNode, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

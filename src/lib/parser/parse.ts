@@ -874,6 +874,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
 
     const sourceIndex: number = arena.sourceIndex(tokenizer.sourceId);
+    const dataTypes: Uint8Array = arena.dataTypes;
     let itemType: EnumToken;
 
     while (!tokenizer.done()) {
@@ -919,7 +920,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 itemType === EnumToken.BlockStartTokenType ||
                 itemType === EnumToken.EOFTokenType)
         ) {
-            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             if (node != null) {
                 if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
@@ -958,7 +959,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
             tokens.length = 0;
         } else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             arena.setSpanEnd(context, arena.getSpanEnd(item));
 
@@ -981,7 +982,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     }
 
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
         if (node != null) {
             if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
@@ -1484,16 +1485,18 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
+                                                const composedNames: string[] = [];
+
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
+
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-
-                                                            return acc;
-                                                        }, [] as string[]),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -1973,6 +1976,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
 
     const sourceIndex: number = arena.sourceIndex(tokenizer.sourceId);
+    const dataTypes: Uint8Array = arena.dataTypes;
     let itemType: EnumToken;
 
     while (!tokenizer.done()) {
@@ -2018,7 +2022,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 itemType === EnumToken.BlockStartTokenType ||
                 itemType === EnumToken.EOFTokenType)
         ) {
-            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             if (node != null) {
                 if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
@@ -2061,7 +2065,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
             tokens.length = 0;
         } else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             arena.setSpanEnd(context, arena.getSpanEnd(item));
 
@@ -2085,7 +2089,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     }
 
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
         if (node != null) {
             if (
@@ -2808,16 +2812,18 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
+                                                const composedNames: string[] = [];
+
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
+
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-
-                                                            return acc;
-                                                        }, [] as string[]),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -3227,35 +3233,29 @@ function parseNode(
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: AstNode[],
+    parensMatch: number,
 ): AstNode | null {
     let i: number = 0;
     const contextType: EnumToken = arena.dataTypes[context];
+    const dataTypes: Uint8Array = arena.dataTypes;
 
-    if (arena.typeOf(tokens.at(-1)) === EnumToken.EOFTokenType) {
+    const lastToken: Token | undefined = tokens[tokens.length - 1];
+
+    if (lastToken != null && dataTypes[lastToken] === EnumToken.EOFTokenType) {
         tokens.pop();
 
         // check parenthesis are balanced
-        let matchCount: number = 0;
-
-        for (let i = 0; i < tokens.length; i++) {
-            const token: Token = tokens[i];
-
-            if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
-                matchCount++;
-            } else if (arena.dataTypes[token] === EnumToken.EndParensTokenType) {
-                matchCount--;
-            }
-        }
+        let matchCount: number = parensMatch;
 
         if (matchCount > 0) {
             let k: number = tokens.length;
 
             while (
                 k-- > 0 &&
-                (arena.dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[k]] === EnumToken.CommentTokenType)
+                (dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType || dataTypes[tokens[k]] === EnumToken.CommentTokenType)
             );
 
-            if (arena.dataTypes[tokens[k]] == EnumToken.SemiColonTokenType) {
+                if (dataTypes[tokens[k]] == EnumToken.SemiColonTokenType) {
                 matchCount = 0;
             }
 
@@ -3331,7 +3331,7 @@ function parseNode(
         return null;
     }
 
-    let delim: Token = tokens.at(-1) as Token;
+    let delim: Token = tokens[tokens.length - 1] as Token;
 
     if (
         arena.dataTypes[delim] == EnumToken.SemiColonTokenType ||

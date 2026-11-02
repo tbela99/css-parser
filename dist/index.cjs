@@ -1458,6 +1458,46 @@ const structuredTokenTypes = new Set([
  */
 const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] == 1;
 /**
+ * arena columns stored as typed arrays, in the order of the transferable buffers
+ */
+const arenaColumns = [
+    "dataTypes",
+    "parents",
+    "nextSibling",
+    "previousSibling",
+    "firstToken",
+    "lastToken",
+    "firstChild",
+    "lastChild",
+    "name",
+    "stringValue",
+    "numericValue",
+    "unit",
+    "flags",
+    "colorType",
+    "spans",
+];
+/**
+ * typed array constructor of each column
+ */
+const arenaColumnTypes = {
+    dataTypes: Uint8Array,
+    parents: Uint32Array,
+    nextSibling: Uint32Array,
+    previousSibling: Uint32Array,
+    firstToken: Uint32Array,
+    lastToken: Uint32Array,
+    firstChild: Uint32Array,
+    lastChild: Uint32Array,
+    name: Uint32Array,
+    stringValue: Uint32Array,
+    numericValue: Float64Array,
+    unit: Uint32Array,
+    flags: Uint32Array,
+    colorType: Uint8Array,
+    spans: BigUint64Array,
+};
+/**
  * Arena memory manager
  */
 class Arena {
@@ -1564,6 +1604,93 @@ class Arena {
         this.spans = new BigUint64Array(size);
         this.spans32 = new Uint32Array(this.spans.buffer);
         this.dataTypes[this.root] = exports.EnumToken.StyleSheetNodeType;
+    }
+    /**
+     * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
+     * to a worker (or back to the main thread) without copying the node data.
+     *
+     * The properties (strings, errors, ...) are cloned by `postMessage()`, the column buffers are moved when they are
+     * passed as the transfer list: the source arena must not be used afterwards (its columns are detached).
+     * The buffers are copied instead when the transfer list is omitted.
+     *
+     * ```ts
+     * // main thread
+     * const [properties, transferables] = AstArena.toTransferableArenaObject(result.arena);
+     *
+     * worker.postMessage({ ast: result.ast, properties, transferables }, transferables);
+     *
+     * // worker
+     * const { ast, properties, transferables } = event.data;
+     * const arena = AstArena.fromTransferableArenaObjects(properties, transferables);
+     * ```
+     *
+     * @param arena
+     * @returns the arena properties and the column buffers, see {@link ArenaProperties} and {@link ArenaTransferables}
+     */
+    static toTransferableArenaObject(arena) {
+        return [arena.exportProperties(), arena.exportTransferables()];
+    }
+    /**
+     * Create an arena from the objects produced by {@link Arena.toTransferableArenaObject}. The column buffers are
+     * used as is (zero copy): the typed arrays are views on the given buffers.
+     *
+     * @param properties arena properties
+     * @param transferables column buffers
+     * @returns an `Arena` or an `AstArena` depending on the class the method is called on
+     */
+    static fromTransferableArenaObjects(properties, transferables) {
+        const arena = new this(0);
+        arena.importProperties(properties, transferables);
+        return arena;
+    }
+    /**
+     * true when the column buffers have been transferred to another thread: the arena can no longer be used
+     */
+    get transferred() {
+        return this.dataTypes.length == 0 && this.current > 0;
+    }
+    /**
+     * structured-cloneable properties of the arena
+     */
+    exportProperties() {
+        return {
+            kind: "Arena",
+            current: this.current,
+            strings: this.strings,
+            errors: [...this.errors.entries()],
+        };
+    }
+    /**
+     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+     */
+    exportTransferables() {
+        const buffers = [];
+        for (const column of arenaColumns) {
+            const array = this[column];
+            // the columns always own their buffer: no offset or partial view
+            buffers.push(array.buffer);
+        }
+        return buffers;
+    }
+    /**
+     * initialize the arena from exported properties and column buffers
+     * @param properties
+     * @param transferables
+     */
+    importProperties(properties, transferables) {
+        if (transferables.length != arenaColumns.length) {
+            throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
+        }
+        for (let i = 0; i < arenaColumns.length; i++) {
+            const column = arenaColumns[i];
+            // @ts-ignore
+            this[column] = new arenaColumnTypes[column](transferables[i]);
+        }
+        this.spans32 = new Uint32Array(this.spans.buffer);
+        this.current = properties.current;
+        this.strings = properties.strings.slice();
+        this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
+        this.errors = new Map(properties.errors);
     }
     allocate() {
         const id = ++this.current;
@@ -2806,6 +2933,27 @@ class AstArena extends Arena {
     /**
      * @inheritDoc
      */
+    exportProperties() {
+        return {
+            ...super.exportProperties(),
+            kind: "AstArena",
+            sources: this.sources,
+            raw: this.raw,
+            optimized: this.optimized,
+        };
+    }
+    /**
+     * @inheritDoc
+     */
+    importProperties(properties, transferables) {
+        super.importProperties(properties, transferables);
+        this.sources = properties.sources?.slice() ?? [];
+        this.raw = properties.raw?.slice() ?? [];
+        this.optimized = properties.optimized?.slice() ?? [];
+    }
+    /**
+     * @inheritDoc
+     */
     trim() {
         super.trim();
         const size = this.dataTypes.length;
@@ -3449,7 +3597,11 @@ class AstArena extends Arena {
                     continue;
                 }
                 const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
-                this.setField(id, field, ...values.map((value) => (typeof value == "number" ? value : this.fromObject(value))));
+                const fieldTokens = [];
+                for (const value of values) {
+                    fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
+                }
+                this.setField(id, field, ...fieldTokens);
             }
         }
         const loc = plain.loc;
@@ -3506,11 +3658,17 @@ class AstArena extends Arena {
                 break;
             default:
                 node.nam = this.strings[this.name[id]];
-                node.val = this.tokens(id).map((token) => this.tokenToObject(token));
+                node.val = [];
+                for (const token of this.tokens(id)) {
+                    node.val.push(this.tokenToObject(token));
+                }
                 break;
         }
         if (flags & exports.EnumAstNodeStatus.HasChildren) {
-            node.chi = this.children(id).map((child) => this.toObject(child));
+            node.chi = [];
+            for (const child of this.children(id)) {
+                node.chi.push(this.toObject(child));
+            }
         }
         if (flags & exports.EnumAstNodeStatus.HasLocation) {
             node.loc = this.getLocation(id);
@@ -3519,7 +3677,10 @@ class AstArena extends Arena {
             node.state = flags & exports.EnumAstNodeStatus.StateMask;
         }
         if ((flags & exports.EnumAstNodeStatus.HasValues) == 0 && this.firstToken[id] != 0) {
-            node.tokens = this.tokens(id).map((token) => this.tokenToObject(token));
+            node.tokens = [];
+            for (const token of this.tokens(id)) {
+                node.tokens.push(this.tokenToObject(token));
+            }
         }
         if (this.errors.has(id)) {
             node.errors = this.errors.get(id);
@@ -3575,7 +3736,10 @@ class AstArena extends Arena {
             token.kin = this.colorType[id];
         }
         if (this.firstToken[id] != 0) {
-            const tokens = this.tokens(id).map((child) => this.tokenToObject(child));
+            const tokens = [];
+            for (const child of this.tokens(id)) {
+                tokens.push(this.tokenToObject(child));
+            }
             if (typ == exports.EnumToken.DeclarationNodeType ||
                 typ == exports.EnumToken.CssVariableTokenType ||
                 typ == exports.EnumToken.CssVariableImportTokenType) {
@@ -3608,7 +3772,10 @@ class AstArena extends Arena {
                 if (list == null) {
                     continue;
                 }
-                const values = this.tokens(list).map((child) => this.tokenToObject(child));
+                const values = [];
+                for (const child of this.tokens(list)) {
+                    values.push(this.tokenToObject(child));
+                }
                 token[key] = isSingle ? (values[0] ?? null) : values;
             }
         }
@@ -24828,27 +24995,30 @@ function transformAtRuleMediaPrelude(arena, values) {
  * @param tokens
  */
 function minifyAtRuleMedia(arena, tokens) {
-    const sections = tokens
-        .reduce((acc, t) => {
-        if (arena.dataTypes[t] === exports.EnumToken.CommaTokenType) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of tokens) {
+        if (arena.dataTypes[token] === exports.EnumToken.CommaTokenType) {
+            parts.push([]);
         }
         else {
-            acc[acc.length - 1].push(t);
+            parts[parts.length - 1].push(token);
         }
-        return acc;
-    }, [[]])
-        .reduce((acc, values) => {
-        if (acc.has("all")) {
-            return acc;
+    }
+    const sections = new Map();
+    for (const values of parts) {
+        if (sections.has("all")) {
+            break;
         }
         const result = transformAtRuleMediaPrelude(arena, values);
         if (result.values.length === 0) {
-            return acc;
+            continue;
         }
-        acc.set(values.reduce((acc, t) => acc + renderValue(arena, t), ""), result.values);
-        return acc;
-    }, new Map());
+        let key = "";
+        for (const token of values) {
+            key += renderValue(arena, token);
+        }
+        sections.set(key, result.values);
+    }
     if (sections.has("all")) {
         tokens.length = 0;
     }
@@ -27516,10 +27686,14 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
     const indentSub = indents[level + 1];
     const typ = arena.dataTypes[data];
     switch (typ) {
-        case exports.EnumToken.DeclarationNodeType:
-            return `${arena.strings[arena.name[data]]}:${options.indent}${(options.minifyValues
-                ? filterValues(arena, arena.tokens(data))
-                : arena.tokens(data)).reduce(reducer, "")}`;
+        case exports.EnumToken.DeclarationNodeType: {
+            const values = options.minifyValues ? filterValues(arena, arena.tokens(data)) : arena.tokens(data);
+            let rendered = "";
+            for (const value of values) {
+                rendered = reducer(rendered, value);
+            }
+            return `${arena.strings[arena.name[data]]}:${options.indent}${rendered}`;
+        }
         case exports.EnumToken.CommentNodeType:
         case exports.EnumToken.CDOCOMMNodeType: {
             const val = arena.strings[arena.stringValue[data]];
@@ -27576,11 +27750,12 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                             : comment;
                 }
                 else if (nodeType == exports.EnumToken.DeclarationNodeType) {
-                    str = `${arena.strings[arena.name[node]]}:${options.indent}${(options.minifyValues
-                        ? filterValues(arena, arena.tokens(node))
-                        : arena.tokens(node))
-                        .reduce(reducer, "")
-                        .trimEnd()};`;
+                    const values = options.minifyValues ? filterValues(arena, arena.tokens(node)) : arena.tokens(node);
+                    let rendered = "";
+                    for (const value of values) {
+                        rendered = reducer(rendered, value);
+                    }
+                    str = `${arena.strings[arena.name[node]]}:${options.indent}${rendered.trimEnd()};`;
                 }
                 else {
                     str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
@@ -27632,6 +27807,13 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             return "";
     }
 }
+function renderTokenList(tokens, reducer) {
+    let result = "";
+    for (const token of tokens) {
+        result = reducer(result, token);
+    }
+    return result;
+}
 /**
  * render ast token
  * @param token
@@ -27677,8 +27859,13 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case exports.EnumToken.CustomFunctionTokenDefType:
         case exports.EnumToken.WildCardFunctionTokenDefType:
             return arena.strings[arena.stringValue[token]] + "(";
-        case exports.EnumToken.ListToken:
-            return arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), "");
+        case exports.EnumToken.ListToken: {
+            let result = "";
+            for (const curr of arena.tokens(token)) {
+                result += renderValue(arena, curr, options, cache);
+            }
+            return result;
+        }
         case exports.EnumToken.BinaryExpressionTokenType: {
             const op = arena.numericValue[token];
             const l = arena.getLeft(token)[0];
@@ -27728,21 +27915,26 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
             return "*";
         case exports.EnumToken.Div:
             return "/";
-        case exports.EnumToken.WrappedValuesTokenType:
-            return ("{" +
-                arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), "") +
-                "}");
+        case exports.EnumToken.WrappedValuesTokenType: {
+            let result = "";
+            for (const curr of arena.tokens(token)) {
+                result += renderValue(arena, curr, options, cache);
+            }
+            return "{" + result + "}";
+        }
         case exports.EnumToken.ColorTokenType:
             if (arena.colorType[token] == exports.ColorType.LIGHT_DARK ||
                 (arena.firstToken[token] != 0 && options.convertColor === false && arena.tokenCount(token) == 2)) {
+                let result = "";
+                for (const curr of arena.tokens(token)) {
+                    if (arena.dataTypes[curr] === exports.EnumToken.IdenTokenType) {
+                        parseColor(arena, curr);
+                    }
+                    result += renderValue(arena, curr, options, cache);
+                }
                 return (arena.strings[arena.stringValue[token]] +
                     "(" +
-                    arena.tokens(token).reduce((acc, curr) => {
-                        if (arena.dataTypes[curr] === exports.EnumToken.IdenTokenType) {
-                            parseColor(arena, curr);
-                        }
-                        return acc + renderValue(arena, curr, options, cache);
-                    }, "") +
+                    result +
                     ")");
             }
             if (options.convertColor !== false) {
@@ -27782,31 +27974,37 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                     "lch",
                 ].includes(fnName);
                 const useAlpha = (hasAlpha && chi.length == (isLegacy ? 7 : 4)) || ("color" == fnName && chi.length == 5);
+                let result = "";
+                for (let index = 0; index < chi.length; index++) {
+                    const curr = chi[index];
+                    if (/[,/]\s*$/.test(result)) {
+                        if (arena.dataTypes[curr] == exports.EnumToken.WhitespaceTokenType) {
+                            result = result.trimEnd();
+                            continue;
+                        }
+                        result = result.trimStart() + renderValue(arena, curr, options, cache);
+                        continue;
+                    }
+                    if (isLegacy && arena.dataTypes[curr] == exports.EnumToken.CommaTokenType) {
+                        result = result.trimEnd() + " ";
+                    }
+                    else if (arena.dataTypes[curr] == exports.EnumToken.WhitespaceTokenType) {
+                        result = result.trimEnd() + " ";
+                    }
+                    else if (arena.dataTypes[curr] == exports.EnumToken.CommaTokenType ||
+                        (arena.dataTypes[curr] == exports.EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
+                        result = result.trimEnd() + (arena.dataTypes[curr] == exports.EnumToken.CommaTokenType ? "," : "/");
+                    }
+                    else {
+                        result =
+                            result.trimEnd() +
+                                (useAlpha && index == chi.length - 1 ? "/" : " ") +
+                                renderValue(arena, curr, options, cache);
+                    }
+                }
                 return ((hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
-                    chi
-                        .reduce((acc, curr, index, array) => {
-                        if (/[,/]\s*$/.test(acc)) {
-                            if (arena.dataTypes[curr] == exports.EnumToken.WhitespaceTokenType) {
-                                return acc.trimEnd();
-                            }
-                            return acc.trimStart() + renderValue(arena, curr, options, cache);
-                        }
-                        if (isLegacy && arena.dataTypes[curr] == exports.EnumToken.CommaTokenType) {
-                            return acc.trimEnd() + " ";
-                        }
-                        if (arena.dataTypes[curr] == exports.EnumToken.WhitespaceTokenType) {
-                            return acc.trimEnd() + " ";
-                        }
-                        if (arena.dataTypes[curr] == exports.EnumToken.CommaTokenType ||
-                            (arena.dataTypes[curr] == exports.EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
-                            return acc.trimEnd() + (arena.dataTypes[curr] == exports.EnumToken.CommaTokenType ? "," : "/");
-                        }
-                        return (acc.trimEnd() +
-                            (useAlpha && index == array.length - 1 ? "/" : " ") +
-                            renderValue(arena, curr, options, cache));
-                    }, "")
-                        .trimStart() +
+                    result.trimStart() +
                     ")");
             }
         case exports.EnumToken.UrlFunctionTokenType:
@@ -28257,7 +28455,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                         }
                         break;
                 }
-                return arena.strings[arena.stringValue[token]] + "(" + slice.reduce(reducer, "") + ")";
+                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer) + ")";
             }
         case exports.EnumToken.TimingFunctionTokenType:
         case exports.EnumToken.PseudoClassFuncTokenType:
@@ -28276,11 +28474,11 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                 !arena.hasFraction(arena.firstToken[token])) {
                 return (arena.strings[arena.stringValue[token]] +
                     "(" +
-                    arena.tokens(token).reduce((acc, curr) => acc +
-                        renderValue(arena, curr, arena.dataTypes[token] == exports.EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer), "") +
+                    renderTokenList(arena.tokens(token), (acc, curr) => acc +
+                        renderValue(arena, curr, arena.dataTypes[token] == exports.EnumToken.FunctionTokenType ? { minify: false } : options, cache, reducer)) +
                     ")");
             }
-            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + arena.tokens(token).reduce(reducer, "") + ")";
+            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderTokenList(arena.tokens(token), reducer) + ")";
         case exports.EnumToken.BlockStartTokenType:
             return "{";
         case exports.EnumToken.BlockEndTokenType:
@@ -28340,7 +28538,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
             return "|";
         case exports.EnumToken.AttrTokenType:
         case exports.EnumToken.IdenListTokenType:
-            return "[" + arena.tokens(token).reduce(reducer, "") + "]";
+            return "[" + renderTokenList(arena.tokens(token), reducer) + "]";
         case exports.EnumToken.TimeTokenType:
         case exports.EnumToken.AngleTokenType:
         case exports.EnumToken.LengthTokenType:
@@ -28473,38 +28671,29 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case exports.EnumToken.NestingSelectorTokenType:
             return "&";
         case exports.EnumToken.InvalidAttrTokenType:
-            return ("[" +
-                arena.tokens(token).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache), ""));
+            return "[" + renderTokenList(arena.tokens(token), (acc, curr) => acc + renderValue(arena, curr, options, cache));
         case exports.EnumToken.InvalidClassSelectorTokenType:
             return arena.strings[arena.stringValue[token]];
         case exports.EnumToken.SupportsQueryUnaryConditionTokenType:
         case exports.EnumToken.WhenElseUnaryConditionTokenType:
             return (renderValue(arena, arena.field(token, exports.TokenField.L), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, exports.TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case exports.EnumToken.SupportsQueryConditionTokenType:
         case exports.EnumToken.WhenElseQueryConditionTokenType:
-            return (arena
-                .fieldTokens(token, exports.TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, exports.TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 " " +
                 renderValue(arena, arena.field(token, exports.TokenField.Op), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, exports.TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case exports.EnumToken.IfConditionTokenType: {
             const l = arena.fieldTokens(token, exports.TokenField.L);
             return l.length == 0
                 ? ""
-                : l.reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+                : renderTokenList(l, (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                     ":" +
                     (options.indent ?? "") +
-                    arena
-                        .fieldTokens(token, exports.TokenField.R)
-                        .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "");
+                    renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer));
         }
         case exports.EnumToken.IfElseConditionTokenType:
             return (renderValue(arena, arena.field(token, exports.TokenField.L), options, cache, reducer) +
@@ -28513,13 +28702,11 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case exports.EnumToken.DeclarationNodeType:
             return (arena.strings[arena.name[token]] +
                 ":" +
-                (options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token)).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case exports.EnumToken.MediaQueryUnaryFeatureTokenType:
             return (renderValue(arena, arena.field(token, exports.TokenField.L), options, cache, reducer) +
                 " " +
-                arena
-                    .fieldTokens(token, exports.TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case exports.EnumToken.MediaQueryConditionTokenType: {
             const op = arena.field(token, exports.TokenField.Op);
             const opType = arena.dataTypes[op];
@@ -28531,28 +28718,18 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
                 opType == exports.EnumToken.GteTokenType
                 ? ""
                 : " ";
-            return (arena
-                .fieldTokens(token, exports.TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, exports.TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 indent +
                 renderValue(arena, op, options, cache, reducer) +
                 indent +
-                arena
-                    .fieldTokens(token, exports.TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         }
         case exports.EnumToken.MediaRangeQueryTokenType:
-            return (arena
-                .fieldTokens(token, exports.TokenField.L)
-                .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+            return (renderTokenList(arena.fieldTokens(token, exports.TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 renderValue(arena, arena.field(token, exports.TokenField.Op), options, cache, reducer) +
-                arena
-                    .fieldTokens(token, exports.TokenField.Val)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "") +
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.Val), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)) +
                 renderValue(arena, arena.field(token, exports.TokenField.Op2), options, cache, reducer) +
-                arena
-                    .fieldTokens(token, exports.TokenField.R)
-                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), ""));
+                renderTokenList(arena.fieldTokens(token, exports.TokenField.R), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case exports.EnumToken.MediaFeatureTokenType:
             return arena.strings[arena.stringValue[token]];
         case exports.EnumToken.NotTokenType:
@@ -28572,7 +28749,7 @@ function renderValue(arena, token, options = {}, cache = Object.create(null), re
         case exports.EnumToken.EOFTokenType:
             return "";
         case exports.EnumToken.ComposesSelectorNodeType:
-            return `${arena.fieldTokens(token, exports.TokenField.L).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer), "")}${!arena.hasField(token, exports.TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, exports.TokenField.R), options, cache, reducer)}`;
+            return `${renderTokenList(arena.fieldTokens(token, exports.TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer))}${!arena.hasField(token, exports.TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, exports.TokenField.R), options, cache, reducer)}`;
         default:
             throw new Error(`Unsupported token type for ${exports.EnumToken[arena.dataTypes[token]]}`);
     }
@@ -31113,23 +31290,21 @@ function parseMediaqueryList(arena, stream, options) {
     let matchCount = 0;
     const errors = [];
     let hasErrors = false;
-    const parts = stream.reduce((acc, t) => {
-        if (arena.dataTypes[t] === exports.EnumToken.CommaTokenType && matchCount === 0) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of stream) {
+        const type = arena.dataTypes[token];
+        if (type === exports.EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
         }
-        else {
-            acc[acc.length - 1].push(t);
-            if (arena.dataTypes[t] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[t] === exports.EnumToken.EndParensTokenType) {
-                if (matchCount > 0) {
-                    matchCount--;
-                }
-            }
+        parts[parts.length - 1].push(token);
+        if (type === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
         }
-        return acc;
-    }, [[]]);
+        else if (type === exports.EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
     {
         for (const stream of parts.slice()) {
             let success = true;
@@ -31503,17 +31678,19 @@ function parseMediaqueryList(arena, stream, options) {
         }
     }
     stream.length = 0;
-    stream.push(...parts
-        .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== exports.EnumToken.InvalidMediaQueryTokenType)
-        .reduce((acc, b) => {
-        if (acc.length > 0) {
-            acc.push(arena.createToken(exports.EnumToken.CommaTokenType));
+    let hasPart = false;
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === exports.EnumToken.InvalidMediaQueryTokenType) {
+            continue;
         }
-        for (const t of b) {
-            acc.push(t);
+        if (hasPart) {
+            stream.push(arena.createToken(exports.EnumToken.CommaTokenType));
         }
-        return acc;
-    }, []));
+        for (const token of part) {
+            stream.push(token);
+        }
+        hasPart = true;
+    }
     return {
         success: !hasErrors ||
             stream.filter((t) => arena.dataTypes[t] !== exports.EnumToken.WhitespaceTokenType &&
@@ -32008,23 +32185,21 @@ function parseAtRuleContainerQueryList(arena, stream, context, options = {}) {
     const errors = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-    const parts = stream.reduce((acc, t) => {
-        if (arena.dataTypes[t] === exports.EnumToken.CommaTokenType && matchCount === 0) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of stream) {
+        const type = arena.dataTypes[token];
+        if (type === exports.EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
         }
-        else {
-            acc[acc.length - 1].push(t);
-            if (arena.dataTypes[t] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[t] === exports.EnumToken.EndParensTokenType) {
-                if (matchCount > 0) {
-                    matchCount--;
-                }
-            }
+        parts[parts.length - 1].push(token);
+        if (type === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
         }
-        return acc;
-    }, [[]]);
+        else if (type === exports.EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
     const result = matchAllSyntaxes(arena, syntax, createValidationContext(arena, stream), options);
     if (!result.success) {
         for (const error of result.errors) {
@@ -32326,14 +32501,14 @@ function parseAtRuleContainerQueryList(arena, stream, context, options = {}) {
         }
     }
     stream.length = 0;
-    stream.push(...parts
-        .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== exports.EnumToken.InvalidMediaQueryTokenType)
-        .reduce((acc, b) => {
-        for (const token of b) {
-            acc.push(token);
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === exports.EnumToken.InvalidMediaQueryTokenType) {
+            continue;
         }
-        return acc;
-    }, []));
+        for (const token of part) {
+            stream.push(token);
+        }
+    }
     return {
         success: true,
         errors,
@@ -33110,7 +33285,7 @@ function doParseSync(tokenizer, options = {}) {
             (itemType === exports.EnumToken.SemiColonTokenType ||
                 itemType === exports.EnumToken.BlockStartTokenType ||
                 itemType === exports.EnumToken.EOFTokenType)) {
-            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             if (node != null) {
                 if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
                     stack.push(node);
@@ -33144,7 +33319,7 @@ function doParseSync(tokenizer, options = {}) {
             tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             arena.setSpanEnd(context, arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
@@ -33160,7 +33335,7 @@ function doParseSync(tokenizer, options = {}) {
         }
     }
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
         if (node != null) {
             if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
                 stack.push(node);
@@ -33570,15 +33745,16 @@ function doParseSync(tokenizer, options = {}) {
                                             const val = arena.strings[arena.stringValue[tk]].slice(1);
                                             if (val in revMapping) {
                                                 const key = revMapping[val];
+                                                const composedNames = [];
+                                                for (const curr of arena.fieldTokens(token, exports.TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == exports.EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, exports.TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == exports.EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-                                                            return acc;
-                                                        }, []),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -33973,7 +34149,7 @@ async function doParse(iter, options = {}) {
             (itemType === exports.EnumToken.SemiColonTokenType ||
                 itemType === exports.EnumToken.BlockStartTokenType ||
                 itemType === exports.EnumToken.EOFTokenType)) {
-            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             if (node != null) {
                 if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
                     stack.push(node);
@@ -34011,7 +34187,7 @@ async function doParse(iter, options = {}) {
             tokens.length = 0;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
-            parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+            parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             arena.setSpanEnd(context, arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
@@ -34028,7 +34204,7 @@ async function doParse(iter, options = {}) {
         // }
     }
     if (tokens.length > 0) {
-        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
         if (node != null) {
             if (arena.dataTypes[node] == exports.EnumToken.AtRuleNodeType &&
                 "import" === arena.strings[arena.stringValue[node]]) {
@@ -34594,15 +34770,16 @@ async function doParse(iter, options = {}) {
                                             const val = arena.strings[arena.stringValue[tk]].slice(1);
                                             if (val in revMapping) {
                                                 const key = revMapping[val];
+                                                const composedNames = [];
+                                                for (const curr of arena.fieldTokens(token, exports.TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == exports.EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...arena.fieldTokens(token, exports.TokenField.L).reduce((acc, curr) => {
-                                                            if (arena.dataTypes[curr] == exports.EnumToken.IdenTokenType) {
-                                                                acc.push(arena.strings[arena.stringValue[curr]]);
-                                                            }
-                                                            return acc;
-                                                        }, []),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -34893,28 +35070,21 @@ async function doParse(iter, options = {}) {
     }
     return result;
 }
-function parseNode(arena, tokens, context, options, errors, stats, invalidNodes) {
+function parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch) {
     let i = 0;
     const contextType = arena.dataTypes[context];
-    if (arena.typeOf(tokens.at(-1)) === exports.EnumToken.EOFTokenType) {
+    const dataTypes = arena.dataTypes;
+    const lastToken = tokens[tokens.length - 1];
+    if (lastToken != null && dataTypes[lastToken] === exports.EnumToken.EOFTokenType) {
         tokens.pop();
         // check parenthesis are balanced
-        let matchCount = 0;
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
-                matchCount--;
-            }
-        }
+        let matchCount = parensMatch;
         if (matchCount > 0) {
             let k = tokens.length;
             while (k-- > 0 &&
-                (arena.dataTypes[tokens[k]] === exports.EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[k]] === exports.EnumToken.CommentTokenType))
+                (dataTypes[tokens[k]] === exports.EnumToken.WhitespaceTokenType || dataTypes[tokens[k]] === exports.EnumToken.CommentTokenType))
                 ;
-            if (arena.dataTypes[tokens[k]] == exports.EnumToken.SemiColonTokenType) {
+            if (dataTypes[tokens[k]] == exports.EnumToken.SemiColonTokenType) {
                 matchCount = 0;
             }
             while (matchCount > 0) {
@@ -34975,7 +35145,7 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes)
     if (tokens.length == 0) {
         return null;
     }
-    let delim = tokens.at(-1);
+    let delim = tokens[tokens.length - 1];
     if (arena.dataTypes[delim] == exports.EnumToken.SemiColonTokenType ||
         arena.dataTypes[delim] == exports.EnumToken.BlockStartTokenType ||
         arena.dataTypes[delim] == exports.EnumToken.BlockEndTokenType) {
@@ -36694,6 +36864,7 @@ async function transform(...args) {
 exports.Arena = Arena;
 exports.AstArena = AstArena;
 exports.SourceMap = SourceMap;
+exports.arenaColumns = arenaColumns;
 exports.cloneNode = cloneNode;
 exports.cloneValue = cloneValue;
 exports.convertColor = convertColor;

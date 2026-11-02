@@ -224,62 +224,59 @@ function transformAtRuleMediaPrelude(arena: AstArena, values: Token[]) {
 function minifyAtRuleMedia(arena: AstArena, tokens: Token[]): Token[] {
     let hasUpdates: boolean = false;
 
-    const sections = tokens
-        .reduce(
-            (acc, t) => {
-                if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
-                    acc.push([]);
-                } else {
-                    acc[acc.length - 1].push(t);
-                }
+    const parts: Token[][] = [[]];
 
-                return acc;
-            },
-            [[]] as Token[][],
-        )
-        .reduce(
-            (acc, values) => {
-                if (acc.has("all")) {
-                    return acc;
-                }
+    for (const token of tokens) {
+        if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
+            parts.push([]);
+        } else {
+            parts[parts.length - 1].push(token);
+        }
+    }
 
-                const result = transformAtRuleMediaPrelude(arena, values);
+    const sections: Map<string, Token[]> = new Map();
 
-                if (result.values.length === 0) {
-                    return acc;
-                }
+    for (const values of parts) {
+        if (sections.has("all")) {
+            break;
+        }
 
-                if (result.hasUpdates) {
-                    hasUpdates = true;
-                }
+        const result = transformAtRuleMediaPrelude(arena, values);
 
-                acc.set(
-                    values.reduce((acc, t) => acc + renderValue(arena, t), ""),
-                    result.values,
-                );
+        if (result.values.length === 0) {
+            continue;
+        }
 
-                return acc;
-            },
-            new Map() as Map<string, Token[]>,
-        );
+        if (result.hasUpdates) {
+            hasUpdates = true;
+        }
+
+        let key: string = "";
+
+        for (const token of values) {
+            key += renderValue(arena, token);
+        }
+
+        sections.set(key, result.values);
+    }
 
     if (sections.has("all")) {
         tokens.length = 0;
     } else if (hasUpdates) {
         tokens.length = 0;
-        tokens.push(
-            ...[...sections.values()].reduce((acc: Token[], t: Token[]) => {
-                if (acc.length > 0) {
-                    acc.push(arena.createToken(EnumToken.CommaTokenType));
-                }
+        let hasSection: boolean = false;
 
-                for (const token of t) {
-                    acc.push(token);
-                }
+        for (const section of sections.values()) {
+            if (hasSection) {
+                tokens.push(arena.createToken(EnumToken.CommaTokenType));
+            }
 
-                return acc;
-            }, [] as Token[]),
-        );
+            for (const token of section) {
+                tokens.push(token);
+            }
+
+            hasSection = true;
+        }
     }
 
     // return ast;

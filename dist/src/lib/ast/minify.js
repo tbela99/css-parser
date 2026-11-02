@@ -139,27 +139,30 @@ function transformAtRuleMediaPrelude(arena, values) {
  * @param tokens
  */
 function minifyAtRuleMedia(arena, tokens) {
-    const sections = tokens
-        .reduce((acc, t) => {
-        if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of tokens) {
+        if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
+            parts.push([]);
         }
         else {
-            acc[acc.length - 1].push(t);
+            parts[parts.length - 1].push(token);
         }
-        return acc;
-    }, [[]])
-        .reduce((acc, values) => {
-        if (acc.has("all")) {
-            return acc;
+    }
+    const sections = new Map();
+    for (const values of parts) {
+        if (sections.has("all")) {
+            break;
         }
         const result = transformAtRuleMediaPrelude(arena, values);
         if (result.values.length === 0) {
-            return acc;
+            continue;
         }
-        acc.set(values.reduce((acc, t) => acc + renderValue(arena, t), ""), result.values);
-        return acc;
-    }, new Map());
+        let key = "";
+        for (const token of values) {
+            key += renderValue(arena, token);
+        }
+        sections.set(key, result.values);
+    }
     if (sections.has("all")) {
         tokens.length = 0;
     }

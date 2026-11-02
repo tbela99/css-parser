@@ -24,23 +24,21 @@ function parseMediaqueryList(arena, stream, options) {
     let matchCount = 0;
     const errors = [];
     let hasErrors = false;
-    const parts = stream.reduce((acc, t) => {
-        if (arena.dataTypes[t] === EnumToken.CommaTokenType && matchCount === 0) {
-            acc.push([]);
+    const parts = [[]];
+    for (const token of stream) {
+        const type = arena.dataTypes[token];
+        if (type === EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
         }
-        else {
-            acc[acc.length - 1].push(t);
-            if (arena.dataTypes[t] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                matchCount++;
-            }
-            else if (arena.dataTypes[t] === EnumToken.EndParensTokenType) {
-                if (matchCount > 0) {
-                    matchCount--;
-                }
-            }
+        parts[parts.length - 1].push(token);
+        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
         }
-        return acc;
-    }, [[]]);
+        else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
     {
         for (const stream of parts.slice()) {
             let success = true;
@@ -414,17 +412,19 @@ function parseMediaqueryList(arena, stream, options) {
         }
     }
     stream.length = 0;
-    stream.push(...parts
-        .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== EnumToken.InvalidMediaQueryTokenType)
-        .reduce((acc, b) => {
-        if (acc.length > 0) {
-            acc.push(arena.createToken(EnumToken.CommaTokenType));
+    let hasPart = false;
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+            continue;
         }
-        for (const t of b) {
-            acc.push(t);
+        if (hasPart) {
+            stream.push(arena.createToken(EnumToken.CommaTokenType));
         }
-        return acc;
-    }, []));
+        for (const token of part) {
+            stream.push(token);
+        }
+        hasPart = true;
+    }
     return {
         success: !hasErrors ||
             stream.filter((t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&

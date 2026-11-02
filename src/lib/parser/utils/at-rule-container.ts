@@ -24,26 +24,24 @@ export function parseAtRuleContainerQueryList(
     const errors: ErrorDescription[] = [];
     const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
-    const parts = stream.reduce(
-        (acc, t) => {
-            if (arena.dataTypes[t] === EnumToken.CommaTokenType && matchCount === 0) {
-                acc.push([]);
-            } else {
-                acc[acc.length - 1].push(t);
+    const parts: Token[][] = [[]];
 
-                if (arena.dataTypes[t] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[t])) {
-                    matchCount++;
-                } else if (arena.dataTypes[t] === EnumToken.EndParensTokenType) {
-                    if (matchCount > 0) {
-                        matchCount--;
-                    }
-                }
-            }
+    for (const token of stream) {
+        const type: EnumToken = arena.dataTypes[token];
 
-            return acc;
-        },
-        [[]] as Token[][],
-    );
+        if (type === EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
+        }
+
+        parts[parts.length - 1].push(token);
+
+        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
+        } else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
 
     const result: ValidationMatch = matchAllSyntaxes(
         arena,
@@ -457,17 +455,15 @@ export function parseAtRuleContainerQueryList(
     }
 
     stream.length = 0;
-    stream.push(
-        ...parts
-            .filter((p) => p.length > 0 && arena.dataTypes[p[0]] !== EnumToken.InvalidMediaQueryTokenType)
-            .reduce((acc, b) => {
-                for (const token of b) {
-                    acc.push(token);
-                }
+    for (const part of parts) {
+        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+            continue;
+        }
 
-                return acc;
-            }, []),
-    );
+        for (const token of part) {
+            stream.push(token);
+        }
+    }
 
     return {
         success:
