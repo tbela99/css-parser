@@ -1,4 +1,5 @@
-import type { ColorToken, NumberToken, PercentageToken } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, hsl2rgbvalues, hwb2rgbvalues, srgb2rgb } from "./rgb.ts";
@@ -46,54 +47,55 @@ export function expandHexValue(value: string): string {
     return value;
 }
 
-export function rgb2HexToken(token: ColorToken): ColorToken | null {
-    let value: string | null = rgb2hexvalues(token);
+export function rgb2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: string | null = rgb2hexvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value);
+    return hexToken(arena, value);
 }
 
-export function hsl2HexToken(token: ColorToken): ColorToken | null {
-    let value: string | null = hsl2hexvalues(token);
+export function hsl2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: string | null = hsl2hexvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value);
+    return hexToken(arena, value);
 }
 
-export function cmyk2HexToken(token: ColorToken): ColorToken | null {
-    let value: string | null = cmyk2hexvalues(token);
+export function cmyk2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: string | null = cmyk2hexvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value);
+    return hexToken(arena, value);
 }
 
-export function hwb2HexToken(token: ColorToken): ColorToken | null {
-    let value: string | null = hwb2hexvalues(token);
+export function hwb2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: string | null = hwb2hexvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value);
+    return hexToken(arena, value);
 }
 
-export function color2HexToken(token: ColorToken): ColorToken | null {
-    let value: number[] | null = color2srgbvalues(token);
+export function color2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: number[] | null = color2srgbvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
     return hexToken(
+        arena,
         value.reduce(
             (acc, curr) =>
                 acc +
@@ -105,94 +107,85 @@ export function color2HexToken(token: ColorToken): ColorToken | null {
     );
 }
 
-export function oklab2HexToken(token: ColorToken): ColorToken | null {
-    let value: number[] | null = oklab2srgbvalues(token);
+export function oklab2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: number[] | null = oklab2srgbvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 
-export function oklch2HexToken(token: ColorToken): ColorToken | null {
-    let value: number[] | null = oklch2srgbvalues(token);
+export function oklch2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: number[] | null = oklch2srgbvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 
-export function lab2HexToken(token: ColorToken): ColorToken | null {
-    let value: number[] | null = lab2srgbvalues(token);
+export function lab2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: number[] | null = lab2srgbvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 
-export function lch2HexToken(token: ColorToken): ColorToken | null {
-    let value: number[] | null = lch2srgbvalues(token);
+export function lch2HexToken(arena: AstArena, token: Token): Token | null {
+    let value: number[] | null = lch2srgbvalues(arena, token);
 
     if (value == null) {
         return null;
     }
 
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
 
-function hexToken(value: string): ColorToken {
+function hexToken(arena: AstArena, value: string): Token {
     value = reduceHexValue(value);
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: value,
-        kin: value[0] == "#" ? ColorType.HEX : ColorType.LIT,
-    } as ColorToken;
+    return arena.createColor(value, value[0] == "#" ? ColorType.HEX : ColorType.LIT);
 }
 
-export function rgb2hexvalues(token: ColorToken): string | null {
+export function rgb2hexvalues(arena: AstArena, token: Token): string | null {
     let value: string = "#";
-    let t: NumberToken | PercentageToken;
+    let t: Token;
 
-    // @ts-ignore
-    const components: number[] = getColorComponents(token);
+    const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    // @ts-ignore
     for (let i = 0; i < 3; i++) {
-        // @ts-ignore
-        t = components[i] as IdenToken | NumberToken | PercentageToken;
+        t = components[i];
 
-        value +=
-        ( // @ts-expect-error
-            t.typ == EnumToken.Iden && (t as IdenToken).val == "none"
+        value += (
+            arena.dataTypes[t] == EnumToken.Iden && arena.strings[arena.stringValue[t]] == "none"
                 ? "0"
-                : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1))
+                : Math.round(getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1))
         )
             .toString(16)
             .padStart(2, "0");
     }
 
-    // @ts-ignore
     if (components.length == 4) {
         // @ts-ignore
         t = components[3];
 
         // @ts-ignore
-        const v: number = getNumber(t);
+        const v: number = getNumber(arena, t);
 
         // @ts-ignore
         if (v < 1) {
             // @ts-ignore
-            value += Math.round(255 * getNumber(t))
+            value += Math.round(255 * getNumber(arena, t))
                 .toString(16)
                 .padStart(2, "0");
         }
@@ -201,8 +194,8 @@ export function rgb2hexvalues(token: ColorToken): string | null {
     return value;
 }
 
-export function hsl2hexvalues(token: ColorToken): string | null {
-    const t: number[] | null = hsl2rgbvalues(token);
+export function hsl2hexvalues(arena: AstArena, token: Token): string | null {
+    const t: number[] | null = hsl2rgbvalues(arena, token);
 
     if (t == null) {
         return null;
@@ -215,8 +208,8 @@ export function hsl2hexvalues(token: ColorToken): string | null {
     return `${t.reduce(toHexString, "#")}`;
 }
 
-export function hwb2hexvalues(token: ColorToken): string | null {
-    const t: number[] | null = hwb2rgbvalues(token);
+export function hwb2hexvalues(arena: AstArena, token: Token): string | null {
+    const t: number[] | null = hwb2rgbvalues(arena, token);
 
     if (t == null) {
         return null;
@@ -229,8 +222,8 @@ export function hwb2hexvalues(token: ColorToken): string | null {
     return `${t.reduce(toHexString, "#")}`;
 }
 
-export function cmyk2hexvalues(token: ColorToken): string | null {
-    const t: number[] | null = cmyk2rgbvalues(token);
+export function cmyk2hexvalues(arena: AstArena, token: Token): string | null {
+    const t: number[] | null = cmyk2rgbvalues(arena, token);
 
     if (t == null) {
         return null;

@@ -2,67 +2,118 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { EnumToken } from '../types.js';
+import { renderValue } from '../../printer/render.js';
 import { FeatureWalkMode } from './type.js';
-import { PARENT, LOCSRCID, LOCSTA, LOCEND, TOKENS } from '../../syntax/constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
-import { replaceNodeOrValue } from '../../parser/utils/token.js';
-import { cloneNode } from '../clone.js';
+import { replaceNode, replaceNodeOrValue } from '../../parser/utils/token.js';
 import { trimArray } from '../../validation/match.js';
 import { findByValue } from '../find.js';
-import { eq } from '../../parser/utils/eq.js';
+import { eqToken } from '../../parser/utils/eq.js';
+import { TokenField } from '../arena.js';
 
-const nodeMatcher = (value) => value.typ === EnumToken.IfConditionTokenType ||
-    (value.typ === EnumToken.WildCardFunctionTokenType && equalsIgnoreCase("if", value.val));
-function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) {
+/**
+ * true if the token is an if() function or an if condition
+ * @param arena
+ * @param value
+ */
+function isIfToken(arena, value) {
+    return (arena.dataTypes[value] === EnumToken.IfConditionTokenType ||
+        (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
+            equalsIgnoreCase("if", arena.strings[arena.stringValue[value]])));
+}
+/**
+ * deep clone a declaration. the clone map is filled with the cloned value tokens
+ * @param arena
+ * @param declaration
+ * @param nodeMap
+ */
+function cloneDeclaration(arena, declaration, nodeMap) {
+    nodeMap.clear();
+    return arena.clone(declaration, true, nodeMap);
+}
+/**
+ * create an at-rule wrapping a declaration. the location is inherited from the declaration parent
+ * @param arena
+ * @param declaration
+ * @param parent parent of the declaration when the declaration is detached
+ * @param nam
+ * @param tokens
+ * @param options
+ */
+function createAtRule(arena, declaration, parent, nam, tokens, options = {}) {
+    const atRule = arena.createAtRule(EnumToken.AtRuleNodeType, nam, tokens.reduce((acc, curr) => acc + renderValue(arena, curr, options), ""), true, tokens, null, null);
+    if (arena.parents[declaration] != 0) {
+        parent = arena.parents[declaration];
+    }
+    if (parent != 0) {
+        arena.copyLocation(atRule, parent);
+    }
+    return atRule;
+}
+/**
+ * first token of the left side of an if condition that is not a comment or a whitespace
+ * @param arena
+ * @param condition
+ */
+function conditionLeft(arena, condition) {
+    return (arena
+        .fieldTokens(condition, TokenField.L)
+        .find((t) => arena.dataTypes[t] != EnumToken.CommentTokenType &&
+        arena.dataTypes[t] != EnumToken.WhitespaceTokenType) ?? null);
+}
+/**
+ * value tokens of an if condition (right side). the trailing semicolon is removed
+ * @param arena
+ * @param condition
+ * @param nodeMap map of the tokens to their clones
+ */
+function conditionValue(arena, condition, nodeMap) {
+    let tokens = arena.fieldTokens(condition, TokenField.R);
+    if (tokens.length > 0 && arena.dataTypes[tokens[tokens.length - 1]] === EnumToken.SemiColonTokenType) {
+        tokens = trimArray(arena, tokens.slice(0, -1));
+    }
+    return tokens.map((t) => nodeMap.get(t));
+}
+function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, cache, parent) {
     const result = [];
-    let nodeMap = new Map();
+    const nodeMap = new Map();
     let clonedDeclaration;
     let targetParentWrapper = parentWrapper;
     let targetWrapper = wrapper;
-    if (node.typ === EnumToken.IfElseConditionTokenType) {
+    // map a token or the declaration itself to its clone
+    const mapped = (target) => target == declaration ? clonedDeclaration : nodeMap.get(target);
+    if (arena.dataTypes[node] === EnumToken.IfElseConditionTokenType) {
         //
-        clonedDeclaration = cloneNode(declaration, true, nodeMap);
+        clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
+        const elseCondition = arena.field(node, TokenField.R);
         // replace else: ... with the actual value
-        if (node.r.typ === EnumToken.IfConditionTokenType) {
-            const target = node.r.l.find((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+        if (arena.dataTypes[elseCondition] === EnumToken.IfConditionTokenType) {
+            const target = conditionLeft(arena, elseCondition);
             //
-            if (target.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", target.val)) {
-                replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.r.r.at(-1)?.typ ===
-                    EnumToken.SemiColonTokenType
-                    ? trimArray(node.r.r.slice(0, -1))
-                    : node.r.r);
-                // @ts-expect-error
-                if (targetParentWrapper.typ != EnumToken.DeclarationNodeType) {
-                    let index = targetParentWrapper.chi.indexOf(targetWrapper);
+            if (target != null &&
+                arena.dataTypes[target] === EnumToken.IdenTokenType &&
+                equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])) {
+                replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(targetWrapper), conditionValue(arena, elseCondition, nodeMap));
+                if (targetParentWrapper != declaration) {
+                    const siblings = arena.tokens(targetParentWrapper);
+                    let index = siblings.indexOf(targetWrapper);
                     if (index != -1) {
                         let i;
-                        let k;
                         let siblingWrapper;
-                        let left = node.l.l.find((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
-                        for (i = index + 1; i < targetParentWrapper.chi.length; i++) {
-                            if (targetParentWrapper.chi[i].typ === targetWrapper.typ) {
-                                siblingWrapper = targetParentWrapper.chi[i];
-                                for (k = 0; k < siblingWrapper.chi.length; k++) {
-                                    if (siblingWrapper.chi[k].typ === EnumToken.IfElseConditionTokenType) {
-                                        let leftSide = siblingWrapper.chi[k].l.l.find((t) => t.typ != EnumToken.CommentTokenType &&
-                                            t.typ != EnumToken.WhitespaceTokenType);
-                                        if (eq(left, leftSide)) {
-                                            replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetParentWrapper.chi[i]), siblingWrapper.chi[k]
-                                                .r.r.at(-1)?.typ === EnumToken.SemiColonTokenType
-                                                ? trimArray(siblingWrapper.chi[k]
-                                                    .r.r.slice(0, -1))
-                                                : siblingWrapper.chi[k]
-                                                    .r.r);
-                                            // @ts-ignore
-                                            cache.add(siblingWrapper.chi[k].l);
+                        let left = conditionLeft(arena, arena.field(node, TokenField.L));
+                        for (i = index + 1; i < siblings.length; i++) {
+                            if (arena.dataTypes[siblings[i]] === arena.dataTypes[targetWrapper]) {
+                                siblingWrapper = siblings[i];
+                                for (const child of arena.tokens(siblingWrapper)) {
+                                    if (arena.dataTypes[child] === EnumToken.IfElseConditionTokenType) {
+                                        const leftSide = conditionLeft(arena, arena.field(child, TokenField.L));
+                                        if (left != null && leftSide != null && eqToken(arena, left, leftSide)) {
+                                            replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(siblings[i]), conditionValue(arena, arena.field(child, TokenField.R), nodeMap));
+                                            cache.add(arena.field(child, TokenField.L));
                                         }
                                     }
                                 }
@@ -73,112 +124,98 @@ function substituteIfElseNode(declaration, node, wrapper, parentWrapper, cache) 
             }
         }
         result.push(clonedDeclaration);
-        nodeMap.clear();
-        clonedDeclaration = cloneNode(declaration, true, nodeMap);
-        replaceNodeOrValue(nodeMap.get(targetParentWrapper), nodeMap.get(targetWrapper), node.l);
+        clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
+        replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(targetWrapper), mapped(arena.field(node, TokenField.L)));
         result.push(clonedDeclaration);
     }
-    else if (node.typ === EnumToken.IfConditionTokenType) {
-        const left = node.l.find((t) => t.typ != EnumToken.CommentTokenType && t.typ != EnumToken.WhitespaceTokenType);
+    else if (arena.dataTypes[node] === EnumToken.IfConditionTokenType) {
+        const left = conditionLeft(arena, node);
         if (left == null) {
             return result;
         }
-        if (left.typ === EnumToken.IdenTokenType && equalsIgnoreCase("else", left.val)) {
-            clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(parentWrapper), 
-            // @ts-expect-error
-            nodeMap.get(targetWrapper.typ === EnumToken.DeclarationNodeType ? node : targetWrapper), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
+        const leftType = arena.dataTypes[left];
+        if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
+            clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
+            replaceNodeOrValue(arena, mapped(parentWrapper), mapped(targetWrapper == declaration ? node : targetWrapper), conditionValue(arena, node, nodeMap));
             result.push(clonedDeclaration);
         }
-        else if (left?.typ === EnumToken.WhenElseFunctionTokenType) {
-            const atRule = Object.assign(cloneNode(declaration), {
-                typ: EnumToken.AtRuleNodeType,
-                nam: left.val,
-                chi: [],
-            });
-            if (declaration[PARENT] != null) {
-                atRule[LOCSRCID] = declaration[PARENT][LOCSRCID];
-                atRule[LOCSTA] = declaration[PARENT][LOCSTA];
-                atRule[LOCEND] = declaration[PARENT][LOCEND];
-            }
-            atRule[TOKENS] = [{ typ: EnumToken.ParensTokenType, chi: left.chi.slice() }];
-            const minify = atRule.nam !== "supports";
-            const options = {
+        else if (leftType === EnumToken.WhenElseFunctionTokenType) {
+            const name = arena.strings[arena.stringValue[left]];
+            const minify = name !== "supports";
+            const atRule = createAtRule(arena, declaration, parent, name, [
+                arena.createList(EnumToken.ParensTokenType, arena.tokens(left).map((t) => arena.clone(t, true))),
+            ], {
                 minify,
                 convertColor: minify,
-            };
-            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + printValue(curr, options), "");
-            clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(targetWrapper), nodeMap.get(node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType ? trimArray(node.r.slice(0, -1)) : node.r);
-            clonedDeclaration[PARENT] = atRule;
-            atRule.chi.push(clonedDeclaration);
-            result.push(atRule);
-            processNode(clonedDeclaration, cache);
-        }
-        else if (left.typ === EnumToken.ContainerFunctionTokenType) {
-            const atRule = Object.assign(cloneNode(declaration), {
-                typ: EnumToken.AtRuleNodeType,
-                nam: "container",
-                chi: [],
             });
-            atRule[TOKENS] = [left];
-            atRule.val = atRule[TOKENS].reduce((acc, curr) => acc + printValue(curr), "");
-            if (declaration[PARENT] != null) {
-                atRule[LOCSRCID] = declaration[PARENT][LOCSRCID];
-                atRule[LOCSTA] = declaration[PARENT][LOCSTA];
-                atRule[LOCEND] = declaration[PARENT][LOCEND];
-            }
-            clonedDeclaration = cloneNode(declaration, true, nodeMap);
-            replaceNodeOrValue(nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetParentWrapper : targetWrapper), nodeMap.get(targetWrapper.typ === EnumToken.WildCardFunctionTokenType ? targetWrapper : node), node.r.at(-1)?.typ === EnumToken.SemiColonTokenType
-                ? trimArray(node.r.slice(0, -1))
-                : node.r);
-            clonedDeclaration[PARENT] = atRule;
-            atRule.chi.push(clonedDeclaration);
+            clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
+            replaceNodeOrValue(arena, mapped(targetWrapper), mapped(node), conditionValue(arena, node, nodeMap));
+            arena.appendChildren(atRule, clonedDeclaration);
             result.push(atRule);
-            processNode(clonedDeclaration, cache);
+            processNode(arena, clonedDeclaration, cache, parent);
+        }
+        else if (leftType === EnumToken.ContainerFunctionTokenType) {
+            const atRule = createAtRule(arena, declaration, parent, "container", [arena.clone(left, true)]);
+            clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
+            const isWildCard = targetWrapper != declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
+            replaceNodeOrValue(arena, mapped(isWildCard ? targetParentWrapper : targetWrapper), mapped(isWildCard ? targetWrapper : node), conditionValue(arena, node, nodeMap));
+            arena.appendChildren(atRule, clonedDeclaration);
+            result.push(atRule);
+            processNode(arena, clonedDeclaration, cache, parent);
         }
     }
     return result;
 }
-function processNode(declarationNode, cache) {
+/**
+ * expand if() conditions into declarations / at-rules
+ * @param arena
+ * @param declarationNode
+ * @param cache
+ * @param parent parent of the declaration when the declaration is detached
+ */
+function processNode(arena, declarationNode, cache, parent = 0) {
     let i;
     let k = -1;
     let astNode;
     const result = [];
     const stack = [declarationNode];
+    // the generated nodes are detached: remember the parent for the location of the generated at-rules
+    if (arena.parents[declarationNode] != 0) {
+        parent = arena.parents[declarationNode];
+    }
+    const nodeMatcher = (value) => isIfToken(arena, value);
     while (++k < stack.length) {
         astNode = stack[k];
-        const { node: declaration, value: node } = findByValue(astNode, nodeMatcher) ?? {};
-        if (declaration == null || node == null) {
+        const { node: declaration, value: node } = findByValue(arena, astNode, nodeMatcher) ?? {};
+        if (declaration == null || node == null || node.node == null) {
             result.push(astNode);
             continue;
         }
+        const value = node.node;
         // @ts-expect-error
-        const parents = [...node.parents?.()];
-        const parentWrapper = node.parent ?? parents.find((node) => !nodeMatcher(node));
-        if (node.node.typ === EnumToken.WildCardFunctionTokenType) {
-            for (i = 0; i < node.node.chi.length; i++) {
-                stack.push(
-                // @ts-expect-error
-                ...substituteIfElseNode(
-                // @ts-expect-error
-                declaration, node.node.chi[i], node.node, parentWrapper, cache));
+        const parents = [...(node.parents?.() ?? [])];
+        const parentWrapper = node.parent ?? declaration;
+        if (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType) {
+            const conditions = arena.tokens(value);
+            for (i = 0; i < conditions.length; i++) {
+                stack.push(...substituteIfElseNode(arena, declaration, conditions[i], value, parentWrapper, cache, parent));
             }
         }
         else {
-            stack.push(
-            // @ts-expect-error
-            ...substituteIfElseNode(
-            // @ts-expect-error
-            declaration, node.node, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache));
+            stack.push(...substituteIfElseNode(arena, declaration, value, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache, parent));
+        }
+        // the node is substituted: release it unless it is the node being replaced
+        if (astNode != declarationNode) {
+            arena.release(astNode);
         }
     }
-    if (result.length > 0) {
-        // @ts-expect-error
-        replaceNodeOrValue(declarationNode[PARENT], declarationNode, result);
+    if (result.length > 0 && arena.parents[declarationNode] != 0) {
+        replaceNode(arena, declarationNode, result);
+        if (!result.includes(declarationNode)) {
+            arena.release(declarationNode);
+        }
     }
     // else remove node?
-    // @ts-expect-error
     return result;
 }
 class ExpandIfFeature {
@@ -195,8 +232,8 @@ class ExpandIfFeature {
             options.features.push(new ExpandIfFeature());
         }
     }
-    run(declaration) {
-        return processNode(declaration, new Set());
+    run(arena, declaration) {
+        return processNode(arena, declaration, new Set());
     }
 }
 

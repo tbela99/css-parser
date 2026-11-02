@@ -1,4 +1,5 @@
 import type {ErrorDescription, Token} from "../../@types/index.d.ts";
+import type {AstArena} from "../ast/arena.ts";
 import type {ValidationToken} from "./parser/types.d.ts";
 
 /**
@@ -6,9 +7,13 @@ import type {ValidationToken} from "./parser/types.d.ts";
  */
 export interface ValidationContext {
     /**
+     * arena the tokens are allocated in
+     */
+    arena: AstArena;
+    /**
      * the tokens
      */
-    tokens: number[];
+    tokens: Token[];
     /**
      * current index
      */
@@ -23,31 +28,31 @@ export interface ValidationContext {
     /**
      * return a range of tokens.
      * @param open
-     * @param close 
+     * @param close
      * @param counter
      */
-    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): number[];
+    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): Token[];
 
     /**
-     * 
-     * @param split 
+     *
+     * @param split
      */
-    split(split?: EnumToken): number[][];
+    split(split?: EnumToken): Token[][];
 
     /**
      * return the current token that is not consumed yet
      */
-    current(): number | null;
+    current(): Token | null;
 
     /**
      * consume the current token and move to the next
      */
-    next(): number | null;
+    next(): Token | null;
 
     /**
      * return tokens that are not consumed
      */
-    getRemainingTokens(): number[];
+    getRemainingTokens(): Token[];
     /**
      *
      */
@@ -62,7 +67,7 @@ export interface ValidationContext {
      * consume all tokens up to the specified token
      * @param token
      */
-    update(token: number): ValidationContext;
+    update(token: Token | null | undefined): ValidationContext;
 
     /**
      * returns true if all tokens are consumed. returns false otherwise

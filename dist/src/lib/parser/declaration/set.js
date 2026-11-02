@@ -2,33 +2,34 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
-import { eq } from '../utils/eq.js';
+import { eqToken } from '../utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
 import { isLength } from '../../syntax/syntax.js';
 
-function dedup(values) {
+function dedup(arena, values) {
     for (const value of values) {
         let i = value.length;
         while (i-- > 1) {
             const t = value[i];
             const k = value[i == 1 ? 0 : i % 2];
-            if (t.val == k.val && t.val == 0) {
-                if ((t.typ == EnumToken.NumberTokenType && isLength(k)) ||
-                    (k.typ == EnumToken.NumberTokenType && isLength(t)) ||
-                    isLength(k) ||
-                    isLength(t)) {
+            if (arena.isNumeric(t) &&
+                arena.isNumeric(k) &&
+                arena.numericValue[t] == 0 &&
+                arena.numericValue[k] == 0 &&
+                !arena.hasFraction(t) &&
+                !arena.hasFraction(k)) {
+                if ((arena.dataTypes[t] == EnumToken.NumberTokenType && isLength(arena, k)) ||
+                    (arena.dataTypes[k] == EnumToken.NumberTokenType && isLength(arena, t)) ||
+                    isLength(arena, k) ||
+                    isLength(arena, t)) {
                     value.splice(i, 1);
                     continue;
                 }
             }
-            if (eq(t, k)) {
+            if (eqToken(arena, t, k)) {
                 value.splice(i, 1);
                 continue;
             }
@@ -37,15 +38,23 @@ function dedup(values) {
     }
     return values;
 }
+/**
+ * set of declarations that can be merged into a single shorthand declaration.
+ * declarations are arena node ids
+ */
 class PropertySet {
     config;
+    arena;
     declarations;
-    constructor(config) {
+    constructor(arena, config) {
+        this.arena = arena;
         this.config = config;
         this.declarations = new Map();
     }
     add(declaration) {
-        if (declaration.nam == this.config.shorthand) {
+        const arena = this.arena;
+        const nam = arena.strings[arena.name[declaration]];
+        if (nam == this.config.shorthand) {
             this.declarations = new Map();
         }
         else {
@@ -54,13 +63,13 @@ class PropertySet {
                 let isValid = true;
                 let current = -1;
                 const tokens = [];
-                // @ts-ignore
-                for (let token of this.declarations.get(this.config.shorthand).val) {
+                for (const token of arena.tokens(this.declarations.get(this.config.shorthand))) {
+                    const typ = arena.dataTypes[token];
                     if (
                     // @ts-expect-error
-                    this.config.types.some((t) => token.typ == EnumToken[t]) ||
-                        (token.typ == EnumToken.NumberTokenType &&
-                            token.val == 0 &&
+                    this.config.types.some((t) => typ == EnumToken[t]) ||
+                        (typ == EnumToken.NumberTokenType &&
+                            arena.numericValue[token] == 0 &&
                             (this.config.types.includes("Length") ||
                                 this.config.types.includes("Angle") ||
                                 this.config.types.includes("Dimension")))) {
@@ -71,17 +80,17 @@ class PropertySet {
                         tokens[current].push(token);
                         continue;
                     }
-                    if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
-                        if (token.typ == EnumToken.IdenTokenType &&
-                            this.config.keywords.includes(token.val)) {
+                    if (typ != EnumToken.WhitespaceTokenType && typ != EnumToken.CommentTokenType) {
+                        if (typ == EnumToken.IdenTokenType &&
+                            this.config.keywords.includes(arena.strings[arena.stringValue[token]])) {
                             if (tokens.length == 0) {
                                 tokens.push([]);
                                 current++;
                             }
                             tokens[current].push(token);
                         }
-                        // @ts-ignore
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator?.val) {
+                        if (typ == EnumToken.LiteralTokenType &&
+                            arena.strings[arena.stringValue[token]] == this.config.separator?.val) {
                             tokens.push([]);
                             current++;
                             continue;
@@ -95,11 +104,7 @@ class PropertySet {
                     for (const values of tokens) {
                         this.config.properties.forEach((property, index) => {
                             if (!this.declarations.has(property)) {
-                                this.declarations.set(property, {
-                                    typ: EnumToken.DeclarationNodeType,
-                                    nam: property,
-                                    val: [],
-                                });
+                                this.declarations.set(property, arena.createDeclaration(EnumToken.DeclarationNodeType, property, [], null, null));
                             }
                             while (index > 0 && index >= values.length) {
                                 if (index > 1) {
@@ -110,20 +115,19 @@ class PropertySet {
                                     break;
                                 }
                             }
-                            // @ts-ignore
-                            const val = this.declarations.get(property).val;
-                            if (val.length > 0) {
-                                val.push({ typ: EnumToken.WhitespaceTokenType });
+                            const node = this.declarations.get(property);
+                            if (arena.firstToken[node] != 0) {
+                                arena.appendToken(node, arena.createToken(EnumToken.WhitespaceTokenType));
                             }
-                            val.push({ ...values[index] });
+                            arena.appendToken(node, arena.clone(values[index], true));
                         });
                     }
                 }
-                this.declarations.set(declaration.nam, declaration);
+                this.declarations.set(nam, declaration);
                 return this;
             }
         }
-        this.declarations.set(declaration.nam, declaration);
+        this.declarations.set(nam, declaration);
         return this;
     }
     isShortHand() {
@@ -134,23 +138,25 @@ class PropertySet {
     }
     [Symbol.iterator]() {
         let iterator;
+        const arena = this.arena;
         const declarations = this.declarations;
         if (declarations.size < this.config.properties.length) {
             const values = [...declarations.values()];
             if (this.isShortHand()) {
-                const val = values[0].val.reduce((acc, curr) => {
-                    if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
+                const val = arena.tokens(values[0]).reduce((acc, curr) => {
+                    if (arena.dataTypes[curr] != EnumToken.WhitespaceTokenType &&
+                        arena.dataTypes[curr] != EnumToken.CommentTokenType) {
                         acc.push(curr);
                     }
                     return acc;
                 }, []);
-                values[0].val = val.reduce((acc, curr) => {
+                arena.setTokens(values[0], ...val.reduce((acc, curr) => {
                     if (acc.length > 0) {
-                        acc.push({ typ: EnumToken.WhitespaceTokenType });
+                        acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                     }
                     acc.push(curr);
                     return acc;
-                }, []);
+                }, []));
             }
             return values[Symbol.iterator]();
         }
@@ -158,12 +164,9 @@ class PropertySet {
             const values = [];
             this.config.properties.forEach((property) => {
                 let index = 0;
-                // @ts-ignore
-                for (const token of this.declarations.get(property)?.val ?? []) {
-                    if (token == null) {
-                        return this.declarations.values()[Symbol.iterator]();
-                    }
-                    if (token.typ == EnumToken.WhitespaceTokenType) {
+                const id = this.declarations.get(property);
+                for (const token of id == null ? [] : arena.tokens(id)) {
+                    if (arena.dataTypes[token] == EnumToken.WhitespaceTokenType) {
                         continue;
                     }
                     if (values.length == index) {
@@ -174,31 +177,27 @@ class PropertySet {
                 }
             });
             if (this.config.valueSeparator == null) {
-                dedup(values);
+                dedup(arena, values);
             }
             iterator = [
-                {
-                    typ: EnumToken.DeclarationNodeType,
-                    nam: this.config.shorthand,
-                    val: values.reduce((acc, curr) => {
-                        if (curr.length > 1) {
-                            const k = curr.length * 2 - 1;
-                            let i = 1;
-                            while (i < k) {
-                                curr.splice(i, 0, { typ: EnumToken.WhitespaceTokenType });
-                                i += 2;
-                            }
+                arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, values.reduce((acc, curr) => {
+                    if (curr.length > 1) {
+                        const k = curr.length * 2 - 1;
+                        let i = 1;
+                        while (i < k) {
+                            curr.splice(i, 0, arena.createToken(EnumToken.WhitespaceTokenType));
+                            i += 2;
                         }
-                        if (acc.length > 0) {
-                            // @ts-ignore
-                            acc.push({ ...this.config.separator, typ: EnumToken.LiteralTokenType });
-                        }
-                        for (const token of curr) {
-                            acc.push(token);
-                        }
-                        return acc;
-                    }, []),
-                },
+                    }
+                    if (acc.length > 0) {
+                        acc.push(arena.createToken(EnumToken.LiteralTokenType, this.config.separator.val));
+                    }
+                    for (const token of curr) {
+                        // tokens are shared with the original declarations
+                        acc.push(arena.parents[token] != 0 ? arena.clone(token, true) : token);
+                    }
+                    return acc;
+                }, []), null, null),
             ][Symbol.iterator]();
         }
         return iterator;

@@ -2,36 +2,34 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
+export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
 import { parseResult, validateSyncArguments } from './utils/sync.js';
-import { Arena } from './lib/parser/arena.js';
 export { minify } from './lib/ast/minify.js';
 export { expand } from './lib/ast/expand.js';
 export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
-export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
-export { cloneNode } from './lib/ast/clone.js';
-export { replaceNodeOrValue } from './lib/parser/utils/token.js';
-export { printValue } from './lib/printer/print.js';
+export { find, findAll, findByValue, findLast, findValue } from './lib/ast/find.js';
+export { cloneNode, cloneValue } from './lib/ast/clone.js';
+export { Arena, AstArena, TokenField } from './lib/ast/arena.js';
+export { replaceNode, replaceNodeOrValue } from './lib/parser/utils/token.js';
+export { PropertyList } from './lib/parser/declaration/list.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
+export { parseSyntax } from './lib/validation/parser/parse.js';
 export { version } from '../package.json.js';
 
 /**
@@ -92,13 +90,13 @@ async function load(url, currentDirectory = ".", responseType = false) {
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
  *
- * let renderResult = render(parseResult.ast);
+ * let renderResult = render(parseResult.arena, parseResult.ast);
  * console.log(result.code);
  *
  * // body{color:red}
  *
  *
- * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * renderResult = render(parseResult.arena, parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
  * console.log(renderResult.code);
  *
  * // body {
@@ -106,8 +104,8 @@ async function load(url, currentDirectory = ".", responseType = false) {
  * // }
  * ```
  */
-function render(data, options = {}, mapping) {
-    return doRender(data, Object.assign(options, {
+function render(arena, data, options = {}, mapping) {
+    return doRender(arena, data, Object.assign(options, {
         resolve,
         dirname,
         cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
@@ -177,7 +175,6 @@ function parseSync(...args) {
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
-    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2(stream.length)));
     Object.assign(options, {
         resolve,
         dirname,
@@ -186,7 +183,6 @@ function parseSync(...args) {
             : dirname(self.location.pathname),
     });
     options.src = resolve(options.src, options.cwd).relative;
-    options.arena ??= new Arena(typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2(stream.length)) : 4096);
     if (options.source == null) {
         const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
@@ -248,7 +244,7 @@ function transformSync(...args) {
         importMapping = parseResult.importMapping;
     }
     // ast already expanded by parse
-    const rendered = render(parseResult.ast, {
+    const rendered = render(parseResult.arena, parseResult.ast, {
         ...options,
         expandNestingRules: false,
     }, mapping != null ? { mapping, importMapping } : null);
@@ -423,7 +419,7 @@ async function transform(...args) {
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, {
+        const rendered = render(parseResult.arena, parseResult.ast, {
             ...options,
             expandNestingRules: false,
         }, mapping != null ? { mapping, importMapping } : null);

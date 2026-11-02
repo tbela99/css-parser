@@ -2,60 +2,67 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
-import { TOKENS, ERRORS, STATE, LOCSRCID, LOCSTA, LOCEND, PARENT } from '../syntax/constants.js';
+import { EnumAstNodeStatus } from './types.js';
 
 /**
- *
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  * @returns
  */
-function getNodeProperty(node, key) {
+function getNodeProperty(arena, node, key) {
     switch (key) {
         case "parent":
-            return node[PARENT];
+            return arena.parents[node];
         case "location":
-            return node[LOCSRCID] == null && node[LOCSTA] == null && node[LOCEND] == null ? null : { srcId: node[LOCSRCID], sta: node[LOCSTA], end: node[LOCEND] };
+            return arena.getLocation(node);
         case "state":
-            return node[STATE];
+            return arena.flags[node] & EnumAstNodeStatus.StateMask;
         case "errors":
-            return node[ERRORS];
+            return arena.errors.get(node) ?? null;
         case "tokens":
-            return node[TOKENS];
+            return arena.firstToken[node] == 0 ? null : arena.tokens(node);
+        case "selector":
+            return arena.strings[arena.name[node]] ?? null;
     }
     return undefined;
 }
 /**
- *
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-function setNodeProperty(node, key, value) {
+function setNodeProperty(arena, node, key, value) {
     switch (key) {
         case "parent":
-            node[PARENT] = value;
+            // move the node at the end of the parent children
+            arena.appendChildren(value, node);
             break;
         case "location":
-            node[LOCSRCID] = value.srcId;
-            node[LOCSTA] = value.sta;
-            node[LOCEND] = value.end;
+            arena.setLocation(node, value?.srcId, value?.sta, value?.end);
             break;
         case "state":
-            node[STATE] = value;
+            arena.setState(node, value);
             break;
         case "errors":
-            node[ERRORS] = value;
+            if (value == null) {
+                arena.errors.delete(node);
+            }
+            else {
+                arena.errors.set(node, value);
+            }
             break;
         case "tokens":
-            node[TOKENS] = value;
+            arena.setTokenList(node, (value ?? []));
+            break;
+        case "selector":
+            arena.name[node] = arena.internString(value);
             break;
     }
 }

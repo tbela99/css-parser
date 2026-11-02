@@ -1,5 +1,5 @@
-import { eq } from "../parser/utils/eq.ts";
-import { doRender } from "../printer/render.ts";
+import { eq, eqToken } from "../parser/utils/eq.ts";
+import { doRender, renderValue } from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
 import { walkValues } from "./walk.ts";
 import type {
@@ -22,16 +22,19 @@ import type {
     ParserOptions,
     PseudoClassFunctionToken,
     RawSelectorTokens,
+    RenderOptions,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken } from "./types.ts";
+import type { AstArena } from "./arena.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
-import { combinators, LOCEND, LOCSRCID, LOCSTA, OPTIMIZED, PARENT, RAW, TOKENS } from "../syntax/constants.ts";
-import { replaceNodeOrValue } from "../parser/utils/token.ts";
+import { combinators } from "../syntax/constants.ts";
+import { replaceNode, replaceNodeOrValue } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { replaceCompound } from "./expand.ts";
+import { equalsIgnoreCase } from "../parser/utils/text.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 const rules: EnumToken[] = [
@@ -47,6 +50,7 @@ const features: MinifyFeature[] = Object.values(allFeatures as Record<string, Mi
 
 /**
  * Apply minification rules to the ast tree
+ * @param arena
  * @param ast
  * @param options
  * @param recursive
@@ -56,6 +60,7 @@ const features: MinifyFeature[] = Object.values(allFeatures as Record<string, Mi
  * @private
  */
 export function minify(
+    arena: AstArena,
     ast: AstNode,
     options: ParserOptions | MinifyFeatureOptions,
     recursive: boolean,
@@ -65,6 +70,7 @@ export function minify(
 
 /**
  * Apply minification rules to the ast tree
+ * @param arena
  * @param ast
  * @param options
  * @param recursive
@@ -75,6 +81,7 @@ export function minify(
  * @private
  */
 export function minify(
+    arena: AstArena,
     ast: AstNode,
     options: ParserOptions | MinifyFeatureOptions = {},
     recursive: boolean = false,
@@ -86,8 +93,6 @@ export function minify(
 ): AstNode {
     let preprocess: boolean = false;
     let postprocess: boolean = false;
-    let parents: Set<AstNode>;
-    let replacement: AstNode | null;
 
     let { sourcemap, module, ...options2 } = options as ParserOptions;
 
@@ -118,40 +123,48 @@ export function minify(
         }
     }
 
-    if (preprocess) {
-        parents = new Set([<AstStyleSheet>ast]);
+    /**
+     * run the features on every node of the tree
+     * @param mode
+     */
+    const runFeatures = (mode: FeatureWalkMode): void => {
+        // breadth first traversal
+        const queue: AstNode[] = [ast];
+        let node: AstNode;
+        let typ: EnumToken;
+        let replacement: AstNode | AstNode[] | null;
 
-        for (const parent of parents) {
-            if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
+        for (let k = 0; k < queue.length; k++) {
+            node = queue[k];
+            typ = arena.dataTypes[node];
+
+            if (typ == EnumToken.CommentTokenType || typ == EnumToken.CDOCOMMTokenType) {
                 continue;
             }
 
-            replacement = parent;
+            replacement = node;
 
             for (const feature of options2.features as MinifyFeature[]) {
-                if (
-                    (feature.processMode & FeatureWalkMode.Pre) === 0 ||
-                    (feature.accept != null && !feature.accept.has(parent.typ))
-                ) {
+                if ((feature.processMode & mode) === 0 || (feature.accept != null && !feature.accept.has(typ))) {
                     continue;
                 }
 
-                if (rules.includes(replacement.typ) && !Array.isArray(replacement[TOKENS])) {
-                    replacement[TOKENS] = parseString(
-                        replacement.typ == EnumToken.RuleNodeType || replacement.typ === EnumToken.KeyframesRuleNodeType
-                            ? replacement.sel
-                            : // @ts-ignore
-                              replacement.nam,
-                    );
+                if (Array.isArray(replacement)) {
+                    break;
+                }
+
+                if (rules.includes(arena.dataTypes[replacement]) && arena.firstToken[replacement] == 0) {
+                    // prelude tokens are parsed from the selector / at-rule prelude string when missing
+                    arena.setTokenList(replacement, parseString(arena, arena.strings[arena.name[replacement]]));
                 }
 
                 const result = feature.run(
-                    replacement as AstRule | AstAtRule,
+                    arena,
+                    replacement,
                     options2,
-                    // @ts-ignore
-                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
+                    arena.parents[node] == 0 ? ast : arena.parents[node],
                     context,
-                    FeatureWalkMode.Pre,
+                    mode,
                 );
 
                 if (result != null) {
@@ -162,207 +175,42 @@ export function minify(
             if (
                 replacement != null &&
                 (!Array.isArray(replacement) || replacement.length > 0) &&
-                replacement != parent &&
-                parent[PARENT] != null
+                replacement != node &&
+                arena.parents[node] != 0
             ) {
-                // @ts-ignore
-                replaceNodeOrValue(parent[PARENT] as AstRule | AstAtRule | AstStyleSheet, parent, replacement);
+                replaceNode(arena, node, replacement);
             }
 
-            // @ts-ignore
-            if (replacement.chi != null) {
-                // @ts-ignore
-                for (const node of replacement.chi) {
-                    node[PARENT] = replacement;
-                    parents.add(node as AstNode);
+            if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
+                for (let child = arena.firstChild[replacement]; child != 0; child = arena.nextSibling[child]) {
+                    queue.push(child);
                 }
             }
         }
 
         for (const feature of options2.features as MinifyFeature[]) {
-            if (feature.processMode & FeatureWalkMode.Pre && "cleanup" in feature) {
+            if (feature.processMode & mode && "cleanup" in feature) {
                 // @ts-ignore
-                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Pre);
+                feature.cleanup(arena, ast, options2, context, mode);
             }
         }
+    };
+
+    if (preprocess) {
+        runFeatures(FeatureWalkMode.Pre);
     }
 
-    doMinify(ast, options2, recursive, errors, nestingContent, context);
-    parents = new Set([<AstStyleSheet>ast]);
-
-    for (const parent of parents) {
-        if (parent.typ == EnumToken.CommentTokenType || parent.typ == EnumToken.CDOCOMMTokenType) {
-            continue;
-        }
-
-        replacement = parent;
-
-        if (postprocess) {
-            for (const feature of options2.features as MinifyFeature[]) {
-                if (
-                    (feature.processMode & FeatureWalkMode.Post) === 0 ||
-                    (feature.accept != null && !feature.accept.has(parent.typ))
-                ) {
-                    continue;
-                }
-
-                const result = feature.run(
-                    replacement as AstRule | AstAtRule,
-                    options2,
-                    // @ts-ignore
-                    parent[PARENT] ?? (ast as AstRule | AstAtRule | AstStyleSheet),
-                    context,
-                    FeatureWalkMode.Post,
-                );
-
-                if (result != null) {
-                    replacement = result;
-                }
-            }
-        }
-
-        if (
-            replacement != null &&
-            (!Array.isArray(replacement) || replacement.length > 0) &&
-            replacement != parent &&
-            parent[PARENT] != null
-        ) {
-            // @ts-ignore
-            replaceNodeOrValue(parent[PARENT], parent, replacement);
-        }
-
-        // @ts-ignore
-        if (replacement.chi != null) {
-            // @ts-ignore
-            for (const node of replacement.chi!) {
-                node[PARENT] = replacement;
-                parents.add(node as AstNode);
-            }
-        }
-    }
+    doMinify(arena, ast, options2, recursive, errors, nestingContent, context);
 
     if (postprocess) {
-        for (const feature of options2.features as MinifyFeature[]) {
-            if (feature.processMode & FeatureWalkMode.Post && "cleanup" in feature) {
-                // @ts-ignore
-                feature.cleanup(ast as AstStyleSheet, options2, context, FeatureWalkMode.Post);
-            }
-        }
+        runFeatures(FeatureWalkMode.Post);
     }
 
     return ast;
 }
 
-function transformAtRuleMediaPrelude(values: Token[]) {
-    let hasUpdates: boolean = false;
-
-    for (let { value, parent, parents } of walkValues(values)) {
-        if (value.typ === EnumToken.MediaQueryConditionTokenType) {
-            if (
-                (value as MediaQueryConditionToken).op.typ == EnumToken.AndTokenType &&
-                // @ts-ignore
-                (value as MediaQueryConditionToken).l.typ === EnumToken.IdenTokenType &&
-                // @ts-ignore
-                ((value as MediaQueryConditionToken).l as IdentToken).val.toLowerCase() === "all"
-            ) {
-                if (parent === null) {
-                    // @ts-ignore
-                    values[values.indexOf(value)] = (value as MediaQueryConditionToken).l;
-                } else {
-                    // @ts-ignore
-                    replaceNodeOrValue(parent, value, (value as MediaQueryConditionToken).l);
-                    // @ts-ignore
-                    value = (value as MediaQueryConditionToken).l;
-                }
-                hasUpdates = true;
-            }
-        }
-
-        // range operator
-        if (
-            parent != null &&
-            parent.typ === EnumToken.MediaQueryConditionTokenType &&
-            (parent as MediaQueryConditionToken).op.typ == EnumToken.AndTokenType &&
-            // @ts-ignore
-            (parent as MediaQueryConditionToken).l.typ == EnumToken.ParensTokenType
-        ) {
-            let token: Token = (parent as MediaQueryConditionToken).r.find(
-                (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-            ) as Token;
-
-            if (token?.typ === EnumToken.ParensTokenType) {
-                // @ts-ignore
-                const node1 = ((parent as MediaQueryConditionToken).l as ParensToken).chi.find(
-                    (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-                ) as MediaQueryConditionToken;
-                const node2 = (token as ParensToken).chi.find(
-                    (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-                ) as MediaQueryConditionToken;
-
-                if (
-                    node1?.typ === EnumToken.MediaQueryConditionTokenType &&
-                    node2?.typ === EnumToken.MediaQueryConditionTokenType &&
-                    (node1 as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType &&
-                    (node2 as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType &&
-                    // @ts-ignore
-                    (node1 as MediaQueryConditionToken).l.typ == EnumToken.IdenTokenType &&
-                    // @ts-ignore
-                    (node2 as MediaQueryConditionToken).l.typ == EnumToken.IdenTokenType &&
-                    // @ts-ignore
-                    ((node1 as MediaQueryConditionToken).l as IdentToken).val.startsWith("min-") &&
-                    // @ts-ignore
-                    ((node2 as MediaQueryConditionToken).l as IdentToken).val.startsWith("max-") &&
-                    // @ts-ignore
-                    ((node1 as MediaQueryConditionToken).l as IdentToken).val.slice(4) ==
-                        // @ts-ignore
-                        ((node2 as MediaQueryConditionToken).l as IdentToken).val.slice(4)
-                ) {
-                    const val1 = (node1 as MediaQueryConditionToken).r.find(
-                        (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-                    );
-                    const val2 = (node2 as MediaQueryConditionToken).r.find(
-                        (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-                    );
-
-                    const replacement = {
-                        typ: EnumToken.ParensTokenType,
-                        chi: [
-                            // @ts-ignore
-                            {
-                                typ: EnumToken.MediaRangeQueryTokenType,
-                                op: {
-                                    typ: EnumToken.IdenTokenType,
-                                    // @ts-ignore
-                                    val: ((node1 as MediaQueryConditionToken).l as IdentToken).val.slice(4),
-                                },
-                                l: val1,
-                                r: val2,
-                                [LOCSRCID]: value[LOCSRCID],
-                                [LOCSTA]: value[LOCSTA],
-                                [LOCEND]: value[LOCEND],
-                            } as MediaRangeQueryToken,
-                        ],
-                    } as ParensToken;
-
-                    // @ts-expect-error
-                    const p = parents?.[parents?.indexOf?.(parent) + 1];
-
-                    if (p != null) {
-                        // @ts-ignore
-                        replaceNodeOrValue(p, parent, replacement);
-                    } else {
-                        // @ts-ignore
-                        values.splice(values.indexOf(parent), 1, replacement as Token);
-                    }
-
-                    hasUpdates = true;
-                    value = replacement;
-                }
-            }
-        }
-    }
-
-    return { hasUpdates, values: trimArray(values) };
+function transformAtRuleMediaPrelude(arena: AstArena, values: Token[]) {
+    return { hasUpdates: false, values: trimArray(arena, values) };
 }
 
 /**
@@ -373,13 +221,13 @@ function transformAtRuleMediaPrelude(values: Token[]) {
  * @private
  * @param tokens
  */
-function minifyAtRuleMedia(tokens: Token[]): Token[] {
+function minifyAtRuleMedia(arena: AstArena, tokens: Token[]): Token[] {
     let hasUpdates: boolean = false;
 
     const sections = tokens
         .reduce(
             (acc, t) => {
-                if (t.typ === EnumToken.CommaTokenType) {
+                if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
                     acc.push([]);
                 } else {
                     acc[acc.length - 1].push(t);
@@ -395,7 +243,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                     return acc;
                 }
 
-                const result = transformAtRuleMediaPrelude(values);
+                const result = transformAtRuleMediaPrelude(arena, values);
 
                 if (result.values.length === 0) {
                     return acc;
@@ -406,7 +254,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
                 }
 
                 acc.set(
-                    values.reduce((acc, t) => acc + printValue(t), ""),
+                    values.reduce((acc, t) => acc + renderValue(arena, t), ""),
                     result.values,
                 );
 
@@ -422,9 +270,7 @@ function minifyAtRuleMedia(tokens: Token[]): Token[] {
         tokens.push(
             ...[...sections.values()].reduce((acc: Token[], t: Token[]) => {
                 if (acc.length > 0) {
-                    acc.push({
-                        typ: EnumToken.CommaTokenType,
-                    } as Token);
+                    acc.push(arena.createToken(EnumToken.CommaTokenType));
                 }
 
                 for (const token of t) {
@@ -472,6 +318,7 @@ function reduce(acc: string[], curr: string[]): string[] {
 
 /**
  * Apply minification rules to the ast tree
+ * @param arena
  * @param ast
  * @param options
  * @param recursive
@@ -482,6 +329,7 @@ function reduce(acc: string[], curr: string[]): string[] {
  * @private
  */
 function doMinify(
+    arena: AstArena,
     ast: AstNode,
     options: ParserOptions = {},
     recursive: boolean = false,
@@ -501,316 +349,382 @@ function doMinify(
 
     context.nodes.add(ast);
 
-    // @ts-ignore
-    if ("chi" in ast && ast.chi.length > 0) {
+    if (arena.flags[ast] & EnumAstNodeStatus.HasChildren && arena.firstChild[ast] != 0) {
         const reducer = reduce.bind(ast);
 
         if (!nestingContent) {
-            nestingContent = options.nestingRules && ast.typ == EnumToken.RuleNodeType;
+            nestingContent = options.nestingRules && arena.dataTypes[ast] == EnumToken.RuleNodeType;
         }
+
+        // mirror of the children list. the arena is updated through splice()
+        const chi: AstNode[] = arena.children(ast);
+
+        /**
+         * remove / insert children. the arena children list is kept in sync
+         * @param index
+         * @param deleteCount
+         * @param items
+         */
+        const splice = (index: number, deleteCount: number, ...items: AstNode[]): AstNode[] => {
+            const removed: AstNode[] = chi.splice(index, deleteCount, ...items);
+
+            if (items.length > 0) {
+                const reference: number = index + items.length;
+
+                if (reference < chi.length) {
+                    arena.insertBefore(chi[reference], ...items);
+                } else {
+                    arena.appendChildList(ast, items);
+                }
+            }
+
+            for (const node of removed) {
+                if (arena.parents[node] == ast && !items.includes(node)) {
+                    // dropped node. the children may have been moved into the items
+                    arena.release(node, true);
+                }
+            }
+
+            return removed;
+        };
 
         let i: number = 0;
         let previous: AstNode | null = null;
         let node: AstNode | null = null;
         let nodeIndex: number = -1;
+        let nodeType: EnumToken;
+        let previousType: EnumToken | null;
 
-        for (; i < ast.chi!.length; i++) {
-            if (ast.chi![i].typ === EnumToken.CommentNodeType) {
+        for (; i < chi.length; i++) {
+            if (arena.dataTypes[chi[i]] === EnumToken.CommentNodeType) {
                 continue;
             }
 
-            while (previous?.typ === EnumToken.CommentNodeType) {
-                // @ts-ignore
-                previous = ast.chi[--nodeIndex];
+            while (previous != null && arena.dataTypes[previous] === EnumToken.CommentNodeType) {
+                previous = chi[--nodeIndex] ?? null;
             }
 
-            node = ast.chi![i] as AstNode;
+            node = chi[i];
+            nodeType = arena.dataTypes[node];
+            previousType = previous == null ? null : arena.dataTypes[previous];
 
-            if (node.typ === EnumToken.AtRuleNodeType && (<AstAtRule>node).nam === "font-face") {
-                continue;
+            if (nodeType === EnumToken.AtRuleNodeType) {
+                const nam: string = arena.strings[arena.name[node]];
+
+                if (nam === "font-face") {
+                    continue;
+                }
+
+                // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                if (equalsIgnoreCase(nam, "function")) {
+                    let k: AstNode = arena.lastChild[node];
+                    let slice: boolean = false;
+
+                    while (k != 0) {
+                        if (
+                            arena.dataTypes[k] === EnumToken.CommentNodeType ||
+                            arena.dataTypes[k] === EnumToken.WhitespaceTokenType
+                        ) {
+                            k = arena.previousSibling[k];
+                            continue;
+                        }
+
+                        if (
+                            arena.dataTypes[k] === EnumToken.DeclarationNodeType &&
+                            equalsIgnoreCase(arena.strings[arena.name[k]], "result")
+                        ) {
+                            slice = true;
+                            break;
+                        }
+
+                        k = arena.previousSibling[k];
+                    }
+
+                    if (k != 0 && slice) {
+                        k = arena.previousSibling[k];
+
+                        while (k != 0) {
+                            const previousNode: AstNode = arena.previousSibling[k];
+
+                            if (arena.dataTypes[k] === EnumToken.AtRuleNodeType) {
+                                arena.release(k, true);
+                            }
+
+                            k = previousNode;
+                        }
+                    }
+                }
             }
 
-            if (node.typ === EnumToken.KeyframesAtRuleNodeType) {
+            if (nodeType === EnumToken.KeyframesAtRuleNodeType) {
                 if (
-                    previous?.typ === EnumToken.KeyframesAtRuleNodeType &&
-                    (<AstKeyframesAtRule>node).nam === (<AstKeyframesAtRule>previous).nam &&
-                    (<AstKeyframesAtRule>node).val === (<AstKeyframesAtRule>previous).val
+                    previousType === EnumToken.KeyframesAtRuleNodeType &&
+                    arena.name[node] === arena.name[previous as AstNode] &&
+                    arena.stringValue[node] === arena.stringValue[previous as AstNode]
                 ) {
-                    ast.chi?.splice(nodeIndex--, 1);
-                    previous = (ast?.chi?.[nodeIndex] as AstNode) ?? null;
+                    splice(nodeIndex--, 1);
+                    previous = chi[nodeIndex] ?? null;
                     i = nodeIndex;
 
                     continue;
                 }
-            } else if (node.typ === EnumToken.KeyframesRuleNodeType) {
+            } else if (nodeType === EnumToken.KeyframesRuleNodeType) {
                 if (
-                    previous?.typ === EnumToken.KeyframesRuleNodeType &&
-                    (<AstKeyframesRule>node).sel === (<AstKeyframesRule>previous).sel
+                    previousType === EnumToken.KeyframesRuleNodeType &&
+                    arena.name[node] === arena.name[previous as AstNode]
                 ) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    for (const child of (<AstKeyframesRule>node).chi) {
-                        (<AstKeyframesRule>previous).chi.push(child);
-                    }
+                    arena.appendChildList(previous as AstNode, arena.children(node));
+                    options.cache?.delete(previous as AstNode);
 
-                    // @ts-ignore
-                    ast.chi.splice(i, 1);
-                    previous = (ast?.chi?.[nodeIndex] as AstNode) ?? null;
+                    splice(i, 1);
+                    previous = chi[nodeIndex] ?? null;
                     i = nodeIndex;
 
                     continue;
                 }
 
-                let k: number;
+                let k: AstNode = arena.firstChild[node];
 
-                for (k = 0; k < (node as AstKeyframesRule).chi.length; k++) {
-                    if ((node as AstKeyframesRule).chi[k].typ == EnumToken.DeclarationNodeType) {
-                        let l: number = ((node as AstKeyframesRule).chi[k] as AstDeclaration).val.length;
+                while (k != 0) {
+                    const next: AstNode = arena.nextSibling[k];
 
-                        while (l--) {
-                            if (
-                                ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ ==
-                                EnumToken.ImportantTokenType
-                            ) {
-                                (node as AstKeyframesRule).chi.splice(k--, 1);
+                    if (arena.dataTypes[k] == EnumToken.DeclarationNodeType) {
+                        let l: Token = arena.lastToken[k];
+
+                        while (l != 0) {
+                            if (arena.dataTypes[l] == EnumToken.ImportantTokenType) {
+                                arena.release(k);
                                 break;
                             }
 
                             if (
-                                [EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(
-                                    ((node as AstKeyframesRule).chi[k] as AstDeclaration).val[l].typ,
-                                )
+                                arena.dataTypes[l] == EnumToken.WhitespaceTokenType ||
+                                arena.dataTypes[l] == EnumToken.CommentTokenType
                             ) {
+                                l = arena.previousSibling[l];
                                 continue;
                             }
 
                             break;
                         }
                     }
+
+                    k = next;
                 }
-            } else if (node.typ == EnumToken.AtRuleNodeType) {
-                if ((node as AstAtRule).nam == "media") {
-                    if (Array.isArray((node as AstAtRule)[TOKENS])) {
-                        const slice = (node as AstAtRule)[TOKENS]!.slice();
-                        minifyAtRuleMedia(slice);
+            } else if (nodeType == EnumToken.AtRuleNodeType) {
+                const nam: string = arena.strings[arena.name[node]];
+                const tokens: Token[] | null = arena.firstToken[node] == 0 ? null : arena.tokens(node);
+                const renderPrelude = (acc: string, curr: Token, index: number, arr: Token[]): string =>
+                    acc +
+                    (arena.dataTypes[curr] === EnumToken.CommentTokenType ||
+                    (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType &&
+                        arena.typeOf(arr[index + 1]) === EnumToken.CommentTokenType &&
+                        (index + 3 < arr.length || arena.typeOf(arr[index + 2]) === EnumToken.WhitespaceTokenType))
+                        ? ""
+                        : renderValue(arena, curr));
 
-                        if (slice.length !== (node as AstAtRule)[TOKENS]!.length) {
-                            (node as AstAtRule)[TOKENS]!.length = 0;
+                if (nam == "media") {
+                    if (tokens != null) {
+                        const slice = tokens.slice();
+                        minifyAtRuleMedia(arena, slice);
 
-                            for (const token of slice) {
-                                (node as AstAtRule)[TOKENS]!.push(token);
-                            }
-
-                            (node as AstAtRule).val = slice.reduce(
-                                (acc: string, curr: Token, index: number, arr: Token[]): string =>
-                                    acc +
-                                    (curr.typ === EnumToken.CommentTokenType ||
-                                    (curr.typ === EnumToken.WhitespaceTokenType &&
-                                        arr[index + 1]?.typ === EnumToken.CommentTokenType &&
-                                        (index + 3 < arr.length ||
-                                            arr[index + 2]?.typ === EnumToken.WhitespaceTokenType))
-                                        ? ""
-                                        : printValue(curr)),
-                                "",
-                            );
+                        if (slice.length !== tokens.length) {
+                            arena.setTokenList(node, slice);
+                            arena.setValueString(node, slice.reduce(renderPrelude, ""));
                         }
                     }
 
-                    if (["all", "", null].includes((node as AstAtRule).val)) {
-                        ast.chi?.splice(i--, 1, ...node.chi!);
+                    if (["all", ""].includes(arena.strings[arena.stringValue[node]])) {
+                        splice(i--, 1, ...arena.children(node));
                         continue;
                     }
-                } else if ((node as AstAtRule).nam === "import" && Array.isArray((node as AstAtRule)[TOKENS])) {
+                } else if (nam === "import" && tokens != null) {
                     let l: number = 0;
                     let token: Token;
 
-                    for (; l < (node as AstAtRule)[TOKENS]!.length; l++) {
-                        token = (node as AstAtRule)[TOKENS]![l];
+                    for (; l < tokens.length; l++) {
+                        token = tokens[l];
 
                         if (
-                            token.typ === EnumToken.ParensTokenType ||
-                            token.typ === EnumToken.MediaQueryConditionTokenType ||
-                            (token.typ === EnumToken.IdenTokenType && "layer" !== (token as IdentToken).val)
+                            arena.dataTypes[token] === EnumToken.ParensTokenType ||
+                            arena.dataTypes[token] === EnumToken.MediaQueryConditionTokenType ||
+                            (arena.dataTypes[token] === EnumToken.IdenTokenType &&
+                                "layer" !== arena.strings[arena.stringValue[token]])
                         ) {
                             break;
                         }
                     }
 
-                    if (l < (node as AstAtRule)[TOKENS]!.length) {
-                        const slice = (node as AstAtRule)[TOKENS]?.slice(l) as Token[];
+                    if (l < tokens.length) {
+                        const slice = tokens.slice(l) as Token[];
 
-                        (node as AstAtRule)[TOKENS]!.splice(l, slice.length, ...minifyAtRuleMedia(slice));
-                        (node as AstAtRule).val = trimArray((node as AstAtRule)[TOKENS]!).reduce(
-                            (acc: string, curr: Token, index: number, arr: Token[]): string =>
-                                acc +
-                                (curr.typ === EnumToken.CommentTokenType ||
-                                (curr.typ === EnumToken.WhitespaceTokenType &&
-                                    arr[index + 1]?.typ === EnumToken.CommentTokenType &&
-                                    (index + 3 < arr.length || arr[index + 2].typ === EnumToken.WhitespaceTokenType))
-                                    ? ""
-                                    : printValue(curr)),
-                            "",
-                        );
+                        tokens.splice(l, slice.length, ...minifyAtRuleMedia(arena, slice));
+                        arena.setTokenList(node, tokens);
+                        arena.setValueString(node, trimArray(arena, tokens).reduce(renderPrelude, ""));
                     }
                 } else if (
-                    ast.typ === node.typ &&
-                    (ast as AstAtRule).nam === (node as AstAtRule).nam &&
-                    (ast as AstAtRule).val === (node as AstAtRule).val
+                    arena.dataTypes[ast] === nodeType &&
+                    arena.name[ast] === arena.name[node] &&
+                    arena.stringValue[ast] === arena.stringValue[node]
                 ) {
-                    // @ts-ignore
-                    replaceNodeOrValue(ast as AstAtRule, node as AstAtRule, (node as AstAtRule).chi!);
-                    i--;
+                    splice(i--, 1, ...arena.children(node));
                     continue;
                 }
 
                 if (
-                    previous?.typ == EnumToken.AtRuleNodeType &&
-                    (node as AstAtRule).nam != "font-face" &&
-                    (<AstAtRule>previous).nam === (<AstAtRule>node).nam &&
-                    (<AstAtRule>previous).val === (<AstAtRule>node).val
+                    previousType == EnumToken.AtRuleNodeType &&
+                    nam != "font-face" &&
+                    arena.name[previous as AstNode] === arena.name[node] &&
+                    arena.stringValue[previous as AstNode] === arena.stringValue[node]
                 ) {
-                    if ("chi" in node) {
-                        for (const child of (node as AstAtRule).chi!) {
-                            previous.chi!.push(child);
-                        }
+                    if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                        arena.appendChildList(previous as AstNode, arena.children(node));
+                        options.cache?.delete(previous as AstNode);
 
-                        if (!hasDeclaration(previous as AstAtRule)) {
+                        if (!hasDeclaration(arena, previous as AstNode)) {
                             context.nodes.delete(previous);
-                            doMinify(previous, options, recursive, errors, nestingContent, context);
+                            doMinify(arena, previous as AstNode, options, recursive, errors, nestingContent, context);
                         }
                     }
 
-                    ast?.chi?.splice(i--, 1);
+                    splice(i--, 1);
                     continue;
                 }
 
-                // if (!hasDeclaration(node as AstAtRule)) {
-                //     doMinify(node, options, recursive, errors, nestingContent, context);
-                // }
-
-                if ("chi" in (node as AstAtRule)) {
-                    doMinify(node, options, recursive, errors, nestingContent, context);
+                if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                    doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
 
                 previous = node;
                 nodeIndex = i;
                 continue;
-            }
-
-            // @ts-ignore
-            else if (node.typ === EnumToken.RuleNodeType) {
-                reduceRuleSelector(<AstRule>node);
+            } else if (nodeType === EnumToken.RuleNodeType) {
+                reduceRuleSelector(arena, node);
 
                 let wrapper: AstRule | null = null;
                 let match;
 
                 if (options.nestingRules) {
-                    if (previous?.typ == EnumToken.RuleNodeType) {
-                        reduceRuleSelector(previous as AstRule);
+                    if (previousType == EnumToken.RuleNodeType) {
+                        reduceRuleSelector(arena, previous as AstNode);
 
-                        // @ts-ignore
-                        match = matchSelectors(previous[RAW], node[RAW], ast.typ, errors);
+                        match = matchSelectors(
+                            arena.raw[previous as AstNode] as string[][],
+                            arena.raw[node] as string[][],
+                        );
 
                         if (match != null) {
                             wrapper = wrapNodes(
-                                previous as AstRule,
-                                node as AstRule,
+                                arena,
+                                previous as AstNode,
+                                node,
                                 match,
                                 ast,
                                 reducer,
+                                chi,
+                                splice,
                                 i,
                                 nodeIndex,
                             );
 
                             nodeIndex = i - 1;
-                            previous = ast.chi![nodeIndex] as AstRule;
+                            previous = chi[nodeIndex];
                         }
                     }
 
                     if (wrapper != null) {
-                        while (i < ast.chi!.length) {
-                            const nextNode: AstRule = ast.chi![i] as AstRule;
+                        while (i < chi.length) {
+                            const nextNode: AstNode = chi[i];
 
-                            if (nextNode.typ != EnumToken.RuleNodeType) {
+                            if (arena.dataTypes[nextNode] != EnumToken.RuleNodeType) {
                                 break;
                             }
 
-                            reduceRuleSelector(<AstRule>nextNode);
-                            match = matchSelectors(wrapper[RAW] as string[][], nextNode[RAW] as string[][]);
+                            reduceRuleSelector(arena, nextNode);
+                            match = matchSelectors(arena.raw[wrapper] as string[][], arena.raw[nextNode] as string[][]);
 
                             if (match == null) {
                                 break;
                             }
 
-                            wrapper = wrapNodes(wrapper, nextNode, match, ast, reducer, i, nodeIndex);
+                            wrapper = wrapNodes(
+                                arena,
+                                wrapper,
+                                nextNode,
+                                match,
+                                ast,
+                                reducer,
+                                chi,
+                                splice,
+                                i,
+                                nodeIndex,
+                            );
                         }
 
                         nodeIndex = --i;
-                        previous = ast.chi![nodeIndex] as AstRule;
-                        doMinify(wrapper as AstRule, options, recursive, errors, nestingContent, context);
+                        previous = chi[nodeIndex];
+                        doMinify(arena, wrapper, options, recursive, errors, nestingContent, context);
                         continue;
-                    }
-                    // @ts-ignore
-                    else if (
-                        node[OPTIMIZED] != null &&
-                        // @ts-ignore
-                        node[OPTIMIZED].match &&
-                        // @ts-ignore
-                        node[OPTIMIZED].selector.length > 1
+                    } else if (
+                        arena.optimized[node] != null &&
+                        arena.optimized[node]!.match &&
+                        arena.optimized[node]!.selector.length > 1
                     ) {
-                        // @ts-ignore
-                        wrapper = {
-                            ...node,
-                            chi: [],
-                            sel: node[OPTIMIZED].optimized[0],
-                            [RAW]: [[node[OPTIMIZED].optimized[0]]],
-                        };
+                        const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
 
-                        // @ts-ignore
-                        node.sel = node[OPTIMIZED].selector.reduce(reducer, []).join(",");
-                        // @ts-ignore
-                        node[RAW] = node[OPTIMIZED].selector.slice();
-                        node[TOKENS] = null;
-                        // @ts-ignore
-                        wrapper.chi.push(node);
-                        // @ts-ignore
-                        ast.chi.splice(i, 1, wrapper);
+                        wrapper = arena.clone(node);
+
+                        arena.setSelector(wrapper, optimized.optimized[0]);
+                        arena.raw[wrapper] = [[optimized.optimized[0]]];
+                        arena.setTokens(wrapper);
+
+                        arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","));
+                        arena.raw[node] = optimized.selector.slice();
+                        arena.setTokens(node);
+
+                        // move the node into the wrapper before replacing it in the children list
+                        arena.appendChildren(wrapper, node);
+                        splice(i, 1, wrapper);
                         node = wrapper as AstRule;
-                    } else if (node[OPTIMIZED]?.reducible) {
-                        if (node[OPTIMIZED].optimized.length === 1) {
+                        nodeType = EnumToken.RuleNodeType;
+                    } else if (arena.optimized[node]?.reducible) {
+                        const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
+
+                        if (optimized.optimized.length === 1) {
                             const sel1 =
-                                node[OPTIMIZED].optimized[0] +
+                                optimized.optimized[0] +
                                 ":is(" +
-                                node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
+                                optimized.selector.reduce(reducer, []).join(",") +
                                 ")";
-                            const sel2 = node[OPTIMIZED].selector.reduce(
+                            const sel2 = optimized.selector.reduce(
                                 (acc: string, curr: string[]) =>
-                                    // @ts-ignore
-                                    (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
+                                    (acc.length > 0 ? acc + "," : "") + optimized.optimized[0] + curr.join(""),
                                 "",
                             );
 
-                            node.sel = sel1.length < sel2.length ? sel1 : sel2;
-                            node[TOKENS] = null;
-                        } else if (node[OPTIMIZED].optimized.length === 0) {
+                            arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2);
+                            arena.setTokens(node);
+                        } else if (optimized.optimized.length === 0) {
                             const testIdent = /^[a-zA-Z]/;
-                            node.sel = node[OPTIMIZED].selector.reduce(
-                                (acc: string, curr: string[]) =>
-                                    (acc.length > 0 ? acc + "," : "") +
-                                    (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
-                                    curr.join(""),
-                                "",
+                            arena.setSelector(
+                                node,
+                                optimized.selector.reduce(
+                                    (acc: string, curr: string[]) =>
+                                        (acc.length > 0 ? acc + "," : "") +
+                                        (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
+                                        curr.join(""),
+                                    "",
+                                ),
                             );
-                            node[TOKENS] = null;
+                            arena.setTokens(node);
                         }
                     }
-                }
-
-                // @ts-ignore
-                else if (node[OPTIMIZED]?.match) {
+                } else if (arena.optimized[node]?.match) {
+                    const optimizedSelector: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
                     let wrap: boolean = true;
-                    // @ts-ignore
-                    const selector: string[][] = node[OPTIMIZED].selector.reduce(
+                    const selector: string[][] = optimizedSelector.selector.reduce(
                         (acc: string[][], curr: string[]): string[][] => {
                             if (curr[0] == "&" && curr.length > 1) {
                                 if (curr[1] == " ") {
@@ -834,7 +748,7 @@ function doMinify(
                     }
 
                     let rule: string | null = null;
-                    const optimized = (node as AstRule)![OPTIMIZED]!.optimized.slice() as string[];
+                    const optimized = optimizedSelector.optimized.slice() as string[];
 
                     if (optimized.length > 1) {
                         const check = optimized.at(-2) as string;
@@ -888,7 +802,7 @@ function doMinify(
                         rule = selector
                             .map((s: string[]): string => {
                                 if (s[0] == "&") {
-                                    const replacement = (node as AstRule)![OPTIMIZED]!.optimized;
+                                    const replacement = optimizedSelector.optimized;
                                     const all = new Array(Math.max(s.length - 1 + replacement.length, 0));
                                     let write = 0;
 
@@ -912,143 +826,156 @@ function doMinify(
                             .join(",");
                     }
 
-                    let sel: string = wrap ? (node as AstRule)![OPTIMIZED]!.optimized.join("") + `:is(${rule})` : rule;
+                    let sel: string = wrap ? optimizedSelector.optimized.join("") + `:is(${rule})` : rule;
 
-                    if (sel.length < (<AstRule>node).sel.length) {
-                        (node as AstRule).sel = sel;
-                        (node as AstRule)[TOKENS] = null;
+                    if (sel.length < arena.strings[arena.name[node]].length) {
+                        arena.setSelector(node, sel);
+                        arena.setTokens(node);
                     }
-                } else if (node[OPTIMIZED]?.reducible) {
-                    if (node[OPTIMIZED].optimized.length === 1) {
+                } else if (arena.optimized[node]?.reducible) {
+                    const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
+
+                    if (optimized.optimized.length === 1) {
                         const sel1 =
-                            node[OPTIMIZED].optimized[0] +
-                            ":is(" +
-                            node[OPTIMIZED].selector.reduce(reducer, []).join(",") +
-                            ")";
-                        const sel2 = node[OPTIMIZED].selector.reduce(
+                            optimized.optimized[0] + ":is(" + optimized.selector.reduce(reducer, []).join(",") + ")";
+                        const sel2 = optimized.selector.reduce(
                             (acc: string, curr: string[]) =>
-                                // @ts-ignore
-                                (acc.length > 0 ? acc + "," : "") + node[OPTIMIZED].optimized[0] + curr.join(""),
+                                (acc.length > 0 ? acc + "," : "") + optimized.optimized[0] + curr.join(""),
                             "",
                         );
 
-                        node.sel = sel1.length < sel2.length ? sel1 : sel2;
-                        node[TOKENS] = null;
-                    } else if (node[OPTIMIZED].optimized.length === 0) {
+                        arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2);
+                        arena.setTokens(node);
+                    } else if (optimized.optimized.length === 0) {
                         const testIdent = /^[a-zA-Z]/;
-                        node.sel = node[OPTIMIZED].selector.reduce(
-                            (acc: string, curr: string[]) =>
-                                (acc.length > 0 ? acc + "," : "") +
-                                (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
-                                curr.join(""),
-                            "",
+                        arena.setSelector(
+                            node,
+                            optimized.selector.reduce(
+                                (acc: string, curr: string[]) =>
+                                    (acc.length > 0 ? acc + "," : "") +
+                                    (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
+                                    curr.join(""),
+                                "",
+                            ),
                         );
-                        node[TOKENS] = null;
+                        arena.setTokens(node);
                     }
-                    // @ts-ignore
-                } else if (node[OPTIMIZED]?.optimized.length > 0) {
-                    // @ts-ignore
-                    const sel = node[OPTIMIZED].optimized.join("");
+                } else if ((arena.optimized[node]?.optimized.length as number) > 0) {
+                    const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
+                    const sel = optimized.optimized.join("");
 
-                    if (sel.length < node.sel.length) {
-                        node.sel = sel;
-                        // @ts-ignore
-                        node[RAW] = [node[OPTIMIZED].optimized.slice()];
-                        node[TOKENS] = null;
+                    if (sel.length < arena.strings[arena.name[node]].length) {
+                        arena.setSelector(node, sel);
+                        arena.raw[node] = [optimized.optimized.slice()];
+                        arena.setTokens(node);
                     }
                 }
 
-                doMinify(node, options, recursive, errors, nestingContent, context);
+                doMinify(arena, node, options, recursive, errors, nestingContent, context);
             }
 
             if (previous != null) {
-                if ("chi" in previous && "chi" in node) {
-                    if (previous.typ === node.typ) {
-                        let shouldMerge: boolean = true;
-                        let k: number = previous.chi!.length;
+                previousType = arena.dataTypes[previous];
 
-                        while (k-- > 0) {
+                if (
+                    arena.flags[previous] & EnumAstNodeStatus.HasChildren &&
+                    arena.flags[node] & EnumAstNodeStatus.HasChildren
+                ) {
+                    if (previousType === nodeType) {
+                        let shouldMerge: boolean = true;
+                        let k: AstNode = arena.lastChild[previous];
+
+                        while (k != 0) {
                             if (
-                                previous.chi![k].typ === EnumToken.CommentNodeType ||
-                                previous.chi![k].typ === EnumToken.InvalidRuleNodeType ||
-                                previous.chi![k].typ === EnumToken.InvalidRuleNodeType
+                                arena.dataTypes[k] === EnumToken.CommentNodeType ||
+                                arena.dataTypes[k] === EnumToken.InvalidRuleNodeType
                             ) {
+                                k = arena.previousSibling[k];
                                 continue;
                             }
 
-                            shouldMerge = previous.chi![k].typ === EnumToken.DeclarationNodeType;
+                            shouldMerge = arena.dataTypes[k] === EnumToken.DeclarationNodeType;
                             break;
                         }
 
                         if (shouldMerge) {
                             if (
-                                ((node.typ === EnumToken.RuleNodeType ||
-                                    node.typ === EnumToken.KeyframesRuleNodeType) &&
-                                    (node as AstRule).sel === (previous as AstRule).sel) ||
-                                // @ts-ignore
-                                (node.typ == EnumToken.AtRuleNodeType &&
-                                    (node as AstAtRule).nam !== "font-face" &&
-                                    // @ts-ignore
-                                    (node as AstAtRule).nam === (previous as AstAtRule).nam)
+                                ((nodeType === EnumToken.RuleNodeType ||
+                                    nodeType === EnumToken.KeyframesRuleNodeType) &&
+                                    arena.name[node] === arena.name[previous]) ||
+                                ((nodeType as EnumToken) == EnumToken.AtRuleNodeType &&
+                                    arena.strings[arena.name[node]] !== "font-face" &&
+                                    arena.name[node] === arena.name[previous])
                             ) {
-                                const array = [];
+                                arena.prependChildren(node, ...arena.children(previous));
+                                options.cache?.delete(node);
 
-                                for (let i = 0; i < previous.chi!.length; i++) {
-                                    array.push(previous.chi![i]);
-                                }
-                                for (let i = 0; i < node.chi!.length; i++) {
-                                    array.push(node.chi![i]);
-                                }
+                                doMinify(arena, node, options, recursive, errors, nestingContent, context);
 
-                                // @ts-ignore
-                                node.chi = array;
+                                splice(nodeIndex, 1);
 
-                                doMinify(node, options, recursive, errors, nestingContent, context);
-
-                                ast.chi!.splice(nodeIndex, 1);
-
-                                previous = ast.chi![--i] as AstNode;
+                                previous = chi[--i];
                                 nodeIndex = i;
 
                                 continue;
                             } else if (
-                                node.typ == previous?.typ &&
-                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(node.typ)
+                                nodeType == previousType &&
+                                [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(nodeType)
                             ) {
-                                const intersect = diff(previous as AstRule, node as AstRule, options);
+                                const intersect = diff(arena, previous, node, options);
 
                                 if (intersect != null) {
-                                    if (intersect.node1.chi.length == 0) {
-                                        ast.chi!.splice(i--, 1);
-                                    } else {
-                                        ast.chi!.splice(i--, 1, intersect.node1);
+                                    // node1 takes the place of node, [result, node2] take the place of previous
+                                    const { node1, node2, result } = intersect;
+                                    const after: AstNode = arena.nextSibling[node2];
+                                    const head: AstNode[] = [];
+
+                                    if (result != null) {
+                                        head.push(result);
                                     }
 
-                                    if (intersect.node2.chi.length == 0) {
-                                        if (intersect.result != null) {
-                                            ast.chi!.splice(nodeIndex, 1, intersect.result);
-                                        } else {
-                                            ast.chi!.splice(nodeIndex, 1);
-                                        }
+                                    if (arena.firstChild[node2] != 0) {
+                                        head.push(node2);
+                                    }
+
+                                    arena.insertBefore(node1, ...head);
+
+                                    if (arena.firstChild[node2] == 0) {
+                                        arena.release(node2);
+                                    }
+
+                                    if (arena.firstChild[node1] == 0) {
+                                        arena.release(node1);
+                                    } else if (after == 0) {
+                                        arena.appendChildren(ast, node1);
+                                    } else {
+                                        arena.insertBefore(after, node1);
+                                    }
+
+                                    // update the mirror
+                                    if (arena.firstChild[node1] == 0) {
+                                        chi.splice(i--, 1);
+                                    } else {
+                                        chi.splice(i--, 1, node1);
+                                    }
+
+                                    chi.splice(nodeIndex, 1, ...head);
+
+                                    if (arena.firstChild[node2] == 0) {
                                         i--;
 
                                         if (nodeIndex == i) {
                                             nodeIndex = i;
                                         }
                                     } else {
-                                        if (intersect.result != null) {
-                                            ast.chi!.splice(nodeIndex, 1, intersect.result, intersect.node2);
-                                        } else {
-                                            ast.chi!.splice(nodeIndex, 1, intersect.node2);
-                                        }
                                         i = (nodeIndex ?? 0) + 1;
                                     }
 
-                                    if (node != ast.chi![i]) {
-                                        node = ast.chi![i] as AstNode;
+                                    if (node != chi[i]) {
+                                        node = chi[i];
                                     }
 
-                                    previous = intersect.result;
+                                    previous = result;
                                     nodeIndex = i;
                                 }
                             }
@@ -1056,8 +983,8 @@ function doMinify(
                     }
 
                     if (recursive && previous != null && previous != node) {
-                        if (!hasDeclaration(previous as AstRule)) {
-                            doMinify(previous, options, recursive, errors, nestingContent, context);
+                        if (!hasDeclaration(arena, previous)) {
+                            doMinify(arena, previous, options, recursive, errors, nestingContent, context);
                         }
                     }
                 }
@@ -1066,24 +993,22 @@ function doMinify(
             if (
                 !nestingContent &&
                 previous != null &&
-                previous.typ == EnumToken.RuleNodeType &&
-                (previous as AstRule).sel.includes("&")
+                arena.dataTypes[previous] == EnumToken.RuleNodeType &&
+                arena.strings[arena.name[previous]].includes("&")
             ) {
-                fixSelector(previous as AstRule);
+                fixSelector(arena, previous);
             }
 
             previous = node;
             nodeIndex = i;
         }
 
-        // @ts-ignore
-        if (recursive && node != null && node.chi != null) {
-            if (
-                node.typ == EnumToken.KeyframesAtRuleNodeType ||
-                !(node as AstAtRule).chi!.some((n: AstNode) => n.typ == EnumToken.DeclarationNodeType)
-            ) {
-                if (!(node.typ == EnumToken.AtRuleNodeType && (<AstAtRule>node).nam != "font-face")) {
-                    doMinify(node, options, recursive, errors, nestingContent, context);
+        if (recursive && node != null && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+            if (arena.dataTypes[node] == EnumToken.KeyframesAtRuleNodeType || !hasDeclarationChild(arena, node)) {
+                if (!(
+                    arena.dataTypes[node] == EnumToken.AtRuleNodeType && arena.strings[arena.name[node]] != "font-face"
+                )) {
+                    doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
             }
         }
@@ -1091,10 +1016,10 @@ function doMinify(
         if (
             !nestingContent &&
             node != null &&
-            node.typ == EnumToken.RuleNodeType &&
-            (node as AstRule).sel.includes("&")
+            arena.dataTypes[node] == EnumToken.RuleNodeType &&
+            arena.strings[arena.name[node]].includes("&")
         ) {
-            fixSelector(node as AstRule);
+            fixSelector(arena, node);
         }
     }
 
@@ -1102,23 +1027,39 @@ function doMinify(
 }
 
 /**
- * Check if a rule has a declaration
+ * Check if the first non comment child is a declaration
+ * @param arena
  * @param node
  *
  * @private
  */
-function hasDeclaration(node: AstRule | AstAtRule): boolean {
-    // @ts-ignore
-    for (let i = 0; i < node.chi?.length; i++) {
-        // @ts-ignore
-        if (node.chi[i].typ == EnumToken.CommentNodeType) {
+function hasDeclaration(arena: AstArena, node: AstNode): boolean {
+    for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
+        if (arena.dataTypes[child] == EnumToken.CommentNodeType) {
             continue;
         }
-        // @ts-ignore
-        return node.chi[i].typ == EnumToken.DeclarationNodeType;
+
+        return arena.dataTypes[child] == EnumToken.DeclarationNodeType;
     }
 
     return true;
+}
+
+/**
+ * Check if the node has a declaration child
+ * @param arena
+ * @param node
+ *
+ * @private
+ */
+function hasDeclarationChild(arena: AstArena, node: AstNode): boolean {
+    for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
+        if (arena.dataTypes[child] == EnumToken.DeclarationNodeType) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -1625,52 +1566,68 @@ function matchSelectors(selector1: string[][], selector2: string[][]): null | Ma
 
 /**
  * Fix selector
+ * @param arena
  * @param node
  *
  * @private
  */
-function fixSelector(node: AstRule): void {
-    if (node.sel.includes("&")) {
-        const attributes: Token[] = parseString(node.sel);
+function fixSelector(arena: AstArena, node: AstRule): void {
+    const sel: string = arena.strings[arena.name[node]];
 
-        for (const attr of walkValues(attributes)) {
+    if (sel.includes("&")) {
+        const attributes: Token[] = parseString(arena, sel);
+
+        for (const attr of walkValues(arena, attributes)) {
             if (
-                attr.value.typ == EnumToken.PseudoClassFuncTokenType &&
-                (attr.value as PseudoClassFunctionToken).val == ":is"
+                arena.dataTypes[attr.value] == EnumToken.PseudoClassFuncTokenType &&
+                arena.strings[arena.stringValue[attr.value]] == ":is"
             ) {
-                let i: number = (attr.value as PseudoClassFunctionToken).chi.length;
+                let child: Token = arena.lastToken[attr.value];
 
-                while (i--) {
-                    if ((attr.value as PseudoClassFunctionToken).chi[i].typ == EnumToken.NestingSelectorTokenType) {
-                        (attr.value as PseudoClassFunctionToken).chi.splice(i, 1);
+                while (child != 0) {
+                    const previous: Token = arena.previousSibling[child];
+
+                    if (arena.dataTypes[child] == EnumToken.NestingSelectorTokenType) {
+                        arena.detach(child);
                     }
+
+                    child = previous;
                 }
             }
         }
 
-        node.sel = attributes.reduce((acc: string, curr: Token) => acc + printValue(curr), "");
-        node[TOKENS] = null;
+        arena.setSelector(
+            node,
+            attributes.reduce((acc: string, curr: Token) => acc + renderValue(arena, curr), ""),
+        );
+        arena.setTokens(node);
     }
 }
 
 /**
  * Wrap nodes
+ * @param arena
  * @param previous
  * @param node
  * @param match
  * @param ast
  * @param reducer
+ * @param chi children mirror
+ * @param splice children mirror splice
  * @param i
  * @param nodeIndex
  *
  * @private
  */
 function wrapNodes(
+    arena: AstArena,
     previous: AstRule,
     node: AstRule,
     match: MatchedSelector,
     ast: AstNode,
     reducer: Function,
+    chi: AstNode[],
+    splice: (index: number, deleteCount: number, ...items: AstNode[]) => AstNode[],
     i: number,
     nodeIndex: number,
 ): AstRule {
@@ -1680,74 +1637,80 @@ function wrapNodes(
     // @ts-ignore
     let nSel: string = match.selector2.reduce(reducer, []).join(",");
 
-    const wrapper = {
-        ...previous,
-        chi: [],
-        // @ts-ignore
-        sel: match.match.reduce(reducer, []).join(","),
-        [RAW]: match.match.map((t) => t.slice()),
-    } as AstRule;
+    const wrapper: AstRule = arena.clone(previous);
+
+    // @ts-ignore
+    arena.setSelector(wrapper, match.match.reduce(reducer, []).join(","));
+    arena.raw[wrapper] = match.match.map((t) => t.slice());
+    arena.optimized[wrapper] = null;
+    arena.setTokens(wrapper);
 
     if (pSel == "&" || pSel === "") {
-        for (const child of previous.chi) {
-            wrapper.chi.push(child);
-        }
+        arena.appendChildList(wrapper, arena.children(previous));
 
         if (nSel == "&" || nSel === "") {
-            for (const child of node.chi) {
-                wrapper.chi.push(child);
-            }
+            arena.appendChildList(wrapper, arena.children(node));
         } else {
-            wrapper.chi.push(node);
+            arena.appendChildren(wrapper, node);
         }
     } else {
-        wrapper.chi.push(previous, node);
+        arena.appendChildren(wrapper, previous, node);
     }
 
-    (ast as AstRule).chi!.splice(i, 1, wrapper);
-    (ast as AstRule).chi!.splice(nodeIndex, 1);
+    // insert the wrapper at the position of node, then remove previous
+    splice(i, 1, wrapper);
+    splice(nodeIndex, 1);
 
-    previous.sel = pSel;
-    previous[RAW] = match.selector1;
-    previous[TOKENS] = null;
-    node.sel = nSel;
-    node[RAW] = match.selector2;
-    node[TOKENS] = null;
+    // update the selectors of the wrapped nodes
+    if (arena.parents[previous] == wrapper) {
+        arena.setSelector(previous, pSel);
+        arena.raw[previous] = match.selector1;
+        arena.setTokens(previous);
+    }
 
-    reduceRuleSelector(wrapper);
-    wrapper[TOKENS] = null;
+    if (arena.parents[node] == wrapper) {
+        arena.setSelector(node, nSel);
+        arena.raw[node] = match.selector2;
+        arena.setTokens(node);
+    }
+
+    reduceRuleSelector(arena, wrapper);
+    arena.setTokens(wrapper);
     return wrapper;
 }
 
 /**
- * Diff nodes
+ * Diff nodes: move the declarations shared by both rules into a new rule
+ * @param arena
  * @param n1
  * @param n2
  * @param options
  *
  * @private
  */
-function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
+function diff(
+    arena: AstArena,
+    n1: AstRule,
+    n2: AstRule,
+    options: ParserOptions = {},
+): { result: AstRule | null; node1: AstRule; node2: AstRule } | null {
     if (!("cache" in options)) {
-        options.cache = new WeakMap<AstNode, string>();
+        options.cache = new Map<AstNode, string>();
     }
 
     let node1: AstRule = n1;
     let node2: AstRule = n2;
     let exchanged: boolean = false;
 
-    if (node1.chi.length > node2.chi.length) {
+    if (arena.childCount(node1) > arena.childCount(node2)) {
         const t: AstRule = node1;
         node1 = node2;
         node2 = t;
         exchanged = true;
     }
 
-    let i: number = node1.chi.length;
-    let j: number = node2.chi.length;
-
-    const raw1: RawSelectorTokens = <RawSelectorTokens>node1[RAW];
-    const raw2: RawSelectorTokens = <RawSelectorTokens>node2[RAW];
+    const raw1: RawSelectorTokens = <RawSelectorTokens>arena.raw[node1];
+    const raw2: RawSelectorTokens = <RawSelectorTokens>arena.raw[node2];
 
     if (raw1 != null && raw2 != null) {
         const prefixes1: Set<string> = new Set();
@@ -1808,169 +1771,210 @@ function diff(n1: AstRule, n2: AstRule, options: ParserOptions = {}) {
         }
     }
 
-    const css1: string = options.cache!.get(node1) as string;
-    const css2: string = options.cache!.get(node2) as string;
-
-    node1 = { ...node1, chi: node1.chi.slice() };
-    node2 = { ...node2, chi: node2.chi.slice() };
-
-    if (css1 != null) {
-        options.cache!.set(node1, css1);
-    }
-
-    if (css2 != null) {
-        options.cache!.set(node2, css2);
-    }
-
-    if (raw1 != null) {
-        node1[RAW] = raw1;
-    }
-
-    if (raw2 != null) {
-        node2[RAW] = raw2;
-    }
-
+    const children1: AstNode[] = arena.children(node1);
+    const children2: AstNode[] = arena.children(node2);
+    const remaining1: AstNode[] = children1.slice();
+    const remaining2: AstNode[] = children2.slice();
     const intersect: AstDeclaration[] = [];
 
+    let i: number = remaining1.length;
+    let j: number;
+
     while (i--) {
-        if (node1.chi[i].typ == EnumToken.CommentNodeType) {
+        if (arena.dataTypes[remaining1[i]] == EnumToken.CommentNodeType) {
             continue;
         }
 
-        j = node2.chi.length;
+        j = remaining2.length;
 
         while (j--) {
-            if (node2.chi[j].typ == EnumToken.CommentNodeType) {
+            if (arena.dataTypes[remaining2[j]] == EnumToken.CommentNodeType) {
                 continue;
             }
 
-            if ((<AstDeclaration>node1.chi[i]).nam == (<AstDeclaration>node2.chi[j]).nam) {
-                if (node1.chi[i].typ == node2.chi[j].typ && eq(node1.chi[i], node2.chi[j])) {
-                    intersect.push(node1.chi[i] as AstDeclaration);
-                    node1.chi.splice(i, 1);
-                    node2.chi.splice(j, 1);
-
-                    options.cache!.delete(node1);
-                    options.cache!.delete(node2);
+            if (arena.name[remaining1[i]] == arena.name[remaining2[j]]) {
+                if (eqNode(arena, remaining1[i], remaining2[j])) {
+                    intersect.push(remaining1[i]);
+                    remaining1.splice(i, 1);
+                    remaining2.splice(j, 1);
                     break;
                 }
             }
         }
     }
 
-    const result =
-        intersect.length === 0 && (node1.chi.length > 0 || node2.chi.length > 0)
-            ? null
-            : {
-                  ...node1,
-                  // @ts-ignore
-                  sel: [
-                      ...new Set(
-                          splitRule(node1.sel)
-                              .concat(splitRule(node2.sel))
-                              .map((s) => s.join("")),
-                      ),
-                  ].join(","),
-                  // @ts-ignore
-                  chi: intersect.reverse(),
-              };
+    if (intersect.length === 0 && (remaining1.length > 0 || remaining2.length > 0)) {
+        return null;
+    }
 
-    let op = { level: 0, ...options };
+    const op: RenderOptions = { ...options } as RenderOptions;
+
+    // size of the original nodes
+    const size: number = [n1, n2].reduce((acc: number, curr: AstRule): number => {
+        let css: string | undefined = options.cache!.get(curr);
+
+        if (css == null) {
+            css = doRender(arena, curr, op).code;
+            options.cache!.set(curr, css);
+        }
+
+        return arena.firstChild[curr] == 0 ? acc : acc + css.length;
+    }, 0);
+
+    // the shared declarations are moved into the result node
+    const result: AstRule = arena.clone(node1);
+
+    arena.setSelector(
+        result,
+        [
+            ...new Set(
+                splitRule(arena.strings[arena.name[node1]])
+                    .concat(splitRule(arena.strings[arena.name[node2]]))
+                    .map((s) => s.join("")),
+            ),
+        ].join(","),
+    );
+
+    arena.setChildList(result, intersect.reverse());
+    arena.setChildList(node1, remaining1);
+    arena.setChildList(node2, remaining2);
+    arena.insertBefore(n1, result);
+
+    // duplicates of node2 are dropped
+    const dropped: AstNode[] = children2.filter((node: AstNode) => arena.parents[node] == 0);
+
+    options.cache!.delete(node1);
+    options.cache!.delete(node2);
 
     if (
-        result == null ||
-        [n1, n2].reduce((acc: number, curr: AstRule): number => {
-            let css: string = options.cache!.get(curr) as string;
+        size <=
+        [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
+            const css: string = doRender(arena, curr, op).code;
 
-            if (css == null) {
-                let level: number = 0;
-                let parent: AstNode | null = curr[PARENT] as AstNode;
-
-                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
-                    level++;
-                    parent = parent[PARENT] as AstRule;
-                }
-
-                op.level = level;
-
-                css = doRender(curr, op).code;
-                options.cache!.set(curr, css);
-            }
-
-            return curr.chi.length == 0 ? acc : acc + css.length;
-        }, 0) <=
-            [node1, node2, result].reduce((acc: number, curr: AstRule): number => {
-                let css: string = options.cache!.get(curr) as string;
-
-                if (css != null) {
-                    return curr.chi.length == 0 ? acc : acc + css.length;
-                }
-
-                let level: number = 0;
-                let parent: AstNode | null = curr[PARENT] as AstNode;
-
-                while (parent != null && parent.typ != EnumToken.StyleSheetNodeType) {
-                    level++;
-                    parent = parent[PARENT] as AstRule;
-                }
-
-                op.level = level;
-                css = doRender(curr, op).code;
-
-                return curr.chi.length == 0 ? acc : acc + css.length;
-            }, 0)
+            return arena.firstChild[curr] == 0 ? acc : acc + css.length;
+        }, 0)
     ) {
-        if (node1.chi.length != 0 && node2.chi.length != 0) {
+        if (remaining1.length != 0 && remaining2.length != 0) {
+            // restore the nodes
+            arena.setChildList(node1, children1);
+            arena.setChildList(node2, children2);
+            arena.release(result);
+
             return null;
         }
     }
 
-    if (result != null) {
-        result[TOKENS] = null;
-        result[RAW] = null;
-        const optimized = optimizeSelector(splitRule(result.sel));
+    for (const node of dropped) {
+        arena.release(node, true);
+    }
 
-        if (optimized?.match) {
-            const rule = optimized.selector.reduce((acc, curr) => {
-                if (acc.length > 0) {
-                    acc += ",";
-                }
+    arena.setTokens(result);
+    arena.raw[result] = null;
+    arena.optimized[result] = null;
 
-                if (curr.length > 2 && curr[0] === "&" && curr[1] === " ") {
-                    return acc + curr.slice(2).join("");
-                } else if (curr.length > 1 && curr[0] === "&") {
-                    return acc + curr.slice(1).join("");
-                }
+    const optimized = optimizeSelector(splitRule(arena.strings[arena.name[result]]));
 
-                return acc + curr.join("");
-            }, "");
-
-            const match = optimized.optimized.join("");
-            const sel = match + ":is(" + replaceCompound(rule, match) + ")";
-
-            if (sel.length < result.sel.length) {
-                result.sel = sel;
-                result[TOKENS] = null;
+    if (optimized?.match) {
+        const rule = optimized.selector.reduce((acc, curr) => {
+            if (acc.length > 0) {
+                acc += ",";
             }
+
+            if (curr.length > 2 && curr[0] === "&" && curr[1] === " ") {
+                return acc + curr.slice(2).join("");
+            } else if (curr.length > 1 && curr[0] === "&") {
+                return acc + curr.slice(1).join("");
+            }
+
+            return acc + curr.join("");
+        }, "");
+
+        const match = optimized.optimized.join("");
+        const sel = match + ":is(" + replaceCompound(arena, rule, match) + ")";
+
+        if (sel.length < arena.strings[arena.name[result]].length) {
+            arena.setSelector(result, sel);
+            arena.setTokens(result);
         }
     }
+
+    arena.detach(result);
 
     return { result, node1: exchanged ? node2 : node1, node2: exchanged ? node1 : node2 };
 }
 
 /**
+ * compare two nodes
+ * @param arena
+ * @param a
+ * @param b
+ *
+ * @private
+ */
+function eqNode(arena: AstArena, a: AstNode, b: AstNode): boolean {
+    if (a == b) {
+        return true;
+    }
+
+    if (
+        arena.dataTypes[a] != arena.dataTypes[b] ||
+        arena.name[a] != arena.name[b] ||
+        arena.stringValue[a] != arena.stringValue[b]
+    ) {
+        return false;
+    }
+
+    if (arena.flags[a] & EnumAstNodeStatus.HasValues) {
+        let token1: Token = arena.firstToken[a];
+        let token2: Token = arena.firstToken[b];
+
+        while (token1 != 0 && token2 != 0) {
+            if (!eqToken(arena, token1, token2)) {
+                return false;
+            }
+
+            token1 = arena.nextSibling[token1];
+            token2 = arena.nextSibling[token2];
+        }
+
+        if (token1 != token2) {
+            return false;
+        }
+    }
+
+    if (arena.flags[a] & EnumAstNodeStatus.HasChildren) {
+        let child1: AstNode = arena.firstChild[a];
+        let child2: AstNode = arena.firstChild[b];
+
+        while (child1 != 0 && child2 != 0) {
+            if (!eqNode(arena, child1, child2)) {
+                return false;
+            }
+
+            child1 = arena.nextSibling[child1];
+            child2 = arena.nextSibling[child2];
+        }
+
+        return child1 == child2;
+    }
+
+    return true;
+}
+
+/**
  * Reduce rule selector
+ * @param arena
  * @param node
  *
  * @private
  */
-function reduceRuleSelector(node: AstRule) {
-    if (node[RAW] == null) {
-        node[RAW] = splitRule(node.sel);
+function reduceRuleSelector(arena: AstArena, node: AstRule) {
+    if (arena.raw[node] == null) {
+        arena.raw[node] = splitRule(arena.strings[arena.name[node]]);
     }
 
     let optimized: OptimizedSelector = optimizeSelector(
-        node[RAW]!.reduce(
+        arena.raw[node]!.reduce(
             (acc, curr) => {
                 acc.push(curr.slice());
                 return acc;
@@ -1980,7 +1984,7 @@ function reduceRuleSelector(node: AstRule) {
     ) as OptimizedSelector;
 
     if (optimized != null) {
-        node[OPTIMIZED] = optimized;
+        arena.optimized[node] = optimized;
     }
 
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
@@ -2028,10 +2032,10 @@ function reduceRuleSelector(node: AstRule) {
 
         const sel: string = raw[0].join("");
 
-        if (sel.length < node.sel.length) {
-            node.sel = sel;
-            node[RAW] = raw;
-            node[TOKENS] = null;
+        if (sel.length < arena.strings[arena.name[node]].length) {
+            arena.setSelector(node, sel);
+            arena.raw[node] = raw;
+            arena.setTokens(node);
         }
     }
 }

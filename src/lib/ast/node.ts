@@ -1,122 +1,156 @@
 import type { AstNode, ErrorDescription, SourceLocation, Token } from "../../@types/index.d.ts";
-import { ERRORS, LOCEND, LOCSRCID, LOCSTA, PARENT, STATE, TOKENS } from "../syntax/constants.ts";
 import { AstNodePropertyType, EnumAstNodeStatus } from "./types.ts";
+import type { AstArena } from "./arena.ts";
 
 /**
- * 
- * @param node 
- * @param key 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
  */
-export function getNodeProperty(node: AstNode, key: 'parent'): AstNode | Token | null;
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "parent"): AstNode;
 /**
- * 
- * @param node 
- * @param key 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
  */
-export function getNodeProperty(node: AstNode, key: 'location'): SourceLocation | null;
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "location"): SourceLocation | null;
 /**
- * 
- * @param node 
- * @param key 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
  */
-export function getNodeProperty(node: AstNode, key: 'state'): EnumAstNodeStatus | null;
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "state"): EnumAstNodeStatus;
 /**
- * 
- * @param node 
- * @param key 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
  */
-export function getNodeProperty(node: AstNode, key: 'errors'): ErrorDescription[] | null;
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "errors"): ErrorDescription[] | null;
 /**
- * 
- * @param node 
- * @param key 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
  */
-export function getNodeProperty(node: AstNode, key: 'tokens'): Token[] | null;
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "tokens"): Token[] | null;
+/**
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
+ */
+export function getNodeProperty(arena: AstArena, node: AstNode, key: "selector"): string | null;
 
 /**
- * 
- * @param node 
- * @param key 
- * @returns 
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @returns
  */
-export function getNodeProperty(node: AstNode, key: AstNodePropertyType): any {
-    
+export function getNodeProperty(arena: AstArena, node: AstNode, key: AstNodePropertyType): any {
     switch (key) {
-        
         case "parent":
-            return node[PARENT];
+            return arena.parents[node];
         case "location":
-            return node[LOCSRCID] == null && node[LOCSTA] == null && node[LOCEND] == null ? null : {srcId: node[LOCSRCID], sta: node[LOCSTA], end: node[LOCEND]} as SourceLocation;
+            return arena.getLocation(node);
         case "state":
-            return node[STATE];
+            return arena.flags[node] & EnumAstNodeStatus.StateMask;
         case "errors":
-            return node[ERRORS];
+            return arena.errors.get(node) ?? null;
         case "tokens":
-            return node[TOKENS];
+            return arena.firstToken[node] == 0 ? null : arena.tokens(node);
+        case "selector":
+            return arena.strings[arena.name[node]] ?? null;
     }
+
     return undefined;
 }
 
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: 'parent', value: AstNode | Token | null): void;
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "parent", value: AstNode): void;
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: 'location', value: SourceLocation | null): void;
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "location", value: SourceLocation | null): void;
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: 'state', value: EnumAstNodeStatus | null): void;
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "state", value: EnumAstNodeStatus | null): void;
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: 'errors', value: ErrorDescription[] | null): void;
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "errors", value: ErrorDescription[] | null): void;
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: 'tokens', value: Token[] | null): void;
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "tokens", value: Token[] | null): void;
+/**
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
+ */
+export function setNodeProperty(arena: AstArena, node: AstNode, key: "selector", value: string): void;
 
 /**
- * 
- * @param node 
- * @param key 
- * @param value 
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
  */
-export function setNodeProperty(node: AstNode, key: AstNodePropertyType, value: any): void {
+export function setNodeProperty(arena: AstArena, node: AstNode, key: AstNodePropertyType, value: any): void {
     switch (key) {
         case "parent":
-            node[PARENT] = value;
+            // move the node at the end of the parent children
+            arena.appendChildren(value, node);
             break;
         case "location":
-            node[LOCSRCID] = (value as SourceLocation).srcId;
-            node[LOCSTA] = (value as SourceLocation).sta;
-            node[LOCEND] = (value as SourceLocation).end;
+            arena.setLocation(node, value?.srcId, value?.sta, value?.end);
             break;
         case "state":
-            node[STATE] = value;
+            arena.setState(node, value);
             break;
         case "errors":
-            node[ERRORS] = value;
+            if (value == null) {
+                arena.errors.delete(node);
+            } else {
+                arena.errors.set(node, value);
+            }
             break;
         case "tokens":
-            node[TOKENS] = value;
+            arena.setTokenList(node, (value ?? []) as Token[]);
+            break;
+        case "selector":
+            arena.name[node] = arena.internString(value);
             break;
     }
 }

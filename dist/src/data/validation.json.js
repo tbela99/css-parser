@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 var declarations = {
@@ -4716,7 +4712,16 @@ var atRules = {
 		syntax: " @bottom-right-corner { <declaration-list> }"
 	},
 	"@function": {
-		syntax: " @function <dashed-ident>(<function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
+		syntax: " @function <dashed-function> <function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
+	},
+	"@mixin": {
+		syntax: " @mixin [<dashed-function> <function-parameter>#? ) | <ident-token> ]{<block-contents>}"
+	},
+	"@apply": {
+		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
+	},
+	"@contents": {
+		syntax: " @contents [ { <declaration-list> } ]?;"
 	},
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"

@@ -1,51 +1,33 @@
 import type { AstNode } from "../../@types/index.d.ts";
 import type { Token } from "../../@types/token.d.ts";
-import { EnumToken } from "../ast/types.ts";
+import type { AstArena } from "./arena.ts";
 
 /**
+ * Clone an ast node
  *
- * Clone an ast node or value
- * @param node
- * @param cloneChildren
- * @param cloneMap
- * @returns
+ * The clone is allocated in the arena, detached from the tree.
+ *
+ * @param arena
+ * @param node node id
+ * @param cloneChildren also clone the children (rules) or the value tokens (declarations)
+ * @param cloneMap map of the source tokens to their clones
+ * @returns the clone id
  */
 export function cloneNode(
-    node: AstNode | Token,
+    arena: AstArena,
+    node: AstNode,
     cloneChildren: boolean = false,
-    cloneMap: Map<Token | AstNode, Token | AstNode> | null = null,
-): AstNode | Token {
-    const checkNode = node.typ == EnumToken.DeclarationNodeType ? "val" : "chi";
+    cloneMap: Map<Token, Token> | null = null,
+): AstNode {
+    return arena.clone(node, cloneChildren, cloneMap);
+}
 
-    const clone = {} as Token | AstNode;
-    cloneMap?.set?.(node, clone);
-
-    for (const [name, value] of Object.entries(node)) {
-        if (value == null || typeof value != "object") {
-            // @ts-ignore
-            clone[name] = value;
-        } else if (Array.isArray(value)) {
-            // @ts-ignore
-            clone[name] = [];
-
-            if (cloneChildren || name !== checkNode) {
-                for (const c of value) {
-                    const newObj = cloneNode(c, cloneChildren, cloneMap);
-                    cloneMap?.set?.(c, newObj);
-                    // @ts-ignore
-                    clone[name].push(newObj);
-                }
-            }
-        } else {
-            // @ts-ignore
-            clone[name] = { ...value };
-        }
-    }
-
-    for (const symbol of Object.getOwnPropertySymbols(node)) {
-        // @ts-ignore
-        clone[symbol] = node[symbol];
-    }
-
-    return clone;
+/**
+ * Deep clone a token
+ * @param arena
+ * @param token
+ * @param cloneMap map of the source tokens to their clones
+ */
+export function cloneValue(arena: AstArena, token: Token, cloneMap: Map<Token, Token> | null = null): Token {
+    return arena.clone(token, true, cloneMap);
 }

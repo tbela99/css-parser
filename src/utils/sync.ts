@@ -1,11 +1,11 @@
 import type {
-    AstComment,
     ParseResult,
     ParserOptions,
     ParserSyncOptions,
     SourceMapObject
 } from "../@types/index.d.ts";
 import { EnumToken } from "../lib/ast/types.ts";
+import { AstArena } from "../lib/ast/arena.ts";
 import { dirname } from "../lib/fs/resolve.ts";
 import { ResponseType } from "../types.ts";
 
@@ -22,13 +22,15 @@ export function parseResult(result: ParseResult, options: ParserOptions): ParseR
             options!.source!.setInputSourceMap(options.inputSourceMap);
         } else {
             // extract inline source map from the input CSS
-            const token = result.ast.chi.at(-1);
+            const arena: AstArena = result.arena;
+            const token: number = arena.lastChild[result.ast];
 
             if (
-                token?.typ == EnumToken.CommentTokenType &&
-                (token as AstComment).val.startsWith("/*# sourceMappingURL=")
+                token != 0 &&
+                arena.dataTypes[token] == EnumToken.CommentTokenType &&
+                arena.startsWith(token, "val", "/*# sourceMappingURL=")
             ) {
-                let data: string = (token as AstComment).val.slice(21, -2).trim();
+                let data: string = arena.strings[arena.stringValue[token]].slice(21, -2).trim();
 
                 if (data.endsWith(".map")) {
                     if (options.load == null) {
@@ -84,7 +86,7 @@ export function validateSyncArguments(options: ParserSyncOptions, prefix: string
                     `[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`,
                 );
             }
-        } else if (value != null && typeof value == "object") {
+        } else if (value != null && typeof value == "object" && !(value instanceof AstArena)) {
             validateSyncArguments(value, prefix + key + ".");
         }
     }

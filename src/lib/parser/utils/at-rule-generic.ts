@@ -1,35 +1,31 @@
-import type { ErrorDescription, IdentToken, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { ErrorDescription, Token, ParserOptions } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOCSTA, tokensfuncDefMap } from "../../syntax/constants.ts";
-import { Arena } from "../arena.ts";
+import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function matchGenericSyntax(
-    stream: number[],
+    arena: AstArena, stream: Token[],
     options: ParserOptions,
 ): {
     success: boolean;
     errors: ErrorDescription[];
 } {
-    const arena = options.arena as Arena;
-    const stack: number[] = [];
+    const stack: Token[] = [];
     let i: number = 0;
     let success: boolean = true;
     let expectAndOr: boolean = false;
     let expectComma: boolean = false;
-    let typ: EnumToken;
     const errors: ErrorDescription[] = [];
     const scopes: Array<Set<EnumToken>> = [new Set()];
 
     for (; i < stream.length; i++) {
         const token = stream[i];
 
-        typ = arena.getType(token);
-
-        if (typ === EnumToken.WhitespaceTokenType || typ === EnumToken.CommentTokenType) {
+        if (arena.dataTypes[token] === EnumToken.WhitespaceTokenType || arena.dataTypes[token] === EnumToken.CommentTokenType) {
             continue;
         }
-        if (typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(typ)) {
+        if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
             stack.push(token);
             scopes.push(new Set());
 
@@ -37,16 +33,17 @@ export function matchGenericSyntax(
             continue;
         }
 
-        if (typ === EnumToken.EndParensTokenType) {
+        if (arena.dataTypes[token] === EnumToken.EndParensTokenType) {
             if (
                 stack.length === 0 ||
-                (arena.getType(stack.at(-1)!) !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(arena.getType(stack.at(-1)!)))
+                (arena.dataTypes[stack[stack.length - 1]] !== EnumToken.StartParensTokenType &&
+                    !tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]]))
             ) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[typ]}`,
+                    message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(token)),
                 });
                 success = false;
                 break;
@@ -58,52 +55,51 @@ export function matchGenericSyntax(
             continue;
         }
 
-        if (typ === EnumToken.IdenTokenType && arena.equalsIgnoreCase(token, 'val', "and")) {
+        if (arena.dataTypes[token] === EnumToken.IdenTokenType && equalsIgnoreCase("and", arena.strings[arena.stringValue[token]])) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[typ]}`,
+                    message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(token)),
                 });
                 success = false;
                 break;
             }
 
-            typ = EnumToken.AndTokenType;
-            arena.setType(token, typ);
+            arena.dataTypes[token] = EnumToken.AndTokenType;
             scopes.at(-1)!.add(EnumToken.AndTokenType);
 
             expectComma = false;
             continue;
         }
 
-        if (typ === EnumToken.IdenTokenType && arena.equalsIgnoreCase(token, 'val', "or")) {
+        if (arena.dataTypes[token] === EnumToken.IdenTokenType && equalsIgnoreCase("or", arena.strings[arena.stringValue[token]])) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[typ]}`,
+                    message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(token)),
                 });
                 success = false;
                 break;
             }
 
             expectComma = false;
-            Object.assign(token, { typ: EnumToken.OrTokenType });
+            arena.dataTypes[token] = EnumToken.OrTokenType;
             scopes.at(-1)!.add(EnumToken.OrTokenType);
 
             continue;
         }
 
-        if (typ === EnumToken.CommaTokenType) {
+        if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
             if (!expectComma) {
                 errors.push({
                     action: "drop",
-                    message: `unexpected token ${EnumToken[typ]}`,
+                    message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source!.getSourceLocation(token),
+                    location: options.source!.getSourceLocation(arena.getSpanStart(token)),
                 });
                 success = false;
                 break;
@@ -117,7 +113,7 @@ export function matchGenericSyntax(
         expectAndOr = true;
         expectComma = true;
 
-        if (stack.length > 0 && arena.getType(stack.at(-1)!) === EnumToken.CommaTokenType) {
+        if (stack.length > 0 && arena.typeOf(stack.at(-1)) === EnumToken.CommaTokenType) {
             stack.pop();
         }
     }
@@ -125,9 +121,9 @@ export function matchGenericSyntax(
     if (stack.length > 0) {
         errors.push({
             action: "drop",
-            message: `unexpected token ${EnumToken[arena.getType(stack.at(-1)!)]}`,
-            node: stack.at(-1),
-            location: options.source!.getSourceLocation(stack.at(-1)!),
+            message: `unexpected token ${EnumToken[arena.dataTypes[stack[stack.length - 1]]]}`,
+            node: stack[stack.length - 1],
+            location: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1])),
         });
         success = false;
     }

@@ -2,14 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { EnumToken } from '../lib/ast/types.js';
+import { AstArena } from '../lib/ast/arena.js';
 import { dirname } from '../lib/fs/resolve.js';
 import { ResponseType } from '../types.js';
 
@@ -27,10 +24,12 @@ function parseResult(result, options) {
         }
         else {
             // extract inline source map from the input CSS
-            const token = result.ast.chi.at(-1);
-            if (token?.typ == EnumToken.CommentTokenType &&
-                token.val.startsWith("/*# sourceMappingURL=")) {
-                let data = token.val.slice(21, -2).trim();
+            const arena = result.arena;
+            const token = arena.lastChild[result.ast];
+            if (token != 0 &&
+                arena.dataTypes[token] == EnumToken.CommentTokenType &&
+                arena.startsWith(token, "val", "/*# sourceMappingURL=")) {
+                let data = arena.strings[arena.stringValue[token]].slice(21, -2).trim();
                 if (data.endsWith(".map")) {
                     if (options.load == null) {
                         data = "";
@@ -75,7 +74,7 @@ function validateSyncArguments(options, prefix = "options.") {
                 throw new Error(`[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`);
             }
         }
-        else if (value != null && typeof value == "object") {
+        else if (value != null && typeof value == "object" && !(value instanceof AstArena)) {
             validateSyncArguments(value, prefix + key + ".");
         }
     }

@@ -1,106 +1,99 @@
 import { splitRule } from "./minify.ts";
-import { combinators, PARENT, RAW, STATE } from "../syntax/constants.ts";
+import { combinators } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
 import { walkValues } from "./walk.ts";
+import { renderValue } from "../printer/render.ts";
 import type { AstAtRule, AstNode, AstRule, AstStyleSheet, LiteralToken, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "./types.ts";
-import { cloneNode } from "./clone.ts";
+import type { AstArena } from "./arena.ts";
+
+const skipStates: number =
+    EnumAstNodeStatus.Invalid |
+    EnumAstNodeStatus.Disallowed |
+    EnumAstNodeStatus.Unknown |
+    EnumAstNodeStatus.Unparsed |
+    EnumAstNodeStatus.Malformed;
 
 /**
- * expand css nesting ast nodes
+ * expand css nesting ast nodes.
+ * the tree is expanded in place: nested rules are moved into the parent of the node
+ * @param arena
  * @param ast
  *
  * @private
  */
-export function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
-    if (
-        (ast as AstNode)[STATE] &
-        (EnumAstNodeStatus.Invalid |
-            EnumAstNodeStatus.Disallowed |
-            EnumAstNodeStatus.Unknown |
-            EnumAstNodeStatus.Unparsed |
-            EnumAstNodeStatus.Malformed)
-    ) {
+export function expand(arena: AstArena, ast: AstStyleSheet | AstAtRule | AstRule): AstNode {
+    if (arena.flags[ast] & skipStates) {
         return ast;
     }
 
-    const result = Object.assign(cloneNode(ast), { chi: [] }) as AstStyleSheet | AstAtRule;
-    let children: AstNode[];
+    const children: AstNode[] = arena.children(ast);
+    const result: AstNode[] = [];
 
-    for (let i = 0; i < ast.chi!.length; i++) {
-        let node = ast.chi![i];
+    for (let i = 0; i < children.length; i++) {
+        let node: AstNode = children[i];
+        const typ: EnumToken = arena.dataTypes[node];
 
-        if (node.typ === EnumToken.RuleNodeType) {
-            children = expandRule(node as AstRule);
-
-            for (const child of children) {
-                child[PARENT] = result;
-                result.chi!.push(child);
+        if (typ === EnumToken.RuleNodeType) {
+            for (const child of expandRule(arena, node)) {
+                result.push(child);
             }
-        } else if (node.typ == EnumToken.AtRuleNodeType && "chi" in node) {
+        } else if (typ == EnumToken.AtRuleNodeType && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
             let hasRule: boolean = false;
-            let j: number = node!.chi!.length;
+            let j: AstNode = arena.lastChild[node];
 
-            while (j--) {
-                // @ts-ignore
-                if (node.chi[j].typ == EnumToken.RuleNodeType || node.chi[j].typ == EnumToken.AtRuleNodeType) {
+            while (j != 0) {
+                if (arena.dataTypes[j] == EnumToken.RuleNodeType || arena.dataTypes[j] == EnumToken.AtRuleNodeType) {
                     hasRule = true;
                     break;
                 }
+
+                j = arena.previousSibling[j];
             }
 
             if (hasRule) {
-                node = expand(node as AstRule);
-
-                for (const child of node.chi) {
-                    child[PARENT] = result;
-                }
-
-                node[PARENT] = result;
-                // @ts-ignore
-                result.chi.push(node);
-            } else {
-                node[PARENT] = result;
-                // @ts-ignore
-                result.chi.push(node);
+                node = expand(arena, node);
             }
-        } else {
-            node[PARENT] = result;
-            // @ts-ignore
 
-            result.chi!.push(node);
+            result.push(node);
+        } else {
+            result.push(node);
         }
     }
 
-    return result;
+    arena.setChildList(ast, result);
+    return ast;
 }
 
-function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
-    if (
-        (node as AstNode)[STATE] &
-        (EnumAstNodeStatus.Invalid |
-            EnumAstNodeStatus.Disallowed |
-            EnumAstNodeStatus.Unknown |
-            EnumAstNodeStatus.Unparsed |
-            EnumAstNodeStatus.Malformed)
-    ) {
+/**
+ * expand a rule. nested rules and at-rules are detached from the rule and returned
+ * @param arena
+ * @param node
+ */
+function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> {
+    if (arena.flags[node] & skipStates) {
         return [node];
     }
 
-    const ast: AstRule = Object.assign(cloneNode(node), { chi: node.chi.slice() }) as AstRule;
+    const ast: AstRule = node;
     const result: Array<AstRule | AstAtRule> = [];
+    const sel: string = arena.strings[arena.name[ast]];
 
-    if (ast.typ == EnumToken.RuleNodeType) {
-        let i: number = 0;
+    if (arena.dataTypes[ast] == EnumToken.RuleNodeType) {
+        let child: AstNode = arena.firstChild[ast];
 
-        for (; i < ast.chi.length; i++) {
-            if (ast.chi[i].typ == EnumToken.RuleNodeType) {
-                const rule: AstRule = (<AstRule>ast).chi[i] as AstRule;
+        while (child != 0) {
+            const next: AstNode = arena.nextSibling[child];
+            const typ: EnumToken = arena.dataTypes[child];
 
-                if (!rule.sel.includes("&")) {
-                    const selRule: string[][] = splitRule(rule.sel);
+            if (typ == EnumToken.RuleNodeType) {
+                const rule: AstRule = child;
+                const ruleSel: string = arena.strings[arena.name[rule]];
 
-                    const arSelf: string = splitRule(ast.sel)
+                if (!ruleSel.includes("&")) {
+                    const selRule: string[][] = splitRule(ruleSel);
+
+                    const arSelf: string = splitRule(sel)
                         .filter((r: string[]): boolean =>
                             r.every((t: string): boolean => t != ":before" && t != ":after" && !t.startsWith("::")),
                         )
@@ -108,7 +101,8 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         .join(",");
 
                     if (arSelf.length == 0) {
-                        ast.chi.splice(i--, 1);
+                        arena.release(rule, true);
+                        child = next;
                         continue;
                     }
 
@@ -117,16 +111,19 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         combinators.includes(arr[0].charAt(0)) ? arr.unshift(arSelf) : arr.unshift(arSelf, " ");
                     }
 
-                    rule.sel = selRule
-                        .reduce(
-                            (acc: string[], curr: string[]) => {
-                                acc.push(curr.join(""));
+                    arena.setSelector(
+                        rule,
+                        selRule
+                            .reduce(
+                                (acc: string[], curr: string[]) => {
+                                    acc.push(curr.join(""));
 
-                                return acc;
-                            },
-                            <string[]>[],
-                        )
-                        .join(",");
+                                    return acc;
+                                },
+                                <string[]>[],
+                            )
+                            .join(","),
+                    );
                 } else {
                     let childSelectorCompound: string[] = [];
                     let withCompound: string[] = [];
@@ -134,17 +131,18 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     // pseudo elements cannot be used with '&'
                     // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
-                    const rules: string[][] = splitRule(ast.sel).filter((r: string[]): boolean =>
+                    const rules: string[][] = splitRule(sel).filter((r: string[]): boolean =>
                         r.every((t: string): boolean => t != ":before" && t != ":after" && !t.startsWith("::")),
                     );
-                    const parentSelector: boolean = !node.sel.includes("&");
+                    const parentSelector: boolean = !sel.includes("&");
 
                     if (rules.length == 0) {
-                        ast.chi.splice(i--, 1);
+                        arena.release(rule, true);
+                        child = next;
                         continue;
                     }
 
-                    for (const sel of rule[RAW] ?? splitRule(rule.sel)) {
+                    for (const sel of arena.raw[rule] ?? splitRule(ruleSel)) {
                         const s: string = sel.join("");
 
                         if (s.includes("&") || parentSelector) {
@@ -172,10 +170,11 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     if (childSelectorCompound.length > 0) {
                         if (childSelectorCompound.length == 1) {
-                            selectors.push(replaceCompound("& " + childSelectorCompound[0].trim(), selector));
+                            selectors.push(replaceCompound(arena, "& " + childSelectorCompound[0].trim(), selector));
                         } else {
                             selectors.push(
                                 replaceCompound(
+                                    arena,
                                     "& :is(" +
                                         childSelectorCompound.reduce(
                                             (acc, curr) => acc + (acc.length > 0 ? "," : "") + curr.trim(),
@@ -190,15 +189,6 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     if (withCompound.length > 0) {
                         if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
-                            // for (const w of withCompound) {
-                            //     for (let m = 0; m < w.length; m++) {
-                            //         // for (let n = 0; n < w[m].length; n++) {
-
-                            //         withoutCompound.push(w[m].slice(1));
-                            //         // }
-                            //     }
-                            // }
-
                             withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                             withCompound.length = 0;
                         }
@@ -216,6 +206,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                             selectors.push(
                                 replaceCompound(
+                                    arena,
                                     rules.length == 1
                                         ? useIs
                                             ? withoutCompound[0] + ":is(&)"
@@ -234,6 +225,7 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
                         } else {
                             selectors.push(
                                 replaceCompound(
+                                    arena,
                                     "&:is(" +
                                         withoutCompound.reduce(
                                             (acc, curr) => acc + (acc.length > 0 ? "," : "") + curr.trim(),
@@ -248,80 +240,114 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
 
                     if (withCompound.length > 0) {
                         if (withCompound.length == 1) {
-                            selectors.push(replaceCompound(withCompound[0], selector));
+                            selectors.push(replaceCompound(arena, withCompound[0], selector));
                         }
                     }
 
-                    rule.sel = selectors.reduce(
-                        (acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr),
-                        "",
+                    arena.setSelector(
+                        rule,
+                        selectors.reduce(
+                            (acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr),
+                            "",
+                        ),
                     );
                 }
 
-                ast.chi.splice(i--, 1);
+                arena.detach(rule);
 
-                for (const s of expandRule(rule) as AstRule[]) {
+                for (const s of expandRule(arena, rule) as AstRule[]) {
                     result.push(s);
                 }
-            } else if (ast.chi[i].typ == EnumToken.AtRuleNodeType) {
-                let astAtRule: AstAtRule = <AstAtRule>ast.chi[i];
+            } else if (typ == EnumToken.AtRuleNodeType) {
+                const astAtRule: AstAtRule = child;
                 const values: Array<AstRule | AstAtRule> = <Array<AstRule | AstAtRule>>[];
+                const atRuleName: string = arena.strings[arena.name[astAtRule]];
 
-                if (astAtRule.nam === "scope") {
-                    if (astAtRule.val.includes("&")) {
-                        astAtRule.val = replaceCompound(astAtRule.val, ast.sel);
+                if (atRuleName === "scope") {
+                    const atRuleValue: string = arena.strings[arena.stringValue[astAtRule]];
+
+                    if (atRuleValue.includes("&")) {
+                        arena.setValueString(astAtRule, replaceCompound(arena, atRuleValue, sel));
                     }
 
-                    const slice = (astAtRule.chi as AstNode[])
-                        .slice()
-                        .filter((t) => t.typ == EnumToken.RuleNodeType && ((t as AstRule).sel as string).includes("&"));
+                    let hasNesting: boolean = false;
 
-                    if (slice.length > 0) {
-                        expandRule(<AstRule>{ ...node, chi: (astAtRule.chi as AstNode[]).slice() });
+                    for (let t = arena.firstChild[astAtRule]; t != 0; t = arena.nextSibling[t]) {
+                        if (
+                            arena.dataTypes[t] == EnumToken.RuleNodeType &&
+                            arena.strings[arena.name[t]].includes("&")
+                        ) {
+                            hasNesting = true;
+                            break;
+                        }
+                    }
+
+                    if (hasNesting) {
+                        // expand the nested rules against the parent selector
+                        const clone: AstRule = arena.clone(node);
+
+                        arena.setChildList(clone, arena.children(astAtRule));
+
+                        const expanded: Array<AstRule | AstAtRule> = expandRule(arena, clone);
+
+                        // declarations stay in the at-rule
+                        arena.setChildList(astAtRule, arena.children(clone));
+                        arena.release(clone);
+
+                        for (const r of expanded) {
+                            if (r != clone) {
+                                arena.appendChildren(astAtRule, r);
+                            }
+                        }
                     }
                 } else {
-                    // @ts-ignore
-                    const clone: AstRule = <AstRule>{ ...ast, chi: astAtRule.chi.slice() };
+                    const clone: AstRule = arena.clone(ast);
 
-                    // @ts-ignore
-                    astAtRule.chi.length = 0;
+                    arena.setChildList(clone, arena.children(astAtRule));
 
-                    for (const r of <Array<AstRule | AstAtRule>>expandRule(clone)) {
-                        if (r.typ == EnumToken.AtRuleNodeType && "chi" in r) {
-                            if (astAtRule.val !== "" && (<AstAtRule>r).val !== "") {
-                                if (astAtRule.nam === "media" && (<AstAtRule>r).nam === "media") {
-                                    (<AstAtRule>r).val = astAtRule.val + " and " + (<AstAtRule>r).val;
-                                } else if (astAtRule.nam == "layer" && (<AstAtRule>r).nam == "layer") {
-                                    (<AstAtRule>r).val = astAtRule.val + "." + (<AstAtRule>r).val;
+                    for (const r of <Array<AstRule | AstAtRule>>expandRule(arena, clone)) {
+                        if (
+                            arena.dataTypes[r] == EnumToken.AtRuleNodeType &&
+                            arena.flags[r] & EnumAstNodeStatus.HasChildren
+                        ) {
+                            const val: string = arena.strings[arena.stringValue[astAtRule]];
+                            const rVal: string = arena.strings[arena.stringValue[r]];
+
+                            if (val !== "" && rVal !== "") {
+                                const rName: string = arena.strings[arena.name[r]];
+
+                                if (atRuleName === "media" && rName === "media") {
+                                    arena.setValueString(r, val + " and " + rVal);
+                                } else if (atRuleName == "layer" && rName == "layer") {
+                                    arena.setValueString(r, val + "." + rVal);
                                 }
                             }
 
-                            // @ts-ignore
                             values.push(r);
-                        } else if (r.typ == EnumToken.RuleNodeType) {
-                            for (const rule of expandRule(r)) {
-                                // @ts-ignore
-                                astAtRule.chi.push(rule);
+                        } else if (arena.dataTypes[r] == EnumToken.RuleNodeType) {
+                            for (const rule of expandRule(arena, r)) {
+                                arena.appendChildren(astAtRule, rule);
                             }
                         }
                     }
                 }
 
-                if (astAtRule.chi!.length > 0) {
+                arena.detach(astAtRule);
+
+                if (arena.firstChild[astAtRule] != 0) {
                     result.push(astAtRule);
                 }
 
                 for (const r of values) {
                     result.push(r);
                 }
-
-                ast.chi.splice(i--, 1);
             }
+
+            child = next;
         }
     }
 
-    // @ts-ignore
-    return ast.chi.length > 0 ? [ast].concat(result) : result;
+    return arena.firstChild[ast] != 0 ? [ast].concat(result) : result;
 }
 
 /**
@@ -329,34 +355,28 @@ function expandRule(node: AstRule): Array<AstRule | AstAtRule> {
  * @param input
  * @param replace
  */
-export function replaceCompound(input: string, replace: string): string {
-    const tokens: Token[] = parseString(input);
-    let replacement: Token[] | null = null;
+export function replaceCompound(arena: AstArena, input: string, replace: string): string {
+    const tokens: Token[] = parseString(arena, input);
 
-    for (const t of walkValues(tokens)) {
-        if (t.value.typ == EnumToken.NestingSelectorTokenType) {
+    for (const t of walkValues(arena, tokens)) {
+        if (arena.dataTypes[t.value] == EnumToken.NestingSelectorTokenType) {
             if (tokens.length == 2) {
-                if (replacement == null) {
-                    replacement = parseString(replace);
-                }
-
-                Object.assign(t.value, {
-                    typ: EnumToken.LiteralTokenType,
-                    val: replaceCompoundLiteral((t.value as LiteralToken).val, replace),
-                });
+                arena.resetToken(
+                    t.value,
+                    EnumToken.LiteralTokenType,
+                    replaceCompoundLiteral(arena.strings[arena.stringValue[t.value]], replace),
+                );
 
                 continue;
             }
 
             const rule: string[][] = splitRule(replace);
-            Object.assign(t.value, {
-                typ: EnumToken.LiteralTokenType,
-                val: rule.length > 1 ? ":is(" + replace + ")" : replace,
-            });
+
+            arena.resetToken(t.value, EnumToken.LiteralTokenType, rule.length > 1 ? ":is(" + replace + ")" : replace);
         }
     }
 
-    return tokens.reduce((acc: string, curr: Token) => acc + printValue(curr), "");
+    return tokens.reduce((acc: string, curr: Token) => acc + renderValue(arena, curr), "");
 }
 
 function replaceCompoundLiteral(selector: string, replace: string) {

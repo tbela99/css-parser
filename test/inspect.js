@@ -1,5 +1,5 @@
 import { dirname } from "node:path";
-import { transformSync } from "../dist/node.js";
+import { transformSync } from "../dist/src/node.js";
 import tailwind from "./files/css/tailwind.css" with { type: "text" };
 
 const { code, stats } = await transformSync({

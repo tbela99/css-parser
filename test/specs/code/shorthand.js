@@ -324,7 +324,7 @@ button.jetpack-instant-search__overlay-close {
 `,
                 options,
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`html {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`html {
  font: clamp(12px,.8rem + .25vw,20px)/1.7 Blanco,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"
 }
 button.jetpack-instant-search__overlay-close {
@@ -373,7 +373,7 @@ overflow-y: hidden;
 `,
                 options,
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  overflow: hidden
 }`),
             );

@@ -20,6 +20,7 @@ import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/printer/render.ts";
+import type { AstArena } from "./lib/ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { Tokenizer } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
@@ -28,7 +29,6 @@ import { resolve as resolvePath } from "node:path";
 import { SourceFile } from "./lib/parser/source.ts";
 import { cwd } from "node:process";
 import { parseResult, validateSyncArguments } from "./utils/sync.ts";
-import { Arena } from "./lib/parser/arena.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -50,16 +50,18 @@ export { minify } from "./lib/ast/minify.ts";
 export { expand } from "./lib/ast/expand.ts";
 export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
+export { renderValue as renderToken } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
-export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
-export { cloneNode } from "./lib/ast/clone.ts";
-export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
-export { printValue } from "./lib/printer/print.ts";
+export { find, findLast, findByValue, findAll, findValue } from "./lib/ast/find.ts";
+export { cloneNode, cloneValue } from "./lib/ast/clone.ts";
+export { Arena, AstArena, TokenField } from "./lib/ast/arena.ts";
+export { replaceNodeOrValue, replaceNode } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
     ColorType,
+    ValidationLevel,
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
@@ -70,6 +72,7 @@ export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
 export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
+export { parseSyntax } from "./lib/validation/parser/parse.ts";
 
 /**
  * Version number
@@ -163,13 +166,13 @@ export async function load(
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
  *
- * let renderResult = render(parseResult.ast);
+ * let renderResult = render(parseResult.arena, parseResult.ast);
  * console.log(result.code);
  *
  * // body{color:red}
  *
  *
- * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * renderResult = render(parseResult.arena, parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
  * console.log(renderResult.code);
  *
  * // body {
@@ -178,6 +181,7 @@ export async function load(
  * ```
  */
 export function render(
+    arena: AstArena,
     data: AstNode,
     options: RenderOptions = {},
     mapping?: {
@@ -185,7 +189,12 @@ export function render(
         importMapping: Record<string, Record<string, string>> | null;
     } | null,
 ): RenderResult {
-    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolvePath() }), mapping);
+    return doRender(
+        arena,
+        data,
+        Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolvePath() }),
+        mapping,
+    );
 }
 
 /**
@@ -300,7 +309,6 @@ export function parseSync(
 
     options.src ??= "";
     options.sourcesMap ??= new Map();
-    options.arena ??= new Arena(2 << Math.ceil(2 + Math.log2((stream as string).length)));
 
     Object.assign(options, {
         resolve,
@@ -430,6 +438,7 @@ export function transformSync(
 
     // ast already expanded by parse
     const rendered: RenderResult = render(
+        parseResult.arena,
         parseResult.ast,
         {
             ...options,
@@ -652,9 +661,6 @@ export async function parse(
     options ??= {};
     options.src ??= "";
     options.sourcesMap ??= new Map();
-    options.arena ??= new Arena(
-        typeof stream == "string" ? 2 << Math.ceil(2 + Math.log2((stream as string).length)) : 4096,
-    );
 
     Object.assign(options, {
         load,
@@ -942,6 +948,7 @@ export async function transform(
 
         // ast already expanded by parse
         const rendered: RenderResult = render(
+            parseResult.arena,
             parseResult.ast,
             {
                 ...options,

@@ -1,6 +1,7 @@
 import type { AstNode, AstRuleList } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
 import { WalkerEvent, WalkerOptionEnum } from "../lib/ast/walk.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
 
 /**
  * node walker options
@@ -29,7 +30,7 @@ export declare interface WalkerOptions {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | number | null;
+export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
@@ -39,7 +40,7 @@ export declare type WalkerOption = WalkerOptionEnum | number | null;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerFilter = (node: AstNode) => WalkerOption;
+export declare type WalkerFilter = (node: AstNode | Token, arena?: AstArena) => WalkerOption;
 
 /**
  * returned value:
@@ -50,28 +51,37 @@ export declare type WalkerFilter = (node: AstNode) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (node: number, event?: WalkerEvent) => WalkerOption | number[];
+export declare type WalkerValueFilter = (
+    node: AstNode | Token,
+    parent?: AstNode | Token | AstNode[] | Token[] | null,
+    event?: WalkerEvent,
+    parents?: Generator<Token>,
+) => WalkerOption | AstNode | Token | AstNode[] | Token[] | null;
 
 /**
  * walker result
  */
 export declare interface WalkResult {
     /**
-     * current node
+     * current node: a node id or a value token (when walking attributes)
      */
-    node: AstNode;
+    node: AstNode | Token;
     /**
-     * parent node
+     * parent node id (0 for the root) or parent token
      */
-    parent?: AstRuleList;
+    parent: AstRuleList | Token;
     /**
      * root node
      */
-    root?: AstNode;
+    root: AstNode | Token;
     /**
-     * parent nodes
+     * arena
      */
-    parents: Generator<AstNode>;
+    arena: AstArena;
+    /**
+     * parent nodes generator
+     */
+    parents: () => Generator<AstNode | Token>;
 }
 
 /**

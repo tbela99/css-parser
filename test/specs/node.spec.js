@@ -19,7 +19,7 @@ for (const test of Object.values(tests)) {
         parse,
         render,
         dirname,
-        async (path) => readFile(path, { encoding: "utf-8" }),
+        async (path) =>  /^(https?:)?\/\//.test(path) ? fetch(path).then((response) => response.text()) : readFile(path, { encoding: "utf-8" }),
         resolve,
         ColorType,
         EnumToken,

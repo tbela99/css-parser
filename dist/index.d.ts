@@ -12,7 +12,7 @@ declare enum SyntaxValidationResult {
 /**
  * Enum of node statuses
  */
-declare enum EnumAstNodeStatus$1 {
+declare enum EnumAstNodeStatus {
     /**
      * Node passed validation
      */
@@ -46,25 +46,63 @@ declare enum EnumAstNodeStatus$1 {
      */
     Malformed = 128,
     /**
-     * Node has children
-     */
-    HasChildren = 256,
-    /**
-     * Node has values
-     */
-    HasValues = 512,
-    /**
-     * Node has fraction value
-     */
-    HasFractionValue = 1024,
-    /**
      * Important declaration
      */
-    ImportantDeclaration = 2048,
+    ImportantDeclaration = 256,
     /**
      * Color component without unit
      */
-    PowerlessColorComponent = 4096
+    PowerlessColorComponent = 512,
+    /**
+     * mask of the validation state bits
+     */
+    StateMask = 65535,
+    /**
+     * the node has a children list (stylesheet, rule, at-rule with a block)
+     */
+    HasChildren = 65536,
+    /**
+     * the node has value tokens (declaration)
+     */
+    HasValues = 131072,
+    /**
+     * the node has a source location
+     */
+    HasLocation = 262144
+}
+/**
+ * Enum of validation levels
+ * @deprecated
+ */
+declare enum ValidationLevel {
+    /**
+     * disable validation
+     */
+    None = 0,
+    /**
+     * validate selectors
+     */
+    Selector = 1,
+    /**
+     * validate at-rules
+     */
+    AtRule = 2,
+    /**
+     * validate declarations
+     */
+    Declaration = 4,
+    /**
+     * validate selectors and at-rules
+     */
+    Default = 3,// selectors + at-rules
+    /**
+     * validate selectors, at-rules and declarations
+     */
+    All = 7,// selectors + at-rules + declarations
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 8
 }
 /**
  * Enum of all token types
@@ -309,7 +347,7 @@ declare enum EnumToken {
     /**
      *  token list token type
      */
-    ListTokenType = 59,
+    ListToken = 59,
     /**
      * addition token type
      */
@@ -640,21 +678,29 @@ declare enum EnumToken {
      */
     WrappedValuesTokenType = 140,
     /**
-     * infinity token
+     * list of arena tokens (binary expression operands)
      */
-    NaNTokenType = 141,
+    ListTokenType = 141,
     /**
      * infinity token
      */
-    InfinityTokenType = 142,
+    NaNTokenType = 142,
+    /**
+     * infinity token
+     */
+    InfinityTokenType = 143,
     /**
      * negative infinity token
      */
-    NegativeInfinityTokenType = 143,
+    NegativeInfinityTokenType = 144,
     /**
      * CSS type token
      */
-    CssTypeTokenType = 144,
+    CssTypeTokenType = 145,
+    /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType = 146,
     /**
      * alias for time token type
      */
@@ -769,7 +815,11 @@ declare enum EnumToken {
  */
 declare enum ColorType$1 {
     /**
-     * deprecated system colors
+     * the color type is not known yet (the color function has not been parsed)
+     */
+    NONE = 0,
+    /**
+     * system colors
      */
     SYS = 1,
     /**
@@ -969,22 +1019,1163 @@ declare enum ModuleScopeEnumOptions {
 }
 
 /**
- * Location source id
+ * token or node location
  */
-declare const LOCSRCID: unique symbol;
-declare const LOCSTA: unique symbol;
-declare const LOCEND: unique symbol;
+export declare interface SourceLocation {
+    /**
+     * start position
+     */
+    sta: number;
+    /**
+     * end position
+     */
+    end: number;
+    /**
+     * source file
+     */
+    srcId: number;
+}
+
 /**
- * Used by the validation parser
+ * Common plain token interface. Plain tokens are the object representation of the arena tokens
+ * returned by `arena.toObject()`
  */
-declare const LOC: unique symbol;
-declare const RAW: unique symbol;
-declare const STATE: unique symbol;
-declare const ROOT: unique symbol;
-declare const ERRORS: unique symbol;
-declare const TOKENS: unique symbol;
-declare const PARENT: unique symbol;
-declare const OPTIMIZED: unique symbol;
+export declare interface BaseToken {
+    /**
+     * token type
+     */
+    typ: EnumToken;
+    /**
+     * source location
+     */
+    loc?: SourceLocation | null;
+}
+
+/**
+ * plain object representation of an ast node (`arena.toObject()` / `arena.fromObject()`).
+ * The library only deals with node ids internally
+ */
+export declare interface PlainAstNode {
+    /**
+     * node type
+     */
+    typ: EnumToken;
+    /**
+     * rule selector
+     */
+    sel?: string;
+    /**
+     * at-rule / declaration name
+     */
+    nam?: string;
+    /**
+     * at-rule prelude, comment or declaration value tokens
+     */
+    val?: string | Array<PlainToken | Token>;
+    /**
+     * children
+     */
+    chi?: Array<PlainAstNode | AstNode>;
+    /**
+     * prelude / selector tokens
+     */
+    tokens?: Array<PlainToken | Token> | null;
+    /**
+     * source location
+     */
+    loc?: SourceLocation | null;
+    /**
+     * validation state
+     */
+    state?: EnumAstNodeStatus | null;
+    /**
+     * validation errors
+     */
+    errors?: ErrorDescription[] | null;
+    /**
+     * raw selector
+     */
+    raw?: RawSelectorTokens | null;
+    /**
+     * optimized selector
+     */
+    optimized?: OptimizedSelector | null;
+}
+
+/**
+ * Ast nodes are integer ids of records stored in an {@link AstArena}.
+ *
+ * - `arena.dataTypes[node]` is the node type ({@link EnumToken}),
+ * - `arena.strings[arena.name[node]]` is the name of declarations / at-rules and the selector of rules,
+ * - `arena.strings[arena.stringValue[node]]` is the string value of at-rules and comments,
+ * - `arena.tokens(node)` (`arena.firstToken[node]` ... `arena.lastToken[node]`) are the declaration value tokens
+ *   or the rule selector / at-rule prelude tokens,
+ * - `arena.flags[node]` holds the validation state ({@link EnumAstNodeStatus}) and the node flags,
+ * - `arena.firstChild[node]`, `arena.lastChild[node]`, `arena.nextSibling[node]`, `arena.previousSibling[node]`
+ *   and `arena.parents[node]` link the tree.
+ */
+export declare type AstNode = number;
+
+/**
+ * comment node id
+ */
+export declare type AstComment = number;
+/**
+ * declaration node id
+ */
+export declare type AstDeclaration = number;
+/**
+ * rule node id
+ */
+export declare type AstRule = number;
+/**
+ * invalid rule node id
+ * @deprecated
+ */
+export declare type AstInvalidRule = number;
+/**
+ * invalid declaration node id
+ * @deprecated
+ */
+export declare type AstInvalidDeclaration = number;
+/**
+ * invalid at rule node id
+ * @deprecated
+ */
+export declare type AstInvalidAtRule = number;
+/**
+ * keyframes rule node id
+ */
+export declare type AstKeyframesRule = number;
+/**
+ * at rule node id
+ */
+export declare type AstAtRule = number;
+/**
+ * keyframes at rule node id
+ */
+export declare type AstKeyframesAtRule = number;
+/**
+ * rule list node id
+ */
+export declare type AstRuleList = number;
+/**
+ * stylesheet node id
+ */
+export declare type AstStyleSheet = number;
+
+/**
+ * raw selector tokens
+ */
+export declare type RawSelectorTokens = string[][];
+
+/**
+ * optimized selector
+ *
+ * @private
+ */
+export declare interface OptimizedSelector {
+    /**
+     * matched selector
+     */
+    match: boolean;
+    /**
+     * optimized selector
+     */
+    optimized: string[];
+    /**
+     * selector tokens as string
+     */
+    selector: string[][];
+    /**
+     * reducible selector
+     */
+    reducible: boolean;
+}
+
+/**
+ * optimized selector token
+ *
+ * @private
+ */
+export declare interface OptimizedSelectorToken {
+    /**
+     * match
+     */
+    match: boolean;
+    /**
+     * optimized
+     */
+    optimized: Token[];
+    /**
+     * selector
+     */
+    selector: Token[][];
+    /**
+     * reducible
+     */
+    reducible: boolean;
+}
+
+/**
+ * token search result
+ */
+interface TokenSearchResult {
+    /**
+     * node
+     */
+    node: Token | null;
+    /**
+     * parent node
+     */
+    parent: AstNode | Token | null;
+    /**
+     * root node
+     */
+    root: AstNode | Token | null;
+    /**
+     * parent tokens
+     */
+    parents: Generator<Token> | null;
+}
+
+/**
+ * Ast value matcher
+ */
+type AstValueMatcher = ((value: Token) => boolean) | ((token: Token, node: AstNode) => boolean);
+
+/**
+ * Options for the walk function
+ */
+declare enum WalkerOptionEnum {
+    /**
+     * ignore the current node and its children
+     */
+    Ignore = 1,
+    /**
+     * stop walking the tree
+     */
+    Stop = 2,
+    /**
+     * ignore the current node and process its children
+     */
+    Children = 4,
+    /**
+     * ignore the current node children
+     */
+    IgnoreChildren = 8
+}
+/**
+ * Event types for the walkValues function
+ */
+declare enum WalkerEvent {
+    /**
+     * enter node
+     */
+    Enter = 1,
+    /**
+     * leave node
+     */
+    Leave = 2
+}
+/**
+ * Walk ast nodes
+ * @param arena the arena the nodes are stored in
+ * @param node initial node id (or value token)
+ * @param filter control the walk process
+ * @param reverse walk in reverse order
+ *
+ * ```ts
+ *
+ * import {walk, EnumToken} from '@tbela99/css-parser';
+ *
+ * const result = await parse(css);
+ *
+ * for (const {node, parent, root, arena} of walk(result.arena, result.ast)) {
+ *
+ *     console.log(EnumToken[arena.dataTypes[node]]);
+ * }
+ * ```
+ *
+ * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
+ *
+ * ```ts
+ * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
+ *
+ * const result = await transform(css);
+ * const arena = result.arena;
+ *
+ * function filter(node) {
+ *
+ *     if (arena.dataTypes[node] == EnumToken.RuleNodeType && arena.strings[arena.name[node]].includes('html')) {
+ *
+ *         // skip the children of the current node
+ *         return WalkerOptionEnum.IgnoreChildren;
+ *     }
+ * }
+ *
+ * for (const {node} of walk(arena, result.ast, filter)) {
+ *
+ *     console.error([EnumToken[arena.dataTypes[node]]]);
+ * }
+ * ```
+ */
+declare function walk(arena: AstArena, node: AstNode | Token, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
+/**
+ * Walk ast nodes
+ * @param arena the arena the nodes are stored in
+ * @param node initial node id (or value token)
+ * @param filter control the walk process
+ */
+declare function walk(arena: AstArena, node: AstNode | Token, filter?: WalkerOptions | null): Generator<WalkResult>;
+/**
+ * Walk node values
+ * @param arena
+ * @param tokens token ids
+ * @param root root node or token
+ * @param filter
+ * @param reverse
+ *
+ * Example:
+ *
+ * ```ts
+ *
+ * import {EnumToken, transform, walkValues} from '@tbela99/css-parser';
+ *
+ * const css = `
+ * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+ * `;
+ *
+ * const result = await transform(css);
+ * const arena = result.arena;
+ * const declaration = arena.firstChild[arena.firstChild[result.ast]];
+ *
+ * // walk the node attribute's tokens in reverse order
+ * for (const {value} of walkValues(arena, arena.tokens(declaration), declaration, null, true)) {
+ *
+ *     console.error([EnumToken[arena.dataTypes[value]], arena.getValue(value)]);
+ * }
+ *
+ * // [ "Color", "color" ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.15 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "b" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "calc" ]
+ * // [ "Number", 0.24 ]
+ * // [ "Add", undefined ]
+ * // [ "Iden", "g" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "r" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "display-p3" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "FunctionTokenType", "var" ]
+ * // [ "DashedIden", "--base-color" ]
+ * // [ "Whitespace", undefined ]
+ * // [ "Iden", "from" ]
+ * ```
+ */
+declare function walkValues(arena: AstArena, tokens: Token[], root?: AstNode | Token | null, filter?: WalkerValueFilter | null | {
+    event?: WalkerEvent;
+    fn?: WalkerValueFilter;
+    type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
+}, reverse?: boolean): Generator<WalkAttributesResult>;
+
+/**
+ * Arena memory manager: ast nodes and value tokens are integer ids, their data is stored column-wise
+ * in typed arrays (structure of arrays), lists are doubly linked lists stored in the `firstChild` /
+ * `lastChild` / `firstToken` / `lastToken` / `nextSibling` / `previousSibling` columns and strings are interned.
+ *
+ * Every node owns two lists that share the sibling columns:
+ *
+ * - the children list (`firstChild` / `lastChild`): the child nodes of a stylesheet, a rule or an at-rule, or the
+ *   structured fields of a token (see {@link TokenField}),
+ * - the token list (`firstToken` / `lastToken`): the value tokens of a declaration, the prelude tokens of a rule / at-rule
+ *   or the arguments of a function token (`chi`).
+ *
+ * Token columns:
+ *
+ * - `dataTypes`: token type ({@link EnumToken}),
+ * - `stringValue`: interned string value (`val`) of identifiers, strings, literals, function names, colors, ...
+ * - `numericValue`: numeric value (`val`) of numbers, dimensions and percentages. operator of binary expressions, sign of unary expressions,
+ * - `unit`: interned unit of dimensions,
+ * - `name`: interned name (`nam`) of at-rule / declaration tokens,
+ * - `colorType`: color kind (`kin`) of color tokens,
+ * - `spans`: packed source location.
+ *
+ * Structured tokens (binary expressions, media queries conditions, ...) store their fields (`l`, `r`, `op`, ...) as
+ * {@link EnumToken.ListTokenType} children at fixed positions ({@link TokenField}). Fraction tokens store their
+ * numerator and denominator as children, numeric tokens with a fraction value store the fraction token as their child.
+ *
+ * @module
+ */
+
+/**
+ * position of the structured token fields in the children list
+ */
+declare enum TokenField {
+    /**
+     * left hand side (`l`)
+     */
+    L = 0,
+    /**
+     * right hand side (`r`)
+     */
+    R = 1,
+    /**
+     * operator (`op`, `op1`)
+     */
+    Op = 2,
+    /**
+     * second operator (`op2`)
+     */
+    Op2 = 3,
+    /**
+     * value (`val`)
+     */
+    Val = 4
+}
+/**
+ * Arena memory manager
+ */
+declare class Arena {
+    #private;
+    /**
+     * string interner identifiers
+     */
+    stringIds: Map<string, number>;
+    /**
+     * string interner values
+     */
+    strings: string[];
+    /**
+     * root node
+     */
+    readonly root: number;
+    /**
+     * current free node id. This is used to allocate new nodes in the arena. It starts at 1 because 0 is reserved for the root node.
+     */
+    current: number;
+    /**
+     * node EnumToken type array
+     */
+    dataTypes: Uint8Array;
+    /**
+     * parent node id array
+     */
+    parents: Uint32Array;
+    /**
+     * next sibling node id array
+     */
+    nextSibling: Uint32Array;
+    /**
+     * previous sibling node id array
+     */
+    previousSibling: Uint32Array;
+    /**
+     * first token node id array
+     */
+    firstToken: Uint32Array;
+    /**
+     * last token node id array
+     */
+    lastToken: Uint32Array;
+    /**
+     * first child node id array
+     */
+    firstChild: Uint32Array;
+    /**
+     * last child node id array
+     */
+    lastChild: Uint32Array;
+    /**
+     * node name string interner id array. used to store (node as AstRule | AstDeclaration | AstKeyframesAtRule).nam and (node as AstRule | AstKeyframesRule).sel
+     */
+    name: Uint32Array;
+    /**
+     * node string value index array.
+     */
+    stringValue: Uint32Array;
+    /**
+     * node numeric value array. previously used as (node as NumberToken | DimensionToken).val
+     */
+    numericValue: Float64Array;
+    /**
+     * node unit string interner id array. previously used as (node as DimensionToken).unit
+     */
+    unit: Uint32Array;
+    /**
+     * node flags
+     */
+    flags: Uint32Array;
+    /**
+     * color type. previously use as (node as ColorToken).kin
+     */
+    colorType: Uint8Array;
+    /**
+     * token spans. 8 bits for source type. 28 bits for start position, 28 bits for end position. This allows us to store the start and end positions of tokens in a single 64-bit integer, which is more efficient than storing them separately.
+     */
+    spans: BigUint64Array;
+    /**
+     * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
+     * the high word holds the 24 high bits of the start position and the source
+     */
+    protected spans32: Uint32Array;
+    /**
+     * error cache
+     */
+    errors: Map<number, ErrorDescription[]>;
+    constructor(size?: number);
+    allocate(): number;
+    /**
+     * Interns a string and returns its unique ID. If the string has already been interned, it returns the existing ID.
+     * @param str
+     * @returns
+     */
+    internString(str: string): number;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     */
+    set(id: number, type: EnumToken): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     */
+    set(id: number, type: EnumToken, stringValue: number): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, and the fourth is the numeric value.
+     * @param id
+     * @param type
+     * @param stringValue
+     * @param numericValue
+     */
+    set(id: number, type: EnumToken, stringValue: number, numericValue: number): void;
+    /**
+     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     * @param id
+     * @param type
+     * @param stringValue
+     * @param numericValue
+     * @param unit
+     */
+    set(id: number, type: EnumToken, stringValue: number, numericValue: number, unit: number): void;
+    getType(id: number): EnumToken;
+    /**
+     * type of a node or a token. null when the id is null
+     * @param id
+     */
+    typeOf(id: number | null | undefined): EnumToken | null;
+    setType(id: number, type: EnumToken): void;
+    setName(id: number, nameId: number): void;
+    getName(id: number): string;
+    setValue(id: number, valueId: number): void;
+    getValue(id: number): string;
+    setNumericValue(id: number, numericValue: number): void;
+    setUnit(id: number, unit: number): void;
+    getUnit(id: number): string;
+    getNumericValue(id: number): number;
+    setParent(id: number, parentId: number): void;
+    getFirstChild(id: number): number;
+    /**
+     * replace the first child
+     * @param id
+     * @param firstChildId
+     */
+    setFirstChild(id: number, firstChildId: number): void;
+    getLastChild(id: number): number;
+    /**
+     * replace the last child
+     * @param id
+     * @param lastChildId
+     */
+    setLastChild(id: number, lastChildId: number): void;
+    /**
+     * insert a node after another one
+     * @param id
+     * @param nextSiblingId
+     */
+    setNextSibling(id: number, nextSiblingId: number): void;
+    /**
+     * insert a node before another one
+     * @param id
+     * @param previousSiblingId
+     */
+    setPreviousSibling(id: number, previousSiblingId: number): void;
+    /**
+     * replace the first token
+     * @param id
+     * @param firstTokenId
+     */
+    setFirstToken(id: number, firstTokenId: number): void;
+    setColorType(id: number, colorType: number): void;
+    getColorType(id: number): number;
+    setFlags(id: number, flags: number): void;
+    getFlags(id: number): number;
+    hasFlags(id: number, flag: number): boolean;
+    getChildAt(id: number, index: number): number | null;
+    /**
+     * token at the given position of the token list
+     * @param id
+     * @param index
+     */
+    getTokenAt(id: number, index: number): number | null;
+    /**
+     * replace the child at the given index. the node is appended when the index is out of range
+     * @param id
+     * @param index
+     * @param child
+     */
+    setChildAt(id: number, index: number, child: number): void;
+    /**
+     * list node holding the tokens of a structured token field. created when missing
+     * @param id
+     * @param field
+     */
+    fieldList(id: number, field: TokenField): number;
+    /**
+     * true if the field exists and is not empty
+     * @param id
+     * @param field
+     */
+    hasField(id: number, field: TokenField): boolean;
+    /**
+     * first token of a structured token field (single token fields: `l` and `r` of binary expressions, `op`, ...)
+     * @param id
+     * @param field
+     */
+    field(id: number, field: TokenField): number;
+    /**
+     * tokens of a structured token field
+     * @param id
+     * @param field
+     */
+    fieldTokens(id: number, field: TokenField): number[];
+    /**
+     * set the tokens of a structured token field
+     * @param id
+     * @param field
+     * @param tokens
+     */
+    setField(id: number, field: TokenField, ...tokens: number[]): void;
+    /**
+     * append tokens to a structured token field
+     * @param id
+     * @param field
+     * @param tokens
+     */
+    appendField(id: number, field: TokenField, ...tokens: number[]): void;
+    setLeft(id: number, ...children: number[]): void;
+    getLeft(id: number): number[] | null;
+    setRight(id: number, rightId: null): void;
+    setRight(id: number, ...rightId: number[]): void;
+    getRight(id: number): number[] | null;
+    setOp(id: number, opId: number): void;
+    getOp(id: number): number;
+    setOp2(id: number, op2Id: number): void;
+    getOp2(id: number): number;
+    setSpan(id: number, sourceId: number, start: number, end: number): void;
+    /**
+     * copy the packed location of a node
+     * @param target
+     * @param source
+     */
+    copySpan(target: number, source: number): void;
+    getSourceId(id: number): number;
+    getSpanStart(id: number): number;
+    setSpandStart(id: number, start: number): void;
+    getSpanEnd(id: number): number;
+    setSpanEnd(id: number, end: number): void;
+    getParent(id: number): number;
+    resolveString(id: number): string;
+    /**
+     * detach a node from its parent
+     * @param id
+     */
+    detach(id: number): void;
+    /**
+     * node walker
+     * @param node
+     * @param filter
+     * @param reverse
+     */
+    walk(node: number, filter?: WalkerFilter | WalkerOptions | null, reverse?: boolean): Generator<number>;
+    /**
+     * node tokens walker
+     * @param values
+     * @param filter
+     * @param reverse
+     * @returns
+     */
+    walkValues(values: number[], filter?: WalkerValueFilter | null | {
+        event?: WalkerEvent;
+        fn?: WalkerValueFilter;
+        type?: EnumToken | EnumToken[] | ((token: number) => boolean);
+    }, reverse?: boolean): Generator<number>;
+    /**
+     * direct value tokens of a node or a token: the token list, then the tokens of the structured fields
+     * and the child tokens (fractions, unary expressions)
+     * @param id
+     */
+    subTokens(id: number): number[];
+    findChild(id: number, predicate: (id: number) => boolean): number | null;
+    /**
+     * find a token in the token list
+     * @param id
+     * @param predicate
+     */
+    findToken(id: number, predicate: (id: number) => boolean): number | null;
+    siblings(id: number, filter?: (id: number) => boolean): number[];
+    children(id: number, filter?: (id: number) => boolean): number[];
+    tokens(id: number, filter?: (id: number) => boolean): number[];
+    /**
+     * number of tokens in the token list
+     * @param id
+     */
+    tokenCount(id: number): number;
+    setChildren(id: number, ...children: number[]): void;
+    /**
+     * replace the children. same as {@link setChildren} with an array
+     * @param id
+     * @param children
+     */
+    setChildList(id: number, children: number[]): void;
+    setTokens(id: number, ...children: number[]): void;
+    /**
+     * replace the token list. same as {@link setTokens} with an array
+     * @param id
+     * @param tokens
+     */
+    setTokenList(id: number, tokens: number[]): void;
+    appendChildren(id: number, ...children: number[]): void;
+    /**
+     * append children. same as {@link appendChildren} with an array
+     * @param id
+     * @param children
+     */
+    appendChildList(id: number, children: number[]): void;
+    appendTokens(id: number, ...children: number[]): void;
+    /**
+     * append tokens. same as {@link appendTokens} with an array
+     * @param id
+     * @param children
+     */
+    appendTokenList(id: number, children: number[]): void;
+    /**
+     * append a single child node. faster than appendChildren()
+     * @param id
+     * @param child
+     */
+    appendChild(id: number, child: number): void;
+    /**
+     * append a single token. faster than appendTokens()
+     * @param id
+     * @param token
+     */
+    appendToken(id: number, token: number): void;
+    /**
+     * prepend tokens to the token list
+     * @param id
+     * @param tokens
+     */
+    prependTokens(id: number, ...tokens: number[]): void;
+    equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean;
+    startsWith(node: number, key: "nam" | "val", string: string): boolean;
+    resize(newSize: number): void;
+    /**
+     * drop the interned strings that are no longer referenced by any node
+     */
+    compactStrings(): void;
+    /**
+     * current allocation position. the ids allocated after the mark can be released with {@link rewind}
+     */
+    mark(): number;
+    /**
+     * release the ids allocated after the mark. the released ids must not be referenced by the tree:
+     * this is used to drop the temporary tokens created while rendering
+     * @param mark
+     */
+    rewind(mark: number): void;
+    /**
+     * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+     * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+     * the unused strings are dropped too
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
+     */
+    compact(errors?: ErrorDescription[] | null): Uint32Array;
+    /**
+     * shrink the columns to the allocated nodes. the arena grows again when new nodes are allocated.
+     * see {@link compactStrings} to drop the unused strings
+     */
+    trim(): void;
+    setErrors(id: number, errors: ErrorDescription[] | null): void;
+    getErrors(id: number): ErrorDescription[] | null;
+    /**
+     * number of children
+     * @param id
+     */
+    childCount(id: number): number;
+}
+/**
+ * Css ast arena: ast nodes and value tokens
+ */
+declare class AstArena extends Arena {
+    /**
+     * raw selector (minification cache). sparse: only rules have an entry
+     */
+    raw: Array<RawSelectorTokens | null | undefined>;
+    /**
+     * optimized selector (minification cache). sparse: only rules have an entry
+     */
+    optimized: Array<OptimizedSelector | null | undefined>;
+    /**
+     * source ids. `spans` store the index in this table (8 bits)
+     */
+    sources: number[];
+    constructor(size?: number);
+    /**
+     * @inheritDoc
+     */
+    trim(): void;
+    /**
+     * @inheritDoc
+     */
+    rewind(mark: number): void;
+    /**
+     * @inheritDoc
+     */
+    compact(errors?: ErrorDescription[] | null): Uint32Array;
+    /**
+     * validation state bits
+     * @param id
+     */
+    getState(id: number): EnumAstNodeStatus;
+    /**
+     * set the validation state bits
+     * @param id
+     * @param state
+     */
+    setState(id: number, state: EnumAstNodeStatus | null | undefined): void;
+    /**
+     * true if the node is invalid
+     * @param id
+     */
+    isInvalid(id: number): boolean;
+    /**
+     * index of a source id in the sources table
+     * @param srcId
+     */
+    sourceIndex(srcId: number): number;
+    /**
+     * set the source location
+     * @param id
+     * @param srcId source id
+     * @param sta start offset
+     * @param end end offset
+     */
+    setLocation(id: number, srcId: number | null | undefined, sta: number | null | undefined, end: number | null | undefined): void;
+    /**
+     * set the location of a token from the tokenizer values. the source index is the index of the source id in the sources table
+     * @param id
+     * @param sourceIndex
+     * @param sta
+     * @param end
+     */
+    setTokenLocation(id: number, sourceIndex: number, sta: number, end: number): void;
+    /**
+     * copy the source location of another node
+     * @param id
+     * @param source node id
+     */
+    copyLocation(id: number, source: number): void;
+    /**
+     * set the location from the start of a node to the end of another one
+     * @param id
+     * @param start
+     * @param end
+     */
+    spanLocation(id: number, start: number, end: number): void;
+    /**
+     * true if the node has a source location
+     * @param id
+     */
+    hasLocation(id: number): boolean;
+    /**
+     * source location
+     * @param id
+     */
+    getLocation(id: number): SourceLocation | null;
+    /**
+     * source id of the node location
+     * @param id
+     */
+    getSource(id: number): number;
+    /**
+     * allocate a stylesheet node
+     */
+    createStyleSheet(): number;
+    /**
+     * allocate a rule node
+     * @param typ
+     * @param sel
+     * @param tokens prelude tokens
+     * @param state
+     * @param errors
+     */
+    createRule(typ: EnumToken, sel: string, tokens: number[] | null | undefined, state: EnumAstNodeStatus | null | undefined, errors: ErrorDescription[] | null | undefined): number;
+    /**
+     * allocate an at-rule node
+     * @param typ
+     * @param nam
+     * @param val
+     * @param block true if the at-rule has a block
+     * @param tokens prelude tokens
+     * @param state
+     * @param errors
+     */
+    createAtRule(typ: EnumToken, nam: string, val: string, block: boolean, tokens: number[] | null | undefined, state: EnumAstNodeStatus | null | undefined, errors: ErrorDescription[] | null | undefined): number;
+    /**
+     * allocate a declaration node
+     * @param typ
+     * @param nam
+     * @param val value tokens
+     * @param state
+     * @param errors
+     */
+    createDeclaration(typ: EnumToken, nam: string, val: number[] | null | undefined, state: EnumAstNodeStatus | null | undefined, errors: ErrorDescription[] | null | undefined): number;
+    /**
+     * allocate a comment node
+     * @param typ
+     * @param val
+     */
+    createComment(typ: EnumToken, val: string): number;
+    /**
+     * allocate a token. string values are interned, numeric values are stored in the `numericValue` column
+     * @param typ
+     * @param val
+     * @param unit
+     */
+    createToken(typ: EnumToken, val?: string | number | null, unit?: string | null): number;
+    /**
+     * allocate a color token
+     * @param val color name, hex value or color function name
+     * @param kin
+     * @param tokens color function arguments
+     */
+    createColor(val: string, kin: ColorType$1, tokens?: number[] | null): number;
+    /**
+     * allocate a function token
+     * @param typ function token type
+     * @param name function name
+     * @param tokens arguments
+     */
+    createFunction(typ: EnumToken, name: string, tokens?: number[] | null): number;
+    /**
+     * allocate a list token (parens, attribute, wrapped values, ...)
+     * @param typ
+     * @param tokens
+     */
+    createList(typ: EnumToken, tokens?: number[] | null): number;
+    /**
+     * allocate a binary expression token. the operator is stored in the `numericValue` column
+     * @param op
+     * @param l
+     * @param r
+     */
+    createBinaryExpression(op: EnumToken, l: number, r: number): number;
+    /**
+     * allocate a fraction token
+     * @param l numerator
+     * @param r denominator
+     */
+    createFraction(l: number, r: number): number;
+    /**
+     * true if the numeric token value is a fraction
+     * @param id
+     */
+    hasFraction(id: number): boolean;
+    /**
+     * fraction token of a numeric token
+     * @param id
+     */
+    getFraction(id: number): number;
+    /**
+     * set the fraction value of a numeric token. the numeric value is set to the fraction value
+     * @param id
+     * @param fraction fraction token id or null
+     */
+    setFraction(id: number, fraction: number | null): void;
+    /**
+     * numerator of a fraction token
+     * @param id
+     */
+    numerator(id: number): number;
+    /**
+     * denominator of a fraction token
+     * @param id
+     */
+    denominator(id: number): number;
+    /**
+     * string value of a token (`val`)
+     * @param id
+     */
+    str(id: number): string;
+    /**
+     * set the string value of a token (`val`)
+     * @param id
+     * @param value
+     */
+    setStr(id: number, value: string): void;
+    /**
+     * set the unit of a token
+     * @param id
+     * @param unit
+     */
+    setUnitString(id: number, unit: string | null): void;
+    /**
+     * true if the token is a numeric token (number, dimension, percentage, ...)
+     * @param id
+     */
+    isNumeric(id: number): boolean;
+    /**
+     * replace a token by other tokens in its parent token list
+     * @param id
+     * @param tokens
+     */
+    replaceToken(id: number, ...tokens: number[]): void;
+    /**
+     * get a token that can be attached to a new parent: the token itself when it is detached, a deep clone otherwise.
+     * a token can only belong to one token list
+     * @param token
+     */
+    take(token: number): number;
+    /**
+     * copy the data columns of a token (type, values, unit, color type, location)
+     * @param target
+     * @param source
+     */
+    copyToken(target: number, source: number): void;
+    /**
+     * reset a token to a new type. the values, the token list and the fields are dropped
+     * @param id
+     * @param typ
+     * @param val
+     * @param unit
+     */
+    resetToken(id: number, typ: EnumToken, val?: string | number | null, unit?: string | null): void;
+    /**
+     * create a node or a token from a plain object. `chi`, `val`, `l`, `r`, ... are created recursively.
+     * Public helper: the library only deals with node ids internally
+     * @param node
+     */
+    fromObject(node: PlainAstNode | PlainToken): number;
+    /**
+     * create an ast node from a plain object
+     * @param node
+     */
+    protected nodeFromObject(node: PlainAstNode): number;
+    /**
+     * create a token from a plain object
+     * @param token
+     */
+    protected tokenFromObject(token: PlainToken): number;
+    /**
+     * export a node or a token as a plain object (deep copy).
+     * Public helper: the library only deals with node ids internally
+     * @param id
+     */
+    toObject(id: number): PlainAstNode | PlainToken;
+    /**
+     * export a token as a plain object (deep copy)
+     * @param id
+     */
+    tokenToObject(id: number): PlainToken;
+    /**
+     * clone a node or a token. tokens are always cloned deeply
+     * @param id
+     * @param deep also clone the children (rules) or the value tokens (declarations)
+     * @param cloneMap map of the source ids to their clones
+     */
+    clone(id: number, deep?: boolean, cloneMap?: Map<number, number> | null): number;
+    /**
+     * copy a node or a token of another arena into this arena
+     * @param source
+     * @param id
+     * @param deep copy the children. defaults to true
+     */
+    import(source: AstArena, id: number, deep?: boolean): number;
+    /**
+     * detach a node and drop its tokens / cached data. node ids are never reused: this only releases
+     * the memory held by the node columns
+     * @param id
+     * @param deep release the children and the tokens
+     */
+    release(id: number, deep?: boolean): void;
+    /**
+     * index of a child in its parent's children (or tokens) list
+     * @param id
+     */
+    indexOf(id: number): number;
+    /**
+     * insert nodes before a child
+     * @param reference
+     * @param nodes
+     */
+    insertBefore(reference: number, ...nodes: number[]): void;
+    /**
+     * insert nodes after a child
+     * @param reference
+     * @param nodes
+     */
+    insertAfter(reference: number, ...nodes: number[]): void;
+    /**
+     * prepend children
+     * @param id
+     * @param nodes
+     */
+    prependChildren(id: number, ...nodes: number[]): void;
+    /**
+     * replace a child with other nodes. the node itself may be part of the replacement
+     * @param id
+     * @param nodes
+     */
+    replaceChild(id: number, ...nodes: number[]): void;
+    /**
+     * true if the node has a block (at-rules) or a children list
+     * @param id
+     */
+    hasChildren(id: number): boolean;
+    /**
+     * rule selector
+     * @param id
+     */
+    getSelector(id: number): string;
+    /**
+     * set the rule selector
+     * @param id
+     * @param sel
+     */
+    setSelector(id: number, sel: string): void;
+    /**
+     * set the at-rule / declaration name
+     * @param id
+     * @param nam
+     */
+    setNameString(id: number, nam: string): void;
+    /**
+     * set the at-rule prelude / comment string value
+     * @param id
+     * @param val
+     */
+    setValueString(id: number, val: string): void;
+}
 
 /**
  * Literal token
@@ -1256,7 +2447,7 @@ export declare interface FunctionToken extends BaseToken {
     /**
      * function children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1274,7 +2465,7 @@ export declare interface GridTemplateFuncToken extends BaseToken {
     /**
      * function children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1337,7 +2528,7 @@ export declare interface TimingFunctionToken extends BaseToken {
     /**
      * timing function children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1355,7 +2546,7 @@ export declare interface TimelineFunctionToken extends BaseToken {
     /**
      * timeline function children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1553,7 +2744,7 @@ export declare interface AttrStartToken extends BaseToken {
     /**
      * attribute start children
      */
-    chi?: Token$1[];
+    chi?: PlainToken[];
 }
 
 /**
@@ -1597,7 +2788,7 @@ export declare interface ParensToken extends BaseToken {
     /**
      * parenthesis children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1843,7 +3034,7 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
     /**
      * Pseudo class function
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1923,7 +3114,7 @@ export declare interface ColorToken extends BaseToken {
     /**
      * Color components
      */
-    chi?: Token$1[];
+    chi?: PlainToken[];
     /**
      * Whether the color is relative, color-mix or color
      * */
@@ -1941,7 +3132,7 @@ export declare interface AttrToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1955,7 +3146,7 @@ export declare interface InvalidAttrToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1993,7 +3184,7 @@ export declare interface NotToken extends BaseToken {
     /**
      * Media feature
      */
-    val: Token$1;
+    val: PlainToken;
 }
 
 /**
@@ -2007,7 +3198,7 @@ export declare interface MediaFeatureOnlyToken extends BaseToken {
     /**
      * Media feature
      */
-    val: Token$1;
+    val: PlainToken;
 }
 
 /**
@@ -2041,11 +3232,11 @@ export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
@@ -2056,11 +3247,11 @@ export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface SupportsQueryConditionToken extends BaseToken {
@@ -2075,11 +3266,11 @@ export declare interface SupportsQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface WhenElseQueryConditionToken extends BaseToken {
@@ -2094,11 +3285,11 @@ export declare interface WhenElseQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface WhenElseUnaryConditionToken extends BaseToken {
@@ -2109,11 +3300,11 @@ export declare interface WhenElseUnaryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface MediaQueryConditionToken extends BaseToken {
@@ -2124,7 +3315,7 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * Media feature
      */
@@ -2140,7 +3331,7 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface IfConditionToken extends BaseToken {
@@ -2151,11 +3342,11 @@ export declare interface IfConditionToken extends BaseToken {
     /**
      * condition left handle
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * condition value
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 export declare interface IfElseConditionToken extends BaseToken {
@@ -2181,15 +3372,15 @@ export declare interface ContainerStyleRangeToken extends BaseToken {
     /**
      * condition left handle
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * condition operator
      */
-    op: Token$1[];
+    op: PlainToken[];
     /**
      * condition value
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 // (20px <= width < 30px)
@@ -2204,11 +3395,11 @@ export declare interface MediaRangeQueryToken extends BaseToken {
     /**
      * left hanle
      * */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * media feature name
      */
-    val: Token$1[];
+    val: PlainToken[];
     /**
      * first comparator
      */
@@ -2220,7 +3411,7 @@ export declare interface MediaRangeQueryToken extends BaseToken {
     /**
      * right handle
      */
-    r: Token$1[];
+    r: PlainToken[];
 }
 
 /**
@@ -2235,7 +3426,7 @@ export declare interface InvalidMediaQueryToken extends BaseToken {
     /**
      * children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -2319,7 +3510,7 @@ export declare interface WrappedValuesToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -2373,11 +3564,11 @@ export declare interface BinaryExpressionToken extends BaseToken {
     /**
      * Left handle
      */
-    l: BinaryExpressionNode | Token$1;
+    l: BinaryExpressionNode | PlainToken;
     /**
      * Right handle
      */
-    r: BinaryExpressionNode | Token$1;
+    r: BinaryExpressionNode | PlainToken;
 }
 
 /**
@@ -2395,11 +3586,11 @@ export declare interface MatchExpressionToken extends BaseToken {
     /**
      * Left handle
      */
-    l: Token$1;
+    l: PlainToken;
     /**
      * Right handle
      */
-    r: Token$1;
+    r: PlainToken;
     /**
      * Flags
      */
@@ -2417,11 +3608,11 @@ export declare interface NameSpaceAttributeToken extends BaseToken {
     /**
      * Left handle
      */
-    l?: Token$1;
+    l?: PlainToken;
     /**
      * Right handle
      */
-    r: Token$1;
+    r: PlainToken;
 }
 
 /**
@@ -2431,11 +3622,11 @@ export declare interface ListToken extends BaseToken {
     /**
      * @inheritdoc
      */
-    typ: EnumToken.ListTokenType;
+    typ: EnumToken.ListToken;
     /**
      * Children
      */
-    chi: Token$1[];
+    chi: PlainToken[];
 }
 
 /**
@@ -2446,14 +3637,15 @@ export declare interface ComposesSelectorToken extends BaseToken {
      * @inheritdoc
      */
     typ: EnumToken.ComposesSelectorTokenType;
+
     /**
      * Left handle
      */
-    l: Token$1[];
+    l: PlainToken[];
     /**
      * Right handle
      */
-    r: Token$1 | null;
+    r: PlainToken | null;
 }
 
 /**
@@ -2469,9 +3661,9 @@ export declare interface CssVariableToken extends BaseToken {
      */
     nam: string;
     /**
-     * Value
+     * Value tokens allocated in the arena of the parse result
      */
-    val: Token$1[];
+    val: Token[];
 }
 
 /**
@@ -2489,7 +3681,7 @@ export declare interface CssVariableImportTokenType extends BaseToken {
     /**
      * Value
      */
-    val: Token$1[];
+    val: PlainToken[];
 }
 
 /**
@@ -2503,11 +3695,11 @@ export declare interface CssVariableMapTokenType extends BaseToken {
     /**
      * CSS Variables
      */
-    vars: Token$1[];
+    vars: PlainToken[];
     /**
      * From clause
      */
-    from: Token$1[];
+    from: PlainToken[];
 }
 
 /**
@@ -2541,7 +3733,7 @@ export declare interface FunctionDefToken extends BaseToken {
 /**
  * Raw node token
  */
-export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
+export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus {
     /**
      * @inheritdoc
      */
@@ -2549,7 +3741,7 @@ export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus$1 {
     /**
      * Value
      */
-    val: Token$1[];
+    val: PlainToken[];
 }
 
 /**
@@ -2581,9 +3773,40 @@ export declare type BinaryExpressionNode =
     | ParensToken;
 
 /**
- * Token
+ * declaration token. a declaration used as a token, ie in an at-rule prelude: `@supports (color: red)`
  */
-export declare type Token$1 =
+export declare interface DeclarationToken extends BaseToken {
+    /**
+     * token type
+     */
+    typ: EnumToken.DeclarationNodeType;
+    /**
+     * declaration name
+     */
+    nam: string;
+    /**
+     * declaration value
+     */
+    val: PlainToken[];
+}
+
+/**
+ * Value tokens are integer ids of records stored in an {@link AstArena}.
+ *
+ * - `arena.dataTypes[token]` is the token type ({@link EnumToken}),
+ * - `arena.strings[arena.stringValue[token]]` is the string value (`val`),
+ * - `arena.numericValue[token]` is the numeric value (`val`) of numbers, dimensions and percentages,
+ * - `arena.strings[arena.unit[token]]` is the unit,
+ * - `arena.colorType[token]` is the color kind (`kin`),
+ * - `arena.tokens(token)` are the children (`chi`),
+ * - `arena.fieldTokens(token, TokenField.L)` ... are the structured fields (`l`, `r`, `op`, ...).
+ */
+export declare type Token = number;
+
+/**
+ * Plain object representation of a token (`arena.toObject()` / `arena.fromObject()`)
+ */
+export declare type PlainToken =
     | InvalidClassSelectorToken
     | InvalidAttrToken
     | LiteralToken
@@ -2618,7 +3841,7 @@ export declare type Token$1 =
     | OrToken
     | MediaRangeQueryToken
     | ContainerStyleRangeToken
-    | AstDeclaration
+    | DeclarationToken
     | NumberToken
     | AtRuleToken
     | PercentageToken
@@ -2693,697 +3916,20 @@ export declare type Token$1 =
     | EOFToken;
 
 /**
- * token or node location
+ * Generic visitor result: ids allocated in the arena. plain objects are imported into the arena with `arena.fromObject()`
  */
-export declare interface SourceLocation {
-    /**
-     * start position
-     */
-    sta: number;
-    /**
-     * end position
-     */
-    end: number;
-    /**
-     * source file
-     */
-    srcId: number;
-}
-
-/**
- * Common token interface
- */
-export declare interface BaseToken {
-    /**
-     * token type
-     */
-    typ: EnumToken;
-
-    /**
-     * source src
-     */
-    [LOCSRCID]?: number;
-
-    /**
-     * source start offset
-     */
-    [LOCSTA]?: number;
-
-    /**
-     * source end offset
-     */
-    [LOCEND]?: number;
-
-    /**
-     * parent node
-     * @private
-     */
-    [PARENT]?: AstNode$1 | Token$1 | null;
-    /**
-     * root node
-     */
-    [ROOT]?: AstStyleSheet | null;
-    /**
-     * prelude or selector tokens
-     * @private
-     */
-    [TOKENS]?: Token$1[] | null;
-    /**
-     * node state
-     * @private
-     */
-    [STATE]?: EnumAstNodeStatus | null;
-    /**
-     * node syntax errors
-     * @private
-     */
-    [ERRORS]?: ErrorDescription[] | null;
-    /**
-     * property name
-     * @private
-     */
-    [PROPERTYNAME]?: string;
-    /**
-     * raw selector
-     * @private
-     */
-    [RAW]?: string[][] | null;
-    /**
-     * optimized selector
-     * @private
-     */
-    [OPTIMIZED]?: OptimizedSelector | null;
-    /**
-     * parent node
-     */
-    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyframesRule | AstInvalidRule | AstInvalidAtRule | null;
-    /**
-     * @private
-     */
-    validSyntax?: boolean;
-}
-
-/**
- * Ast node state
- */
-export declare interface AstNodeStatus {
-    /**
-     * Node state
-     */
-    state?: EnumAstNodeStatus;
-    /**
-     * Syntax errors
-     */
-    errors?: ErrorDescription[];
-}
-
-/**
- * comment node
- */
-export declare interface AstComment extends BaseToken {
-    /**
-     * token type
-     */
-    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType;
-    /**
-     * comment as string
-     */
-    val: string;
-}
-
-/**
- * declaration node
- */
-export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
-    /**
-     * token name
-     */
-    nam: string;
-    /**
-     * token value
-     */
-    val: Token$1[];
-    /**
-     * token type
-     */
-    typ: EnumToken.DeclarationNodeType;
-}
-
-/**
- * rule node
- */
-export declare interface AstRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.RuleNodeType;
-    /**
-     * selector as string
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<
-        AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule
-    >;
-    /**
-     * optimized` selector
-     */
-    optimized?: OptimizedSelector | null;
-    /**
-     * raw selector
-     */
-    raw?: RawSelectorTokens | null;
-}
-
-/**
- * Invalid rule node
- * @deprecated
- */
-export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstNode$1>;
-}
-
-/**
- * invalid declaration node
- * @deprecated
- */
-export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidDeclarationNodeType;
-    /**
-     * tokens
-     */
-    tokens?: null;
-    /**
-     * tokens
-     */
-    val: Array<Token$1>;
-}
-
-/**
- * invalid at rule node
- * @deprecated
- */
-export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidAtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi?: Array<AstNode$1>;
-}
-
-/**
- * raw selector tokens
- */
-export declare type RawSelectorTokens = string[][];
-
-/**
- * optimized selector
- *
- * @private
- */
-export declare interface OptimizedSelector {
-    /**
-     * matched selector
-     */
-    match: boolean;
-    /**
-     * optimized selector
-     */
-    optimized: string[];
-    /**
-     * selector tokens as string
-     */
-    selector: string[][];
-    /**
-     * reducible selector
-     */
-    reducible: boolean;
-}
-
-/**
- * optimized selector token
- *
- * @private
- */
-export declare interface OptimizedSelectorToken {
-    /**
-     * match
-     */
-    match: boolean;
-    /**
-     * optimized
-     */
-    optimized: Token$1[];
-    /**
-     * selector
-     */
-    selector: Token$1[][];
-    /**
-     * reducible
-     */
-    reducible: boolean;
-}
-
-/**
- * at rule node
- */
-export declare interface AstAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.AtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi?: Array<AstNode$1>;
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
-    /**
-     * optimized selector
-     */
-    optimized?: OptimizedSelector;
-    /**
-     * raw selector
-     */
-    raw?: RawSelectorTokens;
-    /**
-     * tokens
-     */
-    tokens?: Token$1[];
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
-    /**
-     * optimized selector
-     */
-    optimized?: OptimizedSelector;
-    /**
-     * raw selector
-     */
-    raw?: RawSelectorTokens;
-}
-
-/**
- * keyframe at rule node
- */
-export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesAtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstKeyframesRule | AstComment>;
-}
-
-/**
- * rule list node
- */
-export declare type AstRuleList =
-    | AstStyleSheet
-    | AstAtRule
-    | AstRule
-    | AstKeyframesAtRule
-    | AstKeyframesRule
-    | AstInvalidRule;
-
-/**
- * stylesheet node
- */
-export declare interface AstStyleSheet extends BaseToken {
-    /**
-     * token type
-     */
-    typ: EnumToken.StyleSheetNodeType;
-    /**
-     * child nodes
-     */
-    chi: Array<AstRule | AstAtRule | astKeyframesAtRule | AstComment | AstInvalidAtRule | AstInvalidRule>;
-}
-
-/**
- * ast node
- */
-export declare type AstNode$1 =
-    | AstStyleSheet
-    | AstRuleList
-    | AstComment
-    | AstAtRule
-    | AstRule
-    | AstDeclaration
-    | AstKeyframesAtRule
-    | AstKeyframesRule
-    | AstInvalidRule
-    | AstInvalidAtRule
-    | AstInvalidDeclaration
-    | CssVariableToken
-    | CssVariableImportTokenType
-    | WhitespaceToken;
-
-/**
- * token search result
- */
-interface TokenSearchResult {
-    /**
-     * node
-     */
-    node: Token$1 | null;
-    /**
-     * parent node
-     */
-    parent: AstNode$1 | Token$1 | null;
-    /**
-     * root node
-     */
-    root: AstNode$1 | Token$1 | null;
-    /**
-     * parent tokens
-     */
-    parents: Generator<Token$1> | null;
-}
-
-/**
- * Ast value matcher
- */
-type AstValueMatcher = ((value: Token$1) => boolean) | ((token: Token$1, node: AstNode$1) => boolean);
-
-/**
- * Options for the walk function
- */
-declare enum WalkerOptionEnum {
-    /**
-     * ignore the current node and its children
-     */
-    Ignore = 1,
-    /**
-     * stop walking the tree
-     */
-    Stop = 2,
-    /**
-     * ignore the current node and process its children
-     */
-    Children = 4,
-    /**
-     * ignore the current node children
-     */
-    IgnoreChildren = 8
-}
-/**
- * Event types for the walkValues function
- */
-declare enum WalkerEvent {
-    /**
-     * enter node
-     */
-    Enter = 1,
-    /**
-     * leave node
-     */
-    Leave = 2
-}
-/**
- * Walk ast nodes
- * @param node initial node
- * @param filter control the walk process
- * @param reverse walk in reverse order
- *
- * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * for (const {node, parent, root} of walk(ast)) {
- *
- *     // do something with node
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * function filter(node) {
- *
- *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * const result = await transform(css);
- * for (const {node} of walk(result.ast, filter, false)) {
- *
- *     console.error([EnumToken[node.typ]]);
- * }
- *
- * // [ "StyleSheetNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * ```
- */
-declare function walk(node: AstNode$1, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
-/**
- * Walk ast nodes
- * @param node initial node
- * @param filter control the walk process
- *
- * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * for (const {node, parent, root} of walk(ast)) {
- *
- *     // do something with node
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * function filter(node) {
- *
- *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * const result = await transform(css);
- * for (const {node} of walk(result.ast, {filter, reverse: false})) {
- *
- *     console.error([EnumToken[node.typ]]);
- * }
- *
- * // [ "StyleSheetNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * ```
- */
-declare function walk(node: AstNode$1, filter?: WalkerOptions | null): Generator<WalkResult>;
-/**
- * Walk ast node value tokens
- * @param values
- * @param root
- * @param filter
- * @param reverse
- *
- * Example:
- *
- * ```ts
- *
- * import {AstDeclaration, EnumToken, transform, walkValues} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- * `;
- *
- * const result = await transform(css);
- * const declaration = result.ast.chi[0].chi[0] as AstDeclaration;
- *
- * // walk the node attribute's tokens in reverse order
- * for (const {value} of walkValues(declaration.val, null, null,true)) {
- *
- *     console.error([EnumToken[value.typ], value.val]);
- * }
- *
- * // [ "Color", "color" ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.15 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "b" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.24 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "g" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "r" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "display-p3" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "var" ]
- * // [ "DashedIden", "--base-color" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "from" ]
- * ```
- */
-declare function walkValues(values: Token$1[], root?: AstNode$1 | Token$1 | null, filter?: WalkerValueFilter | null | {
-    event?: WalkerEvent;
-    fn?: WalkerValueFilter;
-    type?: EnumToken | EnumToken[] | ((token: Token$1) => boolean);
-}, reverse?: boolean): Generator<WalkAttributesResult>;
-
+export declare type GenericVisitorSyncResult<T> =
+    | T
+    | T[]
+    | PlainAstNode
+    | PlainToken
+    | Array<T | PlainAstNode | PlainToken>
+    | null
+    | void;
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorSyncResult<T> = T | T[] | null;
-/**
- * Generic visitor result
- */
-export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
+export declare type GenericVisitorAsyncResult<T> = Promise<GenericVisitorSyncResult<T>>;
 /**
  * Generic visitor result
  */
@@ -3394,6 +3940,7 @@ export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | Gene
  */
 export declare type GenericVisitorSyncHandler<T> = (
     node: T,
+    arena: AstArena,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T>;
@@ -3425,7 +3972,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -3433,9 +3980,9 @@ export declare interface VisitorSyncNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (node: AstAtRule, arena: AstArena): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -3468,7 +4015,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -3478,23 +4025,19 @@ export declare interface VisitorSyncNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (node: AstDeclaration, arena: AstArena): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -3519,24 +4062,24 @@ export declare interface VisitorSyncNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (node: AstDeclaration, arena: AstArena): null => {
      *
      *
-     *             if (node.nam == 'height') {
+     *             if (arena.getName(node) == 'height') {
      *
-     *                 node.nam = 'width';
+     *                 arena.setNameString(node, 'width');
      *             }
      *
-     *             else if (node.nam == 'margin') {
+     *             else if (arena.getName(node) == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 arena.setNameString(node, 'padding');
      *             }
      *
      *             return null;
@@ -3571,18 +4114,19 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (node: AstRule, arena: AstArena): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -3635,10 +4179,11 @@ export declare interface VisitorSyncNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (node, arena) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
      *         },
      *         ColorTokenType:  (node) => {
      *
@@ -3678,6 +4223,7 @@ export declare interface VisitorSyncNodeMap {
  */
 export declare type GenericVisitorHandler<T> = (
     node: T,
+    arena: AstArena,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
@@ -3736,7 +4282,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -3744,9 +4290,9 @@ export declare interface VisitorNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (node: AstAtRule, arena: AstArena): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -3779,7 +4325,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -3789,23 +4335,19 @@ export declare interface VisitorNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (node: AstDeclaration, arena: AstArena): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -3830,24 +4372,24 @@ export declare interface VisitorNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (node: AstDeclaration, arena: AstArena): null => {
      *
      *
-     *             if (node.nam == 'height') {
+     *             if (arena.getName(node) == 'height') {
      *
-     *                 node.nam = 'width';
+     *                 arena.setNameString(node, 'width');
      *             }
      *
-     *             else if (node.nam == 'margin') {
+     *             else if (arena.getName(node) == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 arena.setNameString(node, 'padding');
      *             }
      *
      *             return null;
@@ -3882,18 +4424,19 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (node: AstRule, arena: AstArena): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -3917,8 +4460,14 @@ export declare interface VisitorNodeMap {
      */
     Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
 
+    /**
+     * keyframes rule visitor
+     */
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
+    /**
+     * keyframes at-rule visitor
+     */
     KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
 
     /**
@@ -3940,10 +4489,11 @@ export declare interface VisitorNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (node, arena) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
      *         },
      *         ColorTokenType:  (node) => {
      *
@@ -4244,8 +4794,17 @@ declare class SourceFile {
     getInputSourceMap(): SourceMap | null;
 }
 
+/**
+ * property list options
+ */
 export declare interface PropertyListOptions {
+    /**
+     * remove duplicate declarations
+     */
     removeDuplicateDeclarations?: boolean | string | string[];
+    /**
+     * compute shorthand
+     */
     computeShorthand?: boolean;
 }
 
@@ -4299,6 +4858,11 @@ declare enum FeatureWalkMode {
      */
     Post = 2
 }
+
+/**
+ * Used by the validation parser
+ */
+declare const LOC: unique symbol;
 
 declare enum ValidationTokenEnum {
     Root = 0,
@@ -4522,237 +5086,328 @@ declare enum ResponseType {
     JSON = 3
 }
 
-declare class Arena {
-    stringIds: Map<string, number>;
-    strings: string[];
-    readonly root: number;
-    current: number;
-    dataTypes: Uint8Array;
-    parents: Uint32Array;
-    nextSibling: Uint32Array;
-    previousSibling: Uint32Array;
-    firstToken: Uint32Array;
-    lastToken: Uint32Array;
-    firstChild: Uint32Array;
-    lastChild: Uint32Array;
-    name: Uint32Array;
-    stringValue: Uint32Array;
-    numericValue: Float64Array;
-    unit: Uint32Array;
-    flags: Uint32Array;
-    colorType: Uint8Array;
-    /**
-     * token spans. 8 bits for source type. 28 bits for start position, 28 bits for end position. This allows us to store the start and end positions of tokens in a single 64-bit integer, which is more efficient than storing them separately.
-     */
-    spans: BigUint64Array;
-    /**
-     * error cache
-     */
-    errors: Map<number, ErrorDescription$1[]>;
-    /**
-     * rendered tokens cache
-     */
-    renderedTokens: Uint32Array;
-    constructor(size?: number);
-    allocate(): number;
-    internString(str: string): number;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
-     * @param id
-     * @param type
-     * @param stringValue
-     */
-    set(id: number, type: EnumToken): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
-     * @param id
-     * @param type
-     * @param stringValue
-     */
-    set(id: number, type: EnumToken, stringValue: number): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, and the fourth is the numeric value.
-     * @param id
-     * @param type
-     * @param stringValue
-     * @param numericValue
-     */
-    set(id: number, type: EnumToken, stringValue: number, numericValue: number): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
-     * @param id
-     * @param type
-     * @param stringValue
-     * @param numericValue
-     * @param unit
-     */
-    set(id: number, type: EnumToken, stringValue: number, numericValue: number, unit: number): void;
-    getType(id: number): EnumToken;
-    setType(id: number, type: EnumToken): void;
-    setName(id: number, nameId: number): void;
-    getName(id: number): string;
-    setValue(id: number, valueId: number): void;
-    getValue(id: number): string;
-    setNumericValue(id: number, numericValue: number): void;
-    setUnit(id: number, unit: number): void;
-    getUnit(id: number): string;
-    getNumericValue(id: number): number;
-    setParent(id: number, parentId: number): void;
-    getFirstChild(id: number): number;
-    setFirstChild(id: number, firstChildId: number): void;
-    getLastChild(id: number): number;
-    setLastChild(id: number, lastChildId: number): void;
-    setNextSibling(id: number, nextSiblingId: number): void;
-    setPreviousSibling(id: number, previousSiblingId: number): void;
-    setFirstToken(id: number, firstTokenId: number): void;
-    setColorType(id: number, colorType: number): void;
-    setFlags(id: number, flags: number): void;
-    getFlags(id: number): number;
-    hasFlags(id: number, flag: number): boolean;
-    getChildAt(id: number, index: number): number | null;
-    setChildAt(id: number, index: number, child: number): void;
-    /**
-     * let child should be of type EnumToken.ListToken or EnumToken.ParensToken
-     * @param id
-     * @param child
-     */
-    setLeft(id: number, ...children: number[]): void;
-    getLeft(id: number): number[] | null;
-    setRight(id: number, rightId: null): void;
-    setRight(id: number, ...rightId: number[]): void;
-    getRight(id: number): number[] | null;
-    setOp(id: number, opId: number): void;
-    getOp(id: number): number;
-    setOp2(id: number, op2Id: number): void;
-    getOp2(id: number): number;
-    setRenderedTokens(id: number, renderedTokensId: number): void;
-    setSpan(id: number, sourceId: number, start: number, end: number): void;
-    getSourceId(id: number): number;
-    getSpanStart(id: number): number;
-    setSpandStart(id: number, start: number): void;
-    getSpanEnd(id: number): number;
-    setSpanEnd(id: number, end: number): void;
-    getParent(id: number): number;
-    resolveString(id: number): string;
-    detach(id: number): void;
-    walk(node: number, filter?: WalkerFilter | WalkerOptions | null, reverse?: boolean): Generator<number>;
-    walkValues(values: number[], filter?: WalkerValueFilter | null | {
-        event?: WalkerEvent;
-        fn?: WalkerValueFilter;
-        type?: EnumToken | EnumToken[] | ((token: number) => boolean);
-    }, reverse?: boolean): Generator<number>;
-    findChild(id: number, predicate: (id: number) => boolean): number | null;
-    siblings(id: number): number[];
-    children(id: number): number[];
-    setChildren(id: number, ...children: number[]): void;
-    setTokens(id: number, ...children: number[]): void;
-    appendChildren(id: number, ...children: number[]): void;
-    appendTokens(id: number, ...children: number[]): void;
-    equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean;
-    startsWith(node: number, key: "nam" | "val", string: string): boolean;
-    resize(newSize: number): void;
-    setErrors(id: number, errors: ErrorDescription$1[]): void;
-    getErrors(id: number): ErrorDescription$1[] | null;
-}
-
+/**
+ * shorthand property type
+ */
 interface PropertyType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
 }
 
+/**
+ * single property
+ */
 interface SinglePropertyType {
+    /**
+     * keyof shorthand property type
+     */
     typ: keyof EnumToken;
+    /**
+     * value
+     */
     val: string | number;
 }
 
+/**
+ * shorthand property map
+ */
 interface SinglePropertyTypeMapping {
+    /**
+     * shorthand pattern
+     */
     pattern?: string[][];
+    /**
+     * shorthand mappings
+     */
     mapping: Record<string, SinglePropertyType>;
 }
-
+/**
+ * shorthand configuration
+ */
 interface ShorthandPropertyType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * mapped shorthand property
+     */
     map?: string;
+    /**
+     * property names
+     */
     properties: string[];
+    /**
+     * property types
+     */
     types: string[];
+    /**
+     * allow multiple values
+     */
     multiple: boolean;
+    /**
+     * values separator
+     */
     separator: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * value separator
+     */
     valueSeparator?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * keywords
+     */
     keywords: string[];
 }
 
+/**
+ * shorthand property set. a set of identical properties such as `margin`
+ */
 interface PropertySetType {
+    /**
+     * shorthand property definition
+     */
     [key: string]: PropertyType | ShorthandPropertyType;
 }
 
+/**
+ * mapped shorthand property. a set of different properties such as `font`
+ */
 interface PropertyMapType {
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * property types
+     */
     types: string[];
+    /**
+     * keywords
+     */
     keywords: string[];
+    /**
+     * required
+     */
     required?: boolean;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * property has a prefix
+     */
     prefix?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
+        /**
+         * token value
+         */
         val: string;
     };
+    /**
+     * previous property
+     */
     previous?: string;
+    /**
+     * separator
+     */
     separator?: {
+        /**
+         * token type
+         */
         typ: keyof EnumToken;
     };
+    /**
+     * property constraints
+     */
     constraints?: {
+        /**
+         * property constraints
+         */
         [key: string]: {
+            /**
+             * property constraints
+             */
             [key: string]: any;
         };
     };
+    /**
+     * values mapping
+     */
     mapping?: Record<string, string>;
 }
 
+/**
+ * mapped shorthand definition
+ */
 interface ShorthandMapType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand pattern
+     */
     pattern: string;
+    /**
+     * shorthand keywords
+     */
     keywords: string[];
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * values mapping
+     */
     mapping?: Record<string, string>;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
-    separator?: { typ: keyof EnumToken; val?: string };
+    /**
+     * shorthand values separator
+     */
+    separator?: {
+        /**
+         * token type
+         */
+        typ: keyof EnumToken;
+        /**
+         * token value
+         */
+        val?: string;
+    };
+    /**
+     * shorthand property sets
+     */
     set?: Record<string, string[]>;
+    /**
+     * shorthand properties
+     */
     properties: {
+        /**
+         * shorthand properties
+         */
         [property: string]: PropertyMapType;
     };
 }
 
+/**
+ * shorthand properties
+ */
 interface ShorthandProperties {
+    /**
+     * property types
+     */
     types: EnumToken[];
+    /**
+     * default values
+     */
     default: string[];
+    /**
+     * keywords
+     */
     keywords: string[];
+    /**
+     * required
+     */
     required?: boolean;
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * propery constraints
+     */
     constraints?: Array<any>;
+    /**
+     * values mapping
+     */
     mapping?: {
+        /**
+         * values mapping
+         */
         [key: string]: any;
     };
+    /**
+     * property validation
+     */
     validation?: {
+        /**
+         * property validation
+         */
         [key: string]: any;
     };
+    /**
+     * property has a prefix
+     */
     prefix?: string;
 }
 
+/**
+ * shorthand definition
+ */
 interface ShorthandDef {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand pattern
+     */
     pattern: string;
+    /**
+     * shorthand keywords
+     */
     keywords: string;
+    /**
+     * default values
+     */
     defaults: string[];
+    /**
+     * allow multiple values
+     */
     multiple?: boolean;
+    /**
+     * values separator
+     */
     separator?: string;
 }
 
+/**
+ * shorthand type
+ */
 interface ShorthandType {
+    /**
+     * shorthand name
+     */
     shorthand: string;
+    /**
+     * shorthand properties
+     */
     properties: ShorthandProperties;
 }
 
@@ -5194,7 +5849,7 @@ export declare interface WalkerOptions {
 /**
  * node walker option
  */
-export declare type WalkerOption = WalkerOptionEnum | number | null;
+export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
 /**
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
@@ -5204,7 +5859,7 @@ export declare type WalkerOption = WalkerOptionEnum | number | null;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
+export declare type WalkerFilter = (node: AstNode | Token, arena?: AstArena) => WalkerOption;
 
 /**
  * returned value:
@@ -5215,28 +5870,37 @@ export declare type WalkerFilter = (node: AstNode$1) => WalkerOption;
  * - {@link AstNode}:
  * - {@link Token}:
  */
-export declare type WalkerValueFilter = (node: number, event?: WalkerEvent) => WalkerOption | number[];
+export declare type WalkerValueFilter = (
+    node: AstNode | Token,
+    parent?: AstNode | Token | AstNode[] | Token[] | null,
+    event?: WalkerEvent,
+    parents?: Generator<Token>,
+) => WalkerOption | AstNode | Token | AstNode[] | Token[] | null;
 
 /**
  * walker result
  */
 export declare interface WalkResult {
     /**
-     * current node
+     * current node: a node id or a value token (when walking attributes)
      */
-    node: AstNode$1;
+    node: AstNode | Token;
     /**
-     * parent node
+     * parent node id (0 for the root) or parent token
      */
-    parent?: AstRuleList;
+    parent: AstRuleList | Token;
     /**
      * root node
      */
-    root?: AstNode$1;
+    root: AstNode | Token;
     /**
-     * parent nodes
+     * arena
      */
-    parents: Generator<AstNode$1>;
+    arena: AstArena;
+    /**
+     * parent nodes generator
+     */
+    parents: () => Generator<AstNode | Token>;
 }
 
 /**
@@ -5246,33 +5910,33 @@ export declare interface WalkAttributesResult {
     /**
      * current node
      */
-    value: Token$1;
+    value: Token;
     /**
      * previous node
      */
-    previousValue: Token$1 | null;
+    previousValue: Token | null;
     /**
      * next node
      */
-    nextValue: Token$1 | null;
+    nextValue: Token | null;
     /**
      * root node
      */
-    root?: AstNode$1 | Token$1 | null;
+    root?: AstNode | Token | null;
     /**
      * parent node
      */
-    parent: AstNode$1 | Token$1 | null;
+    parent: AstNode | Token | null;
     /**
      * parent nodes
      */
-    parents: Generator<Token$1>;
+    parents: Generator<Token>;
 }
 
 /**
  * Error description
  */
-export declare interface ErrorDescription$1 {
+export declare interface ErrorDescription {
     /**
      *  Drop rule or declaration
      */
@@ -5289,7 +5953,7 @@ export declare interface ErrorDescription$1 {
     /**
      * Error node
      */
-    node?: number | null;
+    node?: Token | AstNode | null;
     /**
      * Error location
      */
@@ -5308,12 +5972,6 @@ export declare interface ErrorDescription$1 {
  * CSS validation options
  */
 interface ValidationOptions {
-
-    /**
-     * Arena
-     */
-    arena: Arena;
-
     /**
      * Nested rule context
      * @private
@@ -5321,10 +5979,11 @@ interface ValidationOptions {
     nestedRule?: boolean;
 
     /**
-     * Enable CSS validation
+     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
      *
+     * see {@link ValidationLevel}
      */
-    validation?: boolean ;
+    validation?: boolean | ValidationLevel;
 
     /**
      * Lenient validation. retain nodes that failed validation
@@ -5336,7 +5995,7 @@ interface ValidationOptions {
      *
      * @private
      */
-    visited?: Map<Token$1, Set<ValidationToken$1>>;
+    visited?: Map<Token, Set<ValidationToken$1>>;
 
     /**
      * Is optional
@@ -5387,7 +6046,7 @@ interface MinifyOptions {
      * enable ast minification
      */
     minifyAST?: boolean;
-
+    
     /**
      * Parse color tokens
      */
@@ -5722,6 +6381,11 @@ export declare interface ParseSourceOptions {
      * @internal
      */
     source?: SourceFile | null;
+    /**
+     * Arena the ast nodes are allocated in. Created by the parser when omitted.
+     * Nested parses (`@import`) allocate their nodes in the parent arena.
+     */
+    arena?: AstArena;
 }
 
 /**
@@ -5749,10 +6413,6 @@ export declare interface ParserSyncOptions
         ValidationOptions,
         PropertyListOptions,
         ParseSourceOptions {
-    /**
-     * Arena instance. if not provided, a new instance will be created
-     */
-    arena?: Arena;
     /**
      * Source file to be used for sourcemap
      */
@@ -5839,7 +6499,7 @@ export declare interface ParserSyncOptions
      *
      * @private
      */
-    cache?: WeakMap<AstNode$1, string>;
+    cache?: Map<AstNode, string>;
 
     /**
      * CSS modules options
@@ -5933,6 +6593,7 @@ export declare interface MinifyFeature {
      * @param mode
      */
     run: (
+        arena: AstArena,
         ast: AstRule | AstAtRule,
         options: ParserOptions,
         parent: AstRule | AstAtRule | AstStyleSheet,
@@ -5940,7 +6601,7 @@ export declare interface MinifyFeature {
             [key: string]: any;
         },
         mode: FeatureWalkMode,
-    ) => AstNode$1 | null;
+    ) => AstNode | AstNode[] | null;
 }
 
 /**
@@ -5962,7 +6623,6 @@ export declare interface ResolvedPath {
  * Ast node render options
  */
 export declare interface RenderOptions {
-
     /**
      * Source file to be used as CSS input file for sourcemap resolution
      */
@@ -6125,20 +6785,18 @@ export declare interface ParseResultStats {
  * Parse result object
  */
 export declare interface ParseResult {
-
     /**
-     * Arena memory
-     */
-    arena: Arena;
-
-    /**
-     * Parsed ast tree
+     * Parsed ast tree: the id of the stylesheet node in {@link ParseResult.arena}
      */
     ast: AstStyleSheet;
     /**
+     * arena the ast nodes are stored in
+     */
+    arena: AstArena;
+    /**
      * Parse errors
      */
-    errors: ErrorDescription$1[];
+    errors: ErrorDescription[];
     /**
      * Parse stats
      */
@@ -6179,7 +6837,7 @@ export declare interface RenderResult {
     /**
      * Render errors
      */
-    errors: ErrorDescription$1[];
+    errors: ErrorDescription[];
     /**
      * Render stats
      */
@@ -6255,7 +6913,7 @@ export declare interface TokenizeResult {
     /**
      * Token
      */
-    token: Token$1;
+    token: Token;
     /**
      * Bytes in
      */
@@ -6313,7 +6971,7 @@ export declare interface VariableScopeInfo {
     /**
      * Declaration values
      */
-    values: Token$1[];
+    values: Token[];
 }
 
 /**
@@ -6445,7 +7103,7 @@ interface ValidationResult {
     /**
      * node
      */
-    node: AstNode$1 | Token$1 | null;
+    node: AstNode | Token | null;
     /**
      * syntax
      */
@@ -6472,11 +7130,12 @@ interface ValidationSyntaxResult extends ValidationResult {
     /**
      * context
      */
-    context: ValidationContext<Token$1> | Token$1[];
+    context: ValidationContext<Token> | Token[];
 }
 
 /**
  * Apply minification rules to the ast tree
+ * @param arena
  * @param ast
  * @param options
  * @param recursive
@@ -6485,28 +7144,35 @@ interface ValidationSyntaxResult extends ValidationResult {
  *
  * @private
  */
-declare function minify(ast: AstNode$1, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription$1[], nestingContent?: boolean): AstNode$1;
+declare function minify(arena: AstArena, ast: AstNode, options: ParserOptions | MinifyFeatureOptions, recursive: boolean, errors?: ErrorDescription[], nestingContent?: boolean): AstNode;
 
 /**
- * expand css nesting ast nodes
+ * expand css nesting ast nodes.
+ * the tree is expanded in place: nested rules are moved into the parent of the node
+ * @param arena
  * @param ast
  *
  * @private
  */
-declare function expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode$1;
+declare function expand(arena: AstArena, ast: AstStyleSheet | AstAtRule | AstRule): AstNode;
 
 /**
- * Parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes.
+ * The nodes are allocated in the given arena, or in a new arena when none is provided
  * @param declaration
+ * @param arena
  *
  * Example:
  * ````ts
  *
- * const declarations = await parseDeclarations('color: red; background: blue');
- * console.log(declarations);
+ * const {arena, nodes} = parseDeclarations('color: red; background: blue');
+ * console.log(nodes.map((node) => arena.toObject(node)));
  * ```
  */
-declare function parseDeclarations(declaration: string): Array<AstDeclaration | AstComment>;
+declare function parseDeclarations(declaration: string, arena?: AstArena): {
+    arena: AstArena;
+    nodes: Array<AstDeclaration | AstComment>;
+};
 /**
  * Parse css string and return an array of tokens
  * @param src
@@ -6522,213 +7188,18 @@ declare function parseDeclarations(declaration: string): Array<AstDeclaration | 
  *
  * import {parseString} from '@tbela99/css-parser';
  *
- * let tokens = parseString('body { color: red; }');
- * console.log(tokens);
+ * const arena = new AstArena();
+ * let tokens = parseString(arena, 'body { color: red; }');
+ * console.log(tokens.map((token) => arena.toObject(token)));
  *
- * tokens = parseString('#c322c980');
- * console.log(tokens);
+ * tokens = parseString(arena, '#c322c980');
+ * console.log(tokens.map((token) => arena.toObject(token)));
  * ```
  */
-declare function parseString(src: string, options?: {
+declare function parseString(arena: AstArena, src: string, options?: {
     src?: string;
     parseColor?: boolean;
-} | null, errors?: ErrorDescription$1[]): Token$1[];
-
-/**
- * Converts a color to another color space
- * @param token
- * @param to
- *
- * ```ts
- *
- *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
- *     const result = convertColor(token, ColorType.LCH);
- *
- * ```
- */
-declare function convertColor(token: ColorToken, to: ColorType$1): ColorToken | null;
-
-/**
- * Calculate the distance between two okLab colors.
- *
- * @private
- * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
- * @param color1
- * @param color2
- */
-declare function okLabDistance(color1: ColorToken, color2: ColorToken): number | null;
-/**
- * Check if two colors are close in okLab space.
- * @param color1
- * @param color2
- * @param threshold
- *
- * @private
- */
-declare function isOkLabClose(color1: ColorToken, color2: ColorToken, threshold?: number): boolean;
-
-/**
- * Search the ast subtree and return the first match
- *
- * ```ts
- *  // find the first ast declaration node which name is 'aspect-ratio'
-import { find, EnumToken, transform } from "@tbela99/css-parser";
-import type { AstNode } from "@tbela99/css-parser";
-
- * const css = `
-
-button {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 30px; else: 44px);
-}
-    `;
-
- // find declaration which contain a '30px'
-  const nodeMatcher = (node: AstNode) =>
-      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
-
-     const result  = await transform(css);
-     const node = find(result.ast, nodeMatcher);
-
-     console.log({node});
- 
-    ```
- *
- * @param ast
- * @param matcher
- * @returns
- */
-declare function find(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
-/**
- *
- * @param ast
- * @param matcher
- * @returns
- *
- * Search the ast sub-tree by checking each node's value token and return the first match
- *
- ```ts
- // find the first ast node which contains the length token '30px'
-import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
-import type { AstNode } from "@tbela99/css-parser";
-
- const css = `
-
-button {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 30px; else: 44px);
-}
-    `;
-
- // find declaration which contain the length token '30px'
-  const nodeMatcher = (value: Token) =>
-      return value.typ == EnumToken.LengthTokenType && (value as LengthToken).val == 30 && (value as LengthToken).unit == 'px' ;
-
-     const result  = await transform(css);
-     const { node, value } = findByValue(result.ast, nodeMatcher) ?? {};
-
-     console.log({node, value});
- 
-    ```
- */
-declare function findByValue(ast: AstNode$1, matcher: AstValueMatcher): {
-    node: AstNode$1;
-    value: TokenSearchResult;
-} | null;
-/**
- * Search the ast sub-tree and return all matches
- *
- * ```ts
- *  // find the first ast declaration node which name is 'aspect-ratio'
-*  import { findAll, EnumToken, transform } from "@tbela99/css-parser";
-*  import type { AstNode } from "@tbela99/css-parser";
-
-const css = `
-
-button {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 30px; else: 44px);
-}
-button-small {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 20px; else: 30px);
-}
-    `;
-
-  const nodeMatcher = (node: AstNode) =>
-      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
-
-     const result  = await transform(css);
-     const nodes = findAll(result.ast, nodeMatcher);
-
-     console.log({nodes});
- 
-    ```
- *
- * @param ast
- * @param matcher
- * @returns
- */
-declare function findAll(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1[];
-/**
- * Search the ast sub-tree and return the last match.
- *
- * ```ts
- *  // find the first ast declaration node which name is 'aspect-ratio'
-import { findLast, EnumToken, transform } from "@tbela99/css-parser";
-import type { AstNode } from "@tbela99/css-parser";
-
- * const css = `
-
-button {
-  aspect-ratio: 1;
-  width: if(media(any-pointer: fine): 30px; else: 44px);
-}
-    `;
-
-  const nodeMatcher = (node: AstNode) =>
-      return node.typ == EnumToken.DeclarationNodeType && (node as AstDeclaration).nam == 'aspect-ratio';
-
-     const result  = await transform(css);
-     const node = findLast(result.ast, nodeMatcher);
-
-     console.log({node});
- 
-    ```
- *
- * @param ast
- * @param matcher
- * @returns
- */
-declare function findLast(ast: AstNode$1, matcher: (node: AstNode$1, parent?: AstNode$1 | null) => boolean): AstNode$1 | null;
-
-/**
- *
- * Clone an ast node or value
- * @param node
- * @param cloneChildren
- * @param cloneMap
- * @returns
- */
-declare function cloneNode(node: AstNode$1 | Token$1, cloneChildren?: boolean, cloneMap?: Map<Token$1 | AstNode$1, Token$1 | AstNode$1> | null): AstNode$1 | Token$1;
-
-/**
- * Replace token in its parent node
- * @param parent
- * @param node
- * @param replacement
- * @throws TypeError replacement is null
- * @throws ReferenceError node not found in parent
- */
-declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 & ({
-    chi: Token$1[];
-} | {
-    val: Token$1[];
-})) | (Token$1 & ({
-    chi: Token$1[];
-} | {
-    val: Token$1[];
-})), node: Token$1, replacement: Token$1 | Token$1[]): boolean;
+} | null, errors?: ErrorDescription[]): Token[];
 
 /**
  * render ast token
@@ -6739,75 +7210,267 @@ declare function replaceNodeOrValue(parent: BinaryExpressionToken | (AstNode$1 &
  * @param errors
  * @private
  */
-declare function printValue(token: number, arena: Arena, options: RenderOptions, cache?: {
+declare function renderValue(arena: AstArena, token: Token, options?: RenderOptions, cache?: {
     [key: string]: any;
-}, reducer?: null | ((acc: string, curr: number) => string), errors?: ErrorDescription$1[]): string;
+}, reducer?: null | ((acc: string, curr: Token) => string), errors?: ErrorDescription[]): string;
 
 /**
+ * Converts a color to another color space
+ * @param token
+ * @param to
  *
+ * ```ts
+ *
+ *     const token = arena.createColor('#F00', ColorType.HEX)
+ *     const result = convertColor(arena, token, ColorType.LCH);
+ *
+ * ```
+ */
+declare function convertColor(arena: AstArena, token: Token, to: ColorType$1): Token | null;
+
+/**
+ * Calculate the distance between two okLab colors.
+ *
+ * @private
+ * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param arena
+ * @param color1
+ * @param color2
+ */
+declare function okLabDistance(arena: AstArena, color1: Token, color2: Token): number | null;
+/**
+ * Check if two colors are close in okLab space.
+ * @param arena
+ * @param color1
+ * @param color2
+ * @param threshold
+ *
+ * @private
+ */
+declare function isOkLabClose(arena: AstArena, color1: Token, color2: Token, threshold?: number): boolean;
+
+/**
+ * node matcher
+ */
+type AstNodeMatcher = (node: AstNode, arena: AstArena, parent?: AstNode | null) => boolean;
+/**
+ * Search the ast subtree and return the first match
+ *
+ * ```ts
+ * // find the first ast declaration node which name is 'aspect-ratio'
+ * import { find, EnumToken, transform } from "@tbela99/css-parser";
+ *
+ * const css = `
+ *
+ * button {
+ *   aspect-ratio: 1;
+ *   width: if(media(any-pointer: fine): 30px; else: 44px);
+ * }
+ * `;
+ *
+ * const result = await transform(css);
+ * const arena = result.arena;
+ * const nodeMatcher = (node: number) =>
+ *     arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.strings[arena.name[node]] == 'aspect-ratio';
+ *
+ * const node = find(arena, result.ast, nodeMatcher);
+ * console.log(arena.toObject(node));
+ * ```
+ *
+ * @param arena
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function find(arena: AstArena, ast: AstNode, matcher: AstNodeMatcher): AstNode | null;
+/**
+ * Search the ast sub-tree by checking each node's value token and return the first match
+ *
+ * ```ts
+ * // find the first ast node which contains the length token '30px'
+ * import { findByValue, EnumToken, transform } from "@tbela99/css-parser";
+ *
+ * const result = await transform(css);
+ * const nodeMatcher = (value: Token) =>
+ *     value.typ == EnumToken.LengthTokenType && value.val == 30 && value.unit == 'px';
+ *
+ * const { node, value } = findByValue(result.arena, result.ast, nodeMatcher) ?? {};
+ * ```
+ *
+ * @param arena
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findByValue(arena: AstArena, ast: AstNode, matcher: AstValueMatcher): {
+    node: AstNode;
+    value: TokenSearchResult;
+} | null;
+/**
+ * Search the ast sub-tree and return all matches
+ *
+ * @param arena
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findAll(arena: AstArena, ast: AstNode, matcher: AstNodeMatcher): AstNode[];
+/**
+ * Search the ast tree and return the last node matching the specified criteria.
+ *
+ * @param arena
+ * @param ast
+ * @param matcher
+ * @returns
+ */
+declare function findLast(arena: AstArena, ast: AstNode, matcher: AstNodeMatcher): AstNode | null;
+/**
+ * Find the node's value token matching the specified criteria.
+ *
+ * @param arena
+ * @param ast ast node id or token
+ * @param matcher
+ * @returns
+ */
+declare function findValue(arena: AstArena, ast: AstNode | Token, matcher: (node: Token, parent?: AstNode | Token | null, root?: AstNode | null, parents?: Generator<Token> | null) => boolean): TokenSearchResult | null;
+
+/**
+ * Clone an ast node
+ *
+ * The clone is allocated in the arena, detached from the tree.
+ *
+ * @param arena
+ * @param node node id
+ * @param cloneChildren also clone the children (rules) or the value tokens (declarations)
+ * @param cloneMap map of the source tokens to their clones
+ * @returns the clone id
+ */
+declare function cloneNode(arena: AstArena, node: AstNode, cloneChildren?: boolean, cloneMap?: Map<Token, Token> | null): AstNode;
+/**
+ * Deep clone a token
+ * @param arena
+ * @param token
+ * @param cloneMap map of the source tokens to their clones
+ */
+declare function cloneValue(arena: AstArena, token: Token, cloneMap?: Map<Token, Token> | null): Token;
+
+/**
+ * Replace a value token in its parent (token list of a node, function arguments or structured token field)
+ * @param arena
+ * @param parent parent token or node id. the token must be attached to this parent
+ * @param node token id
+ * @param replacement token id(s)
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node not found in parent
+ */
+declare function replaceNodeOrValue(arena: AstArena, parent: AstNode | Token | null, node: Token, replacement: Token | Token[]): boolean;
+/**
+ * Replace an ast node in its parent
+ * @param arena
+ * @param node node id
+ * @param replacement node ids
+ * @throws TypeError replacement is null
+ * @throws ReferenceError node has no parent
+ */
+declare function replaceNode(arena: AstArena, node: AstNode, replacement: AstNode | AstNode[]): void;
+
+/**
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  */
-declare function getNodeProperty(node: AstNode$1, key: 'parent'): AstNode$1 | Token$1 | null;
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "parent"): AstNode;
 /**
- *
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  */
-declare function getNodeProperty(node: AstNode$1, key: 'location'): SourceLocation | null;
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "location"): SourceLocation | null;
 /**
- *
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  */
-declare function getNodeProperty(node: AstNode$1, key: 'state'): EnumAstNodeStatus$1 | null;
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "state"): EnumAstNodeStatus;
 /**
- *
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  */
-declare function getNodeProperty(node: AstNode$1, key: 'errors'): ErrorDescription$1[] | null;
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "errors"): ErrorDescription[] | null;
 /**
- *
+ * Read a node property
+ * @param arena
  * @param node
  * @param key
  */
-declare function getNodeProperty(node: AstNode$1, key: 'tokens'): Token$1[] | null;
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "tokens"): Token[] | null;
 /**
- *
+ * Read a node property
+ * @param arena
+ * @param node
+ * @param key
+ */
+declare function getNodeProperty(arena: AstArena, node: AstNode, key: "selector"): string | null;
+/**
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, key: 'parent', value: AstNode$1 | Token$1 | null): void;
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "parent", value: AstNode): void;
 /**
- *
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, key: 'location', value: SourceLocation | null): void;
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "location", value: SourceLocation | null): void;
 /**
- *
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, key: 'state', value: EnumAstNodeStatus$1 | null): void;
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "state", value: EnumAstNodeStatus | null): void;
 /**
- *
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, key: 'errors', value: ErrorDescription$1[] | null): void;
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "errors", value: ErrorDescription[] | null): void;
 /**
- *
+ * Set a node property
+ * @param arena
  * @param node
  * @param key
  * @param value
  */
-declare function setNodeProperty(node: AstNode$1, key: 'tokens', value: Token$1[] | null): void;
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "tokens", value: Token[] | null): void;
+/**
+ * Set a node property
+ * @param arena
+ * @param node
+ * @param key
+ * @param value
+ */
+declare function setNodeProperty(arena: AstArena, node: AstNode, key: "selector", value: string): void;
+
+/**
+ * parse mdn data syntax
+ * @param syntax
+ * @returns
+ */
+declare function parseSyntax(syntax: string): ValidationToken$1[];
 
 declare let version: string;
 
@@ -6842,13 +7505,13 @@ declare function load(url: string | {
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
  *
- * let renderResult = render(parseResult.ast);
+ * let renderResult = render(parseResult.arena, parseResult.ast);
  * console.log(result.code);
  *
  * // body{color:red}
  *
  *
- * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * renderResult = render(parseResult.arena, parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
  * console.log(renderResult.code);
  *
  * // body {
@@ -6856,7 +7519,7 @@ declare function load(url: string | {
  * // }
  * ```
  */
-declare function render(data: AstNode$1, options?: RenderOptions, mapping?: {
+declare function render(arena: AstArena, data: AstNode, options?: RenderOptions, mapping?: {
     mapping: Record<string, string>;
     importMapping: Record<string, Record<string, string>> | null;
 } | null): RenderResult;
@@ -7198,10 +7861,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-<<<<<<< HEAD
-export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, printValue, render, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
-=======
-export { ColorType$1 as ColorType, EnumAstNodeStatus$1 as EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, convertColor, dirname, expand, find, findAll, findByValue, findLast, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, render, renderValue as renderToken, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
-export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode$1 as AstNode, AstNodeStatus, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription$1 as ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token$1 as Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
->>>>>>> v.next
+export { Arena, AstArena, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, ValidationLevel, WalkerEvent, WalkerOptionEnum, cloneNode, cloneValue, convertColor, dirname, expand, find, findAll, findByValue, findLast, findValue, getNodeProperty, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseFile, parseString, parseSync, parseSyntax, render, renderValue as renderToken, replaceNode, replaceNodeOrValue, resolve, setNodeProperty, transform, transformFile, transformSync, version, walk, walkValues };
+export type { AddToken, AndToken, AngleToken, AstAtRule, AstComment, AstDeclaration, AstInvalidAtRule, AstInvalidDeclaration, AstInvalidRule, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, InvalidAttrToken, InvalidClassSelectorToken, InvalidMediaQueryToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenSearchResult, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkAttributesResult, WalkResult, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

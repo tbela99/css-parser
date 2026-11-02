@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 // Alphabet: a-z, A-Z, 0-9, _, -
@@ -46,37 +42,35 @@ function hashId(input, length = 6) {
     return chars.join("");
 }
 /**
- * Object to string
- * @param input
- * @returns
+ * structural signature of a node or a token: type, name, values, tokens and children
+ * @param arena
+ * @param id
  */
-function toSortedString(input) {
-    if (input == null) {
-        return "null";
-    }
-    if (typeof input !== "object") {
-        return String(input);
-    }
-    if (Array.isArray(input)) {
-        const result = new Array(input.length);
-        for (const value of input) {
-            result.push(toSortedString(value));
+function nodeSignature(arena, id) {
+    let result = `${arena.dataTypes[id]}:${arena.name[id]}:${arena.stringValue[id]}:${arena.numericValue[id]}:${arena.unit[id]}:${arena.colorType[id]}`;
+    if (arena.firstToken[id] != 0) {
+        result += "(";
+        for (let token = arena.firstToken[id]; token != 0; token = arena.nextSibling[token]) {
+            result += nodeSignature(arena, token) + ",";
         }
-        return JSON.stringify(result);
+        result += ")";
     }
-    const keys = Object.keys(input).sort();
-    for (let i = 0; i < keys.length; i++) {
-        keys[i] = `${keys[i]}:${toSortedString(input[keys[i]])}`;
+    if (arena.firstChild[id] != 0) {
+        result += "{";
+        for (let child = arena.firstChild[id]; child != 0; child = arena.nextSibling[child]) {
+            result += nodeSignature(arena, child) + ",";
+        }
+        result += "}";
     }
-    return `{${keys.join(",")}}`;
+    return result;
 }
 /**
- * Object hash
- * @param object
- * @returns
+ * hash of a node or a token content
+ * @param arena
+ * @param id
  */
-function objectHash(object) {
-    return hashCode(toSortedString(object)).toString(16);
+function nodeHash(arena, id) {
+    return hashCode(nodeSignature(arena, id)).toString(16);
 }
 /**
  * convert input to hex
@@ -153,4 +147,4 @@ function syncHash(input, length = 6, algo) {
     return hashId(input, length);
 }
 
-export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash, syncHash, toSortedString };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, nodeHash, nodeSignature, syncHash };

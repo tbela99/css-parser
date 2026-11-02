@@ -2,17 +2,13 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
-import { isIdentStart, isIdent, parseDimension, isPseudo } from '../../syntax/syntax.js';
-import { ValidationTokenEnum } from './typedef.js';
 import { LOC } from '../../syntax/constants.js';
+import { ValidationTokenEnum } from './typedef.js';
+import { isIdentStart, isIdent, parseDimension, isPseudo } from '../../syntax/syntax.js';
 
 const SymbolsMapTokens = {
     "&&": ValidationTokenEnum.Ampersand,
@@ -268,6 +264,11 @@ function* tokenizeSyntax(syntax, position = {
         [LOC]: { ...position },
     };
 }
+/**
+ * parse mdn data syntax
+ * @param syntax
+ * @returns
+ */
 function parseSyntax(syntax) {
     const stack = [];
     let tokens = [];
@@ -588,7 +589,7 @@ function parseSyntax(syntax) {
                                 // if (
                                 //     slice[2].typ != ValidationTokenEnum.Number &&
                                 //     slice[2].typ != ValidationTokenEnum.InfinityToken
-                                // ) {
+                                //) {
                                 //     throw new SyntaxError(
                                 //         `Expecting number or infinity at ${slice[2][LOC].lin}:${slice[2][LOC].col}`,
                                 //     );

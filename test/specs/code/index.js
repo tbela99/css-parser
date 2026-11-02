@@ -40,3 +40,4 @@ export * as transform from './transform.js';
 export * as modules from './modules.js';
 export * as colorMix from './color-mix.js';
 export * as sync from './sync.js';
+export * as arena from './arena.js';

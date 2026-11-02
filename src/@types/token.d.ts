@@ -1,4 +1,5 @@
-import type { AstDeclaration, BaseToken } from "./ast.d.ts";
+import type { BaseToken } from "./ast.d.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
 import { ColorType, EnumToken, EnumAstNodeStatus } from "../lib/ast/types.ts";
 
 /**
@@ -271,7 +272,7 @@ export declare interface FunctionToken extends BaseToken {
     /**
      * function children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -289,7 +290,7 @@ export declare interface GridTemplateFuncToken extends BaseToken {
     /**
      * function children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -352,7 +353,7 @@ export declare interface TimingFunctionToken extends BaseToken {
     /**
      * timing function children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -370,7 +371,7 @@ export declare interface TimelineFunctionToken extends BaseToken {
     /**
      * timeline function children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -568,7 +569,7 @@ export declare interface AttrStartToken extends BaseToken {
     /**
      * attribute start children
      */
-    chi?: Token[];
+    chi?: PlainToken[];
 }
 
 /**
@@ -612,7 +613,7 @@ export declare interface ParensToken extends BaseToken {
     /**
      * parenthesis children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -858,7 +859,7 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
     /**
      * Pseudo class function
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -938,7 +939,7 @@ export declare interface ColorToken extends BaseToken {
     /**
      * Color components
      */
-    chi?: Token[];
+    chi?: PlainToken[];
     /**
      * Whether the color is relative, color-mix or color
      * */
@@ -956,7 +957,7 @@ export declare interface AttrToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -970,7 +971,7 @@ export declare interface InvalidAttrToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1008,7 +1009,7 @@ export declare interface NotToken extends BaseToken {
     /**
      * Media feature
      */
-    val: Token;
+    val: PlainToken;
 }
 
 /**
@@ -1022,7 +1023,7 @@ export declare interface MediaFeatureOnlyToken extends BaseToken {
     /**
      * Media feature
      */
-    val: Token;
+    val: PlainToken;
 }
 
 /**
@@ -1056,11 +1057,11 @@ export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
@@ -1071,11 +1072,11 @@ export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface SupportsQueryConditionToken extends BaseToken {
@@ -1090,11 +1091,11 @@ export declare interface SupportsQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface WhenElseQueryConditionToken extends BaseToken {
@@ -1109,11 +1110,11 @@ export declare interface WhenElseQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface WhenElseUnaryConditionToken extends BaseToken {
@@ -1124,11 +1125,11 @@ export declare interface WhenElseUnaryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token;
+    l: PlainToken;
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface MediaQueryConditionToken extends BaseToken {
@@ -1139,7 +1140,7 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * Media feature
      */
@@ -1155,7 +1156,7 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     /**
      * Media feature
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface IfConditionToken extends BaseToken {
@@ -1166,11 +1167,11 @@ export declare interface IfConditionToken extends BaseToken {
     /**
      * condition left handle
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * condition value
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 export declare interface IfElseConditionToken extends BaseToken {
@@ -1196,15 +1197,15 @@ export declare interface ContainerStyleRangeToken extends BaseToken {
     /**
      * condition left handle
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * condition operator
      */
-    op: Token[];
+    op: PlainToken[];
     /**
      * condition value
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 // (20px <= width < 30px)
@@ -1219,11 +1220,11 @@ export declare interface MediaRangeQueryToken extends BaseToken {
     /**
      * left hanle
      * */
-    l: Token[];
+    l: PlainToken[];
     /**
      * media feature name
      */
-    val: Token[];
+    val: PlainToken[];
     /**
      * first comparator
      */
@@ -1235,7 +1236,7 @@ export declare interface MediaRangeQueryToken extends BaseToken {
     /**
      * right handle
      */
-    r: Token[];
+    r: PlainToken[];
 }
 
 /**
@@ -1250,7 +1251,7 @@ export declare interface InvalidMediaQueryToken extends BaseToken {
     /**
      * children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1334,7 +1335,7 @@ export declare interface WrappedValuesToken extends BaseToken {
     /**
      * Children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1388,11 +1389,11 @@ export declare interface BinaryExpressionToken extends BaseToken {
     /**
      * Left handle
      */
-    l: BinaryExpressionNode | Token;
+    l: BinaryExpressionNode | PlainToken;
     /**
      * Right handle
      */
-    r: BinaryExpressionNode | Token;
+    r: BinaryExpressionNode | PlainToken;
 }
 
 /**
@@ -1410,11 +1411,11 @@ export declare interface MatchExpressionToken extends BaseToken {
     /**
      * Left handle
      */
-    l: Token;
+    l: PlainToken;
     /**
      * Right handle
      */
-    r: Token;
+    r: PlainToken;
     /**
      * Flags
      */
@@ -1432,11 +1433,11 @@ export declare interface NameSpaceAttributeToken extends BaseToken {
     /**
      * Left handle
      */
-    l?: Token;
+    l?: PlainToken;
     /**
      * Right handle
      */
-    r: Token;
+    r: PlainToken;
 }
 
 /**
@@ -1446,11 +1447,11 @@ export declare interface ListToken extends BaseToken {
     /**
      * @inheritdoc
      */
-    typ: EnumToken.ListTokenType;
+    typ: EnumToken.ListToken;
     /**
      * Children
      */
-    chi: Token[];
+    chi: PlainToken[];
 }
 
 /**
@@ -1461,14 +1462,15 @@ export declare interface ComposesSelectorToken extends BaseToken {
      * @inheritdoc
      */
     typ: EnumToken.ComposesSelectorTokenType;
+
     /**
      * Left handle
      */
-    l: Token[];
+    l: PlainToken[];
     /**
      * Right handle
      */
-    r: Token | null;
+    r: PlainToken | null;
 }
 
 /**
@@ -1484,7 +1486,7 @@ export declare interface CssVariableToken extends BaseToken {
      */
     nam: string;
     /**
-     * Value
+     * Value tokens allocated in the arena of the parse result
      */
     val: Token[];
 }
@@ -1504,7 +1506,7 @@ export declare interface CssVariableImportTokenType extends BaseToken {
     /**
      * Value
      */
-    val: Token[];
+    val: PlainToken[];
 }
 
 /**
@@ -1518,11 +1520,11 @@ export declare interface CssVariableMapTokenType extends BaseToken {
     /**
      * CSS Variables
      */
-    vars: Token[];
+    vars: PlainToken[];
     /**
      * From clause
      */
-    from: Token[];
+    from: PlainToken[];
 }
 
 /**
@@ -1564,7 +1566,7 @@ export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus {
     /**
      * Value
      */
-    val: Token[];
+    val: PlainToken[];
 }
 
 /**
@@ -1596,9 +1598,40 @@ export declare type BinaryExpressionNode =
     | ParensToken;
 
 /**
- * Token
+ * declaration token. a declaration used as a token, ie in an at-rule prelude: `@supports (color: red)`
  */
-export declare type Token =
+export declare interface DeclarationToken extends BaseToken {
+    /**
+     * token type
+     */
+    typ: EnumToken.DeclarationNodeType;
+    /**
+     * declaration name
+     */
+    nam: string;
+    /**
+     * declaration value
+     */
+    val: PlainToken[];
+}
+
+/**
+ * Value tokens are integer ids of records stored in an {@link AstArena}.
+ *
+ * - `arena.dataTypes[token]` is the token type ({@link EnumToken}),
+ * - `arena.strings[arena.stringValue[token]]` is the string value (`val`),
+ * - `arena.numericValue[token]` is the numeric value (`val`) of numbers, dimensions and percentages,
+ * - `arena.strings[arena.unit[token]]` is the unit,
+ * - `arena.colorType[token]` is the color kind (`kin`),
+ * - `arena.tokens(token)` are the children (`chi`),
+ * - `arena.fieldTokens(token, TokenField.L)` ... are the structured fields (`l`, `r`, `op`, ...).
+ */
+export declare type Token = number;
+
+/**
+ * Plain object representation of a token (`arena.toObject()` / `arena.fromObject()`)
+ */
+export declare type PlainToken =
     | InvalidClassSelectorToken
     | InvalidAttrToken
     | LiteralToken
@@ -1633,7 +1666,7 @@ export declare type Token =
     | OrToken
     | MediaRangeQueryToken
     | ContainerStyleRangeToken
-    | AstDeclaration
+    | DeclarationToken
     | NumberToken
     | AtRuleToken
     | PercentageToken

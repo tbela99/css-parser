@@ -76,7 +76,6 @@ function assignTokenMap(entries: string[], tokenType: EnumToken, suffix: string 
     }
 }
 
-SymbolsMapTokens[""] = EnumToken.DelimTokenType;
 SymbolsMapTokens["+"] = EnumToken.Plus;
 SymbolsMapTokens["="] = EnumToken.DelimTokenType;
 SymbolsMapTokens["|"] = EnumToken.PipeTokenType;
@@ -312,6 +311,22 @@ export class Tokenizer {
     private hint: EnumToken | null = null;
     private state: EnumToken | null = null;
 
+    /**
+     * id of the source file being tokenized
+     */
+    get sourceId(): number {
+        return (this.parseInfo as ParseInfo).source.id;
+    }
+
+    /**
+     * length of the css input. 0 when the input is a stream
+     */
+    get streamLength(): number {
+        const stream: unknown = (this.parseInfo as ParseInfo).stream;
+
+        return typeof stream == "string" ? stream.length : 0;
+    }
+
     constructor(
         private readonly parseInfo: ParseInfo | string,
         private input: ReadableStream<Uint8Array> | null = null,
@@ -415,7 +430,7 @@ export class Tokenizer {
                     parseInfo,
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType,
                     decodeSegments ? { decodeSegments } : null,
-                    // ),
+                    //),
                 );
             }
 
@@ -624,6 +639,12 @@ export class Tokenizer {
                 break;
             }
 
+            // dashed ident as unit
+            if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                hasLetter = true;
+                break;
+            }
+
             return 0;
         }
 
@@ -656,6 +677,10 @@ export class Tokenizer {
                     if (codepoint == TokenMap.PERCENTAGE) {
                         hasPercent = true;
                     } else if (isLetter(codepoint)) {
+                        hasLetter = true;
+                    }
+                    // custom ident as unit
+                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                     } else {
                         return 0;
@@ -698,6 +723,9 @@ export class Tokenizer {
                     }
 
                     if (isLetter(codepoint)) {
+                        hasLetter = true;
+                        break;
+                    } else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
                         hasLetter = true;
                         break;
                     }
@@ -773,6 +801,11 @@ export class Tokenizer {
                             } else if (isLetter(codepoint)) {
                                 hasLetter = true;
                                 break;
+                            }
+                            // custom ident as unit
+                            else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
+                                hasLetter = true;
+                                break;
                             } else if (codepoint == TokenMap.PERCENTAGE) {
                                 hasPercent = true;
                                 break;
@@ -825,7 +858,7 @@ export class Tokenizer {
             while (position + 1 <= parseInfo.stream.length) {
                 codepoint = parseInfo.stream.charCodeAt(++position) as number;
 
-                if (!isLetter(codepoint)) {
+                if (!isLetter(codepoint) && codepoint != 0x2d) {
                     break;
                 }
             }
@@ -1178,6 +1211,10 @@ export class Tokenizer {
 
                     if (hint != EnumToken.PercentageTokenType) {
                         this.unit = val;
+
+                        if (val!.startsWith("--")) {
+                            this.typ = EnumToken.UserDefinedDimensionTokenType;
+                        }
                     }
                 } else if (hint == EnumToken.NumberTokenType) {
                     this.val = parseFloat(val as string);
@@ -1620,7 +1657,7 @@ export class Tokenizer {
                         // if (
                         //     charCode == TokenMap.MINUS &&
                         //     (nextCharCode == TokenMap.MINUS || isIdentStart(nextCharCode))
-                        // ) {
+                        //) {
                         //     this.advance(parseInfo);
 
                         //     tokensCount = this.consumeIdentToken(parseInfo);
@@ -1659,7 +1696,7 @@ export class Tokenizer {
                         // if (
                         //     parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
                         //     this.isPseudo(parseInfo)
-                        // ) {
+                        //) {
                         //     this.advance(parseInfo);
                         //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
 

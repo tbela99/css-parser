@@ -1,6 +1,6 @@
-import { EnumToken } from "../lib/ast/types.ts";
-import { ERRORS, LOCSRCID, LOCSTA, LOCEND, OPTIMIZED, PARENT, RAW, ROOT, STATE, TOKENS } from "../lib/syntax/constants.ts";
-import type { Token, CssVariableToken, CssVariableImportTokenType, WhitespaceToken } from "./token.d.ts";
+import { EnumAstNodeStatus, EnumToken } from "../lib/ast/types.ts";
+import type { PlainToken, Token } from "./token.d.ts";
+import type { ErrorDescription } from "./index.d.ts";
 
 /**
  * token or node location
@@ -21,242 +21,132 @@ export declare interface SourceLocation {
 }
 
 /**
- * Common token interface
+ * Common plain token interface. Plain tokens are the object representation of the arena tokens
+ * returned by `arena.toObject()`
  */
 export declare interface BaseToken {
     /**
      * token type
      */
     typ: EnumToken;
-
     /**
-     * source src
+     * source location
      */
-    [LOCSRCID]?: number;
-
-    /**
-     * source start offset
-     */
-    [LOCSTA]?: number;
-
-    /**
-     * source end offset
-     */
-    [LOCEND]?: number;
-
-    /**
-     * parent node
-     * @private
-     */
-    [PARENT]?: AstNode | Token | null;
-    /**
-     * root node
-     */
-    [ROOT]?: AstStyleSheet | null;
-    /**
-     * prelude or selector tokens
-     * @private
-     */
-    [TOKENS]?: Token[] | null;
-    /**
-     * node state
-     * @private
-     */
-    [STATE]?: EnumAstNodeStatus | null;
-    /**
-     * node syntax errors
-     * @private
-     */
-    [ERRORS]?: ErrorDescription[] | null;
-    /**
-     * property name
-     * @private
-     */
-    [PROPERTYNAME]?: string;
-    /**
-     * raw selector
-     * @private
-     */
-    [RAW]?: string[][] | null;
-    /**
-     * optimized selector
-     * @private
-     */
-    [OPTIMIZED]?: OptimizedSelector | null;
-    /**
-     * parent node
-     */
-    parent?: AstAtRule | astRule | AstKeyframesAtRule | AstKeyframesRule | AstInvalidRule | AstInvalidAtRule | null;
-    /**
-     * @private
-     */
-    validSyntax?: boolean;
+    loc?: SourceLocation | null;
 }
 
 /**
- * Ast node state
+ * plain object representation of an ast node (`arena.toObject()` / `arena.fromObject()`).
+ * The library only deals with node ids internally
  */
-export declare interface AstNodeStatus {
+export declare interface PlainAstNode {
     /**
-     * Node state
+     * node type
      */
-    state?: EnumAstNodeStatus;
+    typ: EnumToken;
     /**
-     * Syntax errors
+     * rule selector
      */
-    errors?: ErrorDescription[];
-}
-
-/**
- * comment node
- */
-export declare interface AstComment extends BaseToken {
+    sel?: string;
     /**
-     * token type
+     * at-rule / declaration name
      */
-    typ: EnumToken.CommentNodeType | EnumToken.CDOCOMMNodeType;
+    nam?: string;
     /**
-     * comment as string
+     * at-rule prelude, comment or declaration value tokens
      */
-    val: string;
-}
-
-/**
- * declaration node
- */
-export declare interface AstDeclaration extends BaseToken, AstNodeStatus {
+    val?: string | Array<PlainToken | Token>;
     /**
-     * token name
+     * children
      */
-    nam: string;
+    chi?: Array<PlainAstNode | AstNode>;
     /**
-     * token value
+     * prelude / selector tokens
      */
-    val: Token[];
+    tokens?: Array<PlainToken | Token> | null;
     /**
-     * token type
+     * source location
      */
-    typ: EnumToken.DeclarationNodeType;
-}
-
-/**
- * rule node
- */
-export declare interface AstRule extends BaseToken, AstNodeStatus {
+    loc?: SourceLocation | null;
     /**
-     * token type
+     * validation state
      */
-    typ: EnumToken.RuleNodeType;
+    state?: EnumAstNodeStatus | null;
     /**
-     * selector as string
+     * validation errors
      */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<
-        AstDeclaration | AstComment | AstRule | AstAtRule | AstInvalidRule | AstInvalidDeclaration | AstInvalidAtRule
-    >;
-    /**
-     * optimized` selector
-     */
-    optimized?: OptimizedSelector | null;
+    errors?: ErrorDescription[] | null;
     /**
      * raw selector
      */
     raw?: RawSelectorTokens | null;
-}
-
-/**
- * Invalid rule node
- * @deprecated
- */
-export declare interface AstInvalidRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstNode>;
-}
-
-/**
- * invalid declaration node
- * @deprecated
- */
-export declare interface AstInvalidDeclaration extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidDeclarationNodeType;
-    /**
-     * tokens
-     */
-    tokens?: null;
-    /**
-     * tokens
-     */
-    val: Array<Token>;
-}
-
-/**
- * invalid at rule node
- * @deprecated
- */
-export declare interface AstInvalidAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.InvalidAtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi?: Array<AstNode>;
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstDeclaration | AstComment | AstInvalidDeclaration>;
     /**
      * optimized selector
      */
-    optimized?: OptimizedSelector;
-    /**
-     * raw selector
-     */
-    raw?: RawSelectorTokens;
-    /**
-     * tokens
-     */
-    tokens?: Token[];
+    optimized?: OptimizedSelector | null;
 }
+
+/**
+ * Ast nodes are integer ids of records stored in an {@link AstArena}.
+ *
+ * - `arena.dataTypes[node]` is the node type ({@link EnumToken}),
+ * - `arena.strings[arena.name[node]]` is the name of declarations / at-rules and the selector of rules,
+ * - `arena.strings[arena.stringValue[node]]` is the string value of at-rules and comments,
+ * - `arena.tokens(node)` (`arena.firstToken[node]` ... `arena.lastToken[node]`) are the declaration value tokens
+ *   or the rule selector / at-rule prelude tokens,
+ * - `arena.flags[node]` holds the validation state ({@link EnumAstNodeStatus}) and the node flags,
+ * - `arena.firstChild[node]`, `arena.lastChild[node]`, `arena.nextSibling[node]`, `arena.previousSibling[node]`
+ *   and `arena.parents[node]` link the tree.
+ */
+export declare type AstNode = number;
+
+/**
+ * comment node id
+ */
+export declare type AstComment = number;
+/**
+ * declaration node id
+ */
+export declare type AstDeclaration = number;
+/**
+ * rule node id
+ */
+export declare type AstRule = number;
+/**
+ * invalid rule node id
+ * @deprecated
+ */
+export declare type AstInvalidRule = number;
+/**
+ * invalid declaration node id
+ * @deprecated
+ */
+export declare type AstInvalidDeclaration = number;
+/**
+ * invalid at rule node id
+ * @deprecated
+ */
+export declare type AstInvalidAtRule = number;
+/**
+ * keyframes rule node id
+ */
+export declare type AstKeyframesRule = number;
+/**
+ * at rule node id
+ */
+export declare type AstAtRule = number;
+/**
+ * keyframes at rule node id
+ */
+export declare type AstKeyframesAtRule = number;
+/**
+ * rule list node id
+ */
+export declare type AstRuleList = number;
+/**
+ * stylesheet node id
+ */
+export declare type AstStyleSheet = number;
 
 /**
  * raw selector tokens
@@ -310,120 +200,6 @@ export declare interface OptimizedSelectorToken {
      */
     reducible: boolean;
 }
-
-/**
- * at rule node
- */
-export declare interface AstAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.AtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi?: Array<AstNode>;
-}
-
-/**
- * keyframe rule node
- */
-export declare interface AstKeyframesRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesRuleNodeType;
-    /**
-     * selector
-     */
-    sel: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstDeclaration | AstInvalidDeclaration | AstComment | AstRuleList>;
-    /**
-     * optimized selector
-     */
-    optimized?: OptimizedSelector;
-    /**
-     * raw selector
-     */
-    raw?: RawSelectorTokens;
-}
-
-/**
- * keyframe at rule node
- */
-export declare interface AstKeyframesAtRule extends BaseToken, AstNodeStatus {
-    /**
-     * token type
-     */
-    typ: EnumToken.KeyframesAtRuleNodeType;
-    /**
-     * name
-     */
-    nam: string;
-    /**
-     * value
-     */
-    val: string;
-    /**
-     * child nodes
-     */
-    chi: Array<AstKeyframesRule | AstComment>;
-}
-
-/**
- * rule list node
- */
-export declare type AstRuleList =
-    | AstStyleSheet
-    | AstAtRule
-    | AstRule
-    | AstKeyframesAtRule
-    | AstKeyframesRule
-    | AstInvalidRule;
-
-/**
- * stylesheet node
- */
-export declare interface AstStyleSheet extends BaseToken {
-    /**
-     * token type
-     */
-    typ: EnumToken.StyleSheetNodeType;
-    /**
-     * child nodes
-     */
-    chi: Array<AstRule | AstAtRule | astKeyframesAtRule | AstComment | AstInvalidAtRule | AstInvalidRule>;
-}
-
-/**
- * ast node
- */
-export declare type AstNode =
-    | AstStyleSheet
-    | AstRuleList
-    | AstComment
-    | AstAtRule
-    | AstRule
-    | AstDeclaration
-    | AstKeyframesAtRule
-    | AstKeyframesRule
-    | AstInvalidRule
-    | AstInvalidAtRule
-    | AstInvalidDeclaration
-    | CssVariableToken
-    | CssVariableImportTokenType
-    | WhitespaceToken;
 
 /**
  * token search result

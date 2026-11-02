@@ -1,38 +1,37 @@
-import type {
-    AstDeclaration,
-    DimensionToken,
-    IdentToken,
-    LiteralToken,
-    NumberToken,
-    ShorthandPropertyType,
-    Token,
-    WhitespaceToken,
-} from "../../../@types/index.d.ts";
-import { eq } from "../utils/eq.ts";
+import type { AstDeclaration, ShorthandPropertyType, Token } from "../../../@types/index.d.ts";
+import { eqToken } from "../utils/eq.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";
+import type { AstArena } from "../../ast/arena.ts";
 
-function dedup(values: Token[][]): Token[][] {
+function dedup(arena: AstArena, values: Token[][]): Token[][] {
     for (const value of values) {
         let i: number = value.length;
 
         while (i-- > 1) {
-            const t = <DimensionToken | NumberToken>value[i];
-            const k = <DimensionToken | NumberToken>value[i == 1 ? 0 : i % 2];
+            const t: Token = value[i];
+            const k: Token = value[i == 1 ? 0 : i % 2];
 
-            if (t.val == k.val && t.val == 0) {
+            if (
+                arena.isNumeric(t) &&
+                arena.isNumeric(k) &&
+                arena.numericValue[t] == 0 &&
+                arena.numericValue[k] == 0 &&
+                !arena.hasFraction(t) &&
+                !arena.hasFraction(k)
+            ) {
                 if (
-                    (t.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>k)) ||
-                    (k.typ == EnumToken.NumberTokenType && isLength(<DimensionToken>t)) ||
-                    isLength(<DimensionToken>k) ||
-                    isLength(<DimensionToken>t)
+                    (arena.dataTypes[t] == EnumToken.NumberTokenType && isLength(arena, k)) ||
+                    (arena.dataTypes[k] == EnumToken.NumberTokenType && isLength(arena, t)) ||
+                    isLength(arena, k) ||
+                    isLength(arena, t)
                 ) {
                     value.splice(i, 1);
                     continue;
                 }
             }
 
-            if (eq(t, k)) {
+            if (eqToken(arena, t, k)) {
                 value.splice(i, 1);
                 continue;
             }
@@ -44,17 +43,26 @@ function dedup(values: Token[][]): Token[][] {
     return values;
 }
 
+/**
+ * set of declarations that can be merged into a single shorthand declaration.
+ * declarations are arena node ids
+ */
 export class PropertySet {
     protected config: ShorthandPropertyType;
+    protected arena: AstArena;
     public declarations: Map<string, AstDeclaration>;
 
-    constructor(config: ShorthandPropertyType) {
+    constructor(arena: AstArena, config: ShorthandPropertyType) {
+        this.arena = arena;
         this.config = config;
         this.declarations = new Map<string, AstDeclaration>();
     }
 
     add(declaration: AstDeclaration): this {
-        if (declaration.nam == this.config.shorthand) {
+        const arena: AstArena = this.arena;
+        const nam: string = arena.strings[arena.name[declaration]];
+
+        if (nam == this.config.shorthand) {
             this.declarations = new Map<string, AstDeclaration>();
         } else {
             // expand shorthand
@@ -63,13 +71,14 @@ export class PropertySet {
                 let current: number = -1;
                 const tokens: Token[][] = [];
 
-                // @ts-ignore
-                for (let token of this.declarations.get(this.config.shorthand).val) {
+                for (const token of arena.tokens(this.declarations.get(this.config.shorthand)!)) {
+                    const typ: EnumToken = arena.dataTypes[token];
+
                     if (
                         // @ts-expect-error
-                        this.config.types.some((t) => token.typ == EnumToken[t]) ||
-                        (token.typ == EnumToken.NumberTokenType &&
-                            (token as NumberToken).val == 0 &&
+                        this.config.types.some((t) => typ == EnumToken[t]) ||
+                        (typ == EnumToken.NumberTokenType &&
+                            arena.numericValue[token] == 0 &&
                             (this.config.types.includes("Length") ||
                                 this.config.types.includes("Angle") ||
                                 this.config.types.includes("Dimension")))
@@ -83,10 +92,10 @@ export class PropertySet {
                         continue;
                     }
 
-                    if (token.typ != EnumToken.WhitespaceTokenType && token.typ != EnumToken.CommentTokenType) {
+                    if (typ != EnumToken.WhitespaceTokenType && typ != EnumToken.CommentTokenType) {
                         if (
-                            token.typ == EnumToken.IdenTokenType &&
-                            this.config.keywords.includes((token as IdentToken).val)
+                            typ == EnumToken.IdenTokenType &&
+                            this.config.keywords.includes(arena.strings[arena.stringValue[token]])
                         ) {
                             if (tokens.length == 0) {
                                 tokens.push([]);
@@ -96,8 +105,10 @@ export class PropertySet {
                             tokens[current].push(token);
                         }
 
-                        // @ts-ignore
-                        if (token.typ == EnumToken.LiteralTokenType && token.val == this.config.separator?.val) {
+                        if (
+                            typ == EnumToken.LiteralTokenType &&
+                            arena.strings[arena.stringValue[token]] == this.config.separator?.val
+                        ) {
                             tokens.push([]);
                             current++;
                             continue;
@@ -114,11 +125,10 @@ export class PropertySet {
                     for (const values of tokens) {
                         this.config.properties.forEach((property: string, index: number) => {
                             if (!this.declarations.has(property)) {
-                                this.declarations.set(property, <AstDeclaration>{
-                                    typ: EnumToken.DeclarationNodeType,
-                                    nam: property,
-                                    val: [],
-                                });
+                                this.declarations.set(
+                                    property,
+                                    arena.createDeclaration(EnumToken.DeclarationNodeType, property, [], null, null),
+                                );
                             }
 
                             while (index > 0 && index >= values.length) {
@@ -130,24 +140,23 @@ export class PropertySet {
                                 }
                             }
 
-                            // @ts-ignore
-                            const val = this.declarations.get(property).val;
+                            const node: AstDeclaration = this.declarations.get(property)!;
 
-                            if (val.length > 0) {
-                                val.push(<WhitespaceToken>{ typ: EnumToken.WhitespaceTokenType });
+                            if (arena.firstToken[node] != 0) {
+                                arena.appendToken(node, arena.createToken(EnumToken.WhitespaceTokenType));
                             }
 
-                            val.push(<Token>{ ...values[index] });
+                            arena.appendToken(node, arena.clone(values[index], true));
                         });
                     }
                 }
 
-                this.declarations.set(<string>declaration.nam, declaration);
+                this.declarations.set(nam, declaration);
                 return this;
             }
         }
 
-        this.declarations.set(<string>declaration.nam, declaration);
+        this.declarations.set(nam, declaration);
         return this;
     }
 
@@ -161,33 +170,34 @@ export class PropertySet {
 
     [Symbol.iterator](): IterableIterator<AstDeclaration> {
         let iterator: IterableIterator<AstDeclaration>;
+        const arena: AstArena = this.arena;
         const declarations: Map<string, AstDeclaration> = this.declarations;
 
         if (declarations.size < this.config.properties.length) {
             const values = [...declarations.values()];
 
             if (this.isShortHand()) {
-                const val: Token[] = values[0].val.reduce(
-                    (acc, curr) => {
-                        if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(curr.typ)) {
-                            acc.push(curr);
-                        }
+                const val: Token[] = arena.tokens(values[0]).reduce((acc: Token[], curr: Token) => {
+                    if (
+                        arena.dataTypes[curr] != EnumToken.WhitespaceTokenType &&
+                        arena.dataTypes[curr] != EnumToken.CommentTokenType
+                    ) {
+                        acc.push(curr);
+                    }
 
-                        return acc;
-                    },
-                    <Token[]>[],
-                );
+                    return acc;
+                }, <Token[]>[]);
 
-                values[0].val = val.reduce(
-                    (acc: Token[], curr: Token) => {
+                arena.setTokens(
+                    values[0],
+                    ...val.reduce((acc: Token[], curr: Token) => {
                         if (acc.length > 0) {
-                            acc.push(<Token>{ typ: EnumToken.WhitespaceTokenType });
+                            acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                         }
 
                         acc.push(curr);
                         return acc;
-                    },
-                    <Token[]>[],
+                    }, <Token[]>[]),
                 );
             }
 
@@ -197,13 +207,10 @@ export class PropertySet {
             this.config.properties.forEach((property: string) => {
                 let index: number = 0;
 
-                // @ts-ignore
-                for (const token of this.declarations.get(property)?.val ?? []) {
-                    if (token == null) {
-                        return this.declarations.values()[Symbol.iterator]();
-                    }
+                const id: AstDeclaration | undefined = this.declarations.get(property);
 
-                    if (token.typ == EnumToken.WhitespaceTokenType) {
+                for (const token of id == null ? [] : arena.tokens(id)) {
+                    if (arena.dataTypes[token] == EnumToken.WhitespaceTokenType) {
                         continue;
                     }
 
@@ -217,39 +224,38 @@ export class PropertySet {
             });
 
             if (this.config.valueSeparator == null) {
-                dedup(values);
+                dedup(arena, values);
             }
 
             iterator = [
-                <AstDeclaration>{
-                    typ: EnumToken.DeclarationNodeType,
-                    nam: this.config.shorthand,
-                    val: values.reduce(
-                        (acc: Token[], curr: Token[]) => {
-                            if (curr.length > 1) {
-                                const k: number = curr.length * 2 - 1;
-                                let i: number = 1;
+                arena.createDeclaration(
+                    EnumToken.DeclarationNodeType,
+                    this.config.shorthand,
+                    values.reduce((acc: Token[], curr: Token[]) => {
+                        if (curr.length > 1) {
+                            const k: number = curr.length * 2 - 1;
+                            let i: number = 1;
 
-                                while (i < k) {
-                                    curr.splice(i, 0, <WhitespaceToken>{ typ: EnumToken.WhitespaceTokenType });
-                                    i += 2;
-                                }
+                            while (i < k) {
+                                curr.splice(i, 0, arena.createToken(EnumToken.WhitespaceTokenType));
+                                i += 2;
                             }
+                        }
 
-                            if (acc.length > 0) {
-                                // @ts-ignore
-                                acc.push(<LiteralToken>{ ...this.config.separator, typ: EnumToken.LiteralTokenType });
-                            }
+                        if (acc.length > 0) {
+                            acc.push(arena.createToken(EnumToken.LiteralTokenType, this.config.separator.val));
+                        }
 
-                            for (const token of curr) {
-                                acc.push(token);
-                            }
+                        for (const token of curr) {
+                            // tokens are shared with the original declarations
+                            acc.push(arena.parents[token] != 0 ? arena.clone(token, true) : token);
+                        }
 
-                            return acc;
-                        },
-                        <Token[]>[],
-                    ),
-                },
+                        return acc;
+                    }, <Token[]>[]),
+                    null,
+                    null,
+                ),
             ][Symbol.iterator]();
         }
 

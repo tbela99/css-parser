@@ -1,27 +1,28 @@
 import { identity, is2DMatrix } from "./utils.ts";
+import type { AstArena } from "../arena.ts";
 import { EnumToken } from "../types.ts";
-import type { FunctionToken, IdentToken, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
 import { eq } from "../../parser/utils/eq.ts";
 import { getNumber } from "../../syntax/color/color.ts";
 import type { Matrix } from "./type.d.ts";
 
-export function parseMatrix(mat: FunctionToken | IdentToken): Matrix | null {
-    if (mat.typ == EnumToken.IdenTokenType) {
-        return mat.val == "none" ? identity() : null;
+export function parseMatrix(arena: AstArena, mat: Token): Matrix | null {
+    if (arena.dataTypes[mat] == EnumToken.IdenTokenType) {
+        return arena.strings[arena.stringValue[mat]] == "none" ? identity() : null;
     }
 
-    const children = (mat as FunctionToken).chi.filter(
-        (t: Token) => t.typ == EnumToken.NumberTokenType || t.typ == EnumToken.IdenTokenType,
+    const children = arena.tokens(mat).filter(
+        (t: Token) => arena.dataTypes[t] == EnumToken.NumberTokenType || arena.dataTypes[t] == EnumToken.IdenTokenType,
     );
     const values: number[] = [];
 
     for (const child of children) {
-        if (child.typ != EnumToken.NumberTokenType) {
+        if (arena.dataTypes[child] != EnumToken.NumberTokenType) {
             return null;
         }
 
         // @ts-ignore
-        values.push(getNumber(child as NumberToken));
+        values.push(getNumber(arena, child));
     }
 
     // @ts-ignore
@@ -84,51 +85,36 @@ export function matrix(
     return matrix;
 }
 
-export function serialize(matrix: Matrix): Token {
+export function serialize(arena: AstArena, matrix: Matrix): Token {
     matrix = matrix.slice() as Matrix;
 
     // @ts-ignore
     if (eq(matrix, identity())) {
-        return {
-            typ: EnumToken.IdenTokenType,
-            val: "none",
-        };
+        return arena.createToken(EnumToken.IdenTokenType, "none");
     }
 
     if (is2DMatrix(matrix)) {
         // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
-        return {
-            typ: EnumToken.TransformFunctionTokenType,
-            val: "matrix",
-            chi: [matrix[0], matrix[1], matrix[4], matrix[4 + 1], matrix[3 * 4], matrix[3 * 4 + 1]].reduce((acc, t) => {
+        return arena.createFunction(EnumToken.TransformFunctionTokenType, "matrix", [matrix[0], matrix[1], matrix[4], matrix[4 + 1], matrix[3 * 4], matrix[3 * 4 + 1]].reduce((acc, t) => {
                 if (acc.length > 0) {
-                    acc.push({ typ: EnumToken.CommaTokenType });
+                    acc.push(arena.createToken(EnumToken.CommaTokenType));
                 }
 
-                acc.push({
-                    typ: EnumToken.NumberTokenType,
-                    val: t,
-                });
+                acc.push(arena.createToken(EnumToken.NumberTokenType, t));
 
                 return acc;
             }, [] as Token[]),
-        };
+        );
     }
 
-    return {
-        typ: EnumToken.TransformFunctionTokenType,
-        val: "matrix3d",
-        chi: matrix.reduce((acc: Token[], curr: number) => {
+    return arena.createFunction(EnumToken.TransformFunctionTokenType, "matrix3d", matrix.reduce((acc: Token[], curr: number) => {
             if (acc.length > 0) {
-                acc.push({ typ: EnumToken.CommaTokenType });
+                acc.push(arena.createToken(EnumToken.CommaTokenType));
             }
 
-            acc.push({
-                typ: EnumToken.NumberTokenType,
-                val: curr,
-            });
+            acc.push(arena.createToken(EnumToken.NumberTokenType, curr));
 
             return acc;
         }, [] as Token[]),
-    };
+    );
 }

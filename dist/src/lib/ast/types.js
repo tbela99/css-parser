@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 /**
@@ -59,26 +55,66 @@ var EnumAstNodeStatus;
      */
     EnumAstNodeStatus[EnumAstNodeStatus["Malformed"] = 128] = "Malformed";
     /**
-     * Node has children
-     */
-    EnumAstNodeStatus[EnumAstNodeStatus["HasChildren"] = 256] = "HasChildren";
-    /**
-     * Node has values
-     */
-    EnumAstNodeStatus[EnumAstNodeStatus["HasValues"] = 512] = "HasValues";
-    /**
-     * Node has fraction value
-     */
-    EnumAstNodeStatus[EnumAstNodeStatus["HasFractionValue"] = 1024] = "HasFractionValue";
-    /**
      * Important declaration
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 2048] = "ImportantDeclaration";
+    EnumAstNodeStatus[EnumAstNodeStatus["ImportantDeclaration"] = 256] = "ImportantDeclaration";
     /**
      * Color component without unit
      */
-    EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 4096] = "PowerlessColorComponent";
+    EnumAstNodeStatus[EnumAstNodeStatus["PowerlessColorComponent"] = 512] = "PowerlessColorComponent";
+    /* node flags stored in the arena `flags` column next to the validation state */
+    /**
+     * mask of the validation state bits
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["StateMask"] = 65535] = "StateMask";
+    /**
+     * the node has a children list (stylesheet, rule, at-rule with a block)
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasChildren"] = 65536] = "HasChildren";
+    /**
+     * the node has value tokens (declaration)
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasValues"] = 131072] = "HasValues";
+    /**
+     * the node has a source location
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["HasLocation"] = 262144] = "HasLocation";
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
+/**
+ * Enum of validation levels
+ * @deprecated
+ */
+var ValidationLevel;
+(function (ValidationLevel) {
+    /**
+     * disable validation
+     */
+    ValidationLevel[ValidationLevel["None"] = 0] = "None";
+    /**
+     * validate selectors
+     */
+    ValidationLevel[ValidationLevel["Selector"] = 1] = "Selector";
+    /**
+     * validate at-rules
+     */
+    ValidationLevel[ValidationLevel["AtRule"] = 2] = "AtRule";
+    /**
+     * validate declarations
+     */
+    ValidationLevel[ValidationLevel["Declaration"] = 4] = "Declaration";
+    /**
+     * validate selectors and at-rules
+     */
+    ValidationLevel[ValidationLevel["Default"] = 3] = "Default";
+    /**
+     * validate selectors, at-rules and declarations
+     */
+    ValidationLevel[ValidationLevel["All"] = 7] = "All";
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
+})(ValidationLevel || (ValidationLevel = {}));
 /**
  * Enum of all token types
  */
@@ -323,7 +359,7 @@ var EnumToken;
     /**
      *  token list token type
      */
-    EnumToken[EnumToken["ListTokenType"] = 59] = "ListTokenType";
+    EnumToken[EnumToken["ListToken"] = 59] = "ListToken";
     /* arithmetic tokens */
     /**
      * addition token type
@@ -657,21 +693,29 @@ var EnumToken;
      */
     EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
     /**
-     * infinity token
+     * list of arena tokens (binary expression operands)
      */
-    EnumToken[EnumToken["NaNTokenType"] = 141] = "NaNTokenType";
+    EnumToken[EnumToken["ListTokenType"] = 141] = "ListTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["InfinityTokenType"] = 142] = "InfinityTokenType";
+    EnumToken[EnumToken["NaNTokenType"] = 142] = "NaNTokenType";
+    /**
+     * infinity token
+     */
+    EnumToken[EnumToken["InfinityTokenType"] = 143] = "InfinityTokenType";
     /**
      * negative infinity token
      */
-    EnumToken[EnumToken["NegativeInfinityTokenType"] = 143] = "NegativeInfinityTokenType";
+    EnumToken[EnumToken["NegativeInfinityTokenType"] = 144] = "NegativeInfinityTokenType";
     /**
      * CSS type token
      */
-    EnumToken[EnumToken["CssTypeTokenType"] = 144] = "CssTypeTokenType";
+    EnumToken[EnumToken["CssTypeTokenType"] = 145] = "CssTypeTokenType";
+    /**
+     * user defined dimension token type
+     */
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 146] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
@@ -788,7 +832,11 @@ var EnumToken;
 var ColorType;
 (function (ColorType) {
     /**
-     * deprecated system colors
+     * the color type is not known yet (the color function has not been parsed)
+     */
+    ColorType[ColorType["NONE"] = 0] = "NONE";
+    /**
+     * system colors
      */
     ColorType[ColorType["SYS"] = 1] = "SYS";
     /**
@@ -989,4 +1037,4 @@ var ModuleScopeEnumOptions;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };

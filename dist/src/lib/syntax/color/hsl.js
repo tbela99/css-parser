@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { color2srgbvalues, getNumber } from './color.js';
@@ -16,70 +12,70 @@ import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { hwbvalues } from './hwb.js';
 
-function hex2HslToken(token) {
-    let values = hex2srgbvalues(token);
+function hex2HslToken(arena, token) {
+    let values = hex2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
+    return hslToken(arena, srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
-function rgb2HslToken(token) {
-    const values = rgb2hslvalues(token);
+function rgb2HslToken(arena, token) {
+    const values = rgb2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function hwb2HslToken(token) {
-    const values = hwb2hslvalues(token);
+function hwb2HslToken(arena, token) {
+    const values = hwb2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function cmyk2HslToken(token) {
-    const values = cmyk2hslvalues(token);
+function cmyk2HslToken(arena, token) {
+    const values = cmyk2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function oklab2HslToken(token) {
-    const values = oklab2hslvalues(token);
+function oklab2HslToken(arena, token) {
+    const values = oklab2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function oklch2HslToken(token) {
-    const values = oklch2hslvalues(token);
+function oklch2HslToken(arena, token) {
+    const values = oklch2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function lab2HslToken(token) {
-    const values = lab2hslvalues(token);
+function lab2HslToken(arena, token) {
+    const values = lab2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function lch2HslToken(token) {
-    const values = lch2hslvalues(token);
+function lch2HslToken(arena, token) {
+    const values = lch2hslvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function color2HslToken(token) {
-    const values = color2srgbvalues(token);
+function color2HslToken(arena, token) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
+    return hslToken(arena, srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
-function hslToken(values) {
+function hslToken(arena, values) {
     if (values[1] == 0) {
         values[0] = 0;
     }
@@ -88,44 +84,36 @@ function hslToken(values) {
         values[1] = 0;
     }
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] },
-        { typ: EnumToken.PercentageTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.PercentageTokenType, values[1]),
+        arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
     if (values.length == 4 && values[3] != 1) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "hsl",
-        chi,
-        kin: ColorType.HSL,
-    };
+    return arena.createColor("hsl", ColorType.HSL, chi);
 }
-function rgb2hslvalues(token) {
-    const chi = getColorComponents(token);
+function rgb2hslvalues(arena, token) {
+    const chi = getColorComponents(arena, token);
     if (chi == null || chi.length < 3) {
         return null;
     }
     // @ts-ignore
     let t = chi[0];
     // @ts-ignore
-    let r = getNumber(t);
+    let r = getNumber(arena, t);
     // @ts-ignore
     t = chi[1];
     // @ts-ignore
-    let g = getNumber(t);
+    let g = getNumber(arena, t);
     // @ts-ignore
     t = chi[2];
     // @ts-ignore
-    let b = getNumber(t);
+    let b = getNumber(arena, t);
     // @ts-ignore
     let a = null;
     if (chi.length == 4) {
-        a = getNumber(chi[3]);
+        a = getNumber(arena, chi[3]);
     }
     const values = [r, g, b];
     if (a != null && a != 1) {
@@ -133,12 +121,12 @@ function rgb2hslvalues(token) {
     }
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function cmyk2hslvalues(token) {
-    const values = cmyk2rgbvalues(token);
+function cmyk2hslvalues(arena, token) {
+    const values = cmyk2rgbvalues(arena, token);
     return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function hwb2hslvalues(token) {
-    const { h, w, b, a } = hwbvalues(token) ?? {};
+function hwb2hslvalues(arena, token) {
+    const { h, w, b, a } = hwbvalues(arena, token) ?? {};
     if (h == null || w == null || b == null) {
         return null;
     }
@@ -161,28 +149,28 @@ function hwb2hslvalues(token) {
     }
     return hsl;
 }
-function lab2hslvalues(token) {
-    const values = lab2rgbvalues(token);
+function lab2hslvalues(arena, token) {
+    const values = lab2rgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function lch2hslvalues(token) {
-    const values = lch2rgbvalues(token);
+function lch2hslvalues(arena, token) {
+    const values = lch2rgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function oklab2hslvalues(token) {
-    const t = oklab2srgbvalues(token);
+function oklab2hslvalues(arena, token) {
+    const t = oklab2srgbvalues(arena, token);
     // @ts-ignore
     return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }
-function oklch2hslvalues(token) {
-    const t = oklch2srgbvalues(token);
+function oklch2hslvalues(arena, token) {
+    const t = oklch2srgbvalues(arena, token);
     // @ts-ignore
     return t == null ? null : srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }

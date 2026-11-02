@@ -2,25 +2,21 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 
-function matchAtRuleSyntax(atRule, stream, options) {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
+function matchAtRuleSyntax(arena, atRule, stream, options) {
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[atRule]]);
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
-    trimArray(stream);
+    trimArray(arena, stream);
     if (syntax.length === 0) {
         return { success: true, errors: [] };
     }
-    const { success, errors } = matchAllSyntaxes(syntax, createValidationContext(stream), options);
+    const { success, errors } = matchAllSyntaxes(arena, syntax, createValidationContext(arena, stream), options);
     return { success, errors };
 }
 

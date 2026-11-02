@@ -24,8 +24,8 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             ];
 
             return parse(css).then((result) => {
-                for (const s of walk(result.ast)) {
-                    expect(s.node.typ).equals(values.shift());
+                for (const s of walk(result.arena, result.ast)) {
+                    expect(result.arena.dataTypes[s.node]).equals(values.shift());
                 }
 
                 expect(values.length).equals(0);
@@ -49,8 +49,8 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 
             return parse(css, { minify: false }).then((r) => {
                 let i = 0;
-                for (const s of walk(r.ast)) {
-                    expect(s.node.typ).equals(values[i++]);
+                for (const s of walk(r.arena, r.ast)) {
+                    expect(r.arena.dataTypes[s.node]).equals(values[i++]);
                 }
 
                 expect(values.length).equals(i);
@@ -66,12 +66,14 @@ button {
 }`;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (node, arena) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const node = find(result.ast, nodeMatcher);
+                const arena = result.arena;
+                const node = find(arena, result.ast, nodeMatcher);
 
-                expect(node).equals(result.ast.chi[0].chi[0]);
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 0), 0));
             });
         });
 
@@ -89,14 +91,18 @@ button {
 
 `;
 
-            // find declaration which contain a '30px'
-            const nodeMatcher = (value) =>
-                value.typ == EnumToken.LengthTokenType && value.val == 30 && value.unit == "px";
-
             return transform(css).then((result) => {
-                const { node } = findByValue(result.ast, nodeMatcher) ?? {};
+                const arena = result.arena;
 
-                expect(node).equals(result.ast.chi[0].chi[1]);
+                // find declaration which contain a '30px'
+                const nodeMatcher = (value) =>
+                    arena.dataTypes[value] == EnumToken.LengthTokenType &&
+                    arena.numericValue[value] == 30 &&
+                    arena.getUnit(value) == "px";
+
+                const { node } = findByValue(arena, result.ast, nodeMatcher) ?? {};
+
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 0), 1));
             });
         });
 
@@ -115,10 +121,11 @@ button {
 `;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (node, arena) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const nodes = findAll(result.ast, nodeMatcher) ?? {};
+                const nodes = findAll(result.arena, result.ast, nodeMatcher) ?? {};
 
                 expect(nodes.length).equals(2);
             });
@@ -139,12 +146,14 @@ button {
 `;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (node, arena) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const node = findLast(result.ast, nodeMatcher);
+                const arena = result.arena;
+                const node = findLast(arena, result.ast, nodeMatcher);
 
-                expect(node).equals(result.ast.chi[1].chi[0]);
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 1), 0));
             });
         });
     });

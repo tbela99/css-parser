@@ -1,5 +1,13 @@
 import { ColorType, EnumToken } from "../../../dist/src/lib/ast/types.js";
-import { isOkLabClose } from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { isOkLabClose as okLabClose } from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { AstArena } from "../../../dist/src/lib/ast/arena.js";
+
+/**
+ * compare a color token id with another token id or a plain color object
+ */
+function isOkLabClose(arena, color1, color2, threshold) {
+    return okLabClose(arena, color1, typeof color2 == "number" ? color2 : arena.fromObject(color2), threshold);
+}
 
 export function run(describe, expect, it, transform, parse, render) {
     describe("alpha() color", function () {

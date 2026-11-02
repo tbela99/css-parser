@@ -42,39 +42,79 @@ export enum EnumAstNodeStatus {
      * Node is disallowed in the context
      */
     Disallowed = 1 << 6,
-    
     /**
      * Node is malformed
      */
     Malformed = 1 << 7,
 
     /**
-     * Node has children
-     */
-    HasChildren = 1 << 8,
-
-    /**
-     * Node has values
-     */
-    HasValues = 1 << 9,
-
-    /**
-     * Node has fraction value
-     */
-    HasFractionValue = 1 << 10,
-
-    /**
      * Important declaration
      */
-    ImportantDeclaration = 1 << 11,
+    ImportantDeclaration = 1 << 8,
 
     /**
      * Color component without unit
      */
-    PowerlessColorComponent = 1 << 12
+    PowerlessColorComponent = 1 << 9,
+
+    /* node flags stored in the arena `flags` column next to the validation state */
+
+    /**
+     * mask of the validation state bits
+     */
+    StateMask = 0xffff,
+    /**
+     * the node has a children list (stylesheet, rule, at-rule with a block)
+     */
+    HasChildren = 1 << 16,
+    /**
+     * the node has value tokens (declaration)
+     */
+    HasValues = 1 << 17,
+    /**
+     * the node has a source location
+     */
+    HasLocation = 1 << 18,
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
+
+/**
+ * Enum of validation levels
+ * @deprecated
+ */
+export enum ValidationLevel {
+    /**
+     * disable validation
+     */
+    None,
+    /**
+     * validate selectors
+     */
+    Selector = 0x1,
+    /**
+     * validate at-rules
+     */
+    AtRule = 0x2,
+
+    /**
+     * validate declarations
+     */
+    Declaration = 0x4,
+    /**
+     * validate selectors and at-rules
+     */
+    Default = Selector | AtRule, // selectors + at-rules
+    /**
+     * validate selectors, at-rules and declarations
+     */
+    All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
+
+    /**
+     * Report only. Apply validation and report nodes that are marked as invalid
+     */
+    ReportOnly = 0x8,
+}
 
 /**
  * Enum of all token types
@@ -319,8 +359,7 @@ export enum EnumToken {
     /**
      *  token list token type
      */
-    ListTokenType,
-    
+    ListToken,
     /* arithmetic tokens */
     /**
      * addition token type
@@ -692,6 +731,11 @@ export enum EnumToken {
     WrappedValuesTokenType,
 
     /**
+     * list of arena tokens (binary expression operands)
+     */
+    ListTokenType,
+
+    /**
      * infinity token
      */
     NaNTokenType,
@@ -710,6 +754,10 @@ export enum EnumToken {
      */
     CssTypeTokenType,
 
+    /**
+     * user defined dimension token type
+     */
+    UserDefinedDimensionTokenType,
     /* aliases */
 
     /**
@@ -827,17 +875,21 @@ export enum EnumToken {
  */
 export enum ColorType {
     /**
-     * deprecated system colors
+     * the color type is not known yet (the color function has not been parsed)
      */
-    SYS = 1,
+    NONE = 0,
+    /**
+     * system colors
+     */
+    SYS,
     /**
      * deprecated system colors
      */
-    DPSYS ,
+    DPSYS,
     /**
      * named colors
      */
-    LIT ,
+    LIT,
     /**
      * colors as hex values
      */

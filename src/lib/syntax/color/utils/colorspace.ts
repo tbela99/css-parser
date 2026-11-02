@@ -1,4 +1,5 @@
-import type { ColorToken, IdentToken } from "../../../../@types/index.d.ts";
+import type { Token } from "../../../../@types/index.d.ts";
+import type { AstArena } from "../../../ast/arena.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 import { getColorComponents } from "./components.ts";
 
@@ -7,32 +8,32 @@ import { getColorComponents } from "./components.ts";
  * @param color
  * @returns
  */
-export function getColorSpace(color: ColorToken) {
+export function getColorSpace(arena: AstArena, color: Token) {
     // if (!("chi" in color)) {
     //     return "rgb";
     // }
 
     let name: string;
 
-    const components = getColorComponents(color);
+    const components = getColorComponents(arena, color);
     if (components == null || components.length < 3) {
         return null;
     }
 
-    if (equalsIgnoreCase("color", color.val)) {
-        if (equalsIgnoreCase("from", (components[0] as IdentToken).val)) {
-            name = (components[2] as IdentToken).val;
+    if (equalsIgnoreCase("color", arena.strings[arena.stringValue[color]])) {
+        if (equalsIgnoreCase("from", arena.strings[arena.stringValue[components[0]]])) {
+            name = arena.strings[arena.stringValue[components[2]]];
         } else {
-            name = (components[0] as IdentToken).val;
+            name = arena.strings[arena.stringValue[components[0]]];
         }
-    } else if (equalsIgnoreCase("color-mix", color.val)) {
-        if (equalsIgnoreCase("in", (components[0] as IdentToken).val)) {
-            name = (components[1] as IdentToken).val;
+    } else if (equalsIgnoreCase("color-mix", arena.strings[arena.stringValue[color]])) {
+        if (equalsIgnoreCase("in", arena.strings[arena.stringValue[components[0]]])) {
+            name = arena.strings[arena.stringValue[components[1]]];
         } else {
             return "oklab";
         }
     } else {
-        name = color.val;
+        name = arena.strings[arena.stringValue[color]];
     }
 
     return name! == "device-cmyk"

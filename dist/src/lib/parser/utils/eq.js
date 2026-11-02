@@ -2,13 +2,11 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
+import { nodeSignature } from './hash.js';
+
 /**
  *
  * @param a
@@ -19,7 +17,7 @@ function eq(a, b) {
     if (a == null || b == null) {
         return a == b;
     }
-    if (typeof a != 'object' || typeof b != 'object') {
+    if (typeof a != "object" || typeof b != "object") {
         return a === b;
     }
     if (a.constructor != b.constructor) {
@@ -50,5 +48,14 @@ function eq(a, b) {
     }
     return true;
 }
+/**
+ * structural equality of two tokens (source location is ignored)
+ * @param arena
+ * @param a
+ * @param b
+ */
+function eqToken(arena, a, b) {
+    return a == b || nodeSignature(arena, a) == nodeSignature(arena, b);
+}
 
-export { eq };
+export { eq, eqToken };

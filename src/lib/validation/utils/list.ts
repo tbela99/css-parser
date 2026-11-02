@@ -1,18 +1,17 @@
 import { EnumToken } from "../../ast/types.ts";
-import type { ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 
-export function stripCommaToken(tokenList: number[], options: ParserOptions): number[] | null {
-    let result: number[] = [];
-    let typ: EnumToken;
-    let last: number;
-    const arena = options.arena!;
+/**
+ * remove comma and comment tokens
+ * @param arena
+ * @param tokenList
+ */
+export function stripCommaToken(arena: AstArena, tokenList: Token[]): Token[] | null {
+    let result: Token[] = [];
 
     for (let i = 0; i < tokenList.length; i++) {
-
-        typ = arena.getType(tokenList[i]);
-        if (typ != EnumToken.WhitespaceTokenType) {
-            last = tokenList[i];
-        }
+        const typ: EnumToken = arena.dataTypes[tokenList[i]];
 
         if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
             continue;
@@ -24,25 +23,34 @@ export function stripCommaToken(tokenList: number[], options: ParserOptions): nu
     return result;
 }
 
-export function splitTokenList(tokenList: number[], options: ParserOptions, split: EnumToken[] = [EnumToken.CommaTokenType], includeSplitToken: boolean = false): number[][] {
+/**
+ * split a token list
+ * @param arena
+ * @param tokenList
+ * @param split
+ * @param includeSplitToken
+ */
+export function splitTokenList(
+    arena: AstArena,
+    tokenList: Token[],
+    split: EnumToken[] = [EnumToken.CommaTokenType],
+    includeSplitToken: boolean = false,
+): Token[][] {
+    const result: Token[][] = [[]];
 
-    const arena = options.arena!;
-    return tokenList.reduce(
-        (acc: number[][], curr: number): number[][] => {
-            if (split.includes(arena.getType(curr))) {
+    for (let i = 0; i < tokenList.length; i++) {
+        const curr: Token = tokenList[i];
 
-                if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
-
-                    acc[acc.length - 1].push(curr);
-                }
-
-                acc.push([]);
-            } else {
-                acc[acc.length - 1].push(curr);
+        if (split.includes(arena.dataTypes[curr])) {
+            if (includeSplitToken) {
+                result[result.length - 1].push(curr);
             }
 
-            return acc;
-        },
-        [[]] as number[][],
-    );
+            result.push([]);
+        } else {
+            result[result.length - 1].push(curr);
+        }
+    }
+
+    return result;
 }

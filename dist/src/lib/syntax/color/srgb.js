@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -25,48 +21,48 @@ import { hwbvalues } from './hwb.js';
 // from https://www.w3.org/TR/css-color-4/#color-conversion-code
 // srgb-linear -> srgb
 // 0 <= r, g, b <= 1
-function srgbvalues(token) {
-    if (token.typ === EnumToken.IdenTokenType) {
-        token = parseColor(token);
+function srgbvalues(arena, token) {
+    if (arena.dataTypes[token] === EnumToken.IdenTokenType) {
+        token = parseColor(arena, token);
     }
-    switch (token.kin) {
+    switch (arena.colorType[token]) {
         case ColorType.LIT:
         case ColorType.HEX:
-            return hex2srgbvalues(token);
+            return hex2srgbvalues(arena, token);
         case ColorType.RGB:
         case ColorType.RGBA:
-            return rgb2srgb(token);
+            return rgb2srgb(arena, token);
         case ColorType.HSL:
         case ColorType.HSLA:
-            return hsl2srgb(token);
+            return hsl2srgb(arena, token);
         case ColorType.HWB:
-            return hwb2srgbvalues(token);
+            return hwb2srgbvalues(arena, token);
         case ColorType.LAB:
-            return lab2srgbvalues(token);
+            return lab2srgbvalues(arena, token);
         case ColorType.LCH:
-            return lch2srgbvalues(token);
+            return lch2srgbvalues(arena, token);
         case ColorType.OKLAB:
-            return oklab2srgbvalues(token);
+            return oklab2srgbvalues(arena, token);
         case ColorType.OKLCH:
-            return oklch2srgbvalues(token);
+            return oklch2srgbvalues(arena, token);
         case ColorType.COLOR:
-            return color2srgbvalues(token);
+            return color2srgbvalues(arena, token);
     }
     return null;
 }
-function rgb2srgb(token) {
-    return (getColorComponents(token)?.map?.((t, index) => index == 3
-        ? t.typ == EnumToken.IdenTokenType && t.val == "none"
+function rgb2srgb(arena, token) {
+    return (getColorComponents(arena, token)?.map?.((t, index) => index == 3
+        ? arena.dataTypes[t] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] == "none"
             ? 1
-            : getNumber(t)
-        : ((t.typ == EnumToken.PercentageTokenType ? 255 : 1) *
-            getNumber(t)) /
+            : getNumber(arena, t)
+        : ((arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1) *
+            getNumber(arena, t)) /
             255) ?? null);
 }
-function rgb2srgbvalues(token) {
-    return (getColorComponents(token)?.map?.((t, index) => index == 3
-        ? getNumber(t)
-        : getNumber(t) / 255) ?? null);
+function rgb2srgbvalues(arena, token) {
+    return (getColorComponents(arena, token)?.map?.((t, index) => index == 3
+        ? getNumber(arena, t)
+        : getNumber(arena, t) / 255) ?? null);
 }
 // export function rgbvalues2srgbvalues(r: number, g: number, b: number, a: number | null = null): number[] | null {
 //     const result = [r / 255, g / 255, b / 255];
@@ -77,8 +73,10 @@ function rgb2srgbvalues(token) {
 //
 //     return result;
 // }
-function hex2srgbvalues(token) {
-    const value = expandHexValue(token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val);
+function hex2srgbvalues(arena, token) {
+    const value = expandHexValue(arena.colorType[token] == ColorType.LIT
+        ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
+        : arena.strings[arena.stringValue[token]]);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
@@ -94,8 +92,8 @@ function xyz2srgb(x, y, z, alpha = null) {
     // @ts-ignore
     return lsrgb2srgbvalues(values[0], values[1], values[2], alpha);
 }
-function hwb2srgbvalues(token) {
-    const { h, w, b, a } = hwbvalues(token) ?? {};
+function hwb2srgbvalues(arena, token) {
+    const { h, w, b, a } = hwbvalues(arena, token) ?? {};
     if (h == null || w == null || b == null) {
         return [];
     }
@@ -142,44 +140,44 @@ function hwb2srgb(h, w, b, alpha) {
     const srgb = [rChroma * factor + wNorm, gChroma * factor + wNorm, bChroma * factor + wNorm];
     return srgb;
 }
-function hsl2srgb(token) {
-    let { h, s, l, a } = hslvalues(token) ?? {};
+function hsl2srgb(arena, token) {
+    let { h, s, l, a } = hslvalues(arena, token) ?? {};
     if (h == null || s == null || l == null) {
         return null;
     }
     // hue in degrees
     return hslvalues2srgbvalues(h, s, l, a);
 }
-function cmyk2srgbvalues(token) {
-    const components = getColorComponents(token);
+function cmyk2srgbvalues(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) {
         return null;
     }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const c = getNumber(t);
+    const c = getNumber(arena, t);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const m = getNumber(t);
+    const m = getNumber(arena, t);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const y = getNumber(t);
+    const y = getNumber(arena, t);
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const k = getNumber(t);
+    const k = getNumber(arena, t);
     const mul = 1 - k;
     const rgb = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
     if (components.length == 5) {
-        rgb.push(getNumber(components[4]));
+        rgb.push(getNumber(arena, components[4]));
     }
     return rgb;
 }
-function oklab2srgbvalues(token) {
-    const [l, a, b, alpha] = getOKLABComponents(token) ?? [];
+function oklab2srgbvalues(arena, token) {
+    const [l, a, b, alpha] = getOKLABComponents(arena, token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
     }
@@ -189,8 +187,8 @@ function oklab2srgbvalues(token) {
     }
     return rgb;
 }
-function oklch2srgbvalues(token) {
-    const [l, c, h, alpha] = getOKLCHComponents(token) ?? [];
+function oklch2srgbvalues(arena, token) {
+    const [l, c, h, alpha] = getOKLCHComponents(arena, token) ?? [];
     if (l == null || c == null || h == null) {
         return null;
     }
@@ -201,26 +199,26 @@ function oklch2srgbvalues(token) {
     }
     return rgb;
 }
-function hslvalues(token) {
-    const components = getColorComponents(token);
+function hslvalues(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) {
         return null;
     }
     let t;
     // @ts-ignore
-    let h = getAngle(components[0]) * 360;
+    let h = getAngle(arena, components[0]) * 360;
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    let s = getNumber(t);
+    let s = getNumber(arena, t);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    let l = getNumber(t);
-    if (components[1].typ == EnumToken.PercentageTokenType) {
+    let l = getNumber(arena, t);
+    if (arena.dataTypes[components[1]] == EnumToken.PercentageTokenType) {
         s *= 100;
     }
-    if (components[2].typ == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[components[2]] == EnumToken.PercentageTokenType) {
         l *= 100;
     }
     let a = null;
@@ -228,7 +226,7 @@ function hslvalues(token) {
         // @ts-ignore
         t = components[3];
         // @ts-ignore
-        a = getNumber(t);
+        a = getNumber(arena, t);
     }
     return a == null ? { h, s, l } : { h, s, l, a };
 }
@@ -267,8 +265,8 @@ function hslvalues2srgbvalues(h, s, l, a = null) {
     // Return exact float decimals instead of multiplying by 255
     return values;
 }
-function lab2srgbvalues(token) {
-    const [l, a, b, alpha] = getLABComponents(token) ?? [];
+function lab2srgbvalues(arena, token) {
+    const [l, a, b, alpha] = getLABComponents(arena, token) ?? [];
     if (l == null || a == null || b == null) {
         return null;
     }
@@ -278,8 +276,8 @@ function lab2srgbvalues(token) {
     }
     return rgb;
 }
-function lch2srgbvalues(token) {
-    const components = getLCHComponents(token);
+function lch2srgbvalues(arena, token) {
+    const components = getLCHComponents(arena, token);
     if (components == null) {
         return null;
     }

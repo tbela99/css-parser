@@ -1,3 +1,4 @@
+import { ColorType, EnumToken } from "../../../dist/src/lib/ast/types.js";
 import { WalkerEvent } from "../../../dist/src/lib/ast/walk.js";
 
 export function run(
@@ -31,29 +32,27 @@ export function run(
             const options = {
                 visitor: {
                     AtRule: {
-                        media: (node) => {
-                            return { ...node, val: "all" };
+                        media: (node, arena) => {
+                            arena.setValueString(node, "all");
+                            return node;
                         },
                     },
 
-                    Rule(node) {
-                        return { ...node, sel: ".foo,.bar,.fubar" };
+                    Rule(node, arena) {
+                        arena.setSelector(node, ".foo,.bar,.fubar");
+                        return node;
                     },
                     Declaration: {
-                        height: (node) => {
+                        height: (node, arena) => {
                             return [
                                 node,
-                                {
-                                    typ: EnumToken.DeclarationNodeType,
-                                    nam: "width",
-                                    val: [
-                                        {
-                                            typ: EnumToken.Length,
-                                            val: "3",
-                                            unit: "px",
-                                        },
-                                    ],
-                                },
+                                arena.createDeclaration(
+                                    EnumToken.DeclarationNodeType,
+                                    "width",
+                                    [arena.createToken(EnumToken.Length, 3, "px")],
+                                    null,
+                                    null,
+                                ),
                             ];
                         },
                     },
@@ -84,9 +83,9 @@ body {
             const options = {
                 beautify: true,
                 visitor: {
-                    DeclarationNodeType: (declaration) => {
-                        if (declaration.nam == "height") {
-                            declaration.nam = "width";
+                    DeclarationNodeType: (declaration, arena) => {
+                        if (arena.getName(declaration) == "height") {
+                            arena.setNameString(declaration, "width");
                         }
                     },
                     ColorTokenType: (color) => {
@@ -142,9 +141,11 @@ body {
                 inlineCssVariables: true,
                 resolveImport: true,
                 visitor: {
-                    StyleSheetNodeType: async (node) => {
+                    StyleSheetNodeType: async (node, arena) => {
                         // insert a new rule
-                        node.chi.unshift(await parse("html {--base-color: pink}").then((result) => result.ast.chi[0]));
+                        const result = await parse("html {--base-color: pink}");
+
+                        arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
                     },
 
                     ColorTokenType: (node) => {
@@ -216,8 +217,8 @@ html,body {
                 beautify: true,
                 visitor: {
                     KeyframesAtRule: {
-                        slideIn(node) {
-                            node.val = "slide-in-out";
+                        slideIn(node, arena) {
+                            arena.setValueString(node, "slide-in-out");
                             return node;
                         },
                     },
@@ -273,9 +274,9 @@ body {
                 visitor: {
                     DeclarationNodeType: {
                         type: WalkerEvent.Enter,
-                        handler: (declaration) => {
-                            if (declaration.nam == "height") {
-                                declaration.nam = "width";
+                        handler: (declaration, arena) => {
+                            if (arena.getName(declaration) == "height") {
+                                arena.setNameString(declaration, "width");
                             }
                         },
                     },
@@ -322,9 +323,9 @@ body {
             const options = {
                 beautify: true,
                 visitor: {
-                    DeclarationNodeType: (declaration) => {
-                        if (declaration.nam == "height") {
-                            declaration.nam = "width";
+                    DeclarationNodeType: (declaration, arena) => {
+                        if (arena.getName(declaration) == "height") {
+                            arena.setNameString(declaration, "width");
                         }
                     },
                     ColorTokenType: (color) => {
@@ -383,9 +384,14 @@ body {
                     StyleSheetNodeType: {
                         type: WalkerEvent.Leave,
 
-                        handler: (node) => {
+                        handler: (node, arena) => {
                             // insert a new rule
-                            node.chi.unshift(parseSync("html {--base-color: pink}").ast.chi[0]);
+                            const result = parseSync("html {--base-color: pink}");
+
+                            arena.prependChildren(
+                                node,
+                                arena.import(result.arena, result.arena.firstChild[result.ast]),
+                            );
                         },
                     },
                     ColorTokenType: (node) => {
@@ -463,8 +469,8 @@ html,body {
                 visitor: {
                     Rule: {
                         type: WalkerEvent.Enter,
-                        handler(node) {
-                            node.sel = ".ruled";
+                        handler(node, arena) {
+                            arena.setSelector(node, ".ruled");
                             // node.val = "slide-in-out";
                             // return node;
                         },
@@ -478,8 +484,8 @@ html,body {
                         },
                     },
                     KeyframesAtRule: {
-                        slideIn(node) {
-                            node.val = "slide-in-out";
+                        slideIn(node, arena) {
+                            arena.setValueString(node, "slide-in-out");
                             return node;
                         },
                     },
@@ -536,9 +542,9 @@ body {
             const options = {
                 beautify: true,
                 visitor: [
-                    function DeclarationNodeType(declaration) {
-                        if (declaration.nam == "height") {
-                            declaration.nam = "width";
+                    function DeclarationNodeType(declaration, arena) {
+                        if (arena.getName(declaration) == "height") {
+                            arena.setNameString(declaration, "width");
                         }
                     },
                     {
@@ -612,8 +618,8 @@ html,body {
                     {
                         Rule: {
                             type: WalkerEvent.Enter,
-                            handler(node) {
-                                node.sel = ".ruled";
+                            handler(node, arena) {
+                                arena.setSelector(node, ".ruled");
                                 // node.val = "slide-in-out";
                                 // return node;
                             },
@@ -621,8 +627,8 @@ html,body {
                     },
                     {
                         KeyframesAtRule: {
-                            slideIn(node) {
-                                node.val = "slide-in-out";
+                            slideIn(node, arena) {
+                                arena.setValueString(node, "slide-in-out");
                                 return node;
                             },
                         },
@@ -672,8 +678,8 @@ html,body {
             const options = {
                 removePrefix: true,
                 beautify: true,
-                visitor: function Rule(node) {
-                    node.sel = ".ruled";
+                visitor: function Rule(node, arena) {
+                    arena.setSelector(node, ".ruled");
                     // node.val = "slide-in-out";
                     // return node;
                 },
@@ -684,6 +690,121 @@ html,body {
             expect(result.code).equals(`.ruled {
  height: 10px
 }`);
+        });
+
+        it("visitor #12", function () {
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+`;
+            const options = {
+                beautify: true,
+                visitor: [
+                    function DeclarationNodeType(declaration, arena) {
+                        if (arena.getName(declaration) == "height") {
+                            arena.setNameString(declaration, "width");
+                        }
+                    },
+                    {
+                        ColorTokenType: {
+                            type: WalkerEvent.Enter,
+                            handler: function (color) {
+                                return {
+                                    typ: EnumToken.Color,
+                                    val: "red",
+                                    kin: ColorType.HEX,
+                                };
+                            },
+                        },
+                    },
+                ],
+            };
+
+            return expect(transformSync(css, options).code).equals(`body {
+ color: red
+}
+html,body {
+ line-height: 1.474
+}
+.ruler {
+ width: 10px;
+ background-color: red
+}`);
+        });
+
+        it("visitor #13", function () {
+            const visitor = [];
+
+            const css = `
+
+body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
+
+html,
+body {
+    line-height: 1.474;
+}
+
+.ruler {
+
+    height: 10px;
+    background-color: orange
+}
+
+`;
+            const options = {
+                beautify: true,
+                visitor(node, arena) {
+                    // nodes and tokens are arena ids
+                    visitor.push(
+                        `${EnumToken[arena.dataTypes[node]]} -> ${arena.getName(node) || arena.getValue(node) || (arena.isNumeric(node) ? arena.numericValue[node] : "")}`,
+                    );
+                },
+            };
+
+            transformSync(css, options);
+            return expect(visitor).deep.equals([
+                "StyleSheetNodeType -> ",
+                "RuleNodeType -> body",
+                "DeclarationNodeType -> color",
+                "Color -> color",
+                "Iden -> from",
+                "Whitespace -> ",
+                "WildCardFunctionTokenType -> var",
+                "DashedIden -> --base-color",
+                "Whitespace -> ",
+                "Iden -> display-p3",
+                "Whitespace -> ",
+                "Iden -> r",
+                "Whitespace -> ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> g",
+                "Number -> 0.24",
+                "Whitespace -> ",
+                "MathFunctionTokenType -> calc",
+                "BinaryExpressionTokenType -> ",
+                "Iden -> b",
+                "Number -> 0.15",
+                "RuleNodeType -> html,body",
+                "DeclarationNodeType -> line-height",
+                "Number -> 1.474",
+                "RuleNodeType -> .ruler",
+                "DeclarationNodeType -> height",
+                "Length -> 10",
+                "DeclarationNodeType -> background-color",
+                "Color -> orange",
+            ]);
         });
     });
 }

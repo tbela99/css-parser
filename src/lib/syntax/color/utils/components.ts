@@ -1,53 +1,58 @@
-import type { ColorToken, FunctionToken, IdentToken, NumberToken, Token } from "../../../../@types/index.d.ts";
+import type { Token } from "../../../../@types/index.d.ts";
+import type { AstArena } from "../../../ast/arena.ts";
 import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { COLORS_NAMES } from "../../constants.ts";
 import { expandHexValue } from "../hex.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
-export function getColorComponents(token: number, arena: Arena): number[] | null {
-   
-    if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
-        if (equalsIgnoreCase("currentcolor", (token as ColorToken).val)) {
+export function getColorComponents(arena: AstArena, token: Token): Token[] | null {
+    if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+        const val: string = arena.strings[arena.stringValue[token]];
+
+        if (equalsIgnoreCase("currentcolor", val)) {
             return null;
         }
 
         const value: string = expandHexValue(
-            (token as ColorToken).kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val,
+            arena.colorType[token] == ColorType.LIT ? COLORS_NAMES[val.toLowerCase()] : val,
         );
         // @ts-ignore
         return value
             .slice(1)
             .match(/([a-fA-F0-9]{2})/g)
-            .map((t: string, index: number) => {
-                return <NumberToken>{ typ: EnumToken.Number, val: index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255 };
-            });
+            .map((t: string, index: number) =>
+                arena.createToken(EnumToken.Number, index < 3 ? parseInt(t, 16) : parseInt(t, 16) / 255),
+            );
     }
 
     const result: Token[] = [];
 
-    for (const child of (token as ColorToken).chi as Token[]) {
+    for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+        const typ: EnumToken = arena.dataTypes[child];
+
         if (
-            [
-                EnumToken.LiteralTokenType,
-                EnumToken.CommentTokenType,
-                EnumToken.CommaTokenType,
-                EnumToken.WhitespaceTokenType,
-            ].includes(child.typ)
+            typ == EnumToken.LiteralTokenType ||
+            typ == EnumToken.CommentTokenType ||
+            typ == EnumToken.CommaTokenType ||
+            typ == EnumToken.WhitespaceTokenType
         ) {
             continue;
         }
 
         if (
-            child.typ === EnumToken.FunctionTokenType ||
-            child.typ === EnumToken.WildCardFunctionTokenType ||
-            child.typ === EnumToken.MathFunctionTokenType
+            typ === EnumToken.FunctionTokenType ||
+            typ === EnumToken.WildCardFunctionTokenType ||
+            typ === EnumToken.MathFunctionTokenType
         ) {
-            if ("var" == (child as FunctionToken).val.toLowerCase()) {
+            if ("var" == arena.strings[arena.stringValue[child]].toLowerCase()) {
                 return null;
             }
         }
 
-        if (child.typ == EnumToken.ColorTokenType && equalsIgnoreCase("currentcolor", (child as ColorToken).val)) {
+        if (
+            typ == EnumToken.ColorTokenType &&
+            equalsIgnoreCase("currentcolor", arena.strings[arena.stringValue[child]])
+        ) {
             return null;
         }
 

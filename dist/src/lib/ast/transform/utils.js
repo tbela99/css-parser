@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { epsilon } from '../../syntax/constants.js';
@@ -132,7 +128,7 @@ function round(number) {
     const rounded = Math.round(number);
     return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
 }
-// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
+// translate3d(25.9808px, 0, 15px) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
 // translate → rotate → skew → scale
 function decompose(original) {
     const matrix = original.slice();

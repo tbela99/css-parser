@@ -1,66 +1,10 @@
-import type {
-    AngleToken,
-    AstAtRule,
-    AstComment,
-    AstDeclaration,
-    AstNode,
-    AstRule,
-    AstRuleList,
-    AstStyleSheet,
-    AtRuleToken,
-    AttrToken,
-    BinaryExpressionToken,
-    ClassSelectorToken,
-    ColorToken,
-    CommentToken,
-    DashedIdentToken,
-    ErrorDescription,
-    FractionToken,
-    FunctionDefToken,
-    FunctionToken,
-    HashToken,
-    IdentListToken,
-    IdentToken,
-    IfConditionToken,
-    IfElseConditionToken,
-    InvalidAttrToken,
-    InvalidClassSelectorToken,
-    LengthToken,
-    ListToken,
-    LiteralToken,
-    MediaFeatureToken,
-    MediaQueryConditionToken,
-    MediaQueryUnaryFeatureToken,
-    MediaRangeQueryToken,
-    NumberToken,
-    PercentageToken,
-    PseudoElementToken,
-    PseudoPageToken,
-    RenderOptions,
-    RenderResult,
-    SourceLocation,
-    StringToken,
-    SupportsQueryConditionToken,
-    SupportsQueryUnaryConditionToken,
-    Token,
-    WhenElseQueryConditionToken,
-    WhenElseUnaryConditionToken,
-    WrappedValuesToken,
-} from "../../@types/index.d.ts";
+import type { Token, AstAtRule, AstComment, AstDeclaration, AstNode, AstRule, AstRuleList, AstStyleSheet, ErrorDescription, RenderOptions, RenderResult, SourceLocation } from "../../@types/index.d.ts";
 import { convertColor, getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
+import { ColorType, EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
 import { expand } from "../ast/expand.ts";
 import { SourceMap } from "./sourcemap/sourcemap.ts";
-import {
-    anglePrecision,
-    LOCSRCID,
-    LOCSTA,
-    PARENT,
-    pseudoElements,
-    tokensfuncSet,
-    urlTokenMatcher,
-} from "../syntax/constants.ts";
+import { anglePrecision, pseudoElements, tokensfuncSet, urlTokenMatcher } from "../syntax/constants.ts";
 import {
     isWhiteSpace,
     minifyNumber,
@@ -73,20 +17,21 @@ import {
 } from "../syntax/syntax.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
-import { LineMap } from "../parser/linesmap.ts";
+import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 import { SourceFile } from "../parser/source.ts";
-import { cloneNode } from "../ast/clone.ts";
-import { Arena } from "../parser/arena.ts";
+import { AstArena, TokenField } from "../ast/arena.ts";
 
 /**
  * render ast
- * @param data
+ * @param arena
+ * @param data node id
  * @param options
  * @param mapping
  * @private
  */
 export function doRender(
+    arena: AstArena,
     data: AstNode,
     options: RenderOptions = {},
     mapping?: {
@@ -126,22 +71,35 @@ export function doRender(
         ...options,
     };
 
-    if (options.withParents) {
-        let parent: AstNode;
+    const expandNesting: boolean =
+        (options.expandNestingRules as boolean) &&
+        [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(
+            arena.dataTypes[data],
+        ) &&
+        (arena.flags[data] & EnumAstNodeStatus.HasChildren) != 0;
 
-        while (data[PARENT] != null) {
-            // @ts-ignore
-            // parent = { ...data[PARENT], chi: [data] };
+    if (options.withParents || expandNesting) {
+        // render a copy allocated in a temporary arena: the original tree is not modified
+        const source: AstArena = arena;
+        let parent: AstNode = source.parents[data];
 
-            parent = cloneNode(data[PARENT]!) as AstNode;
-            // @ts-ignore
-            parent.chi = [data];
+        arena = new AstArena(Math.min(source.current, 1024));
+        data = arena.import(source, data);
 
-            // @ts-ignore
-            parent[PARENT] = data[PARENT][PARENT];
+        if (options.withParents) {
+            // wrap the node into shallow copies of its ancestors
+            while (parent != 0) {
+                const clone: AstNode = arena.import(source, parent, false);
 
-            // @ts-ignore
-            data = parent;
+                arena.appendChildren(clone, data);
+
+                data = clone;
+                parent = source.parents[parent];
+            }
+        }
+
+        if (expandNesting) {
+            data = expand(arena, data);
         }
     }
 
@@ -159,7 +117,7 @@ export function doRender(
         sta: 0,
         end: 0,
     } as SourceLocation;
-    const lineMap: LineMap | null = options.sourcemap ? new LineMap() : null;
+    const linesMap: LinesMap | null = options.sourcemap ? new LinesMap() : null;
 
     let code: string = "";
 
@@ -192,7 +150,7 @@ export function doRender(
         )}${options.newLine}}${options.newLine}`;
 
         if (sourcemap != null) {
-            move(sourceLocation, lineMap!, code);
+            move(sourceLocation, linesMap!, code);
         }
     }
 
@@ -201,32 +159,30 @@ export function doRender(
         options.output = options.resolve(options.output, options.cwd).absolute;
     }
 
+    // the tokens allocated while rendering (color conversion, gradients, ...) are released
+    const mark: number = arena.mark();
+
     const result: RenderResult = {
         code:
             code +
             renderAstNode(
-                options.expandNestingRules &&
-                    [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(
-                        data.typ,
-                    ) &&
-                    "chi" in data
-                    ? expand(data as AstStyleSheet | AstAtRule | AstRule)
-                    : data,
+                arena,
+                data,
                 options,
                 sourcemaps,
                 sourceLocation,
-                lineMap,
+                linesMap,
                 errors,
                 function reducer(acc: string, curr: Token): string {
-                    if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
-                        if (!options.preserveLicense || !(curr as AstComment).val.startsWith("/*!")) {
+                    if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
+                        if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
                             return acc;
                         }
 
-                        return acc + (curr as AstComment).val;
+                        return acc + arena.strings[arena.stringValue[curr]];
                     }
 
-                    return acc + renderValue(curr, options, cache, reducer, errors);
+                    return acc + renderValue(arena, curr, options, cache, reducer, errors);
                 },
                 cache,
             ),
@@ -235,6 +191,8 @@ export function doRender(
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
+
+    arena.rewind(mark);
 
     if (sourcemap != null) {
         let source: SourceFile;
@@ -256,25 +214,27 @@ export function doRender(
 
 /**
  * Update source map
+ * @param arena
  * @param node
  * @param options
  * @param cache
  * @param sourcemaps
  * @param sourceLocation
- * @param lineMap
+ * @param linesMap
  * @param str
  *
  * @internal
  */
 function updateSourceMap(
-    node: AstRuleList | AstComment,
+    arena: AstArena,
+    node: AstNode,
     options: RenderOptions,
     cache: {
         [p: string]: any;
     },
     sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> },
     sourceLocation: SourceLocation,
-    lineMap: LineMap,
+    linesMap: LinesMap,
     str: string,
 ) {
     let offset: number = 0;
@@ -285,16 +245,16 @@ function updateSourceMap(
     }
 
     if (offset > 0) {
-        move(sourceLocation, lineMap, str, 0, offset + 1);
+        move(sourceLocation, linesMap, str, 0, offset + 1);
     }
 
-    if (node[LOCSTA] != null) {
-        const source = options.sourcesMap!.get(node[LOCSRCID]!) as SourceFile;
+    if (arena.flags[node] & EnumAstNodeStatus.HasLocation) {
+        const source = options.sourcesMap!.get(arena.getSource(node)) as SourceFile;
         const inputSourceMap = source.getInputSourceMap();
-        const offsets: [number, number] = source.getOffsets(node[LOCSTA]) as [number, number];
-        const [newLine, newColumn] = lineMap.getOffsets(sourceLocation.end);
+        const offsets: [number, number] = source.getOffsets(arena.getSpanStart(node)) as [number, number];
+        const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
         let records: Array<[string | null, number, number, string | null]> | null = null;
-        let srcId: number = node[LOCSRCID]!;
+        let srcId: number = arena.getSource(node);
         let sourceFileName: string | null = (source.getFileName() as string) || null;
         let sourceContent: string | null; // = (source.getContent() as string) || null;
 
@@ -380,18 +340,18 @@ function updateSourceMap(
         }
     }
 
-    move(sourceLocation, lineMap, str, offset);
+    move(sourceLocation, linesMap, str, offset);
 }
 
 /**
  * Update position
  * @param sourceLocation
- * @param lineMap
+ * @param linesMap
  * @param str
  * @param start
  * @param end
  */
-export function move(sourceLocation: SourceLocation, lineMap: LineMap, str: string, start?: number, end?: number) {
+export function move(sourceLocation: SourceLocation, linesMap: LinesMap, str: string, start?: number, end?: number) {
     let i: number = start ?? 0;
     let j: number = end ?? str.length;
     let codepoint: number;
@@ -415,7 +375,7 @@ export function move(sourceLocation: SourceLocation, lineMap: LineMap, str: stri
             } else if (codepoint == 0xa && i > 0 && str.charCodeAt(i - 1) == 0xd) {
                 // nope
             } else {
-                lineMap.addLineStart(sourceLocation.end);
+                linesMap.addLineStart(sourceLocation.end);
             }
         }
     }
@@ -423,11 +383,12 @@ export function move(sourceLocation: SourceLocation, lineMap: LineMap, str: stri
 
 /**
  * render ast node
- * @param data
+ * @param arena
+ * @param data node id
  * @param options
  * @param sourcemaps
  * @param sourceLocation
- * @param lineMap
+ * @param linesMap
  * @param errors
  * @param reducer
  * @param cache
@@ -437,11 +398,12 @@ export function move(sourceLocation: SourceLocation, lineMap: LineMap, str: stri
  * @internal
  */
 function renderAstNode(
+    arena: AstArena,
     data: AstNode,
     options: RenderOptions,
     sourcemaps: { sources: number[]; maps: Array<[number, number, number, number, number]> } | null,
     sourceLocation: SourceLocation,
-    lineMap: LineMap | null,
+    linesMap: LinesMap | null,
     errors: ErrorDescription[],
     reducer: (acc: string, curr: Token) => string,
     cache: {
@@ -465,32 +427,36 @@ function renderAstNode(
     const indent: string = indents[level];
     const indentSub: string = indents[level + 1];
 
-    switch (data.typ) {
+    const typ: EnumToken = arena.dataTypes[data];
+
+    switch (typ) {
         case EnumToken.DeclarationNodeType:
-            return `${(<AstDeclaration>data).nam}:${options.indent}${(options.minifyValues
-                ? filterValues((<AstDeclaration>data).val)
-                : (<AstDeclaration>data).val
+            return `${arena.strings[arena.name[data]]}:${options.indent}${(options.minifyValues
+                ? filterValues(arena, arena.tokens(data))
+                : arena.tokens(data)
             ).reduce(reducer, "")}`;
 
         case EnumToken.CommentNodeType:
-        case EnumToken.CDOCOMMNodeType:
-            if ((<AstComment>data).val.startsWith("/*# sourceMappingURL=")) {
+        case EnumToken.CDOCOMMNodeType: {
+            const val: string = arena.strings[arena.stringValue[data]];
+
+            if (val.startsWith("/*# sourceMappingURL=")) {
                 // ignore sourcemap comment
                 return "";
             }
 
-            return !options.removeComments || (options.preserveLicense && (<AstComment>data).val.startsWith("/*!"))
-                ? (<AstComment>data).val
-                : "";
+            return !options.removeComments || (options.preserveLicense && val.startsWith("/*!")) ? val : "";
+        }
 
         case EnumToken.StyleSheetNodeType:
-            for (const node of (<AstStyleSheet>data).chi) {
+            for (let node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
                 str = renderAstNode(
+                    arena,
                     node,
                     options,
                     sourcemaps,
                     sourceLocation,
-                    lineMap,
+                    linesMap,
                     errors,
                     reducer,
                     cache,
@@ -509,7 +475,7 @@ function renderAstNode(
                 children += str;
 
                 if (sourcemaps != null && str !== "" && options.newLine) {
-                    move(sourceLocation, lineMap!, options.newLine as string);
+                    move(sourceLocation, linesMap!, options.newLine as string);
                 }
             }
 
@@ -518,51 +484,56 @@ function renderAstNode(
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
         case EnumToken.KeyframesRuleNodeType:
-        case EnumToken.KeyframesAtRuleNodeType:
-            if ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ) && !("chi" in data)) {
-                return `${indent}@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
-                    (<AstAtRule>data).val
-                };`;
+        case EnumToken.KeyframesAtRuleNodeType: {
+            const isAtRule: boolean = typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType;
+            const nam: string = arena.strings[arena.name[data]];
+            const val: string = arena.strings[arena.stringValue[data]];
+
+            if (isAtRule && !(arena.flags[data] & EnumAstNodeStatus.HasChildren)) {
+                return `${(indent.length > 0 ? options.newLine : "") + indent}@${nam}${val === "" ? "" : options.indent || " "}${val};`;
             }
 
-            const lineMapLength = lineMap ? lineMap.getLineStarts().length : 0;
+            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
             const prelude =
                 (indent.length > 0 ? options.newLine : "") +
                 indent +
-                ([EnumToken.AtRuleNodeType, EnumToken.KeyframesAtRuleNodeType].includes(data.typ)
-                    ? `@${(<AstAtRule>data).nam}${(<AstAtRule>data).val === "" ? "" : options.indent || " "}${
-                          (<AstAtRule>data).val
-                      }${options.indent}{`
-                    : (<AstRule>data).sel + `${options.indent}{`);
+                (isAtRule
+                    ? `@${nam}${val === "" ? "" : options.indent || " "}${val}${options.indent}{`
+                    : nam + `${options.indent}{`);
 
             if (sourcemaps != null) {
-                updateSourceMap(data, options, cache, sourcemaps, sourceLocation, lineMap!, prelude);
+                updateSourceMap(arena, data, options, cache, sourcemaps, sourceLocation, linesMap!, prelude);
             }
 
             let node: AstNode;
-            let recordDeclarationSourceMap: boolean = data.typ == EnumToken.AtRuleNodeType;
-            for (let i = 0; i < (data as AstRule | AstAtRule).chi!.length; i++) {
-                node = (data as AstRule | AstAtRule).chi![i];
-                if (node.typ == EnumToken.CommentNodeType) {
+            let nodeType: EnumToken;
+            let recordDeclarationSourceMap: boolean = typ == EnumToken.AtRuleNodeType;
+
+            for (node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
+                nodeType = arena.dataTypes[node];
+
+                if (nodeType == EnumToken.CommentNodeType) {
+                    const comment: string = arena.strings[arena.stringValue[node]];
+
                     str =
-                        options.removeComments &&
-                        (!options.preserveLicense || !(<AstComment>node).val.startsWith("/*!"))
+                        options.removeComments && (!options.preserveLicense || !comment.startsWith("/*!"))
                             ? ""
-                            : (<AstComment>node).val;
-                } else if (node.typ == EnumToken.DeclarationNodeType) {
-                    str = `${(<AstDeclaration>node).nam}:${options.indent}${(options.minifyValues
-                        ? filterValues((<AstDeclaration>node).val)
-                        : (<AstDeclaration>node).val
+                            : comment;
+                } else if (nodeType == EnumToken.DeclarationNodeType) {
+                    str = `${arena.strings[arena.name[node]]}:${options.indent}${(options.minifyValues
+                        ? filterValues(arena, arena.tokens(node))
+                        : arena.tokens(node)
                     )
                         .reduce(reducer, "")
                         .trimEnd()};`;
                 } else {
                     str = renderAstNode(
+                        arena,
                         node,
                         options,
                         sourcemaps,
                         sourceLocation,
-                        lineMap,
+                        linesMap,
                         errors,
                         reducer,
                         cache,
@@ -587,17 +558,16 @@ function renderAstNode(
                 children += str;
 
                 if (sourcemaps != null && str !== "") {
-                    if (node.typ == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                    if (nodeType == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
                         //     @media screen {
                         //         color: red;
                         //     }
                         // }
-                        // @ts-ignore
-                        updateSourceMap(node, options, cache, sourcemaps, sourceLocation, lineMap!, str);
+                        updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation, linesMap!, str);
                     } else {
-                        move(sourceLocation, lineMap!, str);
+                        move(sourceLocation, linesMap!, str);
                     }
                 }
             }
@@ -610,7 +580,7 @@ function renderAstNode(
             if (options.removeEmpty && children === "") {
                 if (sourcemaps != null) {
                     sourceLocation.end -= prelude.length;
-                    lineMap!.getLineStarts().length = lineMapLength;
+                    linesMap!.getLineStarts().length = lineMapLength;
                 }
                 return "";
             }
@@ -618,10 +588,11 @@ function renderAstNode(
             const end: string = options.newLine + indent + `}`;
 
             if (sourcemaps != null) {
-                move(sourceLocation, lineMap!, end);
+                move(sourceLocation, linesMap!, end);
             }
 
             return prelude + children + end;
+        }
 
         default:
             return "";
@@ -638,6 +609,7 @@ function renderAstNode(
  * @private
  */
 export function renderValue(
+    arena: AstArena,
     token: Token,
     options: RenderOptions = {},
     cache: {
@@ -647,8 +619,8 @@ export function renderValue(
     errors?: ErrorDescription[],
 ): string {
     if (
-        token.typ === EnumToken.WhenElseFunctionTokenType &&
-        equalsIgnoreCase((token as FunctionToken).val, "supports")
+        arena.dataTypes[token] === EnumToken.WhenElseFunctionTokenType &&
+        equalsIgnoreCase(arena.strings[arena.stringValue[token]], "supports")
     ) {
         options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
@@ -658,19 +630,19 @@ export function renderValue(
 
     if (reducer == null) {
         reducer = function (acc: string, curr: Token): string {
-            if (curr.typ == EnumToken.CommentTokenType && options.removeComments) {
-                if (!options.preserveLicense || !(curr as AstComment).val.startsWith("/*!")) {
+            if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
+                if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
                     return acc;
                 }
 
-                return acc + (curr as AstComment).val;
+                return acc + arena.strings[arena.stringValue[curr]];
             }
 
-            return acc + renderValue(curr, options, cache, reducer, errors);
+            return acc + renderValue(arena, curr, options, cache, reducer, errors);
         };
     }
 
-    switch (token.typ) {
+    switch (arena.dataTypes[token]) {
         case EnumToken.UrlFunctionTokenDefType:
         case EnumToken.FunctionTokenDefType:
         case EnumToken.MathFunctionTokenDefType:
@@ -687,60 +659,59 @@ export function renderValue(
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
         case EnumToken.CustomFunctionTokenDefType:
         case EnumToken.WildCardFunctionTokenDefType:
-            return (token as FunctionDefToken).val + "(";
+            return arena.strings[arena.stringValue[token]] + "(";
 
-        case EnumToken.ListTokenType:
-            return (token as ListToken).chi.reduce(
-                (acc: string, curr: Token) => acc + renderValue(curr, options, cache),
+        case EnumToken.ListToken:
+            return arena.tokens(token).reduce(
+                (acc: string, curr: Token) => acc + renderValue(arena, curr, options, cache),
                 "",
             );
 
-        case EnumToken.BinaryExpressionTokenType:
-            if (
-                EnumToken.Mul === (token as BinaryExpressionToken).op ||
-                EnumToken.Div === (token as BinaryExpressionToken).op
-            ) {
+        case EnumToken.BinaryExpressionTokenType: {
+            const op: EnumToken = arena.numericValue[token];
+            const l: Token = arena.getLeft(token)![0];
+            const r: Token = arena.getRight(token)![0];
+
+            if (EnumToken.Mul === op || EnumToken.Div === op) {
                 let result: string = "";
 
                 if (
-                    (token as BinaryExpressionToken).l.typ == EnumToken.BinaryExpressionTokenType &&
-                    [EnumToken.Add, EnumToken.Sub].includes(
-                        ((token as BinaryExpressionToken).l as BinaryExpressionToken).op,
-                    )
+                    arena.dataTypes[l] == EnumToken.BinaryExpressionTokenType &&
+                    (arena.numericValue[l] == EnumToken.Add || arena.numericValue[l] == EnumToken.Sub)
                 ) {
-                    result = "(" + renderValue((token as BinaryExpressionToken).l, options, cache) + ")";
+                    result = "(" + renderValue(arena, l, options, cache) + ")";
                 } else {
-                    result = renderValue((token as BinaryExpressionToken).l, options, cache);
+                    result = renderValue(arena, l, options, cache);
                 }
 
-                result += (token as BinaryExpressionToken).op == EnumToken.Mul ? "*" : "/";
+                result += op == EnumToken.Mul ? "*" : "/";
 
                 if (
-                    (token as BinaryExpressionToken).r.typ == EnumToken.BinaryExpressionTokenType &&
-                    [EnumToken.Add, EnumToken.Sub].includes(
-                        ((token as BinaryExpressionToken).r as BinaryExpressionToken).op,
-                    )
+                    arena.dataTypes[r] == EnumToken.BinaryExpressionTokenType &&
+                    (arena.numericValue[r] == EnumToken.Add || arena.numericValue[r] == EnumToken.Sub)
                 ) {
-                    result += "(" + renderValue((token as BinaryExpressionToken).r, options, cache) + ")";
+                    result += "(" + renderValue(arena, r, options, cache) + ")";
                 } else {
-                    result += renderValue((token as BinaryExpressionToken).r, options, cache);
+                    result += renderValue(arena, r, options, cache);
                 }
 
                 return result;
             }
 
             return (
-                renderValue((token as BinaryExpressionToken).l, options, cache) +
-                ((token as BinaryExpressionToken).op == EnumToken.Add ? " + " : " - ") +
-                renderValue((token as BinaryExpressionToken).r, options, cache)
+                renderValue(arena, l, options, cache) +
+                (op == EnumToken.Add ? " + " : " - ") +
+                renderValue(arena, r, options, cache)
             );
+        }
 
-        case EnumToken.FractionTokenType:
-            const fraction: string =
-                renderValue((token as FractionToken).l) + "/" + renderValue((token as FractionToken).r);
+        case EnumToken.FractionTokenType: {
+            const numerator: Token = arena.numerator(token);
+            const denominator: Token = arena.denominator(token);
+            const fraction: string = renderValue(arena, numerator) + "/" + renderValue(arena, denominator);
 
-            if (+(token as FractionToken).r.val != 0) {
-                const value: string = minifyNumber(+(token as FractionToken).l.val / +(token as FractionToken).r.val);
+            if (arena.numericValue[denominator] != 0) {
+                const value: string = minifyNumber(arena.numericValue[numerator] / arena.numericValue[denominator]);
 
                 if (value.length <= fraction.length) {
                     return value;
@@ -748,6 +719,7 @@ export function renderValue(
             }
 
             return fraction;
+        }
 
         case EnumToken.Add:
             return " + ";
@@ -766,8 +738,8 @@ export function renderValue(
         case EnumToken.WrappedValuesTokenType:
             return (
                 "{" +
-                (token as WrappedValuesToken).chi.reduce(
-                    (acc: string, curr: Token) => acc + renderValue(curr, options, cache),
+                arena.tokens(token).reduce(
+                    (acc: string, curr: Token) => acc + renderValue(arena, curr, options, cache),
                     "",
                 ) +
                 "}"
@@ -775,26 +747,27 @@ export function renderValue(
 
         case EnumToken.ColorTokenType:
             if (
-                (token as ColorToken).kin == ColorType.LIGHT_DARK ||
-                ("chi" in token && options.convertColor === false && ((token as ColorToken).chi as Token[]).length == 2)
+                arena.colorType[token] == ColorType.LIGHT_DARK ||
+                (arena.firstToken[token] != 0 && options.convertColor === false && arena.tokenCount(token) == 2)
             ) {
                 return (
-                    (token as ColorToken).val +
+                    arena.strings[arena.stringValue[token]] +
                     "(" +
-                    ((token as ColorToken).chi as Token[]).reduce((acc: string, curr: Token) => {
-                        if (curr.typ === EnumToken.IdenTokenType) {
-                            parseColor(curr as IdentToken);
+                    arena.tokens(token).reduce((acc: string, curr: Token) => {
+                        if (arena.dataTypes[curr] === EnumToken.IdenTokenType) {
+                            parseColor(arena, curr);
                         }
 
-                        return acc + renderValue(curr, options, cache);
+                        return acc + renderValue(arena, curr, options, cache);
                     }, "") +
                     ")"
                 );
             }
 
             if (options.convertColor !== false) {
-                const value: ColorToken | null = convertColor(
-                    token as ColorToken,
+                const value: Token | null = convertColor(
+                    arena,
+                    token,
                     typeof options.convertColor === "boolean"
                         ? ColorType.HEX
                         : (ColorType[
@@ -808,26 +781,27 @@ export function renderValue(
                     token = value;
                 }
 
-                if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
-                    return reduceHexValue((token as ColorToken).val);
+                if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+                    return reduceHexValue(arena.strings[arena.stringValue[token]]);
                 }
             }
 
             if (
-                (token as ColorToken).kin === ColorType.SYS ||
-                (token as ColorToken).kin === ColorType.DPSYS ||
-                (token as ColorToken).kin === ColorType.NON_STD
+                arena.colorType[token] === ColorType.SYS ||
+                arena.colorType[token] === ColorType.DPSYS ||
+                arena.colorType[token] === ColorType.NON_STD
             ) {
-                return (token as ColorToken).val;
+                return arena.strings[arena.stringValue[token]];
             }
 
-            if ((token as ColorToken).kin == ColorType.HEX || (token as ColorToken).kin == ColorType.LIT) {
-                return (token as ColorToken).val;
+            if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+                return arena.strings[arena.stringValue[token]];
             }
 
-            if (Array.isArray((token as ColorToken).chi)) {
-                const fnName: string = (token as ColorToken).val;
-                const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes((token as ColorToken).val);
+            if (arena.firstToken[token] != 0) {
+                const fnName: string = arena.strings[arena.stringValue[token]];
+                const chi: Token[] = arena.tokens(token);
+                const isLegacy: boolean = ["rgb", "rgba", "hsl", "hsla"].includes(fnName);
                 const hasAlpha: boolean = [
                     "rgb",
                     "rgba",
@@ -840,41 +814,40 @@ export function renderValue(
                     "lch",
                 ].includes(fnName);
                 const useAlpha: boolean =
-                    (hasAlpha && (token as ColorToken).chi!.length == (isLegacy ? 7 : 4)) ||
-                    ("color" == (token as ColorToken).val && (token as ColorToken).chi!.length == 5);
+                    (hasAlpha && chi.length == (isLegacy ? 7 : 4)) || ("color" == fnName && chi.length == 5);
 
                 return (
-                    (hasAlpha && (token as ColorToken).val.endsWith("a") ? fnName.slice(0, -1) : fnName) +
+                    (hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) +
                     "(" +
-                    (token as ColorToken)
-                        .chi!.reduce((acc: string, curr: Token, index: number, array: Token[]) => {
+                    chi
+                        .reduce((acc: string, curr: Token, index: number, array: Token[]) => {
                             if (/[,/]\s*$/.test(acc)) {
-                                if (curr.typ == EnumToken.WhitespaceTokenType) {
+                                if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
                                     return acc.trimEnd();
                                 }
 
-                                return acc.trimStart() + renderValue(curr, options, cache);
+                                return acc.trimStart() + renderValue(arena, curr, options, cache);
                             }
 
-                            if (isLegacy && curr.typ == EnumToken.CommaTokenType) {
+                            if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
                                 return acc.trimEnd() + " ";
                             }
 
-                            if (curr.typ == EnumToken.WhitespaceTokenType) {
+                            if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
                                 return acc.trimEnd() + " ";
                             }
 
                             if (
-                                curr.typ == EnumToken.CommaTokenType ||
-                                (curr.typ == EnumToken.LiteralTokenType && (curr as LiteralToken).val == "/")
+                                arena.dataTypes[curr] == EnumToken.CommaTokenType ||
+                                (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")
                             ) {
-                                return acc.trimEnd() + (curr.typ == EnumToken.CommaTokenType ? "," : "/");
+                                return acc.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
                             }
 
                             return (
                                 acc.trimEnd() +
                                 (useAlpha && index == array.length - 1 ? "/" : " ") +
-                                renderValue(curr, options, cache)
+                                renderValue(arena, curr, options, cache)
                             );
                         }, "")
                         .trimStart() +
@@ -883,21 +856,18 @@ export function renderValue(
             }
 
         case EnumToken.UrlFunctionTokenType:
-            if (options.minifyValues && token.typ === EnumToken.UrlFunctionTokenType) {
-                if ((token as FunctionToken).chi[0]?.typ === EnumToken.BadUrlTokenType) {
+            if (options.minifyValues && arena.dataTypes[token] === EnumToken.UrlFunctionTokenType) {
+                if (arena.typeOf(arena.firstToken[token]) === EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
 
-                for (const child of (token as FunctionToken).chi) {
-                    if (child.typ === EnumToken.StringTokenType) {
-                        if (
-                            (child as StringToken).val.slice(1, 5) !== "data:" &&
-                            urlTokenMatcher.test((child as StringToken).val)
-                        ) {
-                            Object.assign(child, {
-                                typ: EnumToken.UrlTokenTokenType,
-                                val: (child as StringToken).val.slice(1, -1),
-                            });
+                for (const child of arena.tokens(token)) {
+                    if (arena.dataTypes[child] === EnumToken.StringTokenType) {
+                        const val: string = arena.strings[arena.stringValue[child]];
+
+                        if (val.slice(1, 5) !== "data:" && urlTokenMatcher.test(val)) {
+                            arena.dataTypes[child] = EnumToken.UrlTokenTokenType;
+                            arena.setStr(child, val.slice(1, -1));
                         }
 
                         break;
@@ -909,10 +879,10 @@ export function renderValue(
         case EnumToken.FunctionTokenType:
         case EnumToken.MathFunctionTokenType:
         case EnumToken.ImageFunctionTokenType:
-            if (options.minifyValues && token.typ === EnumToken.ImageFunctionTokenType) {
-                const slice = (token as FunctionToken).chi.slice() as Token[];
+            if (options.minifyValues && arena.dataTypes[token] === EnumToken.ImageFunctionTokenType) {
+                const slice: Token[] = arena.tokens(token);
 
-                switch ((token as FunctionToken).val) {
+                switch (arena.strings[arena.stringValue[token]]) {
                     case "linear-gradient":
                     case "repeating-linear-gradient":
                         {
@@ -923,40 +893,34 @@ export function renderValue(
 
                             for (i = 0; i < slice.length; i++) {
                                 if (
-                                    slice[i].typ == EnumToken.ColorTokenType ||
-                                    slice[i].typ === EnumToken.CommaTokenType
+                                    arena.dataTypes[slice[i]] == EnumToken.ColorTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.CommaTokenType
                                 ) {
                                     break;
                                 }
 
                                 if (
-                                    slice[i].typ == EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "to")
+                                    arena.dataTypes[slice[i]] == EnumToken.IdenTokenType &&
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "to")
                                 ) {
                                     k = i + 1;
                                     while (
                                         k < slice.length &&
-                                        (slice[k].typ === EnumToken.WhitespaceTokenType ||
-                                            slice[k].typ === EnumToken.CommentTokenType)
+                                        (arena.dataTypes[slice[k]] === EnumToken.WhitespaceTokenType ||
+                                            arena.dataTypes[slice[k]] === EnumToken.CommentTokenType)
                                     ) {
                                         k++;
                                     }
 
-                                    if (k < slice.length && slice[k].typ === EnumToken.IdenTokenType) {
+                                    if (k < slice.length && arena.dataTypes[slice[k]] === EnumToken.IdenTokenType) {
                                         // convert keyword to angle
-                                        key = (slice[k] as IdentToken).val.toLowerCase();
+                                        key = arena.strings[arena.stringValue[slice[k]]].toLowerCase();
                                         switch (key) {
                                             case "right":
-                                                slice.splice(i, k - i + 1, {
-                                                    typ: EnumToken.AngleTokenType,
-                                                    val: 90,
-                                                } as AngleToken);
+                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, 90, "deg"));
                                                 break;
                                             case "left":
-                                                slice.splice(i, k - i + 1, {
-                                                    typ: EnumToken.AngleTokenType,
-                                                    val: 270,
-                                                } as AngleToken);
+                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, 270, "deg"));
                                                 break;
                                             case "top":
                                             case "bottom":
@@ -964,13 +928,13 @@ export function renderValue(
 
                                                 while (
                                                     j < slice.length &&
-                                                    (slice[j].typ === EnumToken.WhitespaceTokenType ||
-                                                        slice[j].typ === EnumToken.CommentTokenType)
+                                                    (arena.dataTypes[slice[j]] === EnumToken.WhitespaceTokenType ||
+                                                        arena.dataTypes[slice[j]] === EnumToken.CommentTokenType)
                                                 ) {
                                                     j++;
                                                 }
 
-                                                if (j < slice.length && slice[j].typ !== EnumToken.CommaTokenType) {
+                                                if (j < slice.length && arena.dataTypes[slice[j]] !== EnumToken.CommaTokenType) {
                                                     i = j - 1;
                                                     break;
                                                 }
@@ -980,7 +944,7 @@ export function renderValue(
                                                     // to bottom -> 180deg is the default angle and will be removed
                                                     while (
                                                         k < slice.length &&
-                                                        slice[k].typ != EnumToken.CommaTokenType
+                                                        arena.dataTypes[slice[k]] != EnumToken.CommaTokenType
                                                     ) {
                                                         k++;
                                                     }
@@ -990,19 +954,16 @@ export function renderValue(
                                                     continue;
                                                 }
 
-                                                slice.splice(i, k - i + 1, {
-                                                    typ: EnumToken.AngleTokenType,
-                                                    val: key === "top" ? 0 : 180,
-                                                } as AngleToken);
+                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, key === "top" ? 0 : 180, "deg"));
                                                 i--;
                                                 break;
                                         }
                                     }
-                                } else if (slice[i].typ == EnumToken.AngleTokenType) {
-                                    if ((180 - (toDegrees(slice[i] as AngleToken).val as number)) % 360 === 0) {
+                                } else if (arena.dataTypes[slice[i]] == EnumToken.AngleTokenType) {
+                                    if ((180 - arena.numericValue[toDegrees(arena, slice[i])]) % 360 === 0) {
                                         k = i + 1;
 
-                                        // while (k < slice.length && slice[k].typ !== EnumToken.CommaTokenType) {
+                                        // while (k < slice.length && arena.dataTypes[slice[k]] !== EnumToken.CommaTokenType) {
                                         //     k++;
                                         // }
 
@@ -1011,19 +972,19 @@ export function renderValue(
                                 }
                             }
 
-                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.CommaTokenType) {
                                 i++;
                                 // while (
                                 //     i < slice.length &&
-                                //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                //         slice[i].typ === EnumToken.CommentTokenType)
-                                // ) {
+                                //     (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                //         arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
+                                //) {
                                 //     i++;
                                 // }
                             }
 
-                            if (slice[i]?.typ === EnumToken.ColorTokenType) {
-                                for (const token of reduceColorStops(slice.splice(i, slice.length - i))) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.ColorTokenType) {
+                                for (const token of reduceColorStops(arena, slice.splice(i, slice.length - i))) {
                                     slice.push(token);
                                 }
                             }
@@ -1038,9 +999,9 @@ export function renderValue(
 
                             // while (
                             //     i < slice.length &&
-                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                            //         slice[i].typ === EnumToken.CommentTokenType)
-                            // ) {
+                            //     (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                            //         arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
+                            //) {
                             //     i++;
                             // }
 
@@ -1049,96 +1010,96 @@ export function renderValue(
                             const size: Token[] = [];
                             const colorSpaceDef: Token[] = [];
 
-                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType) {
                                 if (
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-corner") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "ellipse")
                                 ) {
                                     i++;
                                 } else if (
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-side") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-corner") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-side")
                                 ) {
                                     size.push(slice[i++]);
-                                } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
+                                } else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "circle")) {
                                     form.push(slice[i++]);
                                 }
 
                                 while (
-                                    slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i]?.typ === EnumToken.CommentTokenType
+                                    arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.CommentTokenType
                                 ) {
                                     i++;
                                 }
                             }
 
-                            if (slice[i]?.typ === EnumToken.IdenTokenType) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType) {
                                 if (
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-corner") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "ellipse")
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-corner") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "ellipse")
                                 ) {
                                     i++;
                                 } else if (
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-side") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "closest-corner") ||
-                                    equalsIgnoreCase((slice[i] as IdentToken).val, "farthest-side")
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-side") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-corner") ||
+                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-side")
                                 ) {
                                     size.push(slice[i++]);
-                                } else if (equalsIgnoreCase((slice[i] as IdentToken).val, "circle")) {
+                                } else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "circle")) {
                                     form.push(slice[i++]);
                                 }
 
                                 while (
-                                    slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i]?.typ === EnumToken.CommentTokenType
+                                    arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.CommentTokenType
                                 ) {
                                     i++;
                                 }
                             }
 
                             if (
-                                slice[i]?.typ === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "at")
+                                arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "at")
                             ) {
                                 i++;
                             }
 
                             while (
-                                slice[i]?.typ === EnumToken.WhitespaceTokenType ||
-                                slice[i]?.typ === EnumToken.CommentTokenType
+                                arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                arena.dataTypes[slice[i]] === EnumToken.CommentTokenType
                             ) {
                                 i++;
                             }
 
                             if (
-                                slice[i]?.typ === EnumToken.PercentageTokenType ||
-                                (slice[i]?.typ === EnumToken.NumberTokenType && 0 === (slice[i] as NumberToken).val) ||
-                                (slice[i]?.typ === EnumToken.IdenTokenType &&
-                                    (equalsIgnoreCase((slice[i] as IdentToken).val, "center") ||
-                                        equalsIgnoreCase((slice[i] as IdentToken).val, "top") ||
-                                        equalsIgnoreCase((slice[i] as IdentToken).val, "bottom") ||
-                                        equalsIgnoreCase((slice[i] as IdentToken).val, "left") ||
-                                        equalsIgnoreCase((slice[i] as IdentToken).val, "right")))
+                                arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
+                                (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType && 0 === arena.numericValue[slice[i]]) ||
+                                (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                    (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "center") ||
+                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "top") ||
+                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "bottom") ||
+                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "left") ||
+                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "right")))
                             ) {
                                 do {
                                     if (
-                                        slice[i]?.typ === EnumToken.IdenTokenType &&
-                                        "in" === (slice[i] as IdentToken).val
+                                        arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                        "in" === arena.strings[arena.stringValue[slice[i]]]
                                     ) {
                                         break;
                                     }
 
                                     positions.push(slice[i]);
                                     i++;
-                                } while (slice[i]?.typ !== EnumToken.CommaTokenType);
+                                } while (i < slice.length && arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType);
                             }
 
-                            while (slice[i]?.typ !== EnumToken.CommaTokenType) {
+                            while (i < slice.length && arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType) {
                                 colorSpaceDef.push(slice[i++]);
                             }
 
-                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.CommaTokenType) {
                                 i++;
                             }
 
@@ -1148,20 +1109,20 @@ export function renderValue(
                                 let position2: string = "";
 
                                 for (k = 0; k < positions.length; k++) {
-                                    if (positions[k].typ === EnumToken.IdenTokenType) {
+                                    if (arena.dataTypes[positions[k]] === EnumToken.IdenTokenType) {
                                         if (position1.length === 0) {
-                                            position1 = (positions[k] as IdentToken).val;
+                                            position1 = arena.strings[arena.stringValue[positions[k]]];
                                         } else {
-                                            position2 = (positions[k] as IdentToken).val;
+                                            position2 = arena.strings[arena.stringValue[positions[k]]];
                                         }
                                     } else if (
-                                        positions[k].typ === EnumToken.PercentageTokenType ||
-                                        positions[k].typ === EnumToken.NumberTokenType
+                                        arena.dataTypes[positions[k]] === EnumToken.PercentageTokenType ||
+                                        arena.dataTypes[positions[k]] === EnumToken.NumberTokenType
                                     ) {
                                         if (position1.length === 0) {
-                                            position1 = (positions[k] as PercentageToken | NumberToken).val + "%";
+                                            position1 = arena.numericValue[positions[k]] + "%";
                                         } else {
-                                            position2 = (positions[k] as PercentageToken | NumberToken).val + "%";
+                                            position2 = arena.numericValue[positions[k]] + "%";
                                         }
                                     }
 
@@ -1186,30 +1147,21 @@ export function renderValue(
                                         key === "top left" ||
                                         key === "left top"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.PercentageTokenType,
-                                            val: 0,
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 0));
                                     } else if (
                                         key === "50% 0%" ||
                                         key === "50% 0" ||
                                         key === "center top" ||
                                         key === "top center"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.IdenTokenType,
-                                            val: "top",
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "top"));
                                     } else if (key === "top right" || key === "right top") {
                                         positions.splice(
                                             0,
                                             positions.length,
-                                            {
-                                                typ: EnumToken.PercentageTokenType,
-                                                val: 100,
-                                            },
-                                            { typ: EnumToken.WhitespaceTokenType },
-                                            { typ: EnumToken.PercentageTokenType, val: 0 },
+                                            arena.createToken(EnumToken.PercentageTokenType, 100),
+                                            arena.createToken(EnumToken.WhitespaceTokenType),
+                                            arena.createToken(EnumToken.PercentageTokenType, 0),
                                         );
                                     } else if (
                                         key === "0 50%" ||
@@ -1217,43 +1169,28 @@ export function renderValue(
                                         key === "left center" ||
                                         key === "center left"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.IdenTokenType,
-                                            val: "left",
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "left"));
                                     } else if (key === "100% 50%" || key === "right center" || key === "center right") {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.IdenTokenType,
-                                            val: "right",
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "right"));
                                     } else if (
                                         key === "0 100%" ||
                                         key === "0% 100%" ||
                                         key === "left bottom" ||
                                         key === "bottom left"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.IdenTokenType,
-                                            val: "bottom",
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "bottom"));
                                     } else if (
                                         key === "50% 100%" ||
                                         key === "center bottom" ||
                                         key === "bottom center"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.IdenTokenType,
-                                            val: "bottom",
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "bottom"));
                                     } else if (
                                         key === "100% 100%" ||
                                         key === "right bottom" ||
                                         key === "bottom right"
                                     ) {
-                                        positions.splice(0, positions.length, {
-                                            typ: EnumToken.PercentageTokenType,
-                                            val: 100,
-                                        });
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 100));
                                     } else if (position1 === position2) {
                                         positions.splice(0, positions.length, positions[k]);
                                     }
@@ -1270,7 +1207,7 @@ export function renderValue(
 
                             if (size.length > 0) {
                                 if (result.length > 0) {
-                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                    result.push(arena.createToken(EnumToken.WhitespaceTokenType));
                                 }
 
                                 for (const token of size) {
@@ -1280,12 +1217,12 @@ export function renderValue(
 
                             if (positions.length > 0) {
                                 if (result.length > 0) {
-                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                    result.push(arena.createToken(EnumToken.WhitespaceTokenType));
                                 }
 
                                 result.push(
-                                    { typ: EnumToken.IdenTokenType, val: "at" },
-                                    { typ: EnumToken.WhitespaceTokenType },
+                                    arena.createToken(EnumToken.IdenTokenType, "at"),
+                                    arena.createToken(EnumToken.WhitespaceTokenType),
                                 );
 
                                 for (const token of positions) {
@@ -1295,7 +1232,7 @@ export function renderValue(
 
                             if (colorSpaceDef.length > 0) {
                                 if (result.length > 0) {
-                                    result.push({ typ: EnumToken.WhitespaceTokenType });
+                                    result.push(arena.createToken(EnumToken.WhitespaceTokenType));
                                 }
 
                                 for (const token of colorSpaceDef) {
@@ -1304,10 +1241,10 @@ export function renderValue(
                             }
 
                             if (result.length > 0) {
-                                result.push({ typ: EnumToken.CommaTokenType });
+                                result.push(arena.createToken(EnumToken.CommaTokenType));
                             }
 
-                            for (const token of reduceColorStops(slice.slice(i))) {
+                            for (const token of reduceColorStops(arena, slice.slice(i))) {
                                 result.push(token);
                             }
 
@@ -1330,59 +1267,59 @@ export function renderValue(
 
                             // while (
                             //     i < slice.length &&
-                            //     (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                            //         slice[i].typ === EnumToken.CommentTokenType)
-                            // ) {
+                            //     (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                            //         arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
+                            //) {
                             //     i++;
                             // }
 
                             if (
-                                slice[i]?.typ === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "from")
+                                arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "from")
                             ) {
                                 angles.push(slice[i++]);
 
                                 while (
                                     i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
+                                    (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                                 ) {
                                     angles.push(slice[i++]);
                                 }
 
                                 if (
-                                    (slice[i]?.typ === EnumToken.NumberTokenType ||
-                                        slice[i]?.typ === EnumToken.AngleTokenType) &&
-                                    0 === toDegrees(slice[i] as AngleToken).val
+                                    (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.AngleTokenType) &&
+                                    0 === arena.numericValue[toDegrees(arena, slice[i])]
                                 ) {
                                     angles.length = 0;
                                     i++;
                                 } else if (
-                                    slice[i]?.typ !== EnumToken.CommaTokenType &&
-                                    slice[i].typ != EnumToken.IdenTokenType
+                                    arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType &&
+                                    arena.dataTypes[slice[i]] != EnumToken.IdenTokenType
                                 ) {
                                     angles.push(slice[i++]);
                                 }
 
                                 while (
                                     i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
+                                    (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                                 ) {
                                     i++;
                                 }
                             }
 
                             if (
-                                slice[i]?.typ === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase((slice[i] as IdentToken).val, "at")
+                                arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "at")
                             ) {
                                 i++;
 
                                 while (
                                     i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
+                                    (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                                 ) {
                                     i++;
                                 }
@@ -1391,72 +1328,72 @@ export function renderValue(
                                 let position2: string = "";
 
                                 if (
-                                    slice[i]?.typ === EnumToken.IdenTokenType &&
-                                    !equalsIgnoreCase("in", (slice[i] as IdentToken).val)
+                                    arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                    !equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])
                                 ) {
-                                    position1 = (slice[i] as IdentToken).val;
+                                    position1 = arena.strings[arena.stringValue[slice[i]]];
                                     positions.push(slice[i++]);
                                 } else if (
-                                    slice[i]?.typ === EnumToken.PercentageTokenType ||
-                                    slice[i]?.typ === EnumToken.NumberTokenType
+                                    arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.NumberTokenType
                                 ) {
-                                    position1 = (slice[i] as IdentToken).val + "%";
+                                    position1 = arena.numericValue[slice[i]] + "%";
                                     positions.push(slice[i++]);
                                 }
 
                                 while (
                                     i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
+                                    (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                                 ) {
                                     positions.push(slice[i++]);
                                 }
 
                                 if (
-                                    slice[i]?.typ === EnumToken.IdenTokenType &&
-                                    !equalsIgnoreCase("in", (slice[i] as IdentToken).val)
+                                    arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                    !equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])
                                 ) {
-                                    position2 = (slice[i] as IdentToken).val;
+                                    position2 = arena.strings[arena.stringValue[slice[i]]];
                                     positions.push(slice[i++]);
                                 } else if (
-                                    slice[i]?.typ === EnumToken.PercentageTokenType ||
-                                    slice[i]?.typ === EnumToken.NumberTokenType
+                                    arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.NumberTokenType
                                 ) {
-                                    position2 = (slice[i] as IdentToken).val + "%";
+                                    position2 = arena.numericValue[slice[i]] + "%";
                                     positions.push(slice[i++]);
                                 }
 
                                 while (
                                     i < slice.length &&
-                                    (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                        slice[i].typ === EnumToken.CommentTokenType)
+                                    (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                        arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                                 ) {
                                     i++;
                                 }
 
                                 if (position1.length > 0) {
-                                    reducegradientBackgroundPosition(positions, `${position1} ${position2}`.trim());
+                                    reducegradientBackgroundPosition(arena, positions, `${position1} ${position2}`.trim());
                                 }
                             }
 
                             while (
                                 i < slice.length &&
-                                (slice[i].typ === EnumToken.WhitespaceTokenType ||
-                                    slice[i].typ === EnumToken.CommentTokenType)
+                                (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[slice[i]] === EnumToken.CommentTokenType)
                             ) {
                                 i++;
                             }
 
                             if (
-                                slice[i]?.typ === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("in", (slice[i] as IdentToken).val)
+                                arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
+                                equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])
                             ) {
-                                while (i < slice.length && slice[i].typ !== EnumToken.CommaTokenType) {
+                                while (i < slice.length && arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType) {
                                     colorSpaceDef.push(slice[i++]);
                                 }
                             }
 
-                            if (slice[i]?.typ === EnumToken.CommaTokenType) {
+                            if (arena.dataTypes[slice[i]] === EnumToken.CommaTokenType) {
                                 i++;
                             }
 
@@ -1465,12 +1402,12 @@ export function renderValue(
                             if (positions.length > 0) {
                                 if (positions.length > 0) {
                                     if (angles.length > 0) {
-                                        angles.push({ typ: EnumToken.WhitespaceTokenType });
+                                        angles.push(arena.createToken(EnumToken.WhitespaceTokenType));
                                     }
 
                                     angles.push(
-                                        { typ: EnumToken.IdenTokenType, val: "at" },
-                                        { typ: EnumToken.WhitespaceTokenType },
+                                        arena.createToken(EnumToken.IdenTokenType, "at"),
+                                        arena.createToken(EnumToken.WhitespaceTokenType),
                                     );
 
                                     for (const position of positions) {
@@ -1483,13 +1420,13 @@ export function renderValue(
                                 for (const angle of angles) {
                                     result.push(angle);
                                 }
-                                result.push({ typ: EnumToken.CommaTokenType });
+                                result.push(arena.createToken(EnumToken.CommaTokenType));
                             }
 
                             if (colorSpaceDef.length > 0) {
                                 if (colorSpaceDef.length > 0) {
                                     if (result.length > 0) {
-                                        result.push({ typ: EnumToken.WhitespaceTokenType });
+                                        result.push(arena.createToken(EnumToken.WhitespaceTokenType));
                                     }
 
                                     for (const token of colorSpaceDef) {
@@ -1497,10 +1434,10 @@ export function renderValue(
                                     }
                                 }
 
-                                result.push({ typ: EnumToken.CommaTokenType });
+                                result.push(arena.createToken(EnumToken.CommaTokenType));
                             }
 
-                            for (const token of reduceConicColorStops(slice.slice(i))) {
+                            for (const token of reduceConicColorStops(arena, slice.slice(i))) {
                                 result.push(token);
                             }
 
@@ -1513,7 +1450,7 @@ export function renderValue(
                         break;
                 }
 
-                return (token as FunctionToken).val + "(" + slice.reduce(reducer, "") + ")";
+                return arena.strings[arena.stringValue[token]] + "(" + slice.reduce(reducer, "") + ")";
             }
 
         case EnumToken.TimingFunctionTokenType:
@@ -1528,24 +1465,23 @@ export function renderValue(
         case EnumToken.CustomFunctionTokenType:
         case EnumToken.WildCardFunctionTokenType:
             if (
-                token.typ == EnumToken.MathFunctionTokenType &&
-                (token as FunctionToken).chi.length == 1 &&
+                arena.dataTypes[token] == EnumToken.MathFunctionTokenType &&
+                arena.tokenCount(token) == 1 &&
                 ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(
-                    (token as FunctionToken).chi[0].typ,
+                    arena.dataTypes[arena.firstToken[token]],
                 ) &&
-                // @ts-ignore
-                ((<FractionToken>((<NumberToken>(token as FunctionToken).chi[0]) as NumberToken).val) as FractionToken)
-                    ?.typ != EnumToken.FractionTokenType
+                !arena.hasFraction(arena.firstToken[token])
             ) {
                 return (
-                    (token as FunctionToken).val +
+                    arena.strings[arena.stringValue[token]] +
                     "(" +
-                    (token as FunctionToken).chi.reduce(
+                    arena.tokens(token).reduce(
                         (acc: string, curr: Token) =>
                             acc +
                             renderValue(
+                                arena,
                                 curr,
-                                token.typ == EnumToken.FunctionTokenType ? { minify: false } : options,
+                                arena.dataTypes[token] == EnumToken.FunctionTokenType ? { minify: false } : options,
                                 cache,
                                 reducer,
                             ),
@@ -1555,7 +1491,7 @@ export function renderValue(
                 );
             }
 
-            return ((token as FunctionToken).val ?? "") + "(" + (token as FunctionToken).chi.reduce(reducer, "") + ")";
+            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + arena.tokens(token).reduce(reducer, "") + ")";
 
         case EnumToken.BlockStartTokenType:
             return "{";
@@ -1641,7 +1577,7 @@ export function renderValue(
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
-            return "[" + (<AttrToken>(token as AttrToken | IdentListToken)).chi.reduce(reducer, "") + "]";
+            return "[" + arena.tokens(token).reduce(reducer, "") + "]";
 
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
@@ -1649,20 +1585,20 @@ export function renderValue(
         case EnumToken.DimensionTokenType:
         case EnumToken.FrequencyTokenType:
         case EnumToken.ResolutionTokenType:
-            let val: string =
-                (<FractionToken>(token as LengthToken).val).typ == EnumToken.FractionTokenType
-                    ? renderValue(<FractionToken>(token as LengthToken).val, options, cache)
-                    : minifyNumber(<string | number>(token as LengthToken).val);
-            let unit: string = (token as LengthToken).unit;
+        case EnumToken.UserDefinedDimensionTokenType:
+            let val: string = arena.hasFraction(token)
+                ? renderValue(arena, arena.getFraction(token), options, cache)
+                : minifyNumber(arena.numericValue[token]);
+            let unit: string = arena.strings[arena.unit[token]];
 
-            if (token.typ == EnumToken.AngleTokenType && !val.includes("/")) {
-                const angle: number = getAngle(<AngleToken>token);
+            if (arena.dataTypes[token] == EnumToken.AngleTokenType && !val.includes("/")) {
+                const angle: number = getAngle(arena, token);
 
                 let v: string;
                 let value: string = val + unit;
 
                 for (const u of ["deg", "turn", "rad", "grad"]) {
-                    if ((token as AngleToken).unit == u) {
+                    if (arena.strings[arena.unit[token]] == u) {
                         continue;
                     }
 
@@ -1721,23 +1657,23 @@ export function renderValue(
             }
 
             if (val === "0") {
-                if (token.typ == EnumToken.TimeTokenType) {
+                if (arena.dataTypes[token] == EnumToken.TimeTokenType) {
                     return "0s";
                 }
 
-                if (token.typ == EnumToken.FrequencyTokenType) {
+                if (arena.dataTypes[token] == EnumToken.FrequencyTokenType) {
                     return "0Hz";
                 }
 
                 // @ts-ignore
-                if (token.typ == EnumToken.ResolutionTokenType) {
+                if (arena.dataTypes[token] == EnumToken.ResolutionTokenType) {
                     return "0x";
                 }
 
                 return "0";
             }
 
-            if (token.typ == EnumToken.TimeTokenType) {
+            if (arena.dataTypes[token] == EnumToken.TimeTokenType) {
                 if (unit == "ms") {
                     // @ts-ignore
                     const v: string = minifyNumber(val / 1000);
@@ -1752,7 +1688,7 @@ export function renderValue(
                 return val + "s";
             }
 
-            if (token.typ == EnumToken.ResolutionTokenType && unit == "dppx") {
+            if (arena.dataTypes[token] == EnumToken.ResolutionTokenType && unit == "dppx") {
                 unit = "x";
             }
 
@@ -1760,11 +1696,10 @@ export function renderValue(
 
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
-            const uni: string = token.typ == EnumToken.PercentageTokenType ? "%" : "fr";
-            const perc: string =
-                (<FractionToken>(token as PercentageToken).val).typ == EnumToken.FractionTokenType
-                    ? renderValue(<FractionToken>(token as PercentageToken).val, options, cache)
-                    : minifyNumber((token as PercentageToken).val as number);
+            const uni: string = arena.dataTypes[token] == EnumToken.PercentageTokenType ? "%" : "fr";
+            const perc: string = arena.hasFraction(token)
+                ? renderValue(arena, arena.getFraction(token), options, cache)
+                : minifyNumber(arena.numericValue[token]);
 
             return options.minifyValues && perc == "0"
                 ? "0"
@@ -1773,9 +1708,9 @@ export function renderValue(
                   : perc + uni;
 
         case EnumToken.NumberTokenType:
-            return (<FractionToken>(token as NumberToken).val).typ == EnumToken.FractionTokenType
-                ? renderValue(<FractionToken>(token as NumberToken).val, options, cache)
-                : minifyNumber((token as NumberToken).val as number);
+            return arena.hasFraction(token)
+                ? renderValue(arena, arena.getFraction(token), options, cache)
+                : minifyNumber(arena.numericValue[token]);
 
         case EnumToken.InfinityTokenType:
             return "1/0";
@@ -1786,13 +1721,13 @@ export function renderValue(
             return "NaN";
 
         case EnumToken.AtRuleTokenType:
-            return "@" + (token as AtRuleToken).nam;
+            return "@" + arena.strings[arena.name[token]];
 
         case EnumToken.CommentTokenType:
         case EnumToken.CDOCOMMNodeType:
             if (
                 options.removeComments &&
-                (!options.preserveLicense || !(token as CommentToken).val.startsWith("/*!"))
+                (!options.preserveLicense || !arena.strings[arena.stringValue[token]].startsWith("/*!"))
             ) {
                 return "";
             }
@@ -1801,10 +1736,10 @@ export function renderValue(
         case EnumToken.PseudoElementTokenType:
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
             if (
-                token.typ == EnumToken.PseudoElementTokenType &&
-                pseudoElements.includes((token as PseudoElementToken).val.slice(1))
+                arena.dataTypes[token] == EnumToken.PseudoElementTokenType &&
+                pseudoElements.includes(arena.strings[arena.stringValue[token]].slice(1))
             ) {
-                return (token as PseudoElementToken).val.slice(1);
+                return arena.strings[arena.stringValue[token]].slice(1);
             }
 
         case EnumToken.CssTypeTokenType:
@@ -1817,16 +1752,7 @@ export function renderValue(
         case EnumToken.DashedIdenTokenType:
         case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
-            return (
-                token as
-                    | ClassSelectorToken
-                    | StringToken
-                    | LiteralToken
-                    | HashToken
-                    | DashedIdentToken
-                    | PseudoPageToken
-                    | IdentToken
-            ).val;
+            return arena.strings[arena.stringValue[token]];
 
         case EnumToken.NestingSelectorTokenType:
             return "&";
@@ -1834,140 +1760,140 @@ export function renderValue(
         case EnumToken.InvalidAttrTokenType:
             return (
                 "[" +
-                (<InvalidAttrToken>token).chi.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache),
+                arena.tokens(token).reduce(
+                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache),
                     "",
                 )
             );
 
         case EnumToken.InvalidClassSelectorTokenType:
-            return (token as InvalidClassSelectorToken).val;
+            return arena.strings[arena.stringValue[token]];
 
         case EnumToken.SupportsQueryUnaryConditionTokenType:
         case EnumToken.WhenElseUnaryConditionTokenType:
             return (
-                renderValue(
-                    (token as SupportsQueryUnaryConditionToken | WhenElseUnaryConditionToken).l,
-                    options,
-                    cache,
-                    reducer,
-                    errors,
-                ) +
+                renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer, errors) +
                 " " +
-                (token as SupportsQueryUnaryConditionToken | WhenElseUnaryConditionToken).r.reduce(
-                    (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                )
+                arena
+                    .fieldTokens(token, TokenField.R)
+                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "")
             );
 
         case EnumToken.SupportsQueryConditionTokenType:
         case EnumToken.WhenElseQueryConditionTokenType:
             return (
-                (token as SupportsQueryConditionToken | WhenElseQueryConditionToken).l.reduce(
-                    (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                ) +
+                arena
+                    .fieldTokens(token, TokenField.L)
+                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "") +
                 " " +
-                renderValue(
-                    (token as SupportsQueryConditionToken | WhenElseQueryConditionToken).op,
-                    options,
-                    cache,
-                    reducer,
-                    errors,
-                ) +
+                renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer, errors) +
                 " " +
-                (token as SupportsQueryConditionToken).r.reduce(
-                    (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                )
+                arena
+                    .fieldTokens(token, TokenField.R)
+                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "")
             );
 
-        case EnumToken.IfConditionTokenType:
-            return (token as IfConditionToken).l.length == 0
+        case EnumToken.IfConditionTokenType: {
+            const l: Token[] = arena.fieldTokens(token, TokenField.L);
+
+            return l.length == 0
                 ? ""
-                : (token as SupportsQueryConditionToken | WhenElseQueryConditionToken).l.reduce(
-                      (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                      "",
-                  ) +
+                : l.reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "") +
                       ":" +
                       (options.indent ?? "") +
-                      (token as SupportsQueryConditionToken).r.reduce(
-                          (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                          "",
-                      );
+                      arena
+                          .fieldTokens(token, TokenField.R)
+                          .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "");
+        }
 
         case EnumToken.IfElseConditionTokenType:
             return (
-                renderValue((token as IfElseConditionToken).l, options, cache, reducer, errors) +
+                renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer, errors) +
                 (options.indent ?? "") +
-                renderValue((token as IfElseConditionToken).r, options, cache, reducer, errors)
+                renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer, errors)
             );
 
         case EnumToken.DeclarationNodeType:
             return (
-                (<AstDeclaration>token).nam +
+                arena.strings[arena.name[token]] +
                 ":" +
-                (options.minifyValues ? filterValues((<AstDeclaration>token).val) : (<AstDeclaration>token).val).reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
+                (options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token)).reduce(
+                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
                     "",
                 )
             );
 
         case EnumToken.MediaQueryUnaryFeatureTokenType:
             return (
-                renderValue((token as MediaQueryUnaryFeatureToken).l, options, cache, reducer, errors) +
+                renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer, errors) +
                 " " +
-                (token as MediaQueryUnaryFeatureToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                )
+                arena
+                    .fieldTokens(token, TokenField.R)
+                    .reduce(
+                        (acc: string, curr: Token): string =>
+                            acc + renderValue(arena, curr, options, cache, reducer, errors),
+                        "",
+                    )
             );
 
         case EnumToken.MediaQueryConditionTokenType: {
+            const op: Token = arena.field(token, TokenField.Op);
+            const opType: EnumToken = arena.dataTypes[op];
             const indent =
-                (token as MediaQueryConditionToken).op.typ == EnumToken.LtTokenType ||
-                (token as MediaQueryConditionToken).op.typ == EnumToken.GtTokenType ||
-                (token as MediaQueryConditionToken).op.typ == EnumToken.ColonTokenType ||
-                (token as MediaQueryConditionToken).op.typ == EnumToken.DelimTokenType ||
-                (token as MediaQueryConditionToken).op.typ == EnumToken.LteTokenType ||
-                (token as MediaQueryConditionToken).op.typ == EnumToken.GteTokenType
+                opType == EnumToken.LtTokenType ||
+                opType == EnumToken.GtTokenType ||
+                opType == EnumToken.ColonTokenType ||
+                opType == EnumToken.DelimTokenType ||
+                opType == EnumToken.LteTokenType ||
+                opType == EnumToken.GteTokenType
                     ? ""
                     : " ";
             return (
-                (token as MediaQueryConditionToken).l.reduce(
-                    (acc, curr) => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                ) +
+                arena
+                    .fieldTokens(token, TokenField.L)
+                    .reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "") +
                 indent +
-                renderValue((token as MediaQueryConditionToken).op, options, cache, reducer, errors) +
+                renderValue(arena, op, options, cache, reducer, errors) +
                 indent +
-                (token as MediaQueryConditionToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                )
+                arena
+                    .fieldTokens(token, TokenField.R)
+                    .reduce(
+                        (acc: string, curr: Token): string =>
+                            acc + renderValue(arena, curr, options, cache, reducer, errors),
+                        "",
+                    )
             );
         }
 
         case EnumToken.MediaRangeQueryTokenType:
             return (
-                (token as MediaRangeQueryToken).l.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                ) +
-                renderValue((token as MediaRangeQueryToken).op1, options, cache, reducer, errors) +
-                (token as MediaRangeQueryToken).val.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                ) +
-                renderValue((token as MediaRangeQueryToken).op2, options, cache, reducer, errors) +
-                (token as MediaRangeQueryToken).r.reduce(
-                    (acc: string, curr: Token): string => acc + renderValue(curr, options, cache, reducer, errors),
-                    "",
-                )
+                arena
+                    .fieldTokens(token, TokenField.L)
+                    .reduce(
+                        (acc: string, curr: Token): string =>
+                            acc + renderValue(arena, curr, options, cache, reducer, errors),
+                        "",
+                    ) +
+                renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer, errors) +
+                arena
+                    .fieldTokens(token, TokenField.Val)
+                    .reduce(
+                        (acc: string, curr: Token): string =>
+                            acc + renderValue(arena, curr, options, cache, reducer, errors),
+                        "",
+                    ) +
+                renderValue(arena, arena.field(token, TokenField.Op2), options, cache, reducer, errors) +
+                arena
+                    .fieldTokens(token, TokenField.R)
+                    .reduce(
+                        (acc: string, curr: Token): string =>
+                            acc + renderValue(arena, curr, options, cache, reducer, errors),
+                        "",
+                    )
             );
 
         case EnumToken.MediaFeatureTokenType:
-            return (token as MediaFeatureToken).val;
+            return arena.strings[arena.stringValue[token]];
 
         case EnumToken.NotTokenType:
             return "not";
@@ -1989,9 +1915,11 @@ export function renderValue(
         case EnumToken.EOFTokenType:
             return "";
 
+        case EnumToken.ComposesSelectorNodeType:
+            return `${arena.fieldTokens(token, TokenField.L).reduce((acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors), "")}${!arena.hasField(token, TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer, errors)}`;
+
         default:
-            console.debug({ token });
-            throw new Error(`Unsupported token type for ${EnumToken[token.typ]}`);
+            throw new Error(`Unsupported token type for ${EnumToken[arena.dataTypes[token]]}`);
     }
 
     // errors?.push({ action: "ignore", message: `render: unexpected token ${JSON.stringify(token, null, 1)}` });
@@ -2004,17 +1932,18 @@ export function renderValue(
  *
  * @internal
  */
-export function filterValues(values: Token[]): Token[] {
+export function filterValues(arena: AstArena, values: Token[]): Token[] {
     let i: number = 0;
 
     for (; i < values.length; i++) {
-        if (values[i].typ == EnumToken.ImportantTokenType && values[i - 1]?.typ === EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[values[i]] == EnumToken.ImportantTokenType && arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
             values.splice(i - 1, 1);
         } else if (
-            tokensfuncSet.has(values[i].typ) &&
-            "chi" in values[i] &&
-            (values[i] as FunctionToken).typ != EnumToken.WildCardFunctionTokenType &&
-            values[i + 1]?.typ == EnumToken.WhitespaceTokenType
+            tokensfuncSet.has(arena.dataTypes[values[i]]) &&
+            // color keywords and hex colors are not functions
+            (arena.dataTypes[values[i]] != EnumToken.ColorTokenType || arena.firstToken[values[i]] != 0) &&
+            arena.dataTypes[values[i]] != EnumToken.WildCardFunctionTokenType &&
+            arena.dataTypes[values[i + 1]] == EnumToken.WhitespaceTokenType
         ) {
             values.splice(i + 1, 1);
         }

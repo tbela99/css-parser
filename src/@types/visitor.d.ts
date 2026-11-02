@@ -1,15 +1,32 @@
-import type { AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule } from "./ast.d.ts";
+import type { PlainToken, Token } from "./token.d.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
+import type {
+    AstAtRule,
+    AstDeclaration,
+    AstKeyframesAtRule,
+    AstKeyframesRule,
+    AstNode,
+    AstRule,
+    PlainAstNode,
+} from "./ast.d.ts";
 import { WalkerEvent } from "../lib/ast/walk.ts";
 import { EnumToken } from "../lib/ast/types.ts";
 
 /**
- * Generic visitor result
+ * Generic visitor result: ids allocated in the arena. plain objects are imported into the arena with `arena.fromObject()`
  */
-export declare type GenericVisitorSyncResult<T> = T | T[] | null;
+export declare type GenericVisitorSyncResult<T> =
+    | T
+    | T[]
+    | PlainAstNode
+    | PlainToken
+    | Array<T | PlainAstNode | PlainToken>
+    | null
+    | void;
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
+export declare type GenericVisitorAsyncResult<T> = Promise<GenericVisitorSyncResult<T>>;
 /**
  * Generic visitor result
  */
@@ -20,6 +37,7 @@ export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | Gene
  */
 export declare type GenericVisitorSyncHandler<T> = (
     node: T,
+    arena: AstArena,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T>;
@@ -65,7 +83,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -73,9 +91,9 @@ export declare interface VisitorSyncNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (node: AstAtRule, arena: AstArena): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -108,7 +126,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -118,23 +136,19 @@ export declare interface VisitorSyncNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (node: AstDeclaration, arena: AstArena): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -159,24 +173,24 @@ export declare interface VisitorSyncNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (node: AstDeclaration, arena: AstArena): null => {
      *
      *
-     *             if (node.nam == 'height') {
+     *             if (arena.getName(node) == 'height') {
      *
-     *                 node.nam = 'width';
+     *                 arena.setNameString(node, 'width');
      *             }
      *
-     *             else if (node.nam == 'margin') {
+     *             else if (arena.getName(node) == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 arena.setNameString(node, 'padding');
      *             }
      *
      *             return null;
@@ -211,18 +225,19 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (node: AstRule, arena: AstArena): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -275,10 +290,11 @@ export declare interface VisitorSyncNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (node, arena) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
      *         },
      *         ColorTokenType:  (node) => {
      *
@@ -318,6 +334,7 @@ export declare interface VisitorSyncNodeMap {
  */
 export declare type GenericVisitorHandler<T> = (
     node: T,
+    arena: AstArena,
     parent?: AstNode | Token,
     root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
@@ -362,7 +379,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -370,9 +387,9 @@ export declare interface VisitorNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (node: AstAtRule, arena: AstArena): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -405,7 +422,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -415,23 +432,19 @@ export declare interface VisitorNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (node: AstDeclaration, arena: AstArena): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -456,24 +469,24 @@ export declare interface VisitorNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (node: AstDeclaration, arena: AstArena): null => {
      *
      *
-     *             if (node.nam == 'height') {
+     *             if (arena.getName(node) == 'height') {
      *
-     *                 node.nam = 'width';
+     *                 arena.setNameString(node, 'width');
      *             }
      *
-     *             else if (node.nam == 'margin') {
+     *             else if (arena.getName(node) == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 arena.setNameString(node, 'padding');
      *             }
      *
      *             return null;
@@ -508,18 +521,19 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (node: AstRule, arena: AstArena): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -543,8 +557,14 @@ export declare interface VisitorNodeMap {
      */
     Rule?: GenericVisitorAstNodeHandlerMap<AstRule>;
 
+    /**
+     * keyframes rule visitor
+     */
     KeyframesRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesRule>;
 
+    /**
+     * keyframes at-rule visitor
+     */
     KeyframesAtRule?: GenericVisitorAstNodeHandlerMap<AstKeyframesAtRule>;
 
     /**
@@ -566,10 +586,11 @@ export declare interface VisitorNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (node, arena) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
      *         },
      *         ColorTokenType:  (node) => {
      *

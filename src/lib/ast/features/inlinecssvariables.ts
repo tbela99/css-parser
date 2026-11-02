@@ -1,40 +1,39 @@
 import type {
     AstAtRule,
-    AstComment,
     AstDeclaration,
     AstNode,
     AstRule,
-    AstRuleList,
     AstStyleSheet,
-    BinaryExpressionToken,
-    CommentToken,
-    DashedIdentToken,
-    FunctionToken,
-    ParensToken,
     ParserOptions,
     Token,
     VariableScopeInfo,
 } from "../../../@types/index.d.ts";
-import { EnumToken } from "../types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { walkValues } from "../walk.ts";
+import { renderValue } from "../../printer/render.ts";
 import { splitRule } from "../minify.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs, RAW } from "../../syntax/constants.ts";
+import { mathFuncs } from "../../syntax/constants.ts";
+import { type AstArena, TokenField } from "../arena.ts";
 
-function inlineExpression(token: Token): Token[] {
+/**
+ * inline a binary expression into a parens token: (l op r)
+ * @param arena
+ * @param token
+ */
+function inlineExpression(arena: AstArena, token: Token): Token[] {
     const result: Token[] = [];
 
-    if (token.typ == EnumToken.BinaryExpressionTokenType) {
-        const chi = inlineExpression((token as BinaryExpressionToken).l);
-        chi.push({ typ: (token as BinaryExpressionToken).op } as Token);
+    if (arena.dataTypes[token] == EnumToken.BinaryExpressionTokenType) {
+        const chi: Token[] = inlineExpression(arena, arena.field(token, TokenField.L));
 
-        for (const child of inlineExpression((token as BinaryExpressionToken).r)) {
+        chi.push(arena.createToken(arena.numericValue[token] as EnumToken));
+
+        for (const child of inlineExpression(arena, arena.field(token, TokenField.R))) {
             chi.push(child);
         }
-        result.push({
-            typ: EnumToken.ParensTokenType,
-            chi,
-        } as ParensToken);
+
+        result.push(arena.createList(EnumToken.ParensTokenType, chi));
     } else {
         result.push(token);
     }
@@ -42,43 +41,36 @@ function inlineExpression(token: Token): Token[] {
     return result;
 }
 
-function replace(
-    node: AstDeclaration | AstRule | AstComment | AstRuleList,
-    variableScope: Map<string, VariableScopeInfo>,
-) {
-    for (const { value, parent: parentValue } of walkValues((<AstDeclaration>node).val)) {
-        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && "chi" in parentValue) {
-            // @ts-ignore
-            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<string, VariableScopeInfo>) {
+    for (const { value, parent: parentValue } of walkValues(arena, arena.tokens(node), node)) {
+        if (
+            arena.dataTypes[value] == EnumToken.BinaryExpressionTokenType &&
+            parentValue != null &&
+            parentValue != node &&
+            // the token belongs to the parent token list (function arguments)
+            arena.parents[value] == parentValue
+        ) {
+            arena.replaceToken(value, ...inlineExpression(arena, value));
         }
     }
 
-    for (const { value, parent: parentValue } of walkValues((<AstDeclaration>node).val)) {
+    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+        const typ: EnumToken = arena.dataTypes[value];
+
         if (
-            value.typ == EnumToken.MathFunctionTokenDefType ||
-            (value.typ == EnumToken.WildCardFunctionTokenType && (value as FunctionToken).val == "var")
+            typ == EnumToken.MathFunctionTokenType ||
+            (typ == EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")
         ) {
-            if (
-                (value as FunctionToken).chi.length == 1 &&
-                (value as FunctionToken).chi[0].typ == EnumToken.DashedIdenTokenType
-            ) {
+            const first: Token = arena.firstToken[value];
+
+            if (first != 0 && arena.nextSibling[first] == 0 && arena.dataTypes[first] == EnumToken.DashedIdenTokenType) {
                 const info: VariableScopeInfo = <VariableScopeInfo>(
-                    variableScope.get(((value as FunctionToken).chi[0] as DashedIdentToken).val)
+                    variableScope.get(arena.strings[arena.stringValue[first]])
                 );
 
-                if (info?.replaceable) {
-                    if (parentValue != null) {
-                        let i: number = 0;
-
-                        for (; i < (<FunctionToken>parentValue).chi.length; i++) {
-                            if ((<FunctionToken>parentValue).chi[i] == value) {
-                                (<FunctionToken>parentValue).chi.splice(i, 1, ...info.node.val);
-                                break;
-                            }
-                        }
-                    } else {
-                        (<AstDeclaration>node).val = info.node.val.slice();
-                    }
+                // the variable declaration may have been released
+                if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
+                    arena.replaceToken(value, ...arena.tokens(info.node).map((t: Token): Token => arena.clone(t, true)));
                 }
             }
         }
@@ -104,6 +96,7 @@ export class InlineCssVariablesFeature {
     }
 
     run(
+        arena: AstArena,
         ast: AstRule | AstAtRule,
         options: ParserOptions = {},
         parent: AstRule | AstAtRule | AstStyleSheet,
@@ -111,7 +104,7 @@ export class InlineCssVariablesFeature {
             [key: string]: any;
         },
     ): AstNode | null {
-        if (!("chi" in ast)) {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
 
@@ -121,63 +114,63 @@ export class InlineCssVariablesFeature {
 
         // [':root', 'html']
         const isRoot: boolean =
-            parent.typ == EnumToken.StyleSheetNodeType &&
-            ast.typ == EnumToken.RuleNodeType &&
-            ((<AstRule>ast)[RAW] ?? splitRule((ast as AstRule).sel)).some((segment) =>
+            arena.dataTypes[parent] == EnumToken.StyleSheetNodeType &&
+            arena.dataTypes[ast] == EnumToken.RuleNodeType &&
+            (arena.raw[ast] ?? splitRule(arena.strings[arena.name[ast]])).some((segment) =>
                 segment.some((s) => s == ":root" || s == "html"),
             );
         const variableScope = context.variableScope;
 
-        // @ts-ignore
-        for (const node of ast.chi) {
-            if (node.typ !== EnumToken.DeclarationNodeType) {
+        for (let node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+            if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType) {
                 continue;
             }
 
+            const name: string = arena.strings[arena.name[node]];
+
             // css variable
-            if ((<AstDeclaration>node).nam.startsWith("--")) {
-                if (!variableScope.has((<AstDeclaration>node).val)) {
-                    const info = {
-                        globalScope: isRoot,
-                        // @ts-ignore
-                        parent: <Set<AstRule | AstAtRule>>new Set(),
-                        declarationCount: 1,
-                        replaceable: isRoot,
-                        node: <AstDeclaration>node,
-                        values: structuredClone((<AstDeclaration>node).val),
-                    };
+            if (name.startsWith("--")) {
+                // the last declaration wins
+                const info = {
+                    globalScope: isRoot,
+                    // @ts-ignore
+                    parent: <Set<AstRule | AstAtRule>>new Set(),
+                    declarationCount: 1,
+                    replaceable: isRoot,
+                    node: <AstDeclaration>node,
+                    values: arena.tokens(node).map((t: Token): Token => arena.clone(t, true)),
+                };
 
-                    info.parent.add(ast);
+                info.parent.add(ast);
 
-                    variableScope.set((<AstDeclaration>node).nam, info);
+                variableScope.set(name, info);
 
-                    let recursive: boolean = false;
+                let recursive: boolean = false;
 
-                    for (const { value } of walkValues((<AstDeclaration>node).val)) {
-                        if (
-                            value?.typ == EnumToken.MathFunctionTokenDefType ||
-                            (value?.typ == EnumToken.WildCardFunctionTokenType &&
-                                (mathFuncs.includes((<FunctionToken>value).val) ||
-                                    (<FunctionToken>value).val === "var"))
-                        ) {
-                            recursive = true;
-                            break;
-                        }
-                    }
-
-                    if (recursive) {
-                        replace(node, variableScope);
+                for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                    if (
+                        arena.dataTypes[value] == EnumToken.MathFunctionTokenDefType ||
+                        (arena.dataTypes[value] == EnumToken.WildCardFunctionTokenType &&
+                            (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||
+                                arena.strings[arena.stringValue[value]] === "var"))
+                    ) {
+                        recursive = true;
+                        break;
                     }
                 }
+
+                if (recursive) {
+                    replace(arena, node, variableScope);
+                }
             } else {
-                replace(node, variableScope);
+                replace(arena, node, variableScope);
             }
         }
 
         return null;
     }
 
-    cleanup(ast: AstStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
+    cleanup(arena: AstArena, ast: AstStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 
         if (variableScope == null) {
@@ -186,21 +179,16 @@ export class InlineCssVariablesFeature {
 
         for (const info of variableScope.values()) {
             if (info.replaceable) {
-                let i: number;
-
                 // drop declarations from :root{}
                 for (const parent of info.parent) {
-                    i = parent.chi?.length ?? 0;
+                    if (arena.parents[info.node] == parent) {
+                        const comment: AstNode = arena.createComment(
+                            EnumToken.CommentTokenType,
+                            `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderValue(arena, curr, { convertColor: false }), "")} */`,
+                        );
 
-                    while (i--) {
-                        if ((<AstDeclaration[]>parent.chi)[i] == info.node) {
-                            // @ts-ignore
-                            (<AstDeclaration[]>parent.chi).splice(i, 1, {
-                                typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc: string, curr: Token): string => acc + printNode(curr, { convertColor: false }), "")} */`,
-                            } as CommentToken);
-                            break;
-                        }
+                        arena.replaceChild(info.node, comment);
+                        arena.release(info.node);
                     }
                 }
             }

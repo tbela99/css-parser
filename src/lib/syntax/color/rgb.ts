@@ -1,4 +1,5 @@
-import type { ColorToken, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { color2srgbvalues, minmax } from "./color.ts";
 import { expandHexValue } from "./hex.ts";
 import {
@@ -18,111 +19,108 @@ export function srgb2rgb(value: number): number {
     return minmax(Math.round(value * 255), 0, 255);
 }
 
-export function hex2RgbToken(token: ColorToken): ColorToken | null {
-    return rgb2RgbToken(hex2rgbvalues(token));
+export function hex2RgbToken(arena: AstArena, token: Token): Token | null {
+    return rgb2RgbToken(arena, hex2rgbvalues(arena, token));
 }
 
-export function hsl2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hsl2rgbvalues(token);
+export function hsl2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hsl2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function hwb2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hwb2rgbvalues(token);
+export function hwb2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hwb2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function cmyk2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = cmyk2rgbvalues(token);
+export function cmyk2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = cmyk2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function oklab2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklab2rgbvalues(token);
+export function oklab2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklab2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function oklch2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklch2rgbvalues(token);
+export function oklch2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklch2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function lab2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = lab2rgbvalues(token);
+export function lab2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = lab2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function lch2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = lch2rgbvalues(token);
+export function lch2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = lch2rgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values);
+    return rgb2RgbToken(arena, values);
 }
 
-export function color2RgbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = color2srgbvalues(token);
+export function color2RgbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = color2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return rgb2RgbToken(values.map((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))));
+    return rgb2RgbToken(arena, values.map((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))));
 }
 
-function rgb2RgbToken(values: number[]): ColorToken | null {
+function rgb2RgbToken(arena: AstArena, values: number[]): Token | null {
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.PercentageTokenType, val: values[3] * 100 });
+        chi.push(arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "rgb",
-        chi,
-        kin: ColorType.RGB,
-    };
+    return arena.createColor("rgb", ColorType.RGB, chi);
 }
-export function hex2rgbvalues(token: ColorToken): number[] {
+export function hex2rgbvalues(arena: AstArena, token: Token): number[] {
     const value: string = expandHexValue(
-        token.kin == ColorType.LIT ? COLORS_NAMES[token.val.toLowerCase()] : token.val,
+        arena.colorType[token] == ColorType.LIT
+            ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
+            : arena.strings[arena.stringValue[token]],
     );
     const rgb: number[] = [];
 
@@ -141,13 +139,13 @@ export function hex2rgbvalues(token: ColorToken): number[] {
     return rgb;
 }
 
-export function hwb2rgbvalues(token: ColorToken): number[] | null {
-    return hwb2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function hwb2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return hwb2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
-export function hsl2rgbvalues(token: ColorToken): number[] | null {
+export function hsl2rgbvalues(arena: AstArena, token: Token): number[] | null {
 
-    let { h, s, l, a } = hslvalues(token) ?? {};
+    let { h, s, l, a } = hslvalues(arena, token) ?? {};
 
     if (h == null || s == null || l == null) {
         return null;
@@ -158,8 +156,8 @@ export function hsl2rgbvalues(token: ColorToken): number[] | null {
         .concat(a == 1 || a == null ? [] : [a]);
 }
 
-export function hsl2srgbvalues(token: ColorToken): number[] | null {
-    let { h, s, l, a } = hslvalues(token) ?? {};
+export function hsl2srgbvalues(arena: AstArena, token: Token): number[] | null {
+    let { h, s, l, a } = hslvalues(arena, token) ?? {};
 
     if (h == null || s == null || l == null) {
         return null;
@@ -168,22 +166,22 @@ export function hsl2srgbvalues(token: ColorToken): number[] | null {
     return hslvalues2srgbvalues(h, s, l).concat(a == 1 || a == null ? [] : [a]);
 }
 
-export function cmyk2rgbvalues(token: ColorToken): number[] | null {
-    return cmyk2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function cmyk2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return cmyk2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
-export function oklab2rgbvalues(token: ColorToken): number[] | null {
-    return oklab2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function oklab2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return oklab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
-export function oklch2rgbvalues(token: ColorToken): number[] | null {
-    return oklch2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function oklch2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return oklch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
-export function lab2rgbvalues(token: ColorToken): number[] | null {
-    return lab2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function lab2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return lab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }
 
-export function lch2rgbvalues(token: ColorToken): number[] | null {
-    return lch2srgbvalues(token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+export function lch2rgbvalues(arena: AstArena, token: Token): number[] | null {
+    return lch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
 }

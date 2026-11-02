@@ -2,11 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-<<<<<<< HEAD
 	Version: 2.0.0-alpha.1
-=======
-	Version: 1.6.8
->>>>>>> v.next
 	License: MIT
  */
 import { PropertySet } from './set.js';
@@ -16,8 +12,7 @@ import { EnumAstNodeStatus, EnumToken } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
-import { STATE } from '../../syntax/constants.js';
-import { objectHash } from '../utils/hash.js';
+import { nodeHash } from '../utils/hash.js';
 import { equalsIgnoreCase } from '../utils/text.js';
 
 const config = getConfig();
@@ -25,28 +20,62 @@ const config = getConfig();
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 class PropertyList {
+    /**
+     * options
+     */
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
+    /**
+     * declarations
+     */
     declarations;
-    constructor(options = {}) {
+    /**
+     * arena the declarations are stored in
+     */
+    arena;
+    /**
+     *
+     * @param arena
+     * @param options
+     */
+    constructor(arena, options = {}) {
+        this.arena = arena;
         this.options = options;
         this.declarations = new Map();
     }
+    /**
+     * add declarations
+     * @param declarations node ids
+     * @returns
+     */
     add(declarations) {
         let name;
         let syntaxRules = null;
         let result;
+        const arena = this.arena;
         for (const declaration of declarations) {
-            name = declaration.typ != EnumToken.DeclarationNodeType ? null : declaration.nam;
-            if (declaration[STATE] &
+            name =
+                arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+                    ? null
+                    : arena.strings[arena.name[declaration]];
+            // do not compute shorthand for invalid declarations
+            if (name == null) {
+                this.declarations.set(nodeHash(arena, declaration), declaration);
+                continue;
+            }
+            // @functiom / result
+            if (arena.flags[declaration] & EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name)) {
+                this.declarations.set(name, declaration);
+                continue;
+            }
+            if (arena.flags[declaration] &
                 (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
-                declaration.typ != EnumToken.DeclarationNodeType ||
                 equalsIgnoreCase("composes", name) ||
                 (typeof this.options.removeDuplicateDeclarations === "string" &&
                     this.options.removeDuplicateDeclarations === name) ||
                 (Array.isArray(this.options.removeDuplicateDeclarations)
-                    ? this.options.removeDuplicateDeclarations.includes(declaration.nam)
+                    ? this.options.removeDuplicateDeclarations.includes(name)
                     : !this.options.removeDuplicateDeclarations)) {
-                const key = objectHash(declaration);
+                const key = nodeHash(arena, declaration);
                 if (this.declarations.has(key)) {
                     this.declarations.delete(key);
                 }
@@ -54,24 +83,24 @@ class PropertyList {
                 continue;
             }
             if (!this.options.computeShorthand) {
-                this.declarations.set(declaration.nam, declaration);
+                this.declarations.set(name, declaration);
                 continue;
             }
-            if (declaration[STATE] & EnumAstNodeStatus.Unvalidated) {
-                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, declaration.nam.toLowerCase());
+            if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
+                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
                 if (syntaxRules != null) {
-                    result = matchAllSyntaxes(syntaxRules, createValidationContext(declaration.val), this.options);
-                    declaration[STATE] |=
+                    result = matchAllSyntaxes(arena, syntaxRules, createValidationContext(arena, arena.tokens(declaration)), this.options);
+                    arena.flags[declaration] |=
                         (result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed) &
                             ~EnumAstNodeStatus.Unvalidated;
                 }
             }
             // do not compute shorthand for invalid declarations
-            if (!(declaration[STATE] & EnumAstNodeStatus.Validated)) {
-                this.declarations.set(objectHash(declaration), declaration);
+            if (!(arena.flags[declaration] & EnumAstNodeStatus.Validated)) {
+                this.declarations.set(nodeHash(arena, declaration), declaration);
                 continue;
             }
-            let propertyName = declaration.nam;
+            let propertyName = name;
             let shortHandType;
             let shorthand = null;
             if (propertyName in config.properties) {
@@ -100,10 +129,12 @@ class PropertyList {
             if (this.declarations.has(shorthand)) {
                 let existing = this.declarations.get(shorthand);
                 if (existing instanceof PropertySet || existing instanceof PropertyMap) {
-                    existing = existing.declarations.get(declaration.nam);
+                    existing = existing.declarations.get(name);
                 }
-                if (existing?.[STATE] & EnumAstNodeStatus.ImportantDeclaration &&
-                    declaration[STATE] & ~EnumAstNodeStatus.ImportantDeclaration) {
+                if (existing != null &&
+                    typeof existing == "number" &&
+                    arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
+                    arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration) {
                     continue;
                 }
             }
@@ -115,14 +146,15 @@ class PropertyList {
                 config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
                 if (typeof mapName === "string") {
                     if (!this.declarations.has(mapName)) {
+                        this.declarations.set(mapName, 
                         // @ts-ignore
-                        this.declarations.set(mapName, new PropertyMap(config.map[mapName]));
+                        new PropertyMap(arena, config.map[mapName]));
                     }
                     owner = this.declarations.get(mapName);
                 }
                 else if (!this.declarations.has(shorthand)) {
                     // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                    this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand]));
                 }
                 if (owner == this) {
                     // @ts-ignore
@@ -130,8 +162,9 @@ class PropertyList {
                 }
                 else {
                     if (!owner.declarations.has(shorthand)) {
+                        owner.declarations.set(shorthand, 
                         // @ts-ignore
-                        owner.declarations.set(shorthand, new PropertyMap(config.map[shorthand]));
+                        new PropertyMap(arena, config.map[shorthand]));
                     }
                     // @ts-ignore
                     owner.declarations.get(shorthand).add(declaration);
@@ -146,7 +179,7 @@ class PropertyList {
                     // @ts-ignore
                     shorthand, 
                     // @ts-ignore
-                    new PropertySet(config.properties[shorthand]));
+                    new PropertySet(arena, config.properties[shorthand]));
                 }
                 // @ts-ignore
                 this.declarations.get(shorthand).add(declaration);
@@ -160,28 +193,36 @@ class PropertyList {
         }
         return this;
     }
+    /**
+     *
+     * @param declaration
+     * @param mapping
+     */
     mapValues(declaration, mapping) {
         let name;
-        let values = declaration.val;
+        const arena = this.arena;
+        const declarationValues = arena.tokens(declaration);
+        let values = declarationValues;
         if (mapping.pattern != null) {
             // match pattern
             for (const patterns of mapping.pattern) {
-                const set = new Set(values.filter((v) => v.typ !== EnumToken.CommentTokenType && v.typ !== EnumToken.WhitespaceTokenType));
+                const set = new Set(values.filter((v) => arena.dataTypes[v] !== EnumToken.CommentTokenType &&
+                    arena.dataTypes[v] !== EnumToken.WhitespaceTokenType));
                 const val = [];
                 for (const pattern of patterns) {
                     switch (pattern) {
                         case "<length>":
                             for (const v of set) {
-                                if (v.typ === EnumToken.LengthTokenType ||
-                                    (v.typ === EnumToken.NumberTokenType && v.val === 0)) {
+                                if (arena.dataTypes[v] === EnumToken.LengthTokenType ||
+                                    (arena.dataTypes[v] === EnumToken.NumberTokenType && arena.numericValue[v] === 0)) {
                                     val.push(v);
                                     set.delete(v);
                                 }
                             }
                         default: {
                             for (const v of set) {
-                                if (v.typ === EnumToken.IdenTokenType) {
-                                    const value = v.val.toLowerCase();
+                                if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
+                                    const value = arena.strings[arena.stringValue[v]].toLowerCase();
                                     if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
                                         val.push(v);
                                         set.delete(v);
@@ -194,7 +235,7 @@ class PropertyList {
                 if (set.size === 0) {
                     values = val.reduce((acc, curr) => {
                         if (acc.length > 0) {
-                            acc.push({ typ: EnumToken.WhitespaceTokenType });
+                            acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                         }
                         acc.push(curr);
                         return acc;
@@ -203,22 +244,23 @@ class PropertyList {
                 }
             }
         }
-        for (const val of declaration.val) {
-            if (val.typ === EnumToken.IdenTokenType) {
-                name = val.val.toLowerCase();
+        for (const val of declarationValues) {
+            if (arena.dataTypes[val] === EnumToken.IdenTokenType) {
+                name = arena.strings[arena.stringValue[val]].toLowerCase();
                 if (mapping.mapping[name] != null) {
-                    // @ts-expect-error
-                    Object.assign(val, mapping.mapping[name], { typ: EnumToken[mapping.mapping[name].typ] });
+                    const typ = EnumToken[mapping.mapping[name].typ];
+                    arena.resetToken(val, typ, mapping.mapping[name].val);
                 }
             }
         }
-        if (values != declaration.val) {
-            declaration.val.length = 0;
-            for (const v of values) {
-                declaration.val.push(v);
-            }
+        if (values != declarationValues) {
+            arena.setTokenList(declaration, values);
         }
     }
+    /**
+     *
+     * @returns
+     */
     [Symbol.iterator]() {
         let iterator = this.declarations.values();
         const iterators = [];

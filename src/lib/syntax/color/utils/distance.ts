@@ -1,28 +1,30 @@
-import type {ColorToken} from "../../../../@types/index.d.ts";
-import {convertColor} from "../color.ts";
-import {getOKLABComponents} from "../oklab.ts";
-import {ColorType} from "../../../ast/types.ts";
-import {colorDistancePrecision} from "../../constants.ts";
-import {toPrecisionValue} from "../../syntax.ts";
+import type { Token } from "../../../../@types/index.d.ts";
+import type { AstArena } from "../../../ast/arena.ts";
+import { convertColor } from "../color.ts";
+import { getOKLABComponents } from "../oklab.ts";
+import { ColorType } from "../../../ast/types.ts";
+import { colorDistancePrecision } from "../../constants.ts";
+import { toPrecisionValue } from "../../syntax.ts";
 
 /**
  * Calculate the distance between two okLab colors.
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param arena
  * @param color1
  * @param color2
  */
-export function okLabDistance(color1: ColorToken, color2: ColorToken): number | null {
-    color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
-    color2 = convertColor(color2, ColorType.OKLAB) as ColorToken;
+export function okLabDistance(arena: AstArena, color1: Token, color2: Token): number | null {
+    const c1: Token | null = convertColor(arena, color1, ColorType.OKLAB);
+    const c2: Token | null = convertColor(arena, color2, ColorType.OKLAB);
 
-    if (color1 == null || color2 == null) {
+    if (c1 == null || c2 == null) {
         return null;
     }
 
-    const okLab1: [number, number, number, number?] = getOKLABComponents(color1) as [number, number, number, number?];
-    const okLab2: [number, number, number, number?] = getOKLABComponents(color2) as [number, number, number, number?];
+    const okLab1: [number, number, number, number?] = getOKLABComponents(arena, c1) as [number, number, number, number?];
+    const okLab2: [number, number, number, number?] = getOKLABComponents(arena, c2) as [number, number, number, number?];
 
     if (okLab1 == null || okLab2 == null) {
         return null;
@@ -40,6 +42,7 @@ export function okLabDistance(color1: ColorToken, color2: ColorToken): number | 
 
 /**
  * Check if two colors are close in okLab space.
+ * @param arena
  * @param color1
  * @param color2
  * @param threshold
@@ -47,19 +50,20 @@ export function okLabDistance(color1: ColorToken, color2: ColorToken): number | 
  * @private
  */
 export function isOkLabClose(
-    color1: ColorToken,
-    color2: ColorToken,
+    arena: AstArena,
+    color1: Token,
+    color2: Token,
     threshold: number = colorDistancePrecision,
 ): boolean {
-    color1 = convertColor(color1, ColorType.OKLAB) as ColorToken;
-    color2 = convertColor(color2, ColorType.OKLAB) as ColorToken;
+    const c1: Token | null = convertColor(arena, color1, ColorType.OKLAB);
+    const c2: Token | null = convertColor(arena, color2, ColorType.OKLAB);
 
-    if (color1 == null || color2 == null) {
+    if (c1 == null || c2 == null) {
         return false;
     }
 
-    const okLab1: [number, number, number] = getOKLABComponents(color1) as [number, number, number];
-    const okLab2: [number, number, number] = getOKLABComponents(color2) as [number, number, number];
+    const okLab1: [number, number, number] = getOKLABComponents(arena, c1) as [number, number, number];
+    const okLab2: [number, number, number] = getOKLABComponents(arena, c2) as [number, number, number];
 
     if (okLab1 == null || okLab2 == null) {
         return false;
