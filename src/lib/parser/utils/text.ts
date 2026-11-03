@@ -4,7 +4,7 @@
  * @returns
  */
 export function dasherize(value: string) {
-    return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    return value.replace(/[A-Z]/g, (one) => `-${one.toLowerCase()}`);
 }
 
 /**
@@ -13,7 +13,7 @@ export function dasherize(value: string) {
  * @returns
  */
 export function camelize(value: string) {
-    return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    return value.replace(/-[a-z]/g, (match) => match[1].toUpperCase());
 }
 
 /**

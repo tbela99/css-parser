@@ -419,7 +419,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         reduceRuleSelector(arena, previous);
                         match = matchSelectors(arena.raw[previous], arena.raw[node]);
                         if (match != null) {
-                            wrapper = wrapNodes(arena, previous, node, match, ast, reducer, chi, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex);
                             nodeIndex = i - 1;
                             previous = chi[nodeIndex];
                         }
@@ -435,7 +435,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             if (match == null) {
                                 break;
                             }
-                            wrapper = wrapNodes(arena, wrapper, nextNode, match, ast, reducer, chi, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer, splice, i, nodeIndex);
                         }
                         nodeIndex = --i;
                         previous = chi[nodeIndex];
@@ -1178,16 +1178,14 @@ function fixSelector(arena, node) {
  * @param previous
  * @param node
  * @param match
- * @param ast
  * @param reducer
- * @param chi children mirror
  * @param splice children mirror splice
  * @param i
  * @param nodeIndex
  *
  * @private
  */
-function wrapNodes(arena, previous, node, match, ast, reducer, chi, splice, i, nodeIndex) {
+function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) {
     // @ts-ignore
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore

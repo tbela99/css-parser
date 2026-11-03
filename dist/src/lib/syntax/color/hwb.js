@@ -166,7 +166,7 @@ function hwbvalues(arena, token) {
     }
     return a == null ? { h, w, b } : { h, w, b, a };
 }
-function srgb2hwb(r, g, b, a = null, fallback = 0) {
+function srgb2hwb(r, g, b, a = null) {
     // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
     const rClamp = Math.min(1, Math.max(0, r));
     const gClamp = Math.min(1, Math.max(0, g));

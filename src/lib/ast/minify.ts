@@ -3,24 +3,15 @@ import { doRender, renderValue } from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
 import { walkValues } from "./walk.ts";
 import type {
-    AstAtRule,
     AstDeclaration,
-    AstKeyframesAtRule,
-    AstKeyframesRule,
     AstNode,
     AstRule,
-    AstStyleSheet,
     ErrorDescription,
-    IdentToken,
     MatchedSelector,
-    MediaQueryConditionToken,
-    MediaRangeQueryToken,
     MinifyFeature,
     MinifyFeatureOptions,
     OptimizedSelector,
-    ParensToken,
     ParserOptions,
-    PseudoClassFunctionToken,
     RawSelectorTokens,
     RenderOptions,
     Token,
@@ -31,7 +22,7 @@ import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/synta
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
 import { combinators } from "../syntax/constants.ts";
-import { replaceNode, replaceNodeOrValue } from "../parser/utils/token.ts";
+import { replaceNode } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { replaceCompound } from "./expand.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
@@ -613,18 +604,7 @@ function doMinify(
                         );
 
                         if (match != null) {
-                            wrapper = wrapNodes(
-                                arena,
-                                previous as AstNode,
-                                node,
-                                match,
-                                ast,
-                                reducer,
-                                chi,
-                                splice,
-                                i,
-                                nodeIndex,
-                            );
+                            wrapper = wrapNodes(arena, previous as AstNode, node, match, reducer, splice, i, nodeIndex);
 
                             nodeIndex = i - 1;
                             previous = chi[nodeIndex];
@@ -646,18 +626,7 @@ function doMinify(
                                 break;
                             }
 
-                            wrapper = wrapNodes(
-                                arena,
-                                wrapper,
-                                nextNode,
-                                match,
-                                ast,
-                                reducer,
-                                chi,
-                                splice,
-                                i,
-                                nodeIndex,
-                            );
+                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer, splice, i, nodeIndex);
                         }
 
                         nodeIndex = --i;
@@ -1002,9 +971,12 @@ function doMinify(
 
         if (recursive && node != null && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
             if (arena.dataTypes[node] == EnumToken.KeyframesAtRuleNodeType || !hasDeclarationChild(arena, node)) {
-                if (!(
-                    arena.dataTypes[node] == EnumToken.AtRuleNodeType && arena.strings[arena.name[node]] != "font-face"
-                )) {
+                if (
+                    !(
+                        arena.dataTypes[node] == EnumToken.AtRuleNodeType &&
+                        arena.strings[arena.name[node]] != "font-face"
+                    )
+                ) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -1607,9 +1579,7 @@ function fixSelector(arena: AstArena, node: AstRule): void {
  * @param previous
  * @param node
  * @param match
- * @param ast
  * @param reducer
- * @param chi children mirror
  * @param splice children mirror splice
  * @param i
  * @param nodeIndex
@@ -1621,9 +1591,7 @@ function wrapNodes(
     previous: AstRule,
     node: AstRule,
     match: MatchedSelector,
-    ast: AstNode,
     reducer: Function,
-    chi: AstNode[],
     splice: (index: number, deleteCount: number, ...items: AstNode[]) => AstNode[],
     i: number,
     nodeIndex: number,

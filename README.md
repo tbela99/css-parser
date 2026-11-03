@@ -5,7 +5,7 @@
 # css-parser
 
 > [!CAUTION] 
-> This new version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
+> This new experimental version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
 
 > [!IMPORTANT] 
 > This branch is a work in progress and it might contain bugs.

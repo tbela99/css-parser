@@ -27,11 +27,10 @@ export interface ValidationContext {
 
     /**
      * return a range of tokens.
-     * @param open
      * @param close
      * @param counter
      */
-    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): Token[];
+    peekRange(close?: EnumToken, counter?: number): Token[];
 
     /**
      *

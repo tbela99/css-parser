@@ -1358,7 +1358,7 @@ function* walkValues(arena, tokens, root = null, filter, reverse) {
  * @returns
  */
 function dasherize(value) {
-    return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    return value.replace(/[A-Z]/g, (one) => `-${one.toLowerCase()}`);
 }
 /**
  *
@@ -1366,7 +1366,7 @@ function dasherize(value) {
  * @returns
  */
 function camelize(value) {
-    return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    return value.replace(/-[a-z]/g, (match) => match[1].toUpperCase());
 }
 /**
  *
@@ -10984,7 +10984,7 @@ function hwbvalues(arena, token) {
     }
     return a == null ? { h, w, b } : { h, w, b, a };
 }
-function srgb2hwb(r, g, b, a = null, fallback = 0) {
+function srgb2hwb(r, g, b, a = null) {
     // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
     const rClamp = Math.min(1, Math.max(0, r));
     const gClamp = Math.min(1, Math.max(0, g));
@@ -14792,7 +14792,7 @@ function createValidationContext(arena, tokens) {
          * @param close
          * @param counter
          */
-        peekRange(open = exports.EnumToken.StartParensTokenType, close = exports.EnumToken.EndParensTokenType, counter = 0) {
+        peekRange(close = exports.EnumToken.EndParensTokenType, counter = 0) {
             let index = this.index;
             let token = this.tokens[index];
             // track balanced parens
@@ -15287,7 +15287,7 @@ function matchListSyntax(arena, syntax, context, options) {
     let done = false;
     success = false;
     do {
-        range = context.peekRange(exports.EnumToken.CommaTokenType, exports.EnumToken.CommaTokenType, 1);
+        range = context.peekRange(exports.EnumToken.CommaTokenType, 1);
         tmpResult = matchSyntax(arena, [rest], createValidationContext(arena, arena.typeOf(range.at(-1)) === exports.EnumToken.CommaTokenType ? range.slice(0, -1) : range), options);
         if (tmpResult.success) {
             count++;
@@ -19769,7 +19769,7 @@ class InlineCssVariablesFeature {
             options.features.push(new InlineCssVariablesFeature());
         }
     }
-    run(arena, ast, options = {}, parent, context) {
+    run(arena, ast, _options = {}, parent, context) {
         if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
             return null;
         }
@@ -19820,7 +19820,7 @@ class InlineCssVariablesFeature {
         }
         return null;
     }
-    cleanup(arena, ast, options = {}, context) {
+    cleanup(arena, _ast, _options = {}, context) {
         const variableScope = context.variableScope;
         if (variableScope == null) {
             return;
@@ -25275,7 +25275,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         reduceRuleSelector(arena, previous);
                         match = matchSelectors(arena.raw[previous], arena.raw[node]);
                         if (match != null) {
-                            wrapper = wrapNodes(arena, previous, node, match, ast, reducer, chi, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex);
                             nodeIndex = i - 1;
                             previous = chi[nodeIndex];
                         }
@@ -25291,7 +25291,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             if (match == null) {
                                 break;
                             }
-                            wrapper = wrapNodes(arena, wrapper, nextNode, match, ast, reducer, chi, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer, splice, i, nodeIndex);
                         }
                         nodeIndex = --i;
                         previous = chi[nodeIndex];
@@ -26034,16 +26034,14 @@ function fixSelector(arena, node) {
  * @param previous
  * @param node
  * @param match
- * @param ast
  * @param reducer
- * @param chi children mirror
  * @param splice children mirror splice
  * @param i
  * @param nodeIndex
  *
  * @private
  */
-function wrapNodes(arena, previous, node, match, ast, reducer, chi, splice, i, nodeIndex) {
+function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) {
     // @ts-ignore
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore

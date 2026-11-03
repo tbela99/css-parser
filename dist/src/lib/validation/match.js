@@ -186,7 +186,7 @@ function createValidationContext(arena, tokens) {
          * @param close
          * @param counter
          */
-        peekRange(open = EnumToken.StartParensTokenType, close = EnumToken.EndParensTokenType, counter = 0) {
+        peekRange(close = EnumToken.EndParensTokenType, counter = 0) {
             let index = this.index;
             let token = this.tokens[index];
             // track balanced parens
@@ -681,7 +681,7 @@ function matchListSyntax(arena, syntax, context, options) {
     let done = false;
     success = false;
     do {
-        range = context.peekRange(EnumToken.CommaTokenType, EnumToken.CommaTokenType, 1);
+        range = context.peekRange(EnumToken.CommaTokenType, 1);
         tmpResult = matchSyntax(arena, [rest], createValidationContext(arena, arena.typeOf(range.at(-1)) === EnumToken.CommaTokenType ? range.slice(0, -1) : range), options);
         if (tmpResult.success) {
             count++;

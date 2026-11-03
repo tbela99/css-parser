@@ -72,7 +72,7 @@ class InlineCssVariablesFeature {
             options.features.push(new InlineCssVariablesFeature());
         }
     }
-    run(arena, ast, options = {}, parent, context) {
+    run(arena, ast, _options = {}, parent, context) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
@@ -123,7 +123,7 @@ class InlineCssVariablesFeature {
         }
         return null;
     }
-    cleanup(arena, ast, options = {}, context) {
+    cleanup(arena, _ast, _options = {}, context) {
         const variableScope = context.variableScope;
         if (variableScope == null) {
             return;

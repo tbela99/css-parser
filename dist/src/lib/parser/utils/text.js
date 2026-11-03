@@ -11,7 +11,7 @@
  * @returns
  */
 function dasherize(value) {
-    return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    return value.replace(/[A-Z]/g, (one) => `-${one.toLowerCase()}`);
 }
 /**
  *
@@ -19,7 +19,7 @@ function dasherize(value) {
  * @returns
  */
 function camelize(value) {
-    return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    return value.replace(/-[a-z]/g, (match) => match[1].toUpperCase());
 }
 /**
  *

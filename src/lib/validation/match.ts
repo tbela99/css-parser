@@ -248,7 +248,6 @@ export function createValidationContext(arena: AstArena, tokens: Token[]): Valid
          * @param counter
          */
         peekRange(
-            open: EnumToken = EnumToken.StartParensTokenType,
             close: EnumToken = EnumToken.EndParensTokenType,
             counter: number = 0,
         ): Token[] {
@@ -902,7 +901,7 @@ function matchListSyntax(
     success = false;
 
     do {
-        range = context.peekRange(EnumToken.CommaTokenType, EnumToken.CommaTokenType, 1);
+        range = context.peekRange(EnumToken.CommaTokenType, 1);
         tmpResult = matchSyntax(
             arena,
             [rest],

@@ -1,4 +1,11 @@
-import type { AstAtRule, AstDeclaration, AstNode, ParserOptions, RenderOptions, Token } from "../../../@types/index.d.ts";
+import type {
+    AstAtRule,
+    AstDeclaration,
+    AstNode,
+    ParserOptions,
+    RenderOptions,
+    Token,
+} from "../../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
 import { renderValue } from "../../printer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
@@ -320,15 +327,7 @@ function processNode(
 
             for (i = 0; i < conditions.length; i++) {
                 stack.push(
-                    ...substituteIfElseNode(
-                        arena,
-                        declaration,
-                        conditions[i],
-                        value,
-                        parentWrapper,
-                        cache,
-                        parent,
-                    ),
+                    ...substituteIfElseNode(arena, declaration, conditions[i], value, parentWrapper, cache, parent),
                 );
             }
         } else {

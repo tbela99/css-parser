@@ -1,4 +1,4 @@
-import type { AstAtRule, Token, ParserOptions, ErrorDescription } from "../../../@types/index.d.ts";
+import type { Token, ParserOptions, ErrorDescription } from "../../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
@@ -9,14 +9,13 @@ import type { ValidationToken } from "../../validation/parser/types.d.ts";
 
 /**
  *
- * @param context
  * @param stream
  * @param options
  * @param errors
  * @returns
  */
 export function parseDeclarationList(
-    arena: AstArena, context: AstAtRule | Token,
+    arena: AstArena,
     stream: Token[],
     options: ParserOptions,
     errors: ErrorDescription[],

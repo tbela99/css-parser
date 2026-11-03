@@ -229,7 +229,7 @@ export function hwbvalues(arena: AstArena, token: Token): { h: number; w: number
     return a == null ? { h, w, b } : { h, w, b, a };
 }
 
-export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
+export function srgb2hwb(r: number, g: number, b: number, a: number | null = null): number[] {
     // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
     const rClamp = Math.min(1, Math.max(0, r));
     const gClamp = Math.min(1, Math.max(0, g));

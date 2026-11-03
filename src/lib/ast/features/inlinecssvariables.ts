@@ -98,7 +98,7 @@ export class InlineCssVariablesFeature {
     run(
         arena: AstArena,
         ast: AstRule | AstAtRule,
-        options: ParserOptions = {},
+        _options: ParserOptions = {},
         parent: AstRule | AstAtRule | AstStyleSheet,
         context: {
             [key: string]: any;
@@ -170,7 +170,7 @@ export class InlineCssVariablesFeature {
         return null;
     }
 
-    cleanup(arena: AstArena, ast: AstStyleSheet, options: ParserOptions = {}, context: { [key: string]: any }) {
+    cleanup(arena: AstArena, _ast: AstStyleSheet, _options: ParserOptions = {}, context: { [key: string]: any }) {
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 
         if (variableScope == null) {
