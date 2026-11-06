@@ -13,7 +13,7 @@ import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { isValidDeclarationValue } from '../../validation/match.js';
 import { nodeHash } from '../utils/hash.js';
-import { equalsIgnoreCase } from '../utils/text.js';
+import { equalsIgnoreCase, lowercase } from '../utils/text.js';
 
 const config = getConfig();
 /**
@@ -95,7 +95,7 @@ class PropertyList {
             return this;
         }
         if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
-            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
             if (syntaxRules != null) {
                 arena.flags[declaration] |=
                     (isValidDeclarationValue(arena, syntaxRules, declaration, this.options)

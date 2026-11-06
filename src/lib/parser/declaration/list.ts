@@ -17,7 +17,7 @@ import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { isValidDeclarationValue } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { nodeHash } from "../utils/hash.ts";
-import { equalsIgnoreCase } from "../utils/text.ts";
+import { equalsIgnoreCase, lowercase } from "../utils/text.ts";
 import type { AstArena } from "../../ast/arena.ts";
 
 const config: PropertiesConfig = getConfig();
@@ -116,7 +116,7 @@ export class PropertyList {
         }
 
         if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
-            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
 
             if (syntaxRules != null) {
                 arena.flags[declaration] |=

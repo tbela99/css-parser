@@ -17,6 +17,23 @@ export function camelize(value: string) {
 }
 
 /**
+ * lowercase string, like String.prototype.toLowerCase(). the string is returned when it has no ascii uppercase and
+ * no non ascii character: no new string is created
+ * @param value
+ */
+export function lowercase(value: string): string {
+    for (let i = 0; i < value.length; i++) {
+        const code: number = value.charCodeAt(i);
+
+        if ((code >= 65 && code <= 90) || code > 0x7f) {
+            return value.toLowerCase();
+        }
+    }
+
+    return value;
+}
+
+/**
  *
  * @param a
  * @param b

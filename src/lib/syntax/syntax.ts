@@ -5,7 +5,7 @@ import { ColorType, EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
 import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { memoize } from "../parser/utils/cache.ts";
-import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
 import { trimArray } from "../validation/match.ts";
 import { splitTokenList } from "../validation/utils/list.ts";
 import { getColorSpace } from "./color/utils/colorspace.ts";
@@ -894,7 +894,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
     }
 
     if (typ == EnumToken.IdenTokenType) {
-        const val = arena.strings[arena.stringValue[token]].toLowerCase();
+        const val = lowercase(arena.strings[arena.stringValue[token]]);
 
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
             return true;

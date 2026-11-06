@@ -35,7 +35,12 @@ export class ComputeCalcExpressionFeature {
                 continue;
             }
 
-            const set: Set<Token> = new Set();
+            if (!hasExpression(arena, node)) {
+                continue;
+            }
+
+            // function tokens already evaluated, created on demand
+            let set: Set<Token> | null = null;
 
             for (const { value, parent } of walkValues(arena, arena.tokens(node), node)) {
                 if (parent != null && arena.dataTypes[parent] == EnumToken.BinaryExpressionTokenType) {
@@ -54,6 +59,8 @@ export class ComputeCalcExpressionFeature {
                 }
 
                 if (tokensfuncSet.has(typ)) {
+                    set ??= new Set();
+
                     if (!set.has(value)) {
                         set.add(value);
 
@@ -128,4 +135,25 @@ function createCalc(arena: AstArena, source: Token, values: Token[]): Token {
 
     arena.copyLocation(calc, source);
     return calc;
+}
+
+/**
+ * true if a value token of the declaration is a function, an expression or has children: the values of the other
+ * declarations are not walked
+ * @param arena
+ * @param node
+ */
+function hasExpression(arena: AstArena, node: AstNode): boolean {
+    for (let token: Token = arena.firstToken[node]; token != 0; token = arena.nextSibling[token]) {
+        if (
+            arena.dataTypes[token] == EnumToken.BinaryExpressionTokenType ||
+            tokensfuncSet.has(arena.dataTypes[token]) ||
+            arena.firstToken[token] != 0 ||
+            arena.firstChild[token] != 0
+        ) {
+            return true;
+        }
+    }
+
+    return false;
 }

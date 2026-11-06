@@ -8,7 +8,7 @@ import type { ValidationContext, ValidationMatch } from "./types.d.ts";
 import type { ValidationConfiguration, ValidationMediaFeature } from "../../@types/validation.d.ts";
 import { funcLike, mFGT, mFLT, tokensfuncDefMap, tokensfuncSet } from "../syntax/constants.ts";
 import { isColor } from "../syntax/syntax.ts";
-import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
 import { parseTokens } from "../parser/parse.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
@@ -1564,8 +1564,8 @@ function matchSyntax(
             case ValidationTokenEnum.Keyword:
                 if (
                     arena.dataTypes[token] == EnumToken.IdenTokenType &&
-                    arena.strings[arena.stringValue[token]].toLowerCase() ===
-                        (syntaxes[i] as ValidationKeywordToken).val.toLowerCase()
+                    lowercase(arena.strings[arena.stringValue[token]]) ===
+                        lowercase((syntaxes[i] as ValidationKeywordToken).val)
                 ) {
                     success = true;
                     (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);

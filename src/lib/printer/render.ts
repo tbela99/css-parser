@@ -42,34 +42,49 @@ export function doRender(
     const minify: boolean = options.minify ?? true;
     const beautify: boolean = options.beautify ?? !minify;
 
-    options = {
-        ...(beautify
-            ? {
-                  indent: " ",
-                  newLine: "\n",
-              }
-            : {
-                  indent: "",
-                  newLine: "",
-              }),
-        ...(minify
-            ? {
-                  removeEmpty: true,
-                  removeComments: true,
+    // a copy of the options (a spread into an empty object is a fast clone), then the defaults of the missing
+    // options. a spread after other properties copies the properties one by one: it is much slower
+    options = { ...options };
 
-                  minify: true,
-              }
-            : {
-                  removeEmpty: false,
-                  removeComments: false,
-              }),
-        minifyValues: true,
-        sourcemap: false,
-        convertColor: true,
-        expandNestingRules: false,
-        preserveLicense: false,
-        ...options,
-    };
+    if (!("indent" in options)) {
+        options.indent = beautify ? " " : "";
+    }
+
+    if (!("newLine" in options)) {
+        options.newLine = beautify ? "\n" : "";
+    }
+
+    if (!("removeEmpty" in options)) {
+        options.removeEmpty = minify;
+    }
+
+    if (!("removeComments" in options)) {
+        options.removeComments = minify;
+    }
+
+    if (minify && !("minify" in options)) {
+        options.minify = true;
+    }
+
+    if (!("minifyValues" in options)) {
+        options.minifyValues = true;
+    }
+
+    if (!("sourcemap" in options)) {
+        options.sourcemap = false;
+    }
+
+    if (!("convertColor" in options)) {
+        options.convertColor = true;
+    }
+
+    if (!("expandNestingRules" in options)) {
+        options.expandNestingRules = false;
+    }
+
+    if (!("preserveLicense" in options)) {
+        options.preserveLicense = false;
+    }
 
     const expandNesting: boolean =
         (options.expandNestingRules as boolean) &&
@@ -175,17 +190,7 @@ export function doRender(
                 sourceLocation,
                 linesMap,
                 errors,
-                function reducer(acc: string, curr: Token): string {
-                    if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
-                        if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
-                            return acc;
-                        }
-
-                        return acc + arena.strings[arena.stringValue[curr]];
-                    }
-
-                    return acc + renderValue(arena, curr, options, cache, reducer, errors);
-                },
+                createReducer(arena, options, cache, errors),
                 cache,
             ),
         errors,
@@ -436,16 +441,8 @@ function renderAstNode(
     const typ: EnumToken = arena.dataTypes[data];
 
     switch (typ) {
-        case EnumToken.DeclarationNodeType: {
-            const values: Token[] = options.minifyValues ? filterValues(arena, arena.tokens(data)) : arena.tokens(data);
-            let rendered: string = "";
-
-            for (const value of values) {
-                rendered = reducer(rendered, value);
-            }
-
-            return `${arena.strings[arena.name[data]]}:${options.indent}${rendered}`;
-        }
+        case EnumToken.DeclarationNodeType:
+            return `${arena.strings[arena.name[data]]}:${options.indent}${renderDeclarationValue(arena, data, options.minifyValues as boolean, reducer)}`;
 
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType: {
@@ -519,6 +516,8 @@ function renderAstNode(
             let node: AstNode;
             let nodeType: EnumToken;
             let recordDeclarationSourceMap: boolean = typ == EnumToken.AtRuleNodeType;
+            // rendering of the last child, appended to the children at the end
+            let last: string = "";
 
             for (node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
                 nodeType = arena.dataTypes[node];
@@ -531,14 +530,7 @@ function renderAstNode(
                             ? ""
                             : comment;
                 } else if (nodeType == EnumToken.DeclarationNodeType) {
-                    const values: Token[] = options.minifyValues ? filterValues(arena, arena.tokens(node)) : arena.tokens(node);
-                    let rendered: string = "";
-
-                    for (const value of values) {
-                        rendered = reducer(rendered, value);
-                    }
-
-                    str = `${arena.strings[arena.name[node]]}:${options.indent}${rendered.trimEnd()};`;
+                    str = `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues as boolean, reducer).trimEnd()};`;
                 } else {
                     str = renderAstNode(
                         arena,
@@ -558,7 +550,8 @@ function renderAstNode(
                         continue;
                     }
 
-                    children += str;
+                    children += last;
+                    last = str;
                     str = "";
                     continue;
                 }
@@ -568,7 +561,8 @@ function renderAstNode(
                 }
 
                 str = options.newLine + indentSub + str;
-                children += str;
+                children += last;
+                last = str;
 
                 if (sourcemaps != null && str !== "") {
                     if (nodeType == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
@@ -585,10 +579,14 @@ function renderAstNode(
                 }
             }
 
-            if (children.endsWith(";")) {
-                children = children.slice(0, -1);
+            // the semicolon that ends the last child is removed. only the last child is read: the string of the
+            // previous children is not flattened
+            if (last.endsWith(";")) {
+                last = last.slice(0, -1);
                 sourceLocation.end--;
             }
+
+            children += last;
 
             if (options.removeEmpty && children === "") {
                 if (sourcemaps != null) {
@@ -623,6 +621,199 @@ function renderTokenList(tokens: Token[], reducer: (acc: string, curr: Token) =>
 }
 
 /**
+ * render the value tokens of a declaration with the reducer. with minifyValues, the whitespace that is not needed is
+ * skipped like {@link filterValues} does, without copying the tokens into an array: the whitespace before
+ * `!important` (the token that follows `!important` is not checked) and the whitespace after a function
+ * @param arena
+ * @param node declaration
+ * @param minifyValues
+ * @param reducer
+ */
+function renderDeclarationValue(
+    arena: AstArena,
+    node: AstNode,
+    minifyValues: boolean,
+    reducer: (acc: string, curr: Token) => string,
+): string {
+    let rendered: string = "";
+    let token: Token = arena.firstToken[node];
+
+    if (!minifyValues) {
+        for (; token != 0; token = arena.nextSibling[token]) {
+            rendered = reducer(rendered, token);
+        }
+
+        return rendered;
+    }
+
+    const dataTypes: Uint8Array = arena.dataTypes;
+    // last kept token, rendered when the next token is kept: a whitespace before !important is dropped
+    let pending: Token = 0;
+    let check: boolean = true;
+    let dropWhitespace: boolean = false;
+
+    for (; token != 0; token = arena.nextSibling[token]) {
+        const type: EnumToken = dataTypes[token];
+
+        if (dropWhitespace) {
+            dropWhitespace = false;
+
+            if (type == EnumToken.WhitespaceTokenType) {
+                continue;
+            }
+        }
+
+        if (!check) {
+            check = true;
+        } else if (
+            type == EnumToken.ImportantTokenType &&
+            pending != 0 &&
+            dataTypes[pending] === EnumToken.WhitespaceTokenType
+        ) {
+            pending = 0;
+            check = false;
+        } else if (
+            tokensfuncSet.has(type) &&
+            // color keywords and hex colors are not functions
+            (type != EnumToken.ColorTokenType || arena.firstToken[token] != 0) &&
+            type != EnumToken.WildCardFunctionTokenType &&
+            arena.nextSibling[token] != 0 &&
+            dataTypes[arena.nextSibling[token]] == EnumToken.WhitespaceTokenType
+        ) {
+            dropWhitespace = true;
+        }
+
+        if (pending != 0) {
+            rendered = reducer(rendered, pending);
+        }
+
+        pending = token;
+    }
+
+    return pending == 0 ? rendered : reducer(rendered, pending);
+}
+
+/**
+ * shared default arguments of {@link renderValue}: no object is created per call. the cache is only written when
+ * a source map is generated, with the cache of {@link doRender}
+ */
+const defaultRenderOptions: RenderOptions = {};
+const defaultCache: { [key: string]: any } = Object.create(null);
+
+/**
+ * reducer of the rendered tokens: comments are removed according to the options
+ * @param arena
+ * @param options
+ * @param cache
+ * @param errors
+ */
+function createReducer(
+    arena: AstArena,
+    options: RenderOptions,
+    cache: { [key: string]: any },
+    errors?: ErrorDescription[],
+): (acc: string, curr: Token) => string {
+    const reducer = (acc: string, curr: Token): string => {
+        if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
+            if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
+                return acc;
+            }
+
+            return acc + arena.strings[arena.stringValue[curr]];
+        }
+
+        return acc + renderValue(arena, curr, options, cache, reducer, errors);
+    };
+
+    return reducer;
+}
+
+/**
+ * render the tokens of a linked token list, starting at the first token, with the reducer. without a reducer, the
+ * comments are handled like {@link createReducer} does: no closure is created
+ * @param arena
+ * @param first first token of the list
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
+function renderReduced(
+    arena: AstArena,
+    first: Token,
+    options: RenderOptions,
+    cache: { [key: string]: any },
+    reducer: null | undefined | ((acc: string, curr: Token) => string),
+    errors?: ErrorDescription[],
+): string {
+    let result: string = "";
+
+    for (let token: Token = first; token != 0; token = arena.nextSibling[token]) {
+        if (reducer != null) {
+            result = reducer(result, token);
+        } else if (arena.dataTypes[token] == EnumToken.CommentTokenType && options.removeComments) {
+            if (options.preserveLicense && arena.strings[arena.stringValue[token]].startsWith("/*!")) {
+                result += arena.strings[arena.stringValue[token]];
+            }
+        } else {
+            result += renderValue(arena, token, options, cache, null, errors);
+        }
+    }
+
+    return result;
+}
+
+/**
+ * render the tokens of a linked token list, starting at the first token (no array, no closure)
+ * @param arena
+ * @param first first token of the list
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
+function renderList(
+    arena: AstArena,
+    first: Token,
+    options: RenderOptions,
+    cache: { [key: string]: any },
+    reducer?: null | ((acc: string, curr: Token) => string),
+    errors?: ErrorDescription[],
+): string {
+    let result: string = "";
+
+    for (let token: Token = first; token != 0; token = arena.nextSibling[token]) {
+        result += renderValue(arena, token, options, cache, reducer, errors);
+    }
+
+    return result;
+}
+
+/**
+ * render the tokens of a field of a structured token, see {@link renderList}
+ * @param arena
+ * @param token
+ * @param field
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
+function renderField(
+    arena: AstArena,
+    token: Token,
+    field: TokenField,
+    options: RenderOptions,
+    cache: { [key: string]: any },
+    reducer?: null | ((acc: string, curr: Token) => string),
+    errors?: ErrorDescription[],
+): string {
+    const list: number | null = arena.getChildAt(token, field);
+
+    return list == null ? "" : renderList(arena, arena.firstToken[list], options, cache, reducer, errors);
+}
+
+/**
  * render ast token
  * @param token
  * @param options
@@ -634,10 +825,10 @@ function renderTokenList(tokens: Token[], reducer: (acc: string, curr: Token) =>
 export function renderValue(
     arena: AstArena,
     token: Token,
-    options: RenderOptions = {},
+    options: RenderOptions = defaultRenderOptions,
     cache: {
         [key: string]: any;
-    } = Object.create(null),
+    } = defaultCache,
     reducer?: null | ((acc: string, curr: Token) => string),
     errors?: ErrorDescription[],
 ): string {
@@ -651,19 +842,8 @@ export function renderValue(
 
     options.minifyValues ??= options.minify;
 
-    if (reducer == null) {
-        reducer = function (acc: string, curr: Token): string {
-            if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
-                if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
-                    return acc;
-                }
-
-                return acc + arena.strings[arena.stringValue[curr]];
-            }
-
-            return acc + renderValue(arena, curr, options, cache, reducer, errors);
-        };
-    }
+    // without a reducer, the default reducer (see createReducer()) is used: it is created only when the rendering of
+    // a child requires it with other options. the children rendered with the same options create their own
 
     switch (arena.dataTypes[token]) {
         case EnumToken.UrlFunctionTokenDefType:
@@ -684,15 +864,8 @@ export function renderValue(
         case EnumToken.WildCardFunctionTokenDefType:
             return arena.strings[arena.stringValue[token]] + "(";
 
-        case EnumToken.ListToken: {
-            let result: string = "";
-
-            for (const curr of arena.tokens(token)) {
-                result += renderValue(arena, curr, options, cache);
-            }
-
-            return result;
-        }
+        case EnumToken.ListToken:
+            return renderList(arena, arena.firstToken[token], options, cache);
 
         case EnumToken.BinaryExpressionTokenType: {
             const op: EnumToken = arena.numericValue[token];
@@ -762,15 +935,8 @@ export function renderValue(
         case EnumToken.Div:
             return "/";
 
-        case EnumToken.WrappedValuesTokenType: {
-            let result: string = "";
-
-            for (const curr of arena.tokens(token)) {
-                result += renderValue(arena, curr, options, cache);
-            }
-
-            return "{" + result + "}";
-        }
+        case EnumToken.WrappedValuesTokenType:
+            return "{" + renderList(arena, arena.firstToken[token], options, cache) + "}";
 
         case EnumToken.ColorTokenType:
             if (
@@ -1481,7 +1647,7 @@ export function renderValue(
                         break;
                 }
 
-                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer) + ")";
+                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer ?? createReducer(arena, options, cache, errors)) + ")";
             }
 
         case EnumToken.TimingFunctionTokenType:
@@ -1514,14 +1680,15 @@ export function renderValue(
                                 curr,
                                 arena.dataTypes[token] == EnumToken.FunctionTokenType ? { minify: false } : options,
                                 cache,
-                                reducer,
+                                // the reducer renders with the options of this token
+                                (reducer ??= createReducer(arena, options, cache, errors)),
                             ),
                     ) +
                     ")"
                 );
             }
 
-            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderTokenList(arena.tokens(token), reducer) + ")";
+            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderReduced(arena, arena.firstToken[token], options, cache, reducer, errors) + ")";
 
         case EnumToken.BlockStartTokenType:
             return "{";
@@ -1607,7 +1774,7 @@ export function renderValue(
             return "|";
         case EnumToken.AttrTokenType:
         case EnumToken.IdenListTokenType:
-            return "[" + renderTokenList(arena.tokens(token), reducer) + "]";
+            return "[" + renderReduced(arena, arena.firstToken[token], options, cache, reducer, errors) + "]";
 
         case EnumToken.TimeTokenType:
         case EnumToken.AngleTokenType:
@@ -1788,7 +1955,7 @@ export function renderValue(
             return "&";
 
         case EnumToken.InvalidAttrTokenType:
-            return "[" + renderTokenList(arena.tokens(token), (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache));
+            return "[" + renderList(arena, arena.firstToken[token], options, cache);
 
         case EnumToken.InvalidClassSelectorTokenType:
             return arena.strings[arena.stringValue[token]];
@@ -1798,40 +1965,26 @@ export function renderValue(
             return (
                 renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer, errors) +
                 " " +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.R),
-                    (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                )
+                renderField(arena, token, TokenField.R, options, cache, reducer, errors)
             );
 
         case EnumToken.SupportsQueryConditionTokenType:
         case EnumToken.WhenElseQueryConditionTokenType:
             return (
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.L),
-                    (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                ) +
+                renderField(arena, token, TokenField.L, options, cache, reducer, errors) +
                 " " +
                 renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer, errors) +
                 " " +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.R),
-                    (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                )
+                renderField(arena, token, TokenField.R, options, cache, reducer, errors)
             );
 
         case EnumToken.IfConditionTokenType: {
-            const l: Token[] = arena.fieldTokens(token, TokenField.L);
-
-            return l.length == 0
+            return !arena.hasField(token, TokenField.L)
                 ? ""
-                : renderTokenList(l, (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors)) +
+                : renderField(arena, token, TokenField.L, options, cache, reducer, errors) +
                       ":" +
                       (options.indent ?? "") +
-                      renderTokenList(
-                          arena.fieldTokens(token, TokenField.R),
-                          (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                      );
+                      renderField(arena, token, TokenField.R, options, cache, reducer, errors);
         }
 
         case EnumToken.IfElseConditionTokenType:
@@ -1855,10 +2008,7 @@ export function renderValue(
             return (
                 renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer, errors) +
                 " " +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.R),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                )
+                renderField(arena, token, TokenField.R, options, cache, reducer, errors)
             );
 
         case EnumToken.MediaQueryConditionTokenType: {
@@ -1874,36 +2024,21 @@ export function renderValue(
                     ? ""
                     : " ";
             return (
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.L),
-                    (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                ) +
+                renderField(arena, token, TokenField.L, options, cache, reducer, errors) +
                 indent +
                 renderValue(arena, op, options, cache, reducer, errors) +
                 indent +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.R),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                )
+                renderField(arena, token, TokenField.R, options, cache, reducer, errors)
             );
         }
 
         case EnumToken.MediaRangeQueryTokenType:
             return (
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.L),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                ) +
+                renderField(arena, token, TokenField.L, options, cache, reducer, errors) +
                 renderValue(arena, arena.field(token, TokenField.Op), options, cache, reducer, errors) +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.Val),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                ) +
+                renderField(arena, token, TokenField.Val, options, cache, reducer, errors) +
                 renderValue(arena, arena.field(token, TokenField.Op2), options, cache, reducer, errors) +
-                renderTokenList(
-                    arena.fieldTokens(token, TokenField.R),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
-                )
+                renderField(arena, token, TokenField.R, options, cache, reducer, errors)
             );
 
         case EnumToken.MediaFeatureTokenType:
@@ -1930,7 +2065,7 @@ export function renderValue(
             return "";
 
         case EnumToken.ComposesSelectorNodeType:
-            return `${renderTokenList(arena.fieldTokens(token, TokenField.L), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer, errors))}${!arena.hasField(token, TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer, errors)}`;
+            return `${renderField(arena, token, TokenField.L, options, cache, reducer, errors)}${!arena.hasField(token, TokenField.R) ? "" : " from " + renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer, errors)}`;
 
         default:
             throw new Error(`Unsupported token type for ${EnumToken[arena.dataTypes[token]]}`);

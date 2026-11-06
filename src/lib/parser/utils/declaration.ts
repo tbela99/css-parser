@@ -15,9 +15,9 @@ import { getParsedSyntax, getSyntaxRule, ValidationSyntaxRule } from "../../vali
 import { createValidationContext, matchAllSyntaxes, matchDeclarationSyntax, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
-import { walkValues } from "../../ast/walk.ts";
+import { visitValues } from "../../ast/walk.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
-import { equalsIgnoreCase } from "./text.ts";
+import { equalsIgnoreCase, lowercase } from "./text.ts";
 import { buildExpression } from "../../ast/math/expression.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 
@@ -57,6 +57,32 @@ function parseGridTemplate(template: string): string {
     }
 
     return buffer.length > 0 ? result + buffer : result;
+}
+
+/**
+ * parse the color of an identifier or a color token, see {@link visitValues}
+ * @param arena
+ * @param value
+ */
+function parseColorToken(arena: AstArena, value: Token): void {
+    if (arena.dataTypes[value] === EnumToken.IdenTokenType && isColor(arena, value)) {
+        parseColor(arena, value);
+    } else if (arena.dataTypes[value] === EnumToken.ColorTokenType) {
+        if (isColor(arena, value)) {
+            parseColor(arena, value);
+        }
+    }
+}
+
+/**
+ * parse the color of an identifier, see {@link visitValues}
+ * @param arena
+ * @param value
+ */
+function parseColorIdent(arena: AstArena, value: Token): void {
+    if (arena.dataTypes[value] === EnumToken.IdenTokenType && isColor(arena, value)) {
+        parseColor(arena, value);
+    }
 }
 
 /**
@@ -151,7 +177,19 @@ export function parseDeclaration(
         return node;
     }
 
-    tokens = trimArray(arena, tokens.slice(i + 1));
+    // value tokens, without the leading and trailing whitespace: a single copy
+    let start: number = i + 1;
+    let end: number = tokens.length;
+
+    while (start < end && arena.dataTypes[tokens[start]] === EnumToken.WhitespaceTokenType) {
+        start++;
+    }
+
+    while (end > start && arena.dataTypes[tokens[end - 1]] === EnumToken.WhitespaceTokenType) {
+        end--;
+    }
+
+    tokens = tokens.slice(start, end);
 
     if (validate && arena.typeOf(name) === EnumToken.IdenTokenType) {
         if (isAtRule && parentNam != "import" && parentNam != "supports" && parentNam != "media") {
@@ -165,16 +203,16 @@ export function parseDeclaration(
                 const propertyDescriptors = rules.getPropertyDescriptors();
 
                 if (propertyDescriptors != null) {
-                    syntaxRules = propertyDescriptors[nam.toLowerCase()];
+                    syntaxRules = propertyDescriptors[lowercase(nam)];
                 } else {
                     syntaxRules =
                         rules.acceptAnyDeclaration && rules.acceptAnyRule
-                            ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, nam.toLowerCase())
+                            ? getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(nam))
                             : rules.getBlockRules();
                 }
             }
         } else {
-            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, nam.toLowerCase());
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(nam));
         }
 
         // <declaration-list> or <declaration-rule-list>
@@ -203,7 +241,7 @@ export function parseDeclaration(
                     "font-feature-custom-ident-character-variant",
                 );
             } else {
-                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, nam.toLowerCase());
+                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(nam));
             }
         }
     }
@@ -233,15 +271,7 @@ export function parseDeclaration(
             success = doNotValidate || (result?.success as boolean);
 
             if (success) {
-                for (const { value } of walkValues(arena, tokens)) {
-                    if (arena.dataTypes[value] === EnumToken.IdenTokenType && isColor(arena, value)) {
-                        parseColor(arena, value);
-                    } else if (arena.dataTypes[value] === EnumToken.ColorTokenType) {
-                        if (isColor(arena, value)) {
-                            parseColor(arena, value);
-                        }
-                    }
-                }
+                visitValues(arena, tokens, parseColorToken);
             }
 
             if (!doNotValidate && !result?.success && result!.errors!.length > 0) {
@@ -434,7 +464,7 @@ export function parseDeclaration(
 
             case EnumToken.IdenTokenType:
                 {
-                    const val: string = arena.strings[arena.stringValue[token]].toLowerCase();
+                    const val: string = lowercase(arena.strings[arena.stringValue[token]]);
 
                     if (val in COLORS_NAMES || val === "currentcolor") {
                         arena.setStr(token, val);
@@ -496,11 +526,7 @@ export function parseDeclaration(
         return createDeclarationNode(arena, name, tokens, EnumAstNodeStatus.Invalid, result?.errors ?? null);
     }
 
-    for (const { value } of walkValues(arena, tokens)) {
-        if (arena.dataTypes[value] === EnumToken.IdenTokenType && isColor(arena, value)) {
-            parseColor(arena, value);
-        }
-    }
+    visitValues(arena, tokens, parseColorIdent);
 
     if (
         nam === "grid" ||

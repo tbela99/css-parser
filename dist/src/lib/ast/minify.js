@@ -1298,11 +1298,11 @@ function diff(arena, n1, n2, options = {}) {
     if (matches == 0 && (arena.firstChild[node1] != 0 || arena.firstChild[node2] != 0)) {
         return null;
     }
-    const op = { ...options };
+    // doRender() copies the options
     const renderedSize = (node, cache) => {
         let css = cache ? options.cache.get(node) : undefined;
         if (css == null) {
-            css = doRender(arena, node, op).code;
+            css = doRender(arena, node, options).code;
             if (cache) {
                 options.cache.set(node, css);
             }

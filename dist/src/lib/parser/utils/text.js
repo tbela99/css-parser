@@ -22,6 +22,20 @@ function camelize(value) {
     return value.replace(/-[a-z]/g, (match) => match[1].toUpperCase());
 }
 /**
+ * lowercase string, like String.prototype.toLowerCase(). the string is returned when it has no ascii uppercase and
+ * no non ascii character: no new string is created
+ * @param value
+ */
+function lowercase(value) {
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i);
+        if ((code >= 65 && code <= 90) || code > 0x7f) {
+            return value.toLowerCase();
+        }
+    }
+    return value;
+}
+/**
  *
  * @param a
  * @param b
@@ -46,4 +60,4 @@ function equalsIgnoreCase(a, b) {
     return true;
 }
 
-export { camelize, dasherize, equalsIgnoreCase };
+export { camelize, dasherize, equalsIgnoreCase, lowercase };

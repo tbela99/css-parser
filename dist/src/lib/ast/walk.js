@@ -182,142 +182,301 @@ function* walk(arena, node, filter, reverse) {
  * // [ "Iden", "from" ]
  * ```
  */
-function* walkValues(arena, tokens, root = null, filter, reverse) {
-    const nodes = [];
-    let previous = null;
-    if (reverse) {
-        for (let i = 0; i < tokens.length; i++) {
-            nodes.push(tokens[i]);
-        }
+function walkValues(arena, tokens, root = null, filter, reverse) {
+    // an iterator object holds the state: no generator
+    return new ValueWalker(arena, tokens, root, filter, reverse);
+}
+/**
+ * push the children of a token onto a stack, from the linked lists: the token list, then the fields (the tokens of
+ * the list fields) of a structured token. they are pushed in order, then reversed in place (unless reverse is true)
+ * so that they are popped in order: no array is created
+ * @param arena
+ * @param nodes stack
+ * @param value
+ * @param reverse
+ */
+function pushChildren(arena, nodes, value, reverse) {
+    const first = nodes.length;
+    let token = arena.firstToken[value];
+    while (token != 0) {
+        nodes.push(token);
+        token = arena.nextSibling[token];
     }
-    else {
-        for (let i = tokens.length - 1; i >= 0; i--) {
-            nodes.push(tokens[i]);
-        }
-    }
-    if (filter != null && typeof filter == "function") {
-        filter = {
-            event: WalkerEvent.Enter,
-            fn: filter,
-        };
-    }
-    else if (filter == null) {
-        filter = {
-            event: WalkerEvent.Enter,
-        };
-    }
-    let isNumeric = false;
-    let value;
-    let option;
-    let node = 0;
-    const eventType = filter.event ?? WalkerEvent.Enter;
-    // parent of a token: the owner of the token list or the structured token owning the field list
-    const parentOf = (token) => {
-        let parent = arena.parents[token];
-        if (parent == 0) {
-            return root ?? null;
-        }
-        if (arena.dataTypes[parent] == EnumToken.ListTokenType) {
-            parent = arena.parents[parent];
-        }
-        return parent == 0 ? (root ?? null) : parent;
-    };
-    // @ts-ignore
-    const result = {
-        value: 0,
-        parent: null,
-        previousValue: null,
-        nextValue: null,
-        root: root ?? null,
-        parents: function* () {
-            let parent = parentOf(node);
-            while (parent != null && parent != 0) {
-                yield parent;
-                if (parent == root) {
-                    break;
-                }
-                parent = parentOf(parent);
-            }
-        },
-    };
-    while (nodes.length > 0) {
-        value = nodes.pop();
-        node = value;
-        option = null;
-        if (filter.fn != null && eventType & WalkerEvent.Enter) {
-            const isValid = filter.type == null ||
-                arena.dataTypes[value] == filter.type ||
-                (Array.isArray(filter.type) && filter.type.includes(arena.dataTypes[value])) ||
-                (typeof filter.type == "function" && filter.type(value));
-            if (isValid) {
-                // @ts-expect-error
-                option = filter.fn(value, parentOf(value), WalkerEvent.Enter, result.parents);
-                isNumeric = typeof option == "number";
-                if (isNumeric && option & WalkerOptionEnum.Stop) {
-                    return;
-                }
-                if (isNumeric && option & WalkerOptionEnum.Ignore) {
-                    continue;
-                }
-                // tokens returned by the filter are visited too
-                if (option != null && !isNumeric) {
-                    const op = Array.isArray(option) ? option : [option];
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
-                        }
-                    }
-                    else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                        }
-                    }
-                }
-            }
-        }
-        result.value = value;
-        result.parent = parentOf(value);
-        result.previousValue = previous;
-        result.nextValue = nodes.length > 0 ? nodes[nodes.length - 1] : null;
-        yield result;
-        if (!isNumeric || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
-            const children = arena.subTokens(value);
-            if (reverse) {
-                for (let i = 0; i < children.length; i++) {
-                    nodes.push(children[i]);
+    if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+        let child = arena.firstChild[value];
+        while (child != 0) {
+            if (arena.dataTypes[child] == EnumToken.ListTokenType) {
+                token = arena.firstToken[child];
+                while (token != 0) {
+                    nodes.push(token);
+                    token = arena.nextSibling[token];
                 }
             }
             else {
-                for (let i = children.length - 1; i >= 0; i--) {
-                    nodes.push(children[i]);
-                }
+                nodes.push(child);
             }
+            child = arena.nextSibling[child];
         }
-        if (eventType & WalkerEvent.Leave && filter.fn != null) {
-            const isValid = filter.type == null ||
-                arena.dataTypes[value] == filter.type ||
-                (Array.isArray(filter.type) && filter.type.includes(arena.dataTypes[value])) ||
-                (typeof filter.type == "function" && filter.type(value));
-            if (isValid) {
-                // @ts-expect-error
-                option = filter.fn(value, parentOf(value), WalkerEvent.Leave, result.parents);
-                if (option != null && typeof option != "number") {
-                    const op = Array.isArray(option) ? option : [option];
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
+    }
+    if (!reverse) {
+        for (let i = first, j = nodes.length - 1; i < j; i++, j--) {
+            const swap = nodes[i];
+            nodes[i] = nodes[j];
+            nodes[j] = swap;
+        }
+    }
+}
+// stack of visitValues(), shared by the nested calls: each call uses the entries above its base. the entries are
+// written by index and the array never shrinks (pop() and a smaller length release the memory of the array)
+const visitStack = [];
+let visitTop = 0;
+/**
+ * call the visitor for the tokens and their children, in the order of {@link walkValues} (the children of a token are
+ * read after the visitor returns). no iterator, result object or stack is created: use it when the parents are not
+ * needed and the visitor is not a closure
+ * @param arena
+ * @param tokens
+ * @param visitor
+ */
+function visitValues(arena, tokens, visitor) {
+    const stack = visitStack;
+    const base = visitTop;
+    let top = base;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+        stack[top++] = tokens[i];
+    }
+    try {
+        while (top > base) {
+            const value = stack[--top];
+            // nested calls use the entries above top
+            visitTop = top;
+            visitor(arena, value);
+            // the children, in reverse order (see pushChildren())
+            const first = top;
+            let token = arena.firstToken[value];
+            while (token != 0) {
+                stack[top++] = token;
+                token = arena.nextSibling[token];
+            }
+            if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+                let child = arena.firstChild[value];
+                while (child != 0) {
+                    if (arena.dataTypes[child] == EnumToken.ListTokenType) {
+                        token = arena.firstToken[child];
+                        while (token != 0) {
+                            stack[top++] = token;
+                            token = arena.nextSibling[token];
                         }
                     }
                     else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                        }
+                        stack[top++] = child;
                     }
+                    child = arena.nextSibling[child];
                 }
             }
+            for (let i = first, j = top - 1; i < j; i++, j--) {
+                const swap = stack[i];
+                stack[i] = stack[j];
+                stack[j] = swap;
+            }
         }
-        previous = value;
+    }
+    finally {
+        visitTop = base;
+    }
+}
+/**
+ * iterator of {@link walkValues}: a stack of the tokens to visit. the same result object is returned for every token
+ */
+class ValueWalker {
+    arena;
+    root;
+    reverse;
+    nodes = [];
+    // iterator result, reused
+    iteration;
+    fn = null;
+    type = null;
+    eventType = WalkerEvent.Enter;
+    result;
+    previous = null;
+    // token returned by the last call of next(): its children are visited by the next call
+    current = null;
+    // value returned by the filter for the current token
+    option = null;
+    // last visited token, see parents()
+    node = 0;
+    constructor(arena, tokens, root, filter, reverse) {
+        this.arena = arena;
+        this.root = root;
+        this.reverse = reverse;
+        if (reverse) {
+            for (let i = 0; i < tokens.length; i++) {
+                this.nodes.push(tokens[i]);
+            }
+        }
+        else {
+            for (let i = tokens.length - 1; i >= 0; i--) {
+                this.nodes.push(tokens[i]);
+            }
+        }
+        // the filter is read once: no filter object is created
+        if (typeof filter == "function") {
+            this.fn = filter;
+        }
+        else if (filter != null) {
+            this.fn = filter.fn ?? null;
+            this.type = filter.type ?? null;
+            this.eventType = filter.event ?? WalkerEvent.Enter;
+        }
+        const walker = this;
+        // @ts-ignore
+        this.result = {
+            value: 0,
+            parent: null,
+            previousValue: null,
+            nextValue: null,
+            root: root ?? null,
+            parents: function* () {
+                let parent = walker.parentOf(walker.node);
+                while (parent != null && parent != 0) {
+                    yield parent;
+                    if (parent == root) {
+                        break;
+                    }
+                    parent = walker.parentOf(parent);
+                }
+            },
+        };
+        this.iteration = { done: false, value: this.result };
+    }
+    /**
+     * parent of a token: the owner of the token list or the structured token owning the field list
+     * @param token
+     */
+    parentOf(token) {
+        let parent = this.arena.parents[token];
+        if (parent == 0) {
+            return this.root ?? null;
+        }
+        if (this.arena.dataTypes[parent] == EnumToken.ListTokenType) {
+            parent = this.arena.parents[parent];
+        }
+        return parent == 0 ? (this.root ?? null) : parent;
+    }
+    /**
+     * the filter function is called for the token
+     * @param token
+     */
+    isValid(token) {
+        const type = this.type;
+        return (type == null ||
+            this.arena.dataTypes[token] == type ||
+            (Array.isArray(type) && type.includes(this.arena.dataTypes[token])) ||
+            (typeof type == "function" && type(token)));
+    }
+    /**
+     * the tokens returned by the filter are visited too
+     * @param option
+     */
+    pushOption(option) {
+        if (!Array.isArray(option)) {
+            this.nodes.push(option);
+        }
+        else if (this.reverse) {
+            for (let i = 0; i < option.length; i++) {
+                this.nodes.push(option[i]);
+            }
+        }
+        else {
+            for (let i = option.length - 1; i >= 0; i--) {
+                this.nodes.push(option[i]);
+            }
+        }
+    }
+    /**
+     * children of the token returned by the previous call, then the leave event
+     */
+    leave(value) {
+        const arena = this.arena;
+        const nodes = this.nodes;
+        const option = this.option;
+        // the children are read after the token is visited (it may have been modified)
+        if (typeof option != "number" || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
+            pushChildren(arena, nodes, value, this.reverse);
+        }
+        if (this.eventType & WalkerEvent.Leave && this.fn != null && this.isValid(value)) {
+            // @ts-expect-error
+            const option = this.fn(value, this.parentOf(value), WalkerEvent.Leave, this.result.parents);
+            if (option != null && typeof option != "number") {
+                this.pushOption(option);
+            }
+        }
+        this.previous = value;
+    }
+    [Symbol.iterator]() {
+        return this;
+    }
+    next() {
+        const result = this.nextValue();
+        // the value of the iteration is always the result object
+        return result == null ? { done: true, value: undefined } : this.iteration;
+    }
+    /**
+     * stop the iteration (break of a for ... of loop)
+     * @param value
+     */
+    return(value) {
+        this.nodes.length = 0;
+        this.current = null;
+        return { done: true, value: value };
+    }
+    throw(error) {
+        this.nodes.length = 0;
+        this.current = null;
+        throw error;
+    }
+    /**
+     * next token, null at the end
+     */
+    nextValue() {
+        const nodes = this.nodes;
+        let value;
+        if (this.current != null) {
+            this.leave(this.current);
+            this.current = null;
+        }
+        while (nodes.length > 0) {
+            value = nodes.pop();
+            this.node = value;
+            this.option = null;
+            if (this.fn != null && this.eventType & WalkerEvent.Enter && this.isValid(value)) {
+                // @ts-expect-error
+                const option = this.fn(value, this.parentOf(value), WalkerEvent.Enter, this.result.parents);
+                this.option = option;
+                if (typeof option == "number") {
+                    if (option & WalkerOptionEnum.Stop) {
+                        nodes.length = 0;
+                        return null;
+                    }
+                    if (option & WalkerOptionEnum.Ignore) {
+                        continue;
+                    }
+                }
+                else if (option != null) {
+                    this.pushOption(option);
+                }
+            }
+            const result = this.result;
+            result.value = value;
+            result.parent = this.parentOf(value);
+            result.previousValue = this.previous;
+            result.nextValue = nodes.length > 0 ? nodes[nodes.length - 1] : null;
+            this.current = value;
+            return result;
+        }
+        return null;
     }
 }
 
-export { WalkerEvent, WalkerOptionEnum, walk, walkValues };
+export { WalkerEvent, WalkerOptionEnum, visitValues, walk, walkValues };

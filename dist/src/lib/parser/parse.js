@@ -190,12 +190,16 @@ const trimWhiteSpace = [
     EnumToken.LteTokenType,
     EnumToken.ColumnCombinatorTokenType,
 ];
-const BadTokensTypes = [
-    EnumToken.BadCommentTokenType,
-    EnumToken.BadCdoTokenType,
-    EnumToken.BadUrlTokenType,
-    EnumToken.BadStringTokenType,
-];
+/**
+ * bad comment, cdo, url or string token
+ * @param type
+ */
+function isBadToken(type) {
+    return (type == EnumToken.BadCommentTokenType ||
+        type == EnumToken.BadCdoTokenType ||
+        type == EnumToken.BadUrlTokenType ||
+        type == EnumToken.BadStringTokenType);
+}
 let keyNameCounter = 0;
 /**
  * Short-scoped name generator.
@@ -695,7 +699,7 @@ function doParseSync(tokenizer, options = {}) {
         itemType = tokenizer.typ;
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
-        if (BadTokensTypes.includes(itemType)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
             errors.push({
@@ -1568,7 +1572,7 @@ async function doParse(iter, options = {}) {
         itemType = tokenizer.typ;
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
-        if (BadTokensTypes.includes(itemType)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
             errors.push({
@@ -2574,11 +2578,14 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
         break;
     }
     if (i > 0) {
-        for (const token of tokens.splice(0, i)) {
-            if (arena.dataTypes[token] !== EnumToken.WhitespaceTokenType) {
-                arena.appendChildren(context, createCommentNode(arena, token));
+        // the leading comments are appended to the context, then removed with the whitespace (no array is created)
+        for (let k = 0; k < i; k++) {
+            if (arena.dataTypes[tokens[k]] !== EnumToken.WhitespaceTokenType) {
+                arena.appendChildren(context, createCommentNode(arena, tokens[k]));
             }
         }
+        tokens.copyWithin(0, i);
+        tokens.length -= i;
         i = 0;
     }
     for (; i < tokens.length; i++) {

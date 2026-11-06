@@ -18,7 +18,7 @@ CSS rules and at-rules are always validated, regardless of the `validation` sett
 ```ts
 
 
-import {transform, TransformOptions, ValidationLevel} from "@tbela99/css-parser";
+import {transform, TransformOptions} from "@tbela99/css-parser";
 
 const options: TransformOptions = {
 

@@ -11,7 +11,7 @@ import { EnumToken, ColorType } from '../ast/types.js';
 import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { memoize } from '../parser/utils/cache.js';
-import { equalsIgnoreCase } from '../parser/utils/text.js';
+import { equalsIgnoreCase, lowercase } from '../parser/utils/text.js';
 import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
@@ -792,7 +792,7 @@ function isColor(arena, token, errors) {
         }
     }
     if (typ == EnumToken.IdenTokenType) {
-        const val = arena.strings[arena.stringValue[token]].toLowerCase();
+        const val = lowercase(arena.strings[arena.stringValue[token]]);
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
             return true;
         }

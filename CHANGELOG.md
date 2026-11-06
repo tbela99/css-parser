@@ -19,6 +19,10 @@ performance
 - [x] the successful validations of declaration values are cached per arena: a value is validated once per property syntax
 - [x] validation allocates less: the validation context is a class, the options are not copied, `matchAllSyntaxes()` passes its result object to the matching functions
 - [x] the syntax definitions are tokenized by character code (no per character strings, regular expressions or position copies)
+- [x] tokenizer: symbols, units and function names are looked up in hash tables by source range (no string per lookup), the characters are read by code (no single character strings), numbers are parsed without a string when the result is exact, the whitespace text is not kept
+- [x] `walkValues()` returns an iterator object instead of a generator: one small object per walk, no closure, no array per visited token. the iteration protocol (`next()`, `return()`, `throw()`, `for ... of`) is unchanged
+- [x] parser: the declaration colors are parsed without an iterator, the selector string is built without intermediate arrays, maps or closures, `toLowerCase()` is not called on lowercase strings
+- [x] renderer: `renderValue()` creates no options / cache object and no closure per call, token lists are rendered from the linked lists, `render()` copies the options with a fast clone and does not flatten the rendered children to remove the last semicolon
 
 # 1.8.2
 

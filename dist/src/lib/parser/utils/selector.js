@@ -7,7 +7,7 @@
  */
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { renderValue } from '../../printer/render.js';
-import { pseudoElements, combinators, tokensfuncDefMap } from '../../syntax/constants.js';
+import { pseudoElements, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
 import { isHash } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
@@ -193,7 +193,6 @@ function parseSelector(arena, tokens, context, options, errors) {
         return node;
     }
     const stack = [];
-    const uniq = new Map();
     let allowed = true;
     let index;
     let parent = context;
@@ -288,43 +287,7 @@ function parseSelector(arena, tokens, context, options, errors) {
                 all[write++] = token;
                 continue;
             }
-            const node = arena.createRule(EnumToken.RuleNodeType, [
-                ...tokens
-                    .reduce((acc, curr, index, array) => {
-                    if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                        if (trimWhiteSpace.includes(arena.dataTypes[array[index - 1]]) ||
-                            trimWhiteSpace.includes(arena.dataTypes[array[index + 1]]) ||
-                            combinators.includes(arena.str(array[index - 1])) ||
-                            combinators.includes(arena.str(array[index + 1]))) {
-                            return acc;
-                        }
-                    }
-                    let t = renderValue(arena, curr, { minify: false });
-                    if (t == ",") {
-                        acc.push([]);
-                    }
-                    else {
-                        acc[acc.length - 1].push(t);
-                    }
-                    return acc;
-                }, [[]])
-                    .reduce((acc, curr) => {
-                    let i = 0;
-                    for (; i < curr.length; i++) {
-                        if (i + 1 < curr.length && curr[i] == "*") {
-                            if (curr[i] == "*") {
-                                let index = curr[i + 1] == " " ? 2 : 1;
-                                if (![">", "~", "+"].includes(curr[index])) {
-                                    curr.splice(i, index);
-                                }
-                            }
-                        }
-                    }
-                    acc.set(curr.join(""), curr);
-                    return acc;
-                }, uniq)
-                    .keys(),
-            ].join(","), tokens, EnumAstNodeStatus.Invalid, [
+            const node = arena.createRule(EnumToken.RuleNodeType, renderSelector(arena, tokens), tokens, EnumAstNodeStatus.Invalid, [
                 {
                     action: "drop",
                     node: token,
@@ -395,52 +358,70 @@ function parseSelector(arena, tokens, context, options, errors) {
             }
         }
     }
-    const node = arena.createRule(EnumToken.RuleNodeType, [
-        ...tokens
-            .reduce((acc, curr, index, array) => {
-            // if (arena.dataTypes[curr] == EnumToken.CommentTokenType) {
-            //     return acc;
-            // }
-            if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                if (trimWhiteSpace.includes(arena.dataTypes[array[index - 1]]) ||
-                    trimWhiteSpace.includes(arena.dataTypes[array[index + 1]]) ||
-                    combinators.includes(arena.str(array[index - 1])) ||
-                    combinators.includes(arena.str(array[index + 1]))) {
-                    return acc;
-                }
-            }
-            let t = renderValue(arena, curr, { minify: false });
-            if (t == ",") {
-                acc.push([]);
-            }
-            else {
-                acc[acc.length - 1].push(t);
-            }
-            return acc;
-        }, [[]])
-            .reduce((acc, curr) => {
-            let i = 0;
-            for (; i < curr.length; i++) {
-                if (i + 1 < curr.length && curr[i] == "*") {
-                    if (curr[i] == "*") {
-                        let index = curr[i + 1] == " " ? 2 : 1;
-                        if (![">", "~", "+"].includes(curr[index])) {
-                            curr.splice(i, index);
-                        }
-                    }
-                }
-            }
-            acc.set(curr.join(""), curr);
-            return acc;
-        }, uniq)
-            .keys(),
-    ].join(","), tokens, result.success && allowed
+    const node = arena.createRule(EnumToken.RuleNodeType, renderSelector(arena, tokens), tokens, result.success && allowed
         ? EnumAstNodeStatus.Validated
         : allowed
             ? EnumAstNodeStatus.Invalid
             : EnumAstNodeStatus.Disallowed, result.success ? [] : result.errors);
     arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
     return node;
+}
+// options of the rendering of the selector tokens
+const selectorRenderOptions = { minify: false };
+/**
+ * selector of a rule: the distinct comma separated selectors, the whitespace around the combinators is removed.
+ * a universal selector is removed before a compound selector
+ * @param arena
+ * @param tokens
+ */
+function renderSelector(arena, tokens) {
+    // the distinct selectors, in order
+    const selectors = new Set();
+    // rendered tokens of the current selector
+    let part = [];
+    for (let index = 0; index < tokens.length; index++) {
+        const curr = tokens[index];
+        if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+            if (trimWhiteSpace.includes(arena.dataTypes[tokens[index - 1]]) ||
+                trimWhiteSpace.includes(arena.dataTypes[tokens[index + 1]]) ||
+                combinators.includes(arena.str(tokens[index - 1])) ||
+                combinators.includes(arena.str(tokens[index + 1]))) {
+                continue;
+            }
+        }
+        const t = renderValue(arena, curr, selectorRenderOptions);
+        if (t == ",") {
+            addSelector(selectors, part);
+            part = [];
+        }
+        else {
+            part.push(t);
+        }
+    }
+    addSelector(selectors, part);
+    let result = "";
+    let first = true;
+    for (const selector of selectors) {
+        result = first ? selector : result + "," + selector;
+        first = false;
+    }
+    return result;
+}
+/**
+ * add a selector from its rendered tokens
+ * @param selectors
+ * @param curr
+ */
+function addSelector(selectors, curr) {
+    for (let i = 0; i < curr.length; i++) {
+        if (i + 1 < curr.length && curr[i] == "*") {
+            const index = curr[i + 1] == " " ? 2 : 1;
+            if (![">", "~", "+"].includes(curr[index])) {
+                curr.splice(i, index);
+            }
+        }
+    }
+    selectors.add(curr.join(""));
 }
 
 export { parseSelector };

@@ -135,12 +135,17 @@ Declarations can also be parsed with [parseDeclarations()](../docs/functions/nod
 - `arena.appendChildren(n, ...nodes)`, `arena.prependChildren(n, ...nodes)`, `arena.setChildren(n, ...nodes)`
 - `arena.insertBefore(reference, ...nodes)`, `arena.insertAfter(reference, ...nodes)`
 - `arena.replaceChild(n, ...nodes)`: replace a node in its parent
-- `arena.detach(n)`: remove a node from its parent
-- `arena.release(n, deep)`: detach a node and drop its tokens. node ids are never reused
+- `arena.detach(n)`: remove a node from its parent. the node memory is not reclaimed: node ids are never reused
+- `arena.mark(...nodes)`: mark nodes to be released or trimmed later
+- `arena.release(n?, deep?)`: detach a node and drop its data (strings, caches, errors). without argument, every marked node is released
+- `arena.trim(errors?)`: release the marked nodes, then reclaim the memory of the nodes that are not reachable from the root (see `compact()`)
+- `arena.recycle(n)`: reuse the id of a detached leaf node that is no longer referenced (the parser recycles the tokens it does not attach to the tree)
 - `arena.clone(n, deep)`: clone a node, see [cloneNode()](../docs/functions/node.cloneNode.html)
 - `arena.import(otherArena, n)`: copy a node allocated in another arena
 - `arena.compact(errors?)`: drop the nodes and tokens that are not reachable from the root and renumber the ids in document order.
-  The parser compacts the arena when `parse()` returns: the ids obtained during parsing (from visitors) are no longer valid
+  The library never compacts the arena by itself: detached nodes and the tokens allocated while rendering stay allocated.
+  Call `compact()` to reclaim their memory, for example before sending the arena to a worker. The ids obtained before the
+  call are no longer valid
 
 A node is always attached to at most one parent: appending a node to a new parent detaches it from its previous parent.
 

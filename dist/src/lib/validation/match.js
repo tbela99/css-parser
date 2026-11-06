@@ -11,7 +11,7 @@ import { EnumToken } from '../ast/types.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum, MediaFeatureType } from './parser/typedef.js';
 import { tokensfuncDefMap, tokensfuncSet, funcLike, mFLT, mFGT } from '../syntax/constants.js';
 import { isColor } from '../syntax/syntax.js';
-import { equalsIgnoreCase } from '../parser/utils/text.js';
+import { equalsIgnoreCase, lowercase } from '../parser/utils/text.js';
 import { parseTokens } from '../parser/parse.js';
 
 const config = getSyntaxConfig();
@@ -1150,8 +1150,8 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                 return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.Keyword:
                 if (arena.dataTypes[token] == EnumToken.IdenTokenType &&
-                    arena.strings[arena.stringValue[token]].toLowerCase() ===
-                        syntaxes[i].val.toLowerCase()) {
+                    lowercase(arena.strings[arena.stringValue[token]]) ===
+                        lowercase(syntaxes[i].val)) {
                     success = true;
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();

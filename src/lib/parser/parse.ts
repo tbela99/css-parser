@@ -277,12 +277,18 @@ export const trimWhiteSpace: EnumToken[] = [
     EnumToken.LteTokenType,
     EnumToken.ColumnCombinatorTokenType,
 ];
-const BadTokensTypes: EnumToken[] = [
-    EnumToken.BadCommentTokenType,
-    EnumToken.BadCdoTokenType,
-    EnumToken.BadUrlTokenType,
-    EnumToken.BadStringTokenType,
-];
+/**
+ * bad comment, cdo, url or string token
+ * @param type
+ */
+function isBadToken(type: EnumToken): boolean {
+    return (
+        type == EnumToken.BadCommentTokenType ||
+        type == EnumToken.BadCdoTokenType ||
+        type == EnumToken.BadUrlTokenType ||
+        type == EnumToken.BadStringTokenType
+    );
+}
 new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
 let keyNameCounter: number = 0;
 
@@ -940,7 +946,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
 
-        if (BadTokensTypes.includes(itemType)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
             errors.push({
@@ -2050,7 +2056,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
 
-        if (BadTokensTypes.includes(itemType)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
             errors.push({
@@ -3368,12 +3374,15 @@ function parseNode(
     }
 
     if (i > 0) {
-        for (const token of tokens.splice(0, i)) {
-            if (arena.dataTypes[token] !== EnumToken.WhitespaceTokenType) {
-                arena.appendChildren(context, createCommentNode(arena, token));
+        // the leading comments are appended to the context, then removed with the whitespace (no array is created)
+        for (let k = 0; k < i; k++) {
+            if (arena.dataTypes[tokens[k]] !== EnumToken.WhitespaceTokenType) {
+                arena.appendChildren(context, createCommentNode(arena, tokens[k]));
             }
         }
 
+        tokens.copyWithin(0, i);
+        tokens.length -= i;
         i = 0;
     }
 

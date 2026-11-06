@@ -1732,12 +1732,12 @@ function diff(
         return null;
     }
 
-    const op: RenderOptions = { ...options } as RenderOptions;
+    // doRender() copies the options
     const renderedSize = (node: AstRule, cache: boolean): number => {
         let css: string | undefined = cache ? options.cache!.get(node) : undefined;
 
         if (css == null) {
-            css = doRender(arena, node, op).code;
+            css = doRender(arena, node, options as RenderOptions).code;
 
             if (cache) {
                 options.cache!.set(node, css);
