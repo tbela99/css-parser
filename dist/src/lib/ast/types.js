@@ -79,752 +79,727 @@ var EnumAstNodeStatus;
      * the node has a source location
      */
     EnumAstNodeStatus[EnumAstNodeStatus["HasLocation"] = 262144] = "HasLocation";
+    /**
+     * the node is marked to be released or trimmed. see `arena.mark()`, `arena.release()` and `arena.trim()`
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Marked"] = 524288] = "Marked";
+    /**
+     * transient flag used while comparing the declarations of two rules
+     * @private
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Matched"] = 1048576] = "Matched";
 })(EnumAstNodeStatus || (EnumAstNodeStatus = {}));
-/**
- * Enum of validation levels
- * @deprecated
- */
-var ValidationLevel;
-(function (ValidationLevel) {
-    /**
-     * disable validation
-     */
-    ValidationLevel[ValidationLevel["None"] = 0] = "None";
-    /**
-     * validate selectors
-     */
-    ValidationLevel[ValidationLevel["Selector"] = 1] = "Selector";
-    /**
-     * validate at-rules
-     */
-    ValidationLevel[ValidationLevel["AtRule"] = 2] = "AtRule";
-    /**
-     * validate declarations
-     */
-    ValidationLevel[ValidationLevel["Declaration"] = 4] = "Declaration";
-    /**
-     * validate selectors and at-rules
-     */
-    ValidationLevel[ValidationLevel["Default"] = 3] = "Default";
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    ValidationLevel[ValidationLevel["All"] = 7] = "All";
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
-})(ValidationLevel || (ValidationLevel = {}));
 /**
  * Enum of all token types
  */
 var EnumToken;
 (function (EnumToken) {
     /**
-     * comment token
+     * comment token. the value 0 is reserved: it is the type of the null node (id 0) and of unset nodes,
+     * so that reading the type of a missing node never matches a real token type
      */
-    EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
+    EnumToken[EnumToken["CommentTokenType"] = 1] = "CommentTokenType";
     /**
      * cdata section token
      */
-    EnumToken[EnumToken["CDOCOMMTokenType"] = 1] = "CDOCOMMTokenType";
+    EnumToken[EnumToken["CDOCOMMTokenType"] = 2] = "CDOCOMMTokenType";
     /**
      * style sheet node type
      */
-    EnumToken[EnumToken["StyleSheetNodeType"] = 2] = "StyleSheetNodeType";
+    EnumToken[EnumToken["StyleSheetNodeType"] = 3] = "StyleSheetNodeType";
     /**
      * at-rule node type
      */
-    EnumToken[EnumToken["AtRuleNodeType"] = 3] = "AtRuleNodeType";
+    EnumToken[EnumToken["AtRuleNodeType"] = 4] = "AtRuleNodeType";
     /**
      * rule node type
      */
-    EnumToken[EnumToken["RuleNodeType"] = 4] = "RuleNodeType";
+    EnumToken[EnumToken["RuleNodeType"] = 5] = "RuleNodeType";
     /**
      * declaration node type
      */
-    EnumToken[EnumToken["DeclarationNodeType"] = 5] = "DeclarationNodeType";
+    EnumToken[EnumToken["DeclarationNodeType"] = 6] = "DeclarationNodeType";
     /**
      * literal token type
      */
-    EnumToken[EnumToken["LiteralTokenType"] = 6] = "LiteralTokenType";
+    EnumToken[EnumToken["LiteralTokenType"] = 7] = "LiteralTokenType";
     /**
      * identifier token type
      */
-    EnumToken[EnumToken["IdenTokenType"] = 7] = "IdenTokenType";
+    EnumToken[EnumToken["IdenTokenType"] = 8] = "IdenTokenType";
     /**
      * dashed identifier token type
      */
-    EnumToken[EnumToken["DashedIdenTokenType"] = 8] = "DashedIdenTokenType";
+    EnumToken[EnumToken["DashedIdenTokenType"] = 9] = "DashedIdenTokenType";
     /**
      * comma token type
      */
-    EnumToken[EnumToken["CommaTokenType"] = 9] = "CommaTokenType";
+    EnumToken[EnumToken["CommaTokenType"] = 10] = "CommaTokenType";
     /**
      * colon token type
      */
-    EnumToken[EnumToken["ColonTokenType"] = 10] = "ColonTokenType";
+    EnumToken[EnumToken["ColonTokenType"] = 11] = "ColonTokenType";
     /**
      * semicolon token type
      */
-    EnumToken[EnumToken["SemiColonTokenType"] = 11] = "SemiColonTokenType";
+    EnumToken[EnumToken["SemiColonTokenType"] = 12] = "SemiColonTokenType";
     /**
      * number token type
      */
-    EnumToken[EnumToken["NumberTokenType"] = 12] = "NumberTokenType";
+    EnumToken[EnumToken["NumberTokenType"] = 13] = "NumberTokenType";
     /**
      * at-rule token type
      */
-    EnumToken[EnumToken["AtRuleTokenType"] = 13] = "AtRuleTokenType";
+    EnumToken[EnumToken["AtRuleTokenType"] = 14] = "AtRuleTokenType";
     /**
      * percentage token type
      */
-    EnumToken[EnumToken["PercentageTokenType"] = 14] = "PercentageTokenType";
+    EnumToken[EnumToken["PercentageTokenType"] = 15] = "PercentageTokenType";
     /**
      * function token type
      */
-    EnumToken[EnumToken["FunctionTokenType"] = 15] = "FunctionTokenType";
+    EnumToken[EnumToken["FunctionTokenType"] = 16] = "FunctionTokenType";
     /**
      * timeline function token type
      */
-    EnumToken[EnumToken["TimelineFunctionTokenType"] = 16] = "TimelineFunctionTokenType";
+    EnumToken[EnumToken["TimelineFunctionTokenType"] = 17] = "TimelineFunctionTokenType";
     /**
      * timing function token type
      */
-    EnumToken[EnumToken["TimingFunctionTokenType"] = 17] = "TimingFunctionTokenType";
+    EnumToken[EnumToken["TimingFunctionTokenType"] = 18] = "TimingFunctionTokenType";
     /**
      * url function token type
      */
-    EnumToken[EnumToken["UrlFunctionTokenType"] = 18] = "UrlFunctionTokenType";
+    EnumToken[EnumToken["UrlFunctionTokenType"] = 19] = "UrlFunctionTokenType";
     /**
      * image function token type
      */
-    EnumToken[EnumToken["ImageFunctionTokenType"] = 19] = "ImageFunctionTokenType";
+    EnumToken[EnumToken["ImageFunctionTokenType"] = 20] = "ImageFunctionTokenType";
     /**
      * string token type
      */
-    EnumToken[EnumToken["StringTokenType"] = 20] = "StringTokenType";
+    EnumToken[EnumToken["StringTokenType"] = 21] = "StringTokenType";
     /**
      * unclosed string token type
      */
-    EnumToken[EnumToken["UnclosedStringTokenType"] = 21] = "UnclosedStringTokenType";
+    EnumToken[EnumToken["UnclosedStringTokenType"] = 22] = "UnclosedStringTokenType";
     /**
      * dimension token type
      */
-    EnumToken[EnumToken["DimensionTokenType"] = 22] = "DimensionTokenType";
+    EnumToken[EnumToken["DimensionTokenType"] = 23] = "DimensionTokenType";
     /**
      * length token type
      */
-    EnumToken[EnumToken["LengthTokenType"] = 23] = "LengthTokenType";
+    EnumToken[EnumToken["LengthTokenType"] = 24] = "LengthTokenType";
     /**
      * angle token type
      */
-    EnumToken[EnumToken["AngleTokenType"] = 24] = "AngleTokenType";
+    EnumToken[EnumToken["AngleTokenType"] = 25] = "AngleTokenType";
     /**
      * time token type
      */
-    EnumToken[EnumToken["TimeTokenType"] = 25] = "TimeTokenType";
+    EnumToken[EnumToken["TimeTokenType"] = 26] = "TimeTokenType";
     /**
      * frequency token type
      */
-    EnumToken[EnumToken["FrequencyTokenType"] = 26] = "FrequencyTokenType";
+    EnumToken[EnumToken["FrequencyTokenType"] = 27] = "FrequencyTokenType";
     /**
      * resolution token type
      */
-    EnumToken[EnumToken["ResolutionTokenType"] = 27] = "ResolutionTokenType";
+    EnumToken[EnumToken["ResolutionTokenType"] = 28] = "ResolutionTokenType";
     /**
      * hash token type
      */
-    EnumToken[EnumToken["HashTokenType"] = 28] = "HashTokenType";
+    EnumToken[EnumToken["HashTokenType"] = 29] = "HashTokenType";
     /**
      * block start token type
      */
-    EnumToken[EnumToken["BlockStartTokenType"] = 29] = "BlockStartTokenType";
+    EnumToken[EnumToken["BlockStartTokenType"] = 30] = "BlockStartTokenType";
     /**
      * block end token type
      */
-    EnumToken[EnumToken["BlockEndTokenType"] = 30] = "BlockEndTokenType";
+    EnumToken[EnumToken["BlockEndTokenType"] = 31] = "BlockEndTokenType";
     /**
      * attribute start token type
      */
-    EnumToken[EnumToken["AttrStartTokenType"] = 31] = "AttrStartTokenType";
+    EnumToken[EnumToken["AttrStartTokenType"] = 32] = "AttrStartTokenType";
     /**
      * attribute end token type
      */
-    EnumToken[EnumToken["AttrEndTokenType"] = 32] = "AttrEndTokenType";
+    EnumToken[EnumToken["AttrEndTokenType"] = 33] = "AttrEndTokenType";
     /**
      * start parentheses token type
      */
-    EnumToken[EnumToken["StartParensTokenType"] = 33] = "StartParensTokenType";
+    EnumToken[EnumToken["StartParensTokenType"] = 34] = "StartParensTokenType";
     /**
      * end parentheses token type
      */
-    EnumToken[EnumToken["EndParensTokenType"] = 34] = "EndParensTokenType";
+    EnumToken[EnumToken["EndParensTokenType"] = 35] = "EndParensTokenType";
     /**
      * parentheses token type
      */
-    EnumToken[EnumToken["ParensTokenType"] = 35] = "ParensTokenType";
+    EnumToken[EnumToken["ParensTokenType"] = 36] = "ParensTokenType";
     /**
      * whitespace token type
      */
-    EnumToken[EnumToken["WhitespaceTokenType"] = 36] = "WhitespaceTokenType";
+    EnumToken[EnumToken["WhitespaceTokenType"] = 37] = "WhitespaceTokenType";
     /**
      * include match token type
      */
-    EnumToken[EnumToken["IncludeMatchTokenType"] = 37] = "IncludeMatchTokenType";
+    EnumToken[EnumToken["IncludeMatchTokenType"] = 38] = "IncludeMatchTokenType";
     /**
      * dash match token type
      */
-    EnumToken[EnumToken["DashMatchTokenType"] = 38] = "DashMatchTokenType";
+    EnumToken[EnumToken["DashMatchTokenType"] = 39] = "DashMatchTokenType";
     /**
      * equal match token type
      */
-    EnumToken[EnumToken["EqualMatchTokenType"] = 39] = "EqualMatchTokenType";
+    EnumToken[EnumToken["EqualMatchTokenType"] = 40] = "EqualMatchTokenType";
     /**
      * less than token type
      */
-    EnumToken[EnumToken["LtTokenType"] = 40] = "LtTokenType";
+    EnumToken[EnumToken["LtTokenType"] = 41] = "LtTokenType";
     /**
      * less than or equal to token type
      */
-    EnumToken[EnumToken["LteTokenType"] = 41] = "LteTokenType";
+    EnumToken[EnumToken["LteTokenType"] = 42] = "LteTokenType";
     /**
      * greater than token type
      */
-    EnumToken[EnumToken["GtTokenType"] = 42] = "GtTokenType";
+    EnumToken[EnumToken["GtTokenType"] = 43] = "GtTokenType";
     /**
      * greater than or equal to token type
      */
-    EnumToken[EnumToken["GteTokenType"] = 43] = "GteTokenType";
+    EnumToken[EnumToken["GteTokenType"] = 44] = "GteTokenType";
     /**
      * pseudo-class token type
      */
-    EnumToken[EnumToken["PseudoClassTokenType"] = 44] = "PseudoClassTokenType";
+    EnumToken[EnumToken["PseudoClassTokenType"] = 45] = "PseudoClassTokenType";
     /**
      * pseudo-class function token type
      */
-    EnumToken[EnumToken["PseudoClassFuncTokenType"] = 45] = "PseudoClassFuncTokenType";
+    EnumToken[EnumToken["PseudoClassFuncTokenType"] = 46] = "PseudoClassFuncTokenType";
     /**
      * delimiter token type
      */
-    EnumToken[EnumToken["DelimTokenType"] = 46] = "DelimTokenType";
+    EnumToken[EnumToken["DelimTokenType"] = 47] = "DelimTokenType";
     /**
      * URL token type
      */
-    EnumToken[EnumToken["UrlTokenTokenType"] = 47] = "UrlTokenTokenType";
+    EnumToken[EnumToken["UrlTokenTokenType"] = 48] = "UrlTokenTokenType";
     /**
      * end of file token type
      */
-    EnumToken[EnumToken["EOFTokenType"] = 48] = "EOFTokenType";
+    EnumToken[EnumToken["EOFTokenType"] = 49] = "EOFTokenType";
     /**
      * important token type
      */
-    EnumToken[EnumToken["ImportantTokenType"] = 49] = "ImportantTokenType";
+    EnumToken[EnumToken["ImportantTokenType"] = 50] = "ImportantTokenType";
     /**
      * color token type
      */
-    EnumToken[EnumToken["ColorTokenType"] = 50] = "ColorTokenType";
+    EnumToken[EnumToken["ColorTokenType"] = 51] = "ColorTokenType";
     /**
      * attribute token type
      */
-    EnumToken[EnumToken["AttrTokenType"] = 51] = "AttrTokenType";
+    EnumToken[EnumToken["AttrTokenType"] = 52] = "AttrTokenType";
     /**
      * bad comment token type
      */
-    EnumToken[EnumToken["BadCommentTokenType"] = 52] = "BadCommentTokenType";
+    EnumToken[EnumToken["BadCommentTokenType"] = 53] = "BadCommentTokenType";
     /**
      * bad cdo token type
      */
-    EnumToken[EnumToken["BadCdoTokenType"] = 53] = "BadCdoTokenType";
+    EnumToken[EnumToken["BadCdoTokenType"] = 54] = "BadCdoTokenType";
     /**
      * bad URL token type
      */
-    EnumToken[EnumToken["BadUrlTokenType"] = 54] = "BadUrlTokenType";
+    EnumToken[EnumToken["BadUrlTokenType"] = 55] = "BadUrlTokenType";
     /**
      * bad string token type
      */
-    EnumToken[EnumToken["BadStringTokenType"] = 55] = "BadStringTokenType";
+    EnumToken[EnumToken["BadStringTokenType"] = 56] = "BadStringTokenType";
     /**
      * binary expression token type
      */
-    EnumToken[EnumToken["BinaryExpressionTokenType"] = 56] = "BinaryExpressionTokenType";
+    EnumToken[EnumToken["BinaryExpressionTokenType"] = 57] = "BinaryExpressionTokenType";
     /**
      * unary expression token type
      */
-    EnumToken[EnumToken["UnaryExpressionTokenType"] = 57] = "UnaryExpressionTokenType";
+    EnumToken[EnumToken["UnaryExpressionTokenType"] = 58] = "UnaryExpressionTokenType";
     /**
      * flex token type
      */
-    EnumToken[EnumToken["FlexTokenType"] = 58] = "FlexTokenType";
+    EnumToken[EnumToken["FlexTokenType"] = 59] = "FlexTokenType";
     /**
      *  token list token type
      */
-    EnumToken[EnumToken["ListToken"] = 59] = "ListToken";
+    EnumToken[EnumToken["ListToken"] = 60] = "ListToken";
     /* arithmetic tokens */
     /**
      * addition token type
      */
-    EnumToken[EnumToken["Add"] = 60] = "Add";
+    EnumToken[EnumToken["Add"] = 61] = "Add";
     /**
      * multiplication token type
      */
-    EnumToken[EnumToken["Mul"] = 61] = "Mul";
+    EnumToken[EnumToken["Mul"] = 62] = "Mul";
     /**
      * division token type
      */
-    EnumToken[EnumToken["Div"] = 62] = "Div";
+    EnumToken[EnumToken["Div"] = 63] = "Div";
     /**
      * subtraction token type
      */
-    EnumToken[EnumToken["Sub"] = 63] = "Sub";
+    EnumToken[EnumToken["Sub"] = 64] = "Sub";
     /* new tokens */
     /**
      * column combinator token type
      */
-    EnumToken[EnumToken["ColumnCombinatorTokenType"] = 64] = "ColumnCombinatorTokenType";
+    EnumToken[EnumToken["ColumnCombinatorTokenType"] = 65] = "ColumnCombinatorTokenType";
     /**
      * contain match token type
      */
-    EnumToken[EnumToken["ContainMatchTokenType"] = 65] = "ContainMatchTokenType";
+    EnumToken[EnumToken["ContainMatchTokenType"] = 66] = "ContainMatchTokenType";
     /**
      * start match token type
      */
-    EnumToken[EnumToken["StartMatchTokenType"] = 66] = "StartMatchTokenType";
+    EnumToken[EnumToken["StartMatchTokenType"] = 67] = "StartMatchTokenType";
     /**
      * end match token type
      */
-    EnumToken[EnumToken["EndMatchTokenType"] = 67] = "EndMatchTokenType";
+    EnumToken[EnumToken["EndMatchTokenType"] = 68] = "EndMatchTokenType";
     /**
      * match expression token type
      */
-    EnumToken[EnumToken["MatchExpressionTokenType"] = 68] = "MatchExpressionTokenType";
+    EnumToken[EnumToken["MatchExpressionTokenType"] = 69] = "MatchExpressionTokenType";
     /**
      * namespace attribute token type
      */
-    EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 69] = "NameSpaceAttributeTokenType";
+    EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 70] = "NameSpaceAttributeTokenType";
     /**
      * fraction token type
      */
-    EnumToken[EnumToken["FractionTokenType"] = 70] = "FractionTokenType";
+    EnumToken[EnumToken["FractionTokenType"] = 71] = "FractionTokenType";
     /**
      * identifier list token type
      */
-    EnumToken[EnumToken["IdenListTokenType"] = 71] = "IdenListTokenType";
+    EnumToken[EnumToken["IdenListTokenType"] = 72] = "IdenListTokenType";
     /**
      * grid template function token type
      */
-    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 72] = "GridTemplateFuncTokenType";
+    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 73] = "GridTemplateFuncTokenType";
     /**
      * keyframe rule node type
      */
-    EnumToken[EnumToken["KeyframesRuleNodeType"] = 73] = "KeyframesRuleNodeType";
+    EnumToken[EnumToken["KeyframesRuleNodeType"] = 74] = "KeyframesRuleNodeType";
     /**
      * class selector token type
      */
-    EnumToken[EnumToken["ClassSelectorTokenType"] = 74] = "ClassSelectorTokenType";
+    EnumToken[EnumToken["ClassSelectorTokenType"] = 75] = "ClassSelectorTokenType";
     /**
      * universal selector token type
      */
-    EnumToken[EnumToken["UniversalSelectorTokenType"] = 75] = "UniversalSelectorTokenType";
+    EnumToken[EnumToken["UniversalSelectorTokenType"] = 76] = "UniversalSelectorTokenType";
     /**
      * child combinator token type
      */
-    EnumToken[EnumToken["ChildCombinatorTokenType"] = 76] = "ChildCombinatorTokenType";
+    EnumToken[EnumToken["ChildCombinatorTokenType"] = 77] = "ChildCombinatorTokenType";
     /**
      * descendant combinator token type
      */
-    EnumToken[EnumToken["DescendantCombinatorTokenType"] = 77] = "DescendantCombinatorTokenType";
+    EnumToken[EnumToken["DescendantCombinatorTokenType"] = 78] = "DescendantCombinatorTokenType";
     /**
      * next sibling combinator token type
      */
-    EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 78] = "NextSiblingCombinatorTokenType";
+    EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 79] = "NextSiblingCombinatorTokenType";
     /**
      * subsequent sibling combinator token type
      */
-    EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 79] = "SubsequentSiblingCombinatorTokenType";
+    EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 80] = "SubsequentSiblingCombinatorTokenType";
     /**
      * nesting selector token type
      */
-    EnumToken[EnumToken["NestingSelectorTokenType"] = 80] = "NestingSelectorTokenType";
+    EnumToken[EnumToken["NestingSelectorTokenType"] = 81] = "NestingSelectorTokenType";
     /**
      * Invalid rule token type
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidRuleNodeType"] = 81] = "InvalidRuleNodeType";
+    EnumToken[EnumToken["InvalidRuleNodeType"] = 82] = "InvalidRuleNodeType";
     /**
      * invalid class selector token type
      */
-    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 82] = "InvalidClassSelectorTokenType";
+    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 83] = "InvalidClassSelectorTokenType";
     /**
      * invalid attribute token type
      */
-    EnumToken[EnumToken["InvalidAttrTokenType"] = 83] = "InvalidAttrTokenType";
+    EnumToken[EnumToken["InvalidAttrTokenType"] = 84] = "InvalidAttrTokenType";
     /**
      * Invalid at rule token type
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 84] = "InvalidAtRuleNodeType";
+    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 85] = "InvalidAtRuleNodeType";
     /**
      * media query condition token type
      */
-    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 85] = "MediaQueryConditionTokenType";
+    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 86] = "MediaQueryConditionTokenType";
     /**
      * media feature token type
      */
-    EnumToken[EnumToken["MediaFeatureTokenType"] = 86] = "MediaFeatureTokenType";
+    EnumToken[EnumToken["MediaFeatureTokenType"] = 87] = "MediaFeatureTokenType";
     /**
      * media feature only token type
      */
-    EnumToken[EnumToken["OnlyTokenType"] = 87] = "OnlyTokenType";
+    EnumToken[EnumToken["OnlyTokenType"] = 88] = "OnlyTokenType";
     /**
      * media feature not token type
      */
-    EnumToken[EnumToken["NotTokenType"] = 88] = "NotTokenType";
+    EnumToken[EnumToken["NotTokenType"] = 89] = "NotTokenType";
     /**
      * media feature and token type
      */
-    EnumToken[EnumToken["AndTokenType"] = 89] = "AndTokenType";
+    EnumToken[EnumToken["AndTokenType"] = 90] = "AndTokenType";
     /**
      * media feature or token type
      */
-    EnumToken[EnumToken["OrTokenType"] = 90] = "OrTokenType";
+    EnumToken[EnumToken["OrTokenType"] = 91] = "OrTokenType";
     /**
      * pseudo page token type
      */
-    EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
+    EnumToken[EnumToken["PseudoPageTokenType"] = 92] = "PseudoPageTokenType";
     /**
      * pseudo element token type
      */
-    EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
+    EnumToken[EnumToken["PseudoElementTokenType"] = 93] = "PseudoElementTokenType";
     /**
      * keyframe at rule node type
      */
-    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 93] = "KeyframesAtRuleNodeType";
+    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 94] = "KeyframesAtRuleNodeType";
     /**
      * invalid declaration node type.
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 95] = "InvalidDeclarationNodeType";
     /* css module nodes */
     /**
      * composes token node type
      */
-    EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
+    EnumToken[EnumToken["ComposesSelectorNodeType"] = 96] = "ComposesSelectorNodeType";
     /**
      * css variable token type
      */
-    EnumToken[EnumToken["CssVariableTokenType"] = 96] = "CssVariableTokenType";
+    EnumToken[EnumToken["CssVariableTokenType"] = 97] = "CssVariableTokenType";
     /**
      * css variable import token type
      */
-    EnumToken[EnumToken["CssVariableImportTokenType"] = 97] = "CssVariableImportTokenType";
+    EnumToken[EnumToken["CssVariableImportTokenType"] = 98] = "CssVariableImportTokenType";
     /**
      * css variable declaration map token type
      */
-    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
+    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 99] = "CssVariableDeclarationMapTokenType";
     /**
      * media range query token type
      */
-    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 99] = "MediaRangeQueryTokenType";
+    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 100] = "MediaRangeQueryTokenType";
     /**
      * invalid media query token type
      */
-    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 100] = "InvalidMediaQueryTokenType";
+    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 101] = "InvalidMediaQueryTokenType";
     /**
      * supports query condition token type
      */
-    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 101] = "SupportsQueryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 102] = "SupportsQueryConditionTokenType";
     /**
      * supports query unary condition token type
      */
-    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 102] = "SupportsQueryUnaryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 103] = "SupportsQueryUnaryConditionTokenType";
     /**
      * when else query condition token type
      */
-    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 103] = "WhenElseQueryConditionTokenType";
+    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 104] = "WhenElseQueryConditionTokenType";
     /**
      * when else query unary condition token type
      */
-    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 104] = "WhenElseUnaryConditionTokenType";
+    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 105] = "WhenElseUnaryConditionTokenType";
     /**
      * container style range token type
      */
-    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 105] = "ContainerStyleRangeTokenType";
+    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 106] = "ContainerStyleRangeTokenType";
     /**
      * '*'
      */
-    EnumToken[EnumToken["Star"] = 106] = "Star";
+    EnumToken[EnumToken["Star"] = 107] = "Star";
     /**
      * '+'
      */
-    EnumToken[EnumToken["Plus"] = 107] = "Plus";
+    EnumToken[EnumToken["Plus"] = 108] = "Plus";
     /**
      * '~'
      */
-    EnumToken[EnumToken["Tilda"] = 108] = "Tilda";
+    EnumToken[EnumToken["Tilda"] = 109] = "Tilda";
     /**
      * '|'
      */
-    EnumToken[EnumToken["PipeTokenType"] = 109] = "PipeTokenType";
+    EnumToken[EnumToken["PipeTokenType"] = 110] = "PipeTokenType";
     /**
      * '::'
      */
-    EnumToken[EnumToken["DoubleColonTokenType"] = 110] = "DoubleColonTokenType";
+    EnumToken[EnumToken["DoubleColonTokenType"] = 111] = "DoubleColonTokenType";
     /**
      * math function token type  such as'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenType"] = 111] = "MathFunctionTokenType";
+    EnumToken[EnumToken["MathFunctionTokenType"] = 112] = "MathFunctionTokenType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenType"] = 112] = "TransformFunctionTokenType";
+    EnumToken[EnumToken["TransformFunctionTokenType"] = 113] = "TransformFunctionTokenType";
     /**
      * when function token type such as 'supports(' etc.
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 113] = "WhenElseFunctionTokenType";
+    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 114] = "WhenElseFunctionTokenType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 114] = "GeneralEnclosedFunctionTokenType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 115] = "GeneralEnclosedFunctionTokenType";
     /**
      * supports function token type such as 'at-rule('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenType"] = 115] = "SupportsFunctionTokenType";
+    EnumToken[EnumToken["SupportsFunctionTokenType"] = 116] = "SupportsFunctionTokenType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenType"] = 116] = "ContainerFunctionTokenType";
+    EnumToken[EnumToken["ContainerFunctionTokenType"] = 117] = "ContainerFunctionTokenType";
     /**
      * unrecognized node token type
      */
-    EnumToken[EnumToken["RawNodeTokenType"] = 117] = "RawNodeTokenType";
+    EnumToken[EnumToken["RawNodeTokenType"] = 118] = "RawNodeTokenType";
     /**
      * media query boolean token type
      * at-rule media not ()
      * at-rule media only ()
      */
-    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 118] = "MediaQueryUnaryFeatureTokenType";
+    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 119] = "MediaQueryUnaryFeatureTokenType";
     /**
      * grid template function token type such as 'minmax('
      */
-    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 119] = "GridTemplateFuncTokenDefType";
+    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 120] = "GridTemplateFuncTokenDefType";
     /**
      * image function token type such as 'image(' etc.
      */
-    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 120] = "ImageFunctionTokenDefType";
+    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 121] = "ImageFunctionTokenDefType";
     /**
      * function token type such as 'view(' etc.
      */
-    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 121] = "TimelineFunctionTokenDefType";
+    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 122] = "TimelineFunctionTokenDefType";
     /**
      * function token type
      */
-    EnumToken[EnumToken["FunctionTokenDefType"] = 122] = "FunctionTokenDefType";
+    EnumToken[EnumToken["FunctionTokenDefType"] = 123] = "FunctionTokenDefType";
     /**
      * timing function token type such as 'linear(' etc.
      */
-    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 123] = "TimingFunctionTokenDefType";
+    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 124] = "TimingFunctionTokenDefType";
     /**
      * color function token type such as 'rgb(' etc.
      */
-    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 124] = "ColorFunctionTokenDefType";
+    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 125] = "ColorFunctionTokenDefType";
     /**
      * math function token type such as 'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenDefType"] = 125] = "MathFunctionTokenDefType";
+    EnumToken[EnumToken["MathFunctionTokenDefType"] = 126] = "MathFunctionTokenDefType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 126] = "ContainerFunctionTokenDefType";
+    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 127] = "ContainerFunctionTokenDefType";
     /**
      * url function token type 'url('
      */
-    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 127] = "UrlFunctionTokenDefType";
+    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 128] = "UrlFunctionTokenDefType";
     /**
      * pseudo-class function token type
      */
-    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 128] = "PseudoClassFunctionTokenDefType";
+    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 129] = "PseudoClassFunctionTokenDefType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 129] = "TransformFunctionTokenDefType";
+    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 130] = "TransformFunctionTokenDefType";
     /**
      * when function token type such as 'supports(' or 'media('
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 130] = "WhenElseFunctionTokenDefType";
+    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 131] = "WhenElseFunctionTokenDefType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 131] = "GeneralEnclosedFunctionTokenDefType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 132] = "GeneralEnclosedFunctionTokenDefType";
     /**
      * supports function token type 'font-tech('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 132] = "SupportsFunctionTokenDefType";
+    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 133] = "SupportsFunctionTokenDefType";
     /**
      *  CDOCOMMTokenType not allowed in this context
      */
-    EnumToken[EnumToken["InvalidCommentTokenType"] = 133] = "InvalidCommentTokenType";
+    EnumToken[EnumToken["InvalidCommentTokenType"] = 134] = "InvalidCommentTokenType";
     /**
      * custom function token type '--function-name('
      */
-    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 134] = "CustomFunctionTokenDefType";
+    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 135] = "CustomFunctionTokenDefType";
     /**
      * custom function token type
      */
-    EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
+    EnumToken[EnumToken["CustomFunctionTokenType"] = 136] = "CustomFunctionTokenType";
     /**
      * function tokens such as 'var(', 'env(', 'if(')
      */
-    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 136] = "WildCardFunctionTokenDefType";
+    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 137] = "WildCardFunctionTokenDefType";
     /**
      * function such as 'var()', 'env()', 'if()'
      */
-    EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
+    EnumToken[EnumToken["WildCardFunctionTokenType"] = 138] = "WildCardFunctionTokenType";
     /**
      * if condition token
      */
-    EnumToken[EnumToken["IfConditionTokenType"] = 138] = "IfConditionTokenType";
+    EnumToken[EnumToken["IfConditionTokenType"] = 139] = "IfConditionTokenType";
     /**
      * if-Else condition token
      */
-    EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
+    EnumToken[EnumToken["IfElseConditionTokenType"] = 140] = "IfElseConditionTokenType";
     /**
      * wrapped values token type like {Arial, sans-serif}
      */
-    EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
+    EnumToken[EnumToken["WrappedValuesTokenType"] = 141] = "WrappedValuesTokenType";
     /**
      * list of arena tokens (binary expression operands)
      */
-    EnumToken[EnumToken["ListTokenType"] = 141] = "ListTokenType";
+    EnumToken[EnumToken["ListTokenType"] = 142] = "ListTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["NaNTokenType"] = 142] = "NaNTokenType";
+    EnumToken[EnumToken["NaNTokenType"] = 143] = "NaNTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["InfinityTokenType"] = 143] = "InfinityTokenType";
+    EnumToken[EnumToken["InfinityTokenType"] = 144] = "InfinityTokenType";
     /**
      * negative infinity token
      */
-    EnumToken[EnumToken["NegativeInfinityTokenType"] = 144] = "NegativeInfinityTokenType";
+    EnumToken[EnumToken["NegativeInfinityTokenType"] = 145] = "NegativeInfinityTokenType";
     /**
      * CSS type token
      */
-    EnumToken[EnumToken["CssTypeTokenType"] = 145] = "CssTypeTokenType";
+    EnumToken[EnumToken["CssTypeTokenType"] = 146] = "CssTypeTokenType";
     /**
      * user defined dimension token type
      */
-    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 146] = "UserDefinedDimensionTokenType";
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 147] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
      */
-    EnumToken[EnumToken["Time"] = 25] = "Time";
+    EnumToken[EnumToken["Time"] = 26] = "Time";
     /**
      * alias for identifier token type
      */
-    EnumToken[EnumToken["Iden"] = 7] = "Iden";
+    EnumToken[EnumToken["Iden"] = 8] = "Iden";
     /**
      * alias for end of file token type
      */
-    EnumToken[EnumToken["EOF"] = 48] = "EOF";
+    EnumToken[EnumToken["EOF"] = 49] = "EOF";
     /**
      * alias for hash token type
      */
-    EnumToken[EnumToken["Hash"] = 28] = "Hash";
+    EnumToken[EnumToken["Hash"] = 29] = "Hash";
     /**
      * alias for flex token type
      */
-    EnumToken[EnumToken["Flex"] = 58] = "Flex";
+    EnumToken[EnumToken["Flex"] = 59] = "Flex";
     /**
      * alias for angle token type
      */
-    EnumToken[EnumToken["Angle"] = 24] = "Angle";
+    EnumToken[EnumToken["Angle"] = 25] = "Angle";
     /**
      * alias for color token type
      */
-    EnumToken[EnumToken["Color"] = 50] = "Color";
+    EnumToken[EnumToken["Color"] = 51] = "Color";
     /**
      * alias for comma token type
      */
-    EnumToken[EnumToken["Comma"] = 9] = "Comma";
+    EnumToken[EnumToken["Comma"] = 10] = "Comma";
     /**
      * alias for string token type
      */
-    EnumToken[EnumToken["String"] = 20] = "String";
+    EnumToken[EnumToken["String"] = 21] = "String";
     /**
      * alias for length token type
      */
-    EnumToken[EnumToken["Length"] = 23] = "Length";
+    EnumToken[EnumToken["Length"] = 24] = "Length";
     /**
      * alias for number token type
      */
-    EnumToken[EnumToken["Number"] = 12] = "Number";
+    EnumToken[EnumToken["Number"] = 13] = "Number";
     /**
      * alias for percentage token type
      */
-    EnumToken[EnumToken["Perc"] = 14] = "Perc";
+    EnumToken[EnumToken["Perc"] = 15] = "Perc";
     /**
      * alias for literal token type
      */
-    EnumToken[EnumToken["Literal"] = 6] = "Literal";
+    EnumToken[EnumToken["Literal"] = 7] = "Literal";
     /**
      * alias for comment token type
      */
-    EnumToken[EnumToken["Comment"] = 0] = "Comment";
+    EnumToken[EnumToken["Comment"] = 1] = "Comment";
     /**
      * alias for url function token type
      */
-    EnumToken[EnumToken["UrlFunc"] = 18] = "UrlFunc";
+    EnumToken[EnumToken["UrlFunc"] = 19] = "UrlFunc";
     /**
      * alias for dimension token type
      */
-    EnumToken[EnumToken["Dimension"] = 22] = "Dimension";
+    EnumToken[EnumToken["Dimension"] = 23] = "Dimension";
     /**
      * alias for frequency token type
      */
-    EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
+    EnumToken[EnumToken["Frequency"] = 27] = "Frequency";
     /**
      * alias for resolution token type
      */
-    EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
+    EnumToken[EnumToken["Resolution"] = 28] = "Resolution";
     /**
      * alias for whitespace token type
      */
-    EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+    EnumToken[EnumToken["Whitespace"] = 37] = "Whitespace";
     /**
      * alias for identifier list token type
      */
-    EnumToken[EnumToken["IdenList"] = 71] = "IdenList";
+    EnumToken[EnumToken["IdenList"] = 72] = "IdenList";
     /**
      * alias for dashed identifier token type
      */
-    EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+    EnumToken[EnumToken["DashedIden"] = 9] = "DashedIden";
     /**
      * alias for grid template function token type
      */
-    EnumToken[EnumToken["GridTemplateFunc"] = 72] = "GridTemplateFunc";
+    EnumToken[EnumToken["GridTemplateFunc"] = 73] = "GridTemplateFunc";
     /**
      * alias for image function token type
      */
-    EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
+    EnumToken[EnumToken["ImageFunc"] = 20] = "ImageFunc";
     /**
      * alias for comment node type
      */
-    EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
+    EnumToken[EnumToken["CommentNodeType"] = 1] = "CommentNodeType";
     /**
      * alias for cdata section node type
      */
-    EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
+    EnumToken[EnumToken["CDOCOMMNodeType"] = 2] = "CDOCOMMNodeType";
     /**
      * alias for timing function token type
      */
-    EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
+    EnumToken[EnumToken["TimingFunction"] = 18] = "TimingFunction";
     /**
      * alias for timeline function token type
      */
-    EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
+    EnumToken[EnumToken["TimelineFunction"] = 17] = "TimelineFunction";
 })(EnumToken || (EnumToken = {}));
 /**
  * Supported color types enum
@@ -1037,4 +1012,4 @@ var ModuleScopeEnumOptions;
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, ValidationLevel };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult };

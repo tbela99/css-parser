@@ -12,7 +12,7 @@ import {
 } from "../../syntax/constants.ts";
 import { isColor, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxRule, ValidationSyntaxRule } from "../../validation/config.ts";
-import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
+import { createValidationContext, matchAllSyntaxes, matchDeclarationSyntax, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import { walkValues } from "../../ast/walk.ts";
@@ -115,7 +115,7 @@ export function parseDeclaration(
     let success: boolean = true;
     let hasImportantFlag: boolean = false;
 
-    let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
+    let validate: boolean = !!options.validation;
 
     if (renamedStandardProperties.has(nam)) {
         nam = renamedStandardProperties.get(nam) as string;
@@ -227,7 +227,7 @@ export function parseDeclaration(
 
     if (syntaxRules != null) {
         const doNotValidate: boolean = options.validation === false;
-        result = doNotValidate ? null : matchAllSyntaxes(arena, syntaxRules, createValidationContext(arena, tokens), options);
+        result = doNotValidate ? null : matchDeclarationSyntax(arena, syntaxRules, tokens, options);
 
         if (doNotValidate || result != null) {
             success = doNotValidate || (result?.success as boolean);

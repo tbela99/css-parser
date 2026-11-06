@@ -14,8 +14,7 @@ import { PropertyMap } from "./map.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getParsedSyntax } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import type { ValidationMatch } from "../../validation/types.d.ts";
-import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
+import { isValidDeclarationValue } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { nodeHash } from "../utils/hash.ts";
 import { equalsIgnoreCase } from "../utils/text.ts";
@@ -58,180 +57,184 @@ export class PropertyList {
      * @param declarations node ids
      * @returns
      */
-    add(declarations: AstNode[]): this {
+    add(declarations: Iterable<AstNode>): this {
+        for (const declaration of declarations) {
+            this.addDeclaration(declaration);
+        }
+
+        return this;
+    }
+
+    /**
+     * add a declaration
+     * @param declaration node id
+     */
+    addDeclaration(declaration: AstNode): this {
         let name: string | null;
         let syntaxRules: ValidationToken[] | null = null;
-        let result: ValidationMatch;
         const arena: AstArena = this.arena;
 
-        for (const declaration of declarations) {
-            name =
-                arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
-                    ? null
-                    : arena.strings[arena.name[declaration]];
+        name =
+            arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+                ? null
+                : arena.strings[arena.name[declaration]];
 
-            // do not compute shorthand for invalid declarations
-            if (name == null) {
-                this.declarations.set(nodeHash(arena, declaration), declaration);
-                continue;
+        // do not compute shorthand for invalid declarations
+        if (name == null) {
+            this.declarations.set(nodeHash(arena, declaration), declaration);
+            return this;
+        }
+        // @functiom / result
+        if (arena.flags[declaration] & EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name as string)) {
+            this.declarations.set(name, declaration);
+            return this;
+        }
+
+        if (
+            arena.flags[declaration] &
+                (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
+            equalsIgnoreCase("composes", name as string) ||
+            (typeof this.options.removeDuplicateDeclarations === "string" &&
+                this.options.removeDuplicateDeclarations === name) ||
+            (Array.isArray(this.options.removeDuplicateDeclarations)
+                ? this.options.removeDuplicateDeclarations.includes(name)
+                : !this.options.removeDuplicateDeclarations)
+        ) {
+            const key: string = nodeHash(arena, declaration);
+
+            if (this.declarations.has(key)) {
+                this.declarations.delete(key);
             }
-            // @functiom / result
-            if (arena.flags[declaration] & EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name as string)) {
-                this.declarations.set(name, declaration);
-                continue;
+
+            this.declarations.set(key, declaration);
+            return this;
+        }
+
+        if (!this.options.computeShorthand) {
+            this.declarations.set(name, declaration);
+            return this;
+        }
+
+        if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
+
+            if (syntaxRules != null) {
+                arena.flags[declaration] |=
+                    (isValidDeclarationValue(arena, syntaxRules, declaration, this.options)
+                        ? EnumAstNodeStatus.Validated
+                        : EnumAstNodeStatus.ValidationFailed) & ~EnumAstNodeStatus.Unvalidated;
+            }
+        }
+
+        // do not compute shorthand for invalid declarations
+        if (!(arena.flags[declaration] & EnumAstNodeStatus.Validated)) {
+            this.declarations.set(nodeHash(arena, declaration), declaration);
+            return this;
+        }
+
+        let propertyName: string = name;
+        let shortHandType: "map" | "set" | "single";
+        let shorthand: any = null;
+
+        if (propertyName in config.properties) {
+            // @ts-ignore
+            if ("map" in <ShorthandPropertyType>config.properties[propertyName]) {
+                shortHandType = "map";
+                // @ts-ignore
+                shorthand = <string>config.properties[propertyName].map;
+            } else {
+                shortHandType = "set";
+                // @ts-ignore
+                shorthand = <string>config.properties[propertyName].shorthand;
+            }
+        } else if (propertyName in config.map) {
+            shortHandType = "map";
+            // @ts-ignore
+            shorthand = <string>config.map[propertyName].shorthand;
+        } else if (propertyName in config.property) {
+            shortHandType = "single";
+            // @ts-ignore
+            shorthand = <string>config.property[propertyName];
+        }
+
+        if (this.declarations.has(shorthand)) {
+            let existing = this.declarations.get(shorthand);
+
+            if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                existing = (existing as PropertySet | PropertyMap).declarations.get(name) as AstDeclaration;
             }
 
             if (
-                arena.flags[declaration] &
-                    (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ValidationFailed) ||
-                equalsIgnoreCase("composes", name as string) ||
-                (typeof this.options.removeDuplicateDeclarations === "string" &&
-                    this.options.removeDuplicateDeclarations === name) ||
-                (Array.isArray(this.options.removeDuplicateDeclarations)
-                    ? this.options.removeDuplicateDeclarations.includes(name)
-                    : !this.options.removeDuplicateDeclarations)
+                existing != null &&
+                typeof existing == "number" &&
+                arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
+                arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration
             ) {
-                const key: string = nodeHash(arena, declaration);
-
-                if (this.declarations.has(key)) {
-                    this.declarations.delete(key);
-                }
-
-                this.declarations.set(key, declaration);
-                continue;
+                return this;
             }
+        }
+        // @ts-ignore
+        if (shortHandType == "map") {
+            let owner: PropertyMap | PropertyList = this;
 
-            if (!this.options.computeShorthand) {
-                this.declarations.set(name, declaration);
-                continue;
-            }
-
-            if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
-                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
-
-                if (syntaxRules != null) {
-                    result = matchAllSyntaxes(
-                        arena,
-                        syntaxRules,
-                        createValidationContext(arena, arena.tokens(declaration)),
-                        this.options,
-                    );
-                    arena.flags[declaration] |=
-                        (result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed) &
-                        ~EnumAstNodeStatus.Unvalidated;
-                }
-            }
-
-            // do not compute shorthand for invalid declarations
-            if (!(arena.flags[declaration] & EnumAstNodeStatus.Validated)) {
-                this.declarations.set(nodeHash(arena, declaration), declaration);
-                continue;
-            }
-
-            let propertyName: string = name;
-            let shortHandType: "map" | "set" | "single";
-            let shorthand: any = null;
-
-            if (propertyName in config.properties) {
+            const mapName: string =
                 // @ts-ignore
-                if ("map" in <ShorthandPropertyType>config.properties[propertyName]) {
-                    shortHandType = "map";
-                    // @ts-ignore
-                    shorthand = <string>config.properties[propertyName].map;
-                } else {
-                    shortHandType = "set";
-                    // @ts-ignore
-                    shorthand = <string>config.properties[propertyName].shorthand;
-                }
-            } else if (propertyName in config.map) {
-                shortHandType = "map";
-                // @ts-ignore
-                shorthand = <string>config.map[propertyName].shorthand;
-            } else if (propertyName in config.property) {
-                shortHandType = "single";
-                // @ts-ignore
-                shorthand = <string>config.property[propertyName];
-            }
+                config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
 
-            if (this.declarations.has(shorthand)) {
-                let existing = this.declarations.get(shorthand);
-
-                if (existing instanceof PropertySet || existing instanceof PropertyMap) {
-                    existing = (existing as PropertySet | PropertyMap).declarations.get(name) as AstDeclaration;
-                }
-
-                if (
-                    existing != null &&
-                    typeof existing == "number" &&
-                    arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
-                    arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration
-                ) {
-                    continue;
-                }
-            }
-            // @ts-ignore
-            if (shortHandType == "map") {
-                let owner: PropertyMap | PropertyList = this;
-
-                const mapName: string =
-                    // @ts-ignore
-                    config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
-
-                if (typeof mapName === "string") {
-                    if (!this.declarations.has(mapName)) {
-                        this.declarations.set(
-                            mapName,
-                            // @ts-ignore
-                            new PropertyMap(arena, <ShorthandMapType>config.map[mapName]),
-                        );
-                    }
-
-                    owner = this.declarations.get(mapName) as PropertyMap;
-                } else if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]));
-                }
-
-                if (owner == this) {
-                    // @ts-ignore
-                    owner.declarations.get(shorthand).add(declaration);
-                } else {
-                    if (!(owner as PropertyMap).declarations.has(shorthand)) {
-                        (owner as PropertyMap).declarations.set(
-                            shorthand,
-                            // @ts-ignore
-                            new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]),
-                        );
-                    }
-
-                    // @ts-ignore
-                    (<PropertyMap>owner).declarations.get(shorthand).add(<AstDeclaration>declaration);
-                }
-            }
-
-            // @ts-ignore
-            else if (shortHandType == "set") {
-                // @ts-ignore
-
-                if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
+            if (typeof mapName === "string") {
+                if (!this.declarations.has(mapName)) {
                     this.declarations.set(
+                        mapName,
                         // @ts-ignore
+                        new PropertyMap(arena, <ShorthandMapType>config.map[mapName]),
+                    );
+                }
+
+                owner = this.declarations.get(mapName) as PropertyMap;
+            } else if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
+                this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]));
+            }
+
+            if (owner == this) {
+                // @ts-ignore
+                owner.declarations.get(shorthand).add(declaration);
+            } else {
+                if (!(owner as PropertyMap).declarations.has(shorthand)) {
+                    (owner as PropertyMap).declarations.set(
                         shorthand,
                         // @ts-ignore
-                        new PropertySet(arena, <ShorthandPropertyType>config.properties[shorthand]),
+                        new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]),
                     );
                 }
 
                 // @ts-ignore
-                (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
-            } else {
-                if (shorthand != null) {
-                    this.mapValues(declaration as AstDeclaration, shorthand as SinglePropertyTypeMapping);
-                }
-
-                this.declarations.set(propertyName, declaration);
+                (<PropertyMap>owner).declarations.get(shorthand).add(<AstDeclaration>declaration);
             }
+        }
+
+        // @ts-ignore
+        else if (shortHandType == "set") {
+            // @ts-ignore
+
+            if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
+                this.declarations.set(
+                    // @ts-ignore
+                    shorthand,
+                    // @ts-ignore
+                    new PropertySet(arena, <ShorthandPropertyType>config.properties[shorthand]),
+                );
+            }
+
+            // @ts-ignore
+            (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
+        } else {
+            if (shorthand != null) {
+                this.mapValues(declaration as AstDeclaration, shorthand as SinglePropertyTypeMapping);
+            }
+
+            this.declarations.set(propertyName, declaration);
         }
 
         return this;

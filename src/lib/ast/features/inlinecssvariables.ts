@@ -188,7 +188,7 @@ export class InlineCssVariablesFeature {
                         );
 
                         arena.replaceChild(info.node, comment);
-                        arena.release(info.node);
+                        arena.detach(info.node);
                     }
                 }
             }

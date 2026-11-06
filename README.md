@@ -115,7 +115,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 164.11 ms          | 415.14 ms                 |
+| Time                  | 157.44 ms          | 389.45 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 ## Playground

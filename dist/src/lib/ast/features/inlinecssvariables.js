@@ -135,7 +135,7 @@ class InlineCssVariablesFeature {
                     if (arena.parents[info.node] == parent) {
                         const comment = arena.createComment(EnumToken.CommentTokenType, `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc, curr) => acc + renderValue(arena, curr, { convertColor: false }), "")} */`);
                         arena.replaceChild(info.node, comment);
-                        arena.release(info.node);
+                        arena.detach(info.node);
                     }
                 }
             }

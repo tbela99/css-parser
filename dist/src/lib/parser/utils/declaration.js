@@ -10,7 +10,7 @@ import { TokenField } from '../../ast/arena.js';
 import { tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
 import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
-import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
+import { trimArray, matchDeclarationSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { walkValues } from '../../ast/walk.js';
 import { equalsIgnoreCase } from './text.js';
@@ -82,7 +82,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     let syntaxRules = null;
     let success = true;
     let hasImportantFlag = false;
-    let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
+    let validate = !!options.validation;
     if (renamedStandardProperties.has(nam)) {
         nam = renamedStandardProperties.get(nam);
         arena.setStr(name, nam);
@@ -170,7 +170,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     let index;
     if (syntaxRules != null) {
         const doNotValidate = options.validation === false;
-        result = doNotValidate ? null : matchAllSyntaxes(arena, syntaxRules, createValidationContext(arena, tokens), options);
+        result = doNotValidate ? null : matchDeclarationSyntax(arena, syntaxRules, tokens, options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
             if (success) {

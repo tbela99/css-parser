@@ -20,10 +20,10 @@ export function run(describe, expect, it, transform, parse, render) {
             }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                     "typ": EnumToken.ColorTokenType,
                     "val": "color",
-                    "chi": [{"typ": 7, "val": "display-p3"}, {"typ": 12, "val": "0.6449802764484531"}, {
-                        "typ": 12,
+                    "chi": [{"typ": EnumToken.IdenTokenType, "val": "display-p3"}, {"typ": EnumToken.NumberTokenType, "val": "0.6449802764484531"}, {
+                        "typ": EnumToken.NumberTokenType,
                         "val": "0.19119980094061145"
-                    }, {"typ": 12, "val": "0.16577088540310694"}, {"typ": 6, "val": "/"}, {"typ": 14, "val": "50"}],
+                    }, {"typ": EnumToken.NumberTokenType, "val": "0.16577088540310694"}, {"typ": EnumToken.LiteralTokenType, "val": "/"}, {"typ": EnumToken.PercentageTokenType, "val": "50"}],
                     "kin":  ColorType.COLOR
                 }
             )).equals(true));

@@ -383,16 +383,16 @@ h1 { font-size: 2em }
             expect(arena.children(result.ast)).deep.equals([clone, b]);
             expect(arena.parents[a]).equals(0);
 
-            // released nodes are detached and their data dropped. ids are never reused
+            // detached nodes keep their data: the memory is not reclaimed and ids are never reused
             const declaration = arena.firstChild[b];
 
             const token = arena.firstToken[declaration];
 
-            arena.release(b, true);
+            arena.detach(b);
             expect(arena.children(result.ast)).deep.equals([clone]);
-            expect(arena.firstToken[declaration]).equals(0);
-            expect(arena.parents[token]).equals(0);
-            expect(arena.firstToken[b]).equals(0);
+            expect(arena.parents[b]).equals(0);
+            expect(arena.firstToken[declaration]).equals(token);
+            expect(arena.parents[declaration]).equals(b);
             expect(arena.allocate()).to.be.above(b);
             expect(render(arena, result.ast).code).equals(".b{color:blue}");
         });
@@ -498,39 +498,51 @@ h1 { font-size: 2em }
             expect(render(arena, declaration).code).equals("width:auto 3px");
         });
 
-        it("rendering does not grow the arena #17", async function () {
+        it("rendering does not modify the arena tree #17", async function () {
             const result = await parse(
-                ".a{color:rgb(255 0 0 / 50%);background:linear-gradient(to right, red 0%, blue 100%);width:calc(1px + 2px)}",
-                { minify: false },
+                ".a{color:rgb(255 0 0 / 50%);background:linear-gradient(to right, red 0%, blue 100%);width:calc(1px + 2px);.b{color:red}}",
+                { minify: false, expandNestingRules: false },
             );
             const arena = result.arena;
+            const children = arena.children(result.ast);
+            const rule = children[0];
+            const nested = arena.lastChild[rule];
+            const expected = ".a{color:#ff000080;background:linear-gradient(90deg,red,blue);width:calc(1px + 2px);.b{color:red}}";
+
+            expect(render(arena, result.ast).code).equals(expected);
+
+            // the tokens allocated while rendering are not released: the memory is not trimmed
             const current = arena.current;
 
-            expect(render(arena, result.ast).code).equals(".a{color:#ff000080;background:linear-gradient(90deg,red,blue);width:calc(1px + 2px)}");
-            // the temporary tokens are released
-            expect(arena.current).equals(current);
+            expect(render(arena, result.ast).code).equals(expected);
+            expect(arena.current).to.be.at.least(current);
+
+            // copies (expandNestingRules, withParents) are rendered from a temporary stylesheet that is not attached to the tree
+            expect(render(arena, result.ast, { expandNestingRules: true }).code).equals(
+                ".a{color:#ff000080;background:linear-gradient(90deg,red,blue);width:calc(1px + 2px)}.a .b{color:red}",
+            );
+            expect(render(arena, nested, { withParents: true }).code).equals(".a{.b{color:red}}");
+            expect(arena.children(result.ast)).deep.equals(children);
+            expect(arena.lastChild[rule]).equals(nested);
+            expect(arena.parents[nested]).equals(rule);
+
+            // the next rendering of the same arena is not affected
+            expect(render(arena, result.ast).code).equals(expected);
             expect(render(arena, result.ast, { minify: false, beautify: true }).code).equals(`.a {
  color: #ff000080;
  background: linear-gradient(90deg,red,blue);
- width: calc(1px + 2px)
+ width: calc(1px + 2px);
+ .b {
+  color: red
+ }
 }`);
-            expect(arena.current).equals(current);
-
-            // mark() / rewind()
-            const mark = arena.mark();
-            const token = arena.createToken(EnumToken.IdenTokenType, "temporary");
-
-            expect(arena.current).equals(mark + 1);
-            arena.rewind(mark);
-            expect(arena.current).equals(mark);
-            expect(arena.dataTypes[token]).equals(0);
         });
 
-        it("the arena is compacted after parsing #18", async function () {
+        it("the arena is compacted on demand #18", async function () {
             const result = await parse(".a{color:red;color:red}.b{color:blue}", { minify: true });
             const arena = result.arena;
 
-            // the dropped duplicate declaration, the structural tokens (';', '{', ...) are released
+            // parsing does not compact the arena: the released nodes are still allocated
             let count = 0;
 
             for (const { node } of walk(arena, result.ast, { attributes: true })) {
@@ -538,6 +550,10 @@ h1 { font-size: 2em }
                 expect(node).to.be.at.most(arena.current);
             }
 
+            expect(arena.current).to.be.above(count);
+
+            // the dropped duplicate declaration, the structural tokens (';', '{', ...) are released
+            arena.compact();
             expect(arena.current).equals(count);
             // the ids are renumbered in document order: rule, selector tokens, declaration, value tokens
             expect(arena.children(result.ast)).deep.equals([2, 6]);
@@ -559,6 +575,43 @@ h1 { font-size: 2em }
             expect(mapping.length).equals(before + 1);
             expect(mapping[other.ast]).equals(other.ast);
             expect(render(other.arena, other.ast).code).equals(".a{color:red}");
+        });
+
+        it("marked nodes are released or trimmed on demand #20", async function () {
+            const result = await parse(".a{color:red}.b{color:blue}.c{color:green}", { minify: false });
+            const arena = result.arena;
+            const [a, b, c] = arena.children(result.ast);
+            const declaration = arena.firstChild[b];
+
+            // mark() only flags the nodes
+            arena.mark(a, c);
+            expect(arena.isMarked(a)).equals(true);
+            expect(arena.isMarked(b)).equals(false);
+            expect(arena.children(result.ast)).deep.equals([a, b, c]);
+
+            // release() detaches the marked nodes and drops their data. the ids are not reused
+            arena.release();
+            expect(arena.children(result.ast)).deep.equals([b]);
+            expect(arena.isMarked(a)).equals(false);
+            expect(arena.name[a]).equals(0);
+            expect(render(arena, result.ast).code).equals(".b{color:blue}");
+
+            // release(id, deep) releases a single node
+            arena.release(declaration, true);
+            expect(arena.firstChild[b]).equals(0);
+
+            // trim() releases the marked nodes and reclaims the memory: the ids are renumbered
+            const other = await parse(".a{color:red}.b{color:blue}.c{color:green}", { minify: false });
+            const before = other.arena.current;
+            const [, second] = other.arena.children(other.ast);
+
+            other.arena.mark(second);
+
+            const mapping = other.arena.trim();
+
+            expect(mapping[second]).equals(0);
+            expect(other.arena.current).to.be.below(before);
+            expect(render(other.arena, other.ast).code).equals(".a{color:red}.c{color:green}");
         });
 
         it("the arena is transferable #19", async function () {
@@ -629,9 +682,15 @@ h1 { font-size: 2em }
             expect(baseCopy.current).equals(2);
         });
 
-        it("the arena is trimmed after parsing #14", async function () {
+        it("the arena is trimmed by compact() #14", async function () {
             const result = await parse(css, { minify: false });
             const arena = result.arena;
+            const before = arena.current;
+
+            // parsing does not compact the arena
+            expect(arena.dataTypes.length).to.be.above(arena.current);
+            arena.compact();
+            expect(arena.current).to.be.below(before);
 
             // the columns are shrunk to the allocated nodes (plus a small headroom for rendering)
             expect(arena.dataTypes.length).to.be.above(arena.current);

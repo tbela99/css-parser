@@ -511,8 +511,9 @@ class PropertyMap {
                 }) ||
                 // @ts-ignore
                 !Object.values(tokens).every((v) => 
-                // @ts-expect-error
-                v.filter((t) => arena.dataTypes[t] != EnumToken.CommentTokenType).length === count)) {
+                // `v` holds token groups: only single token groups were type checked by the former
+                // `arena.dataTypes[group]` lookup (the group is converted to a string key)
+                v.filter((t) => t.length != 1 || arena.dataTypes[t[0]] != EnumToken.CommentTokenType).length === count)) {
                 // @ts-ignore
                 iterable = declarations.values();
             }

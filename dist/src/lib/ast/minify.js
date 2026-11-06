@@ -219,52 +219,39 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
         if (!nestingContent) {
             nestingContent = options.nestingRules && arena.dataTypes[ast] == EnumToken.RuleNodeType;
         }
-        // mirror of the children list. the arena is updated through splice()
-        const chi = arena.children(ast);
-        /**
-         * remove / insert children. the arena children list is kept in sync
-         * @param index
-         * @param deleteCount
-         * @param items
-         */
-        const splice = (index, deleteCount, ...items) => {
-            const removed = chi.splice(index, deleteCount, ...items);
-            if (items.length > 0) {
-                const reference = index + items.length;
-                if (reference < chi.length) {
-                    arena.insertBefore(chi[reference], ...items);
-                }
-                else {
-                    arena.appendChildList(ast, items);
-                }
-            }
-            for (const node of removed) {
-                if (arena.parents[node] == ast && !items.includes(node)) {
-                    // dropped node. the children may have been moved into the items
-                    arena.release(node, true);
-                }
-            }
-            return removed;
-        };
-        let i = 0;
+        // the children list is modified while it is visited: every branch sets the next child to visit
+        let cursor = arena.firstChild[ast];
         let previous = null;
         let node = null;
-        let nodeIndex = -1;
         let nodeType;
         let previousType;
-        for (; i < chi.length; i++) {
-            if (arena.dataTypes[chi[i]] === EnumToken.CommentNodeType) {
+        /**
+         * the node located `count` positions before a child of ast (the end of the list when 0). null when out of range
+         * @param child
+         * @param count
+         */
+        const before = (child, count) => {
+            let result = child == 0 ? arena.lastChild[ast] : arena.previousSibling[child];
+            while (--count > 0 && result != 0) {
+                result = arena.previousSibling[result];
+            }
+            return result == 0 ? null : result;
+        };
+        while (cursor != 0) {
+            if (arena.dataTypes[cursor] === EnumToken.CommentNodeType) {
+                cursor = arena.nextSibling[cursor];
                 continue;
             }
             while (previous != null && arena.dataTypes[previous] === EnumToken.CommentNodeType) {
-                previous = chi[--nodeIndex] ?? null;
+                previous = arena.previousSibling[previous] || null;
             }
-            node = chi[i];
+            node = cursor;
             nodeType = arena.dataTypes[node];
             previousType = previous == null ? null : arena.dataTypes[previous];
             if (nodeType === EnumToken.AtRuleNodeType) {
                 const nam = arena.strings[arena.name[node]];
                 if (nam === "font-face") {
+                    cursor = arena.nextSibling[node];
                     continue;
                 }
                 // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
@@ -289,7 +276,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         while (k != 0) {
                             const previousNode = arena.previousSibling[k];
                             if (arena.dataTypes[k] === EnumToken.AtRuleNodeType) {
-                                arena.release(k, true);
+                                arena.detach(k);
                             }
                             k = previousNode;
                         }
@@ -300,9 +287,11 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 if (previousType === EnumToken.KeyframesAtRuleNodeType &&
                     arena.name[node] === arena.name[previous] &&
                     arena.stringValue[node] === arena.stringValue[previous]) {
-                    splice(nodeIndex--, 1);
-                    previous = chi[nodeIndex] ?? null;
-                    i = nodeIndex;
+                    // the previous keyframes are dropped, the node is visited again
+                    const previousNode = arena.previousSibling[previous];
+                    cursor = arena.nextSibling[previous];
+                    arena.detach(previous);
+                    previous = previousNode || null;
                     continue;
                 }
             }
@@ -311,11 +300,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     arena.name[node] === arena.name[previous]) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    arena.appendChildList(previous, arena.children(node));
+                    arena.moveChildren(node, previous);
                     options.cache?.delete(previous);
-                    splice(i, 1);
-                    previous = chi[nodeIndex] ?? null;
-                    i = nodeIndex;
+                    arena.detach(node);
+                    cursor = arena.nextSibling[previous];
                     continue;
                 }
                 let k = arena.firstChild[node];
@@ -325,7 +313,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         let l = arena.lastToken[k];
                         while (l != 0) {
                             if (arena.dataTypes[l] == EnumToken.ImportantTokenType) {
-                                arena.release(k);
+                                arena.detach(k);
                                 break;
                             }
                             if (arena.dataTypes[l] == EnumToken.WhitespaceTokenType ||
@@ -359,7 +347,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         }
                     }
                     if (["all", ""].includes(arena.strings[arena.stringValue[node]])) {
-                        splice(i--, 1, ...arena.children(node));
+                        // the node is replaced by its children
+                        cursor = arena.firstChild[node] || arena.nextSibling[node];
+                        arena.moveChildren(node, ast, node);
+                        arena.detach(node);
                         continue;
                     }
                 }
@@ -385,7 +376,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 else if (arena.dataTypes[ast] === nodeType &&
                     arena.name[ast] === arena.name[node] &&
                     arena.stringValue[ast] === arena.stringValue[node]) {
-                    splice(i--, 1, ...arena.children(node));
+                    // the node is replaced by its children
+                    cursor = arena.firstChild[node] || arena.nextSibling[node];
+                    arena.moveChildren(node, ast, node);
+                    arena.detach(node);
                     continue;
                 }
                 if (previousType == EnumToken.AtRuleNodeType &&
@@ -393,21 +387,22 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     arena.name[previous] === arena.name[node] &&
                     arena.stringValue[previous] === arena.stringValue[node]) {
                     if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
-                        arena.appendChildList(previous, arena.children(node));
+                        arena.moveChildren(node, previous);
                         options.cache?.delete(previous);
                         if (!hasDeclaration(arena, previous)) {
                             context.nodes.delete(previous);
                             doMinify(arena, previous, options, recursive, errors, nestingContent, context);
                         }
                     }
-                    splice(i--, 1);
+                    cursor = arena.nextSibling[node];
+                    arena.detach(node);
                     continue;
                 }
                 if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
-                nodeIndex = i;
+                cursor = arena.nextSibling[node];
                 continue;
             }
             else if (nodeType === EnumToken.RuleNodeType) {
@@ -419,26 +414,23 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         reduceRuleSelector(arena, previous);
                         match = matchSelectors(arena.raw[previous], arena.raw[node]);
                         if (match != null) {
-                            wrapper = wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex);
-                            nodeIndex = i - 1;
-                            previous = chi[nodeIndex];
+                            wrapper = wrapNodes(arena, previous, node, match, reducer);
                         }
                     }
                     if (wrapper != null) {
-                        while (i < chi.length) {
-                            const nextNode = chi[i];
-                            if (arena.dataTypes[nextNode] != EnumToken.RuleNodeType) {
-                                break;
-                            }
+                        // wrap the following rules that match the wrapper selector
+                        let nextNode = arena.nextSibling[wrapper];
+                        while (nextNode != 0 && arena.dataTypes[nextNode] == EnumToken.RuleNodeType) {
                             reduceRuleSelector(arena, nextNode);
                             match = matchSelectors(arena.raw[wrapper], arena.raw[nextNode]);
                             if (match == null) {
                                 break;
                             }
-                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer);
+                            nextNode = arena.nextSibling[wrapper];
                         }
-                        nodeIndex = --i;
-                        previous = chi[nodeIndex];
+                        previous = wrapper;
+                        cursor = arena.nextSibling[wrapper];
                         doMinify(arena, wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
@@ -453,9 +445,9 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","));
                         arena.raw[node] = optimized.selector.slice();
                         arena.setTokens(node);
-                        // move the node into the wrapper before replacing it in the children list
-                        arena.appendChildren(wrapper, node);
-                        splice(i, 1, wrapper);
+                        // the wrapper takes the place of the node
+                        arena.insertBefore(node, wrapper);
+                        arena.appendChild(wrapper, node);
                         node = wrapper;
                         nodeType = EnumToken.RuleNodeType;
                     }
@@ -623,63 +615,45 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                                 (nodeType == EnumToken.AtRuleNodeType &&
                                     arena.strings[arena.name[node]] !== "font-face" &&
                                     arena.name[node] === arena.name[previous])) {
-                                arena.prependChildren(node, ...arena.children(previous));
+                                arena.moveChildren(previous, node, arena.firstChild[node]);
                                 options.cache?.delete(node);
                                 doMinify(arena, node, options, recursive, errors, nestingContent, context);
-                                splice(nodeIndex, 1);
-                                previous = chi[--i];
-                                nodeIndex = i;
+                                arena.detach(previous);
+                                previous = node;
+                                cursor = arena.nextSibling[node];
                                 continue;
                             }
                             else if (nodeType == previousType &&
                                 [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(nodeType)) {
                                 const intersect = diff(arena, previous, node, options);
                                 if (intersect != null) {
-                                    // node1 takes the place of node, [result, node2] take the place of previous
+                                    // [result, node2] take the place of node1 (previous), node1 takes the place of node2 (node)
                                     const { node1, node2, result } = intersect;
                                     const after = arena.nextSibling[node2];
-                                    const head = [];
+                                    const keep2 = arena.firstChild[node2] != 0;
                                     if (result != null) {
-                                        head.push(result);
+                                        arena.insertBefore(node1, result);
                                     }
-                                    if (arena.firstChild[node2] != 0) {
-                                        head.push(node2);
+                                    if (keep2) {
+                                        arena.insertBefore(node1, node2);
                                     }
-                                    arena.insertBefore(node1, ...head);
-                                    if (arena.firstChild[node2] == 0) {
-                                        arena.release(node2);
+                                    else {
+                                        arena.detach(node2);
                                     }
                                     if (arena.firstChild[node1] == 0) {
-                                        arena.release(node1);
+                                        arena.detach(node1);
                                     }
                                     else if (after == 0) {
-                                        arena.appendChildren(ast, node1);
+                                        arena.appendChild(ast, node1);
                                     }
                                     else {
                                         arena.insertBefore(after, node1);
                                     }
-                                    // update the mirror
-                                    if (arena.firstChild[node1] == 0) {
-                                        chi.splice(i--, 1);
-                                    }
-                                    else {
-                                        chi.splice(i--, 1, node1);
-                                    }
-                                    chi.splice(nodeIndex, 1, ...head);
-                                    if (arena.firstChild[node2] == 0) {
-                                        i--;
-                                        if (nodeIndex == i) {
-                                            nodeIndex = i;
-                                        }
-                                    }
-                                    else {
-                                        i = (nodeIndex ?? 0) + 1;
-                                    }
-                                    if (node != chi[i]) {
-                                        node = chi[i];
-                                    }
+                                    // next node to visit
+                                    node = keep2
+                                        ? arena.nextSibling[result ?? node2] || null
+                                        : before(arena.parents[node1] == ast ? node1 : after, result == null ? 1 : 2);
                                     previous = result;
-                                    nodeIndex = i;
                                 }
                             }
                         }
@@ -698,11 +672,12 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 fixSelector(arena, previous);
             }
             previous = node;
-            nodeIndex = i;
+            cursor = node == null ? arena.firstChild[ast] : arena.nextSibling[node];
         }
         if (recursive && node != null && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
             if (arena.dataTypes[node] == EnumToken.KeyframesAtRuleNodeType || !hasDeclarationChild(arena, node)) {
-                if (!(arena.dataTypes[node] == EnumToken.AtRuleNodeType && arena.strings[arena.name[node]] != "font-face")) {
+                if (!(arena.dataTypes[node] == EnumToken.AtRuleNodeType &&
+                    arena.strings[arena.name[node]] != "font-face")) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -1173,19 +1148,16 @@ function fixSelector(arena, node) {
     }
 }
 /**
- * Wrap nodes
+ * Wrap two sibling rules into a new rule. the wrapper takes the place of node, previous is removed
  * @param arena
  * @param previous
  * @param node
  * @param match
  * @param reducer
- * @param splice children mirror splice
- * @param i
- * @param nodeIndex
  *
  * @private
  */
-function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) {
+function wrapNodes(arena, previous, node, match, reducer) {
     // @ts-ignore
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
@@ -1196,21 +1168,29 @@ function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) 
     arena.raw[wrapper] = match.match.map((t) => t.slice());
     arena.optimized[wrapper] = null;
     arena.setTokens(wrapper);
+    const parent = arena.parents[node];
+    // the wrapper takes the place of node
+    arena.insertBefore(node, wrapper);
     if (pSel == "&" || pSel === "") {
-        arena.appendChildList(wrapper, arena.children(previous));
+        arena.moveChildren(previous, wrapper);
         if (nSel == "&" || nSel === "") {
-            arena.appendChildList(wrapper, arena.children(node));
+            arena.moveChildren(node, wrapper);
         }
         else {
-            arena.appendChildren(wrapper, node);
+            arena.appendChild(wrapper, node);
         }
     }
     else {
-        arena.appendChildren(wrapper, previous, node);
+        arena.appendChild(wrapper, previous);
+        arena.appendChild(wrapper, node);
     }
-    // insert the wrapper at the position of node, then remove previous
-    splice(i, 1, wrapper);
-    splice(nodeIndex, 1);
+    // the nodes whose children were moved into the wrapper are dropped
+    if (arena.parents[previous] == parent) {
+        arena.detach(previous);
+    }
+    if (arena.parents[node] == parent) {
+        arena.detach(node);
+    }
     // update the selectors of the wrapped nodes
     if (arena.parents[previous] == wrapper) {
         arena.setSelector(previous, pSel);
@@ -1296,45 +1276,41 @@ function diff(arena, n1, n2, options = {}) {
             }
         }
     }
-    const children1 = arena.children(node1);
-    const children2 = arena.children(node2);
-    const remaining1 = children1.slice();
-    const remaining2 = children2.slice();
-    const intersect = [];
-    let i = remaining1.length;
-    let j;
-    while (i--) {
-        if (arena.dataTypes[remaining1[i]] == EnumToken.CommentNodeType) {
+    // match the declarations of both rules, from the last to the first
+    let matches = 0;
+    for (let child1 = arena.lastChild[node1]; child1 != 0; child1 = arena.previousSibling[child1]) {
+        if (arena.dataTypes[child1] == EnumToken.CommentNodeType) {
             continue;
         }
-        j = remaining2.length;
-        while (j--) {
-            if (arena.dataTypes[remaining2[j]] == EnumToken.CommentNodeType) {
+        for (let child2 = arena.lastChild[node2]; child2 != 0; child2 = arena.previousSibling[child2]) {
+            if (arena.dataTypes[child2] == EnumToken.CommentNodeType ||
+                arena.flags[child2] & EnumAstNodeStatus.Matched) {
                 continue;
             }
-            if (arena.name[remaining1[i]] == arena.name[remaining2[j]]) {
-                if (eqNode(arena, remaining1[i], remaining2[j])) {
-                    intersect.push(remaining1[i]);
-                    remaining1.splice(i, 1);
-                    remaining2.splice(j, 1);
-                    break;
-                }
+            if (arena.name[child1] == arena.name[child2] && eqNode(arena, child1, child2)) {
+                arena.flags[child1] |= EnumAstNodeStatus.Matched;
+                arena.flags[child2] |= EnumAstNodeStatus.Matched;
+                matches++;
+                break;
             }
         }
     }
-    if (intersect.length === 0 && (remaining1.length > 0 || remaining2.length > 0)) {
+    if (matches == 0 && (arena.firstChild[node1] != 0 || arena.firstChild[node2] != 0)) {
         return null;
     }
     const op = { ...options };
-    // size of the original nodes
-    const size = [n1, n2].reduce((acc, curr) => {
-        let css = options.cache.get(curr);
+    const renderedSize = (node, cache) => {
+        let css = cache ? options.cache.get(node) : undefined;
         if (css == null) {
-            css = doRender(arena, curr, op).code;
-            options.cache.set(curr, css);
+            css = doRender(arena, node, op).code;
+            if (cache) {
+                options.cache.set(node, css);
+            }
         }
-        return arena.firstChild[curr] == 0 ? acc : acc + css.length;
-    }, 0);
+        return arena.firstChild[node] == 0 ? 0 : css.length;
+    };
+    // size of the original nodes
+    const size = renderedSize(n1, true) + renderedSize(n2, true);
     // the shared declarations are moved into the result node
     const result = arena.clone(node1);
     arena.setSelector(result, [
@@ -1342,29 +1318,45 @@ function diff(arena, n1, n2, options = {}) {
             .concat(splitRule(arena.strings[arena.name[node2]]))
             .map((s) => s.join(""))),
     ].join(","));
-    arena.setChildList(result, intersect.reverse());
-    arena.setChildList(node1, remaining1);
-    arena.setChildList(node2, remaining2);
+    // the matched declarations of node1 are moved into the result, the duplicates in node2 are dropped.
+    // the moves are recorded (node, parent, next sibling) to be undone when the result is not smaller
+    const moves = [];
+    const moveMatched = (parent, target) => {
+        let child = arena.firstChild[parent];
+        while (child != 0) {
+            const next = arena.nextSibling[child];
+            if (arena.flags[child] & EnumAstNodeStatus.Matched) {
+                arena.flags[child] &= ~EnumAstNodeStatus.Matched;
+                moves.push(child, parent, next);
+                if (target == null) {
+                    arena.detach(child);
+                }
+                else {
+                    arena.appendChild(target, child);
+                }
+            }
+            child = next;
+        }
+    };
+    moveMatched(node1, result);
+    moveMatched(node2, null);
     arena.insertBefore(n1, result);
-    // duplicates of node2 are dropped
-    const dropped = children2.filter((node) => arena.parents[node] == 0);
     options.cache.delete(node1);
     options.cache.delete(node2);
-    if (size <=
-        [node1, node2, result].reduce((acc, curr) => {
-            const css = doRender(arena, curr, op).code;
-            return arena.firstChild[curr] == 0 ? acc : acc + css.length;
-        }, 0)) {
-        if (remaining1.length != 0 && remaining2.length != 0) {
-            // restore the nodes
-            arena.setChildList(node1, children1);
-            arena.setChildList(node2, children2);
-            arena.release(result);
-            return null;
+    if (size <= renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false) &&
+        arena.firstChild[node1] != 0 &&
+        arena.firstChild[node2] != 0) {
+        // restore the nodes: undo the moves in reverse order
+        for (let k = moves.length - 3; k >= 0; k -= 3) {
+            if (moves[k + 2] == 0) {
+                arena.appendChild(moves[k + 1], moves[k]);
+            }
+            else {
+                arena.insertBefore(moves[k + 2], moves[k]);
+            }
         }
-    }
-    for (const node of dropped) {
-        arena.release(node, true);
+        arena.detach(result);
+        return null;
     }
     arena.setTokens(result);
     arena.raw[result] = null;

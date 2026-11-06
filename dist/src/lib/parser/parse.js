@@ -98,11 +98,13 @@ function createCommentNode(arena, token) {
     return node;
 }
 /**
- * initial arena capacity: about one node for every 2.5 bytes of css, capped to 256K nodes
+ * initial arena capacity: one node for every 4 bytes of css. the statement tokens that are not attached to the tree
+ * are recycled, so a parse + minify allocates 0.07 to 0.22 node per byte (up to 0.5 for keyframes heavy stylesheets
+ * or when nesting rules are expanded): the arena seldom grows
  * @param tokenizer
  */
 function arenaCapacity(tokenizer) {
-    return Math.min(1 << 18, Math.max(4096, Math.ceil(tokenizer.streamLength / 2.5)));
+    return Math.min(1 << 25, Math.max(4096, Math.ceil(tokenizer.streamLength / 4) + 1024));
 }
 /**
  * allocate the current tokenizer token in the arena
@@ -137,6 +139,35 @@ function allocateToken(arena, tokenizer, sourceIndex) {
         arena.setTokenLocation(item, sourceIndex, tokenizer.sta, tokenizer.end);
     }
     return item;
+}
+/**
+ * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
+ * the tokens referenced by the errors or the invalid nodes of the statement are kept
+ * @param arena
+ * @param tokens statement tokens
+ * @param errors
+ * @param errorStart index of the first error of the statement
+ * @param invalidNodes
+ * @param invalidStart index of the first invalid node of the statement
+ */
+function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes, invalidStart) {
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        // already recycled (a token can be recorded twice), attached or holding other tokens
+        if (arena.dataTypes[token] == 0 ||
+            arena.parents[token] != 0 ||
+            arena.firstChild[token] != 0 ||
+            arena.firstToken[token] != 0) {
+            continue;
+        }
+        let referenced = invalidNodes.indexOf(token, invalidStart) != -1;
+        for (let j = errorStart; !referenced && j < errors.length; j++) {
+            referenced = errors[j].node === token;
+        }
+        if (!referenced) {
+            arena.recycle(token);
+        }
+    }
 }
 /**
  * build a css variable token from a css variable node
@@ -438,6 +469,13 @@ function parseVisitors(visitorsDef, errors) {
             if (typeof value == "function") {
                 key = value.name;
             }
+            else if (value != null && typeof value == "object") {
+                // array of visitor maps: flatten. this used to depend on the array index being an EnumToken value
+                for (const val of Object.entries(value)) {
+                    visitors.push(val);
+                }
+                continue;
+            }
         }
         if (key in EnumToken) {
             if (typeof value == "function") {
@@ -608,9 +646,7 @@ function doParseSync(tokenizer, options = {}) {
         lenient: true,
         ...options,
     };
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
     if (options.module) {
         options.expandNestingRules = true;
     }
@@ -634,8 +670,12 @@ function doParseSync(tokenizer, options = {}) {
         imports: [],
     };
     const invalidNodes = [];
+    // first error / invalid node of the current statement
+    let errorStart = errors.length;
+    let invalidStart = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement = [];
     // nested parses share the arena of the parent
-    const ownArena = options.arena == null;
     const arena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
     let ast = arena.current == 1 ? arena.root : arena.createStyleSheet();
     let tokens = [];
@@ -657,6 +697,7 @@ function doParseSync(tokenizer, options = {}) {
         stats.tokensCount++;
         if (BadTokensTypes.includes(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
@@ -680,6 +721,7 @@ function doParseSync(tokenizer, options = {}) {
             curlyBracketMatch--;
         }
         tokens.push(item);
+        statement.push(item);
         if (parensMatch === 0 &&
             (itemType === EnumToken.SemiColonTokenType ||
                 itemType === EnumToken.BlockStartTokenType ||
@@ -700,6 +742,7 @@ function doParseSync(tokenizer, options = {}) {
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ;
                     tokens.push(item);
+                    statement.push(item);
                     if (itemType === EnumToken.BlockStartTokenType) {
                         inBlock++;
                     }
@@ -715,7 +758,11 @@ function doParseSync(tokenizer, options = {}) {
                     });
                 }
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
@@ -726,9 +773,13 @@ function doParseSync(tokenizer, options = {}) {
                 previousNode != null &&
                 arena.firstChild[previousNode] == 0 &&
                 arena.lastChild[context] == previousNode) {
-                arena.release(previousNode);
+                arena.detach(previousNode);
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -1039,7 +1090,7 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == EnumToken.CssVariableTokenType) {
@@ -1049,7 +1100,7 @@ function doParseSync(tokenizer, options = {}) {
                     }
                     result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == EnumToken.DeclarationNodeType) {
@@ -1426,10 +1477,6 @@ function doParseSync(tokenizer, options = {}) {
     if (options.signal != null) {
         options.signal.removeEventListener("abort", reject);
     }
-    if (ownArena) {
-        // drop the tokens and nodes that are no longer referenced and renumber the nodes in document order
-        arena.compact(errors);
-    }
     return result;
 }
 /**
@@ -1468,9 +1515,7 @@ async function doParse(iter, options = {}) {
         ...options,
     };
     options.minifyAST ??= options.minify;
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
     if (options.module) {
         options.expandNestingRules = true;
     }
@@ -1496,9 +1541,13 @@ async function doParse(iter, options = {}) {
         imports: [],
     };
     const invalidNodes = [];
+    // first error / invalid node of the current statement
+    let errorStart = errors.length;
+    let invalidStart = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement = [];
     let tokenizer = iter instanceof Promise ? await iter : iter;
     // nested parses share the arena of the parent
-    const ownArena = options.arena == null;
     const arena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
     let ast = arena.current == 1 ? arena.root : arena.createStyleSheet();
     let tokens = [];
@@ -1521,6 +1570,7 @@ async function doParse(iter, options = {}) {
         stats.tokensCount++;
         if (BadTokensTypes.includes(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
@@ -1544,6 +1594,7 @@ async function doParse(iter, options = {}) {
             curlyBracketMatch--;
         }
         tokens.push(item);
+        statement.push(item);
         if (parensMatch === 0 &&
             (itemType === EnumToken.SemiColonTokenType ||
                 itemType === EnumToken.BlockStartTokenType ||
@@ -1568,6 +1619,7 @@ async function doParse(iter, options = {}) {
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ;
                     tokens.push(item);
+                    statement.push(item);
                     if (itemType === EnumToken.BlockStartTokenType) {
                         inBlock++;
                     }
@@ -1583,7 +1635,11 @@ async function doParse(iter, options = {}) {
                     });
                 }
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
@@ -1594,9 +1650,13 @@ async function doParse(iter, options = {}) {
                 previousNode != null &&
                 arena.firstChild[previousNode] == 0 &&
                 arena.lastChild[context] == previousNode) {
-                arena.release(previousNode);
+                arena.detach(previousNode);
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -1651,8 +1711,11 @@ async function doParse(iter, options = {}) {
                 stats.nodesCount += root.stats.nodesCount;
                 stats.tokensCount += root.stats.tokensCount;
                 stats.imports.push(root.stats);
-                // the imported stylesheet is allocated in the same arena
-                arena.replaceChild(node, ...arena.children(root.ast));
+                // the imported stylesheet is allocated in the same arena: its children replace the @import rule
+                if (arena.parents[node] != 0) {
+                    arena.moveChildren(root.ast, arena.parents[node], node);
+                    arena.detach(node);
+                }
                 if (root.errors.length > 0) {
                     for (const error of root.errors) {
                         errors.push(error);
@@ -1993,7 +2056,7 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == EnumToken.CssVariableTokenType) {
@@ -2003,7 +2066,7 @@ async function doParse(iter, options = {}) {
                     }
                     result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == EnumToken.DeclarationNodeType) {
@@ -2462,10 +2525,6 @@ async function doParse(iter, options = {}) {
     }
     if (options.signal != null) {
         options.signal.removeEventListener("abort", reject);
-    }
-    if (ownArena) {
-        // drop the tokens and nodes that are no longer referenced and renumber the nodes in document order
-        arena.compact(errors);
     }
     return result;
 }
@@ -3345,14 +3404,14 @@ function parseDeclarations(declaration, arena) {
     });
     const rule = result.arena.firstChild[result.ast];
     const nodes = [];
-    if (rule != 0) {
-        for (const node of result.arena.children(rule)) {
-            if (result.arena.dataTypes[node] == EnumToken.DeclarationNodeType ||
-                result.arena.dataTypes[node] == EnumToken.CommentNodeType) {
-                result.arena.detach(node);
-                nodes.push(node);
-            }
+    for (let node = rule == 0 ? 0 : result.arena.firstChild[rule]; node != 0;) {
+        const next = result.arena.nextSibling[node];
+        if (result.arena.dataTypes[node] == EnumToken.DeclarationNodeType ||
+            result.arena.dataTypes[node] == EnumToken.CommentNodeType) {
+            result.arena.detach(node);
+            nodes.push(node);
         }
+        node = next;
     }
     return { arena: result.arena, nodes };
 }
@@ -3397,8 +3456,13 @@ function parseString(arena, src, options = { parseColor: true }, errors) {
         mapped.push(allocateToken(arena, tokenizer, -1));
     }
     const result = parseTokens(arena, mapped, options, errors);
-    // remove EOF token
-    result.splice(result.length - (arena.dataTypes[result[result.length - 2]] === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
+    // remove the EOF token and the whitespace before it: their ids are recycled
+    const removed = result.splice(result.length - (arena.dataTypes[result[result.length - 2]] === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
+    for (let i = 0; i < removed.length; i++) {
+        if (arena.parents[removed[i]] == 0 && arena.firstToken[removed[i]] == 0 && arena.firstChild[removed[i]] == 0) {
+            arena.recycle(removed[i]);
+        }
+    }
     return result;
 }
 /**

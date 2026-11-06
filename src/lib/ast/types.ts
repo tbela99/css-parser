@@ -75,55 +75,28 @@ export enum EnumAstNodeStatus {
      * the node has a source location
      */
     HasLocation = 1 << 18,
+    /**
+     * the node is marked to be released or trimmed. see `arena.mark()`, `arena.release()` and `arena.trim()`
+     */
+    Marked = 1 << 19,
+    /**
+     * transient flag used while comparing the declarations of two rules
+     * @private
+     */
+    Matched = 1 << 20,
 }
 
 export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
-
-/**
- * Enum of validation levels
- * @deprecated
- */
-export enum ValidationLevel {
-    /**
-     * disable validation
-     */
-    None,
-    /**
-     * validate selectors
-     */
-    Selector = 0x1,
-    /**
-     * validate at-rules
-     */
-    AtRule = 0x2,
-
-    /**
-     * validate declarations
-     */
-    Declaration = 0x4,
-    /**
-     * validate selectors and at-rules
-     */
-    Default = Selector | AtRule, // selectors + at-rules
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
-
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ReportOnly = 0x8,
-}
 
 /**
  * Enum of all token types
  */
 export enum EnumToken {
     /**
-     * comment token
+     * comment token. the value 0 is reserved: it is the type of the null node (id 0) and of unset nodes,
+     * so that reading the type of a missing node never matches a real token type
      */
-    CommentTokenType,
+    CommentTokenType = 1,
     /**
      * cdata section token
      */

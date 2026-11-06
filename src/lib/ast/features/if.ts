@@ -346,7 +346,7 @@ function processNode(
 
         // the node is substituted: release it unless it is the node being replaced
         if (astNode != declarationNode) {
-            arena.release(astNode);
+            arena.detach(astNode);
         }
     }
 
@@ -354,7 +354,7 @@ function processNode(
         replaceNode(arena, declarationNode, result);
 
         if (!result.includes(declarationNode)) {
-            arena.release(declarationNode);
+            arena.detach(declarationNode);
         }
     }
     // else remove node?

@@ -27,57 +27,56 @@ export function expand(arena: AstArena, ast: AstStyleSheet | AstAtRule | AstRule
         return ast;
     }
 
-    const children: AstNode[] = arena.children(ast);
-    const result: AstNode[] = [];
+    let node: AstNode = arena.firstChild[ast];
 
-    for (let i = 0; i < children.length; i++) {
-        let node: AstNode = children[i];
+    while (node != 0) {
+        const next: AstNode = arena.nextSibling[node];
         const typ: EnumToken = arena.dataTypes[node];
 
         if (typ === EnumToken.RuleNodeType) {
-            for (const child of expandRule(arena, node)) {
-                result.push(child);
-            }
+            // the expanded rules are inserted after the rule
+            expandRule(arena, node, ast, next);
         } else if (typ == EnumToken.AtRuleNodeType && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
-            let hasRule: boolean = false;
             let j: AstNode = arena.lastChild[node];
 
             while (j != 0) {
                 if (arena.dataTypes[j] == EnumToken.RuleNodeType || arena.dataTypes[j] == EnumToken.AtRuleNodeType) {
-                    hasRule = true;
+                    expand(arena, node);
                     break;
                 }
 
                 j = arena.previousSibling[j];
             }
-
-            if (hasRule) {
-                node = expand(arena, node);
-            }
-
-            result.push(node);
-        } else {
-            result.push(node);
         }
+
+        node = next;
     }
 
-    arena.setChildList(ast, result);
     return ast;
 }
 
 /**
- * expand a rule. nested rules and at-rules are detached from the rule and returned
+ * expand a rule: the nested rules and at-rules are moved out of the rule, into `parent` before `before`.
+ * the rule is detached when it has no children left
  * @param arena
  * @param node
+ * @param parent
+ * @param before the expanded nodes are inserted before this child of parent. they are appended when 0
  */
-function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> {
+function expandRule(arena: AstArena, node: AstRule, parent: AstNode, before: AstNode): void {
     if (arena.flags[node] & skipStates) {
-        return [node];
+        return;
     }
 
     const ast: AstRule = node;
-    const result: Array<AstRule | AstAtRule> = [];
     const sel: string = arena.strings[arena.name[ast]];
+    const place = (child: AstNode): void => {
+        if (before == 0) {
+            arena.appendChild(parent, child);
+        } else {
+            arena.insertBefore(before, child);
+        }
+    };
 
     if (arena.dataTypes[ast] == EnumToken.RuleNodeType) {
         let child: AstNode = arena.firstChild[ast];
@@ -101,7 +100,7 @@ function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> 
                         .join(",");
 
                     if (arSelf.length == 0) {
-                        arena.release(rule, true);
+                        arena.detach(rule);
                         child = next;
                         continue;
                     }
@@ -137,7 +136,7 @@ function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> 
                     const parentSelector: boolean = !sel.includes("&");
 
                     if (rules.length == 0) {
-                        arena.release(rule, true);
+                        arena.detach(rule);
                         child = next;
                         continue;
                     }
@@ -253,14 +252,10 @@ function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> 
                     );
                 }
 
-                arena.detach(rule);
-
-                for (const s of expandRule(arena, rule) as AstRule[]) {
-                    result.push(s);
-                }
+                place(rule);
+                expandRule(arena, rule, parent, before);
             } else if (typ == EnumToken.AtRuleNodeType) {
                 const astAtRule: AstAtRule = child;
-                const values: Array<AstRule | AstAtRule> = <Array<AstRule | AstAtRule>>[];
                 const atRuleName: string = arena.strings[arena.name[astAtRule]];
 
                 if (atRuleName === "scope") {
@@ -286,60 +281,65 @@ function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> 
                         // expand the nested rules against the parent selector
                         const clone: AstRule = arena.clone(node);
 
-                        arena.setChildList(clone, arena.children(astAtRule));
+                        arena.moveChildren(astAtRule, clone);
+                        expandRule(arena, clone, astAtRule, 0);
 
-                        const expanded: Array<AstRule | AstAtRule> = expandRule(arena, clone);
-
-                        // declarations stay in the at-rule
-                        arena.setChildList(astAtRule, arena.children(clone));
-                        arena.release(clone);
-
-                        for (const r of expanded) {
-                            if (r != clone) {
-                                arena.appendChildren(astAtRule, r);
-                            }
-                        }
+                        // declarations stay in the at-rule, before the expanded rules
+                        arena.moveChildren(clone, astAtRule, arena.firstChild[astAtRule]);
                     }
+
+                    place(astAtRule);
                 } else {
                     const clone: AstRule = arena.clone(ast);
 
-                    arena.setChildList(clone, arena.children(astAtRule));
+                    // the rules are expanded inside the at-rule: [clone, ...expanded nodes]
+                    arena.moveChildren(astAtRule, clone);
+                    expandRule(arena, clone, astAtRule, 0);
 
-                    for (const r of <Array<AstRule | AstAtRule>>expandRule(arena, clone)) {
-                        if (
-                            arena.dataTypes[r] == EnumToken.AtRuleNodeType &&
-                            arena.flags[r] & EnumAstNodeStatus.HasChildren
-                        ) {
-                            const val: string = arena.strings[arena.stringValue[astAtRule]];
-                            const rVal: string = arena.strings[arena.stringValue[r]];
+                    if (arena.firstChild[clone] != 0) {
+                        // the rule declarations are wrapped in the clone, before the expanded nodes
+                        if (arena.firstChild[astAtRule] == 0) {
+                            arena.appendChild(astAtRule, clone);
+                        } else {
+                            arena.insertBefore(arena.firstChild[astAtRule], clone);
+                        }
+                    }
 
-                            if (val !== "" && rVal !== "") {
-                                const rName: string = arena.strings[arena.name[r]];
+                    place(astAtRule);
 
-                                if (atRuleName === "media" && rName === "media") {
-                                    arena.setValueString(r, val + " and " + rVal);
-                                } else if (atRuleName == "layer" && rName == "layer") {
-                                    arena.setValueString(r, val + "." + rVal);
+                    // the expanded at-rules are moved after the at-rule
+                    let r: AstNode = arena.firstChild[astAtRule];
+
+                    while (r != 0) {
+                        const nextRule: AstNode = arena.nextSibling[r];
+
+                        if (arena.dataTypes[r] == EnumToken.AtRuleNodeType) {
+                            if (arena.flags[r] & EnumAstNodeStatus.HasChildren) {
+                                const val: string = arena.strings[arena.stringValue[astAtRule]];
+                                const rVal: string = arena.strings[arena.stringValue[r]];
+
+                                if (val !== "" && rVal !== "") {
+                                    const rName: string = arena.strings[arena.name[r]];
+
+                                    if (atRuleName === "media" && rName === "media") {
+                                        arena.setValueString(r, val + " and " + rVal);
+                                    } else if (atRuleName == "layer" && rName == "layer") {
+                                        arena.setValueString(r, val + "." + rVal);
+                                    }
                                 }
-                            }
 
-                            values.push(r);
-                        } else if (arena.dataTypes[r] == EnumToken.RuleNodeType) {
-                            for (const rule of expandRule(arena, r)) {
-                                arena.appendChildren(astAtRule, rule);
+                                place(r);
+                            } else {
+                                arena.detach(r);
                             }
                         }
+
+                        r = nextRule;
                     }
                 }
 
-                arena.detach(astAtRule);
-
-                if (arena.firstChild[astAtRule] != 0) {
-                    result.push(astAtRule);
-                }
-
-                for (const r of values) {
-                    result.push(r);
+                if (arena.firstChild[astAtRule] == 0) {
+                    arena.detach(astAtRule);
                 }
             }
 
@@ -347,7 +347,9 @@ function expandRule(arena: AstArena, node: AstRule): Array<AstRule | AstAtRule> 
         }
     }
 
-    return arena.firstChild[ast] != 0 ? [ast].concat(result) : result;
+    if (arena.firstChild[ast] == 0) {
+        arena.detach(ast);
+    }
 }
 
 /**

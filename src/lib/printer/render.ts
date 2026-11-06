@@ -78,25 +78,30 @@ export function doRender(
         ) &&
         (arena.flags[data] & EnumAstNodeStatus.HasChildren) != 0;
 
-    if (options.withParents || expandNesting) {
-        // render a copy allocated in a temporary arena: the original tree is not modified
-        const source: AstArena = arena;
-        let parent: AstNode = source.parents[data];
+    // temporary stylesheet holding the rendered copy
+    let sheet: AstNode = 0;
 
-        arena = new AstArena(Math.min(source.current, 1024));
-        data = arena.import(source, data);
+    if (options.withParents || expandNesting) {
+        // render a copy: the original tree is not modified. the copy is allocated in the same arena,
+        // under a temporary stylesheet node that is not attached to the tree
+        let parent: AstNode = arena.parents[data];
+
+        sheet = arena.createStyleSheet();
+        data = arena.clone(data, true);
 
         if (options.withParents) {
             // wrap the node into shallow copies of its ancestors
             while (parent != 0) {
-                const clone: AstNode = arena.import(source, parent, false);
+                const clone: AstNode = arena.clone(parent, false);
 
-                arena.appendChildren(clone, data);
+                arena.appendChild(clone, data);
 
                 data = clone;
-                parent = source.parents[parent];
+                parent = arena.parents[parent];
             }
         }
+
+        arena.appendChild(sheet, data);
 
         if (expandNesting) {
             data = expand(arena, data);
@@ -159,9 +164,6 @@ export function doRender(
         options.output = options.resolve(options.output, options.cwd).absolute;
     }
 
-    // the tokens allocated while rendering (color conversion, gradients, ...) are released
-    const mark: number = arena.mark();
-
     const result: RenderResult = {
         code:
             code +
@@ -192,7 +194,11 @@ export function doRender(
         },
     };
 
-    arena.rewind(mark);
+    if (sheet != 0) {
+        // drop the temporary stylesheet. the tokens allocated while rendering (color conversion, gradients, ...)
+        // are not attached to the tree either: the memory is not reclaimed, the ids are never reused
+        arena.detach(data);
+    }
 
     if (sourcemap != null) {
         let source: SourceFile;

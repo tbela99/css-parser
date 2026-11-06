@@ -5,7 +5,6 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { deprecate } from 'node:util';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
@@ -14,9 +13,9 @@ export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
 export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
-import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
+import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
@@ -120,32 +119,6 @@ async function load(url, currentDirectory = ".", responseType = false) {
 function render(arena, data, options = {}, mapping) {
     return doRender(arena, data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
 }
-/**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @see {@link parse}
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-const parseFile = deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
  * Parse CSS
  * @param args
@@ -365,35 +338,6 @@ async function parse(...args) {
         : parseResult(result, options));
 }
 /**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated Use transform() instead.
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-const transformFile = deprecate(async (file, options = {}, asStream = false) => transform({
-    file,
-    asStream,
-    ...options,
-}), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
-/**
  * Transform CSS
  *
  * Parsing a string
@@ -493,4 +437,4 @@ async function transform(...args) {
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseSync, render, resolve, transform, transformSync };

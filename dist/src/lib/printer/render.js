@@ -17,7 +17,7 @@ import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
-import { TokenField, AstArena } from '../ast/arena.js';
+import { TokenField } from '../ast/arena.js';
 
 /**
  * render ast
@@ -60,21 +60,24 @@ function doRender(arena, data, options = {}, mapping) {
     const expandNesting = options.expandNestingRules &&
         [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(arena.dataTypes[data]) &&
         (arena.flags[data] & EnumAstNodeStatus.HasChildren) != 0;
+    // temporary stylesheet holding the rendered copy
+    let sheet = 0;
     if (options.withParents || expandNesting) {
-        // render a copy allocated in a temporary arena: the original tree is not modified
-        const source = arena;
-        let parent = source.parents[data];
-        arena = new AstArena(Math.min(source.current, 1024));
-        data = arena.import(source, data);
+        // render a copy: the original tree is not modified. the copy is allocated in the same arena,
+        // under a temporary stylesheet node that is not attached to the tree
+        let parent = arena.parents[data];
+        sheet = arena.createStyleSheet();
+        data = arena.clone(data, true);
         if (options.withParents) {
             // wrap the node into shallow copies of its ancestors
             while (parent != 0) {
-                const clone = arena.import(source, parent, false);
-                arena.appendChildren(clone, data);
+                const clone = arena.clone(parent, false);
+                arena.appendChild(clone, data);
                 data = clone;
-                parent = source.parents[parent];
+                parent = arena.parents[parent];
             }
         }
+        arena.appendChild(sheet, data);
         if (expandNesting) {
             data = expand(arena, data);
         }
@@ -109,8 +112,6 @@ function doRender(arena, data, options = {}, mapping) {
         // @ts-ignore
         options.output = options.resolve(options.output, options.cwd).absolute;
     }
-    // the tokens allocated while rendering (color conversion, gradients, ...) are released
-    const mark = arena.mark();
     const result = {
         code: code +
             renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, function reducer(acc, curr) {
@@ -127,7 +128,11 @@ function doRender(arena, data, options = {}, mapping) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
-    arena.rewind(mark);
+    if (sheet != 0) {
+        // drop the temporary stylesheet. the tokens allocated while rendering (color conversion, gradients, ...)
+        // are not attached to the tree either: the memory is not reclaimed, the ids are never reused
+        arena.detach(data);
+    }
     if (sourcemap != null) {
         let source;
         for (const sourceId of sourcemaps.sources) {

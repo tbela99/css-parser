@@ -16,7 +16,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { anglePrecision, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc, colorFuncColorSpace, colorPrecision, epsilon } from './constants.js';
+import { colorPrecision, anglePrecision, epsilon, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorFuncColorSpace, colorsFunc } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax

@@ -1,5 +1,25 @@
 # Changelog
 
+# 2.0.0 (unreleased)
+
+breaking changes
+
+- [x] `EnumToken.CommentTokenType` is 1: the value 0 is reserved for the null node, the `EnumToken` values are renumbered
+- [x] the arena is never compacted nor trimmed by the library: detached nodes and the tokens allocated while rendering stay allocated. call `arena.compact()` to reclaim the memory
+- [x] the initial arena capacity is computed from the input length: the arena seldom grows
+- [x] `render()` renders copies (`withParents`, `expandNestingRules`) in the same arena, under a temporary stylesheet node
+- [x] memory is reclaimed on demand only: `arena.mark(...nodes)` marks nodes, `arena.release()` releases the marked nodes, `arena.trim()` releases them and compacts the arena. `arena.rewind()` is removed
+- [x] removed the deprecated `ValidationLevel` enum: the `validation` option is a boolean
+- [x] removed the deprecated `parseFile()` and `transformFile()` functions: use `parse({file})` and `transform({file})`
+
+performance
+
+- [x] the parser recycles the tokens that are not attached to the tree (whitespace, `:`, `;`, `{`, `}`, ...): the arena allocates about half the nodes. `arena.recycle(id)` reuses the id of a detached leaf node
+- [x] the initial arena capacity is one node for every 4 bytes of css
+- [x] the successful validations of declaration values are cached per arena: a value is validated once per property syntax
+- [x] validation allocates less: the validation context is a class, the options are not copied, `matchAllSyntaxes()` passes its result object to the matching functions
+- [x] the syntax definitions are tokenized by character code (no per character strings, regular expressions or position copies)
+
 # 1.8.2
 
 remove left over console debug

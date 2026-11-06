@@ -7,7 +7,7 @@ import type {
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
 import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../lib/ast/types.ts";
 import type { CssVariableToken, Token } from "./token.d.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
@@ -69,11 +69,9 @@ export interface ValidationOptions {
     nestedRule?: boolean;
 
     /**
-     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
-     *
-     * see {@link ValidationLevel}
+     * Enable CSS validation
      */
-    validation?: boolean | ValidationLevel;
+    validation?: boolean;
 
     /**
      * Lenient validation. retain nodes that failed validation

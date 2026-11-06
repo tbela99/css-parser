@@ -14,7 +14,6 @@ import type {
     TransformResult,
     TransformSyncOptions,
 } from "./@types/index.d.ts";
-import { deprecate } from "node:util";
 import { Readable } from "node:stream";
 import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
@@ -62,7 +61,6 @@ export { replaceNodeOrValue, replaceNode } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
     ColorType,
-    ValidationLevel,
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
@@ -197,38 +195,6 @@ export function render(
         mapping,
     );
 }
-
-/**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @see {@link parse}
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-
-export const parseFile = deprecate(
-    async (file: string, options: ParserOptions = {}, asStream: boolean = false) =>
-        parse({ file, asStream, ...options }),
-    "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})",
-) as (file: string, options?: ParserOptions, asStream?: boolean) => Promise<ParseResult>;
 
 /**
  * Parse CSS string
@@ -700,41 +666,6 @@ export async function parse(
             : parseResult(result, options),
     );
 }
-
-/**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated Use transform() instead.
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-
-export const transformFile = deprecate(
-    async (file: string, options: TransformOptions = {}, asStream: boolean = false) =>
-        transform({
-            file,
-            asStream,
-            ...options,
-        }),
-    "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})",
-) as (file: string, options?: TransformOptions, asStream?: boolean) => Promise<TransformResult>;
 
 /**
  * Transform CSS

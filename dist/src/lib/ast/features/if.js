@@ -206,13 +206,13 @@ function processNode(arena, declarationNode, cache, parent = 0) {
         }
         // the node is substituted: release it unless it is the node being replaced
         if (astNode != declarationNode) {
-            arena.release(astNode);
+            arena.detach(astNode);
         }
     }
     if (result.length > 0 && arena.parents[declarationNode] != 0) {
         replaceNode(arena, declarationNode, result);
         if (!result.includes(declarationNode)) {
-            arena.release(declarationNode);
+            arena.detach(declarationNode);
         }
     }
     // else remove node?

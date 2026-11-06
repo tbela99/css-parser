@@ -10,7 +10,7 @@ export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
 export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
@@ -112,34 +112,6 @@ function render(arena, data, options = {}, mapping) {
             ? self.location.pathname
             : dirname(self.location.pathname),
     }), mapping);
-}
-/**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser/web';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-async function parseFile(file, options = {}, asStream = false) {
-    console.warn("DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
-    return parse({ file, asStream, ...options });
 }
 /**
  * Parse CSS
@@ -338,36 +310,6 @@ async function parse(...args) {
         : parseResult(result, options));
 }
 /**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * Example:
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser/web';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-async function transformFile(file, options = {}, asStream = false) {
-    console.error("DeprecationWarning: transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
-    return transform({
-        file,
-        asStream,
-        ...options,
-    });
-}
-/**
  * Transform CSS
  *
  * Example:
@@ -437,4 +379,4 @@ async function transform(...args) {
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseSync, render, resolve, transform, transformSync };

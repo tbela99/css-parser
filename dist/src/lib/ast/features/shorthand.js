@@ -31,13 +31,9 @@ class ComputeShorthandFeature {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;
         }
-        const children = arena.children(ast);
-        const j = children.length;
-        let k = 0;
-        let l;
-        const rules = [];
-        const declarations = [];
+        const list = new PropertyList(arena, options);
         let doNotSort = false;
+        let hasDeclarations = false;
         if (arena.dataTypes[ast] == EnumToken.AtRuleNodeType) {
             switch (arena.strings[arena.name[ast]]) {
                 case "function":
@@ -46,50 +42,39 @@ class ComputeShorthandFeature {
                     break;
             }
         }
-        // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
-        if (doNotSort) {
-            for (const node of children) {
-                declarations.push(node);
-            }
-        }
-        else {
-            for (; k < j; k++) {
-                l = k;
-                // capture comments with the next token
-                while (l + 1 < j) {
-                    const node = children[l];
-                    if (arena.dataTypes[node] == EnumToken.CommentNodeType) {
-                        l++;
-                        continue;
-                    }
-                    break;
+        // the declarations (with their leading comments) are moved into the property list,
+        // the rules (with their leading comments) stay in place
+        let child = arena.firstChild[ast];
+        while (child != 0) {
+            let last = child;
+            if (!doNotSort) {
+                // capture comments with the next node
+                while (arena.nextSibling[last] != 0 && arena.dataTypes[last] == EnumToken.CommentNodeType) {
+                    last = arena.nextSibling[last];
                 }
-                const node = children[l];
-                if (arena.dataTypes[node] == EnumToken.DeclarationNodeType) {
-                    for (let m = k; m <= l; m++) {
-                        declarations.push(children[m]);
-                    }
+            }
+            const next = arena.nextSibling[last];
+            // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+            if (doNotSort || arena.dataTypes[last] == EnumToken.DeclarationNodeType) {
+                hasDeclarations = true;
+                for (let node = child; node != next;) {
+                    const nextNode = arena.nextSibling[node];
+                    arena.detach(node);
+                    list.addDeclaration(node);
+                    node = nextNode;
+                }
+            }
+            child = next;
+        }
+        if (hasDeclarations) {
+            // the declarations are inserted before the rules
+            const first = arena.firstChild[ast];
+            for (const node of list) {
+                if (first == 0) {
+                    arena.appendChild(ast, node);
                 }
                 else {
-                    for (let m = k; m <= l; m++) {
-                        rules.push(children[m]);
-                    }
-                }
-                k = l;
-            }
-        }
-        if (declarations.length > 0) {
-            const first = arena.current + 1;
-            arena.setChildren(ast, ...new PropertyList(arena, options).add(declarations), ...rules);
-            // release the dropped declarations and the temporary nodes
-            for (const node of children) {
-                if (arena.parents[node] == 0) {
-                    arena.release(node);
-                }
-            }
-            for (let node = first; node <= arena.current; node++) {
-                if (arena.parents[node] == 0) {
-                    arena.release(node);
+                    arena.insertBefore(first, node);
                 }
             }
         }

@@ -1,6 +1,5 @@
 'use strict';
 
-var node_util = require('node:util');
 var node_stream = require('node:stream');
 var node_fs = require('node:fs');
 var promises = require('node:fs/promises');
@@ -81,752 +80,727 @@ exports.EnumAstNodeStatus = void 0;
      * the node has a source location
      */
     EnumAstNodeStatus[EnumAstNodeStatus["HasLocation"] = 262144] = "HasLocation";
+    /**
+     * the node is marked to be released or trimmed. see `arena.mark()`, `arena.release()` and `arena.trim()`
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Marked"] = 524288] = "Marked";
+    /**
+     * transient flag used while comparing the declarations of two rules
+     * @private
+     */
+    EnumAstNodeStatus[EnumAstNodeStatus["Matched"] = 1048576] = "Matched";
 })(exports.EnumAstNodeStatus || (exports.EnumAstNodeStatus = {}));
-/**
- * Enum of validation levels
- * @deprecated
- */
-exports.ValidationLevel = void 0;
-(function (ValidationLevel) {
-    /**
-     * disable validation
-     */
-    ValidationLevel[ValidationLevel["None"] = 0] = "None";
-    /**
-     * validate selectors
-     */
-    ValidationLevel[ValidationLevel["Selector"] = 1] = "Selector";
-    /**
-     * validate at-rules
-     */
-    ValidationLevel[ValidationLevel["AtRule"] = 2] = "AtRule";
-    /**
-     * validate declarations
-     */
-    ValidationLevel[ValidationLevel["Declaration"] = 4] = "Declaration";
-    /**
-     * validate selectors and at-rules
-     */
-    ValidationLevel[ValidationLevel["Default"] = 3] = "Default";
-    /**
-     * validate selectors, at-rules and declarations
-     */
-    ValidationLevel[ValidationLevel["All"] = 7] = "All";
-    /**
-     * Report only. Apply validation and report nodes that are marked as invalid
-     */
-    ValidationLevel[ValidationLevel["ReportOnly"] = 8] = "ReportOnly";
-})(exports.ValidationLevel || (exports.ValidationLevel = {}));
 /**
  * Enum of all token types
  */
 exports.EnumToken = void 0;
 (function (EnumToken) {
     /**
-     * comment token
+     * comment token. the value 0 is reserved: it is the type of the null node (id 0) and of unset nodes,
+     * so that reading the type of a missing node never matches a real token type
      */
-    EnumToken[EnumToken["CommentTokenType"] = 0] = "CommentTokenType";
+    EnumToken[EnumToken["CommentTokenType"] = 1] = "CommentTokenType";
     /**
      * cdata section token
      */
-    EnumToken[EnumToken["CDOCOMMTokenType"] = 1] = "CDOCOMMTokenType";
+    EnumToken[EnumToken["CDOCOMMTokenType"] = 2] = "CDOCOMMTokenType";
     /**
      * style sheet node type
      */
-    EnumToken[EnumToken["StyleSheetNodeType"] = 2] = "StyleSheetNodeType";
+    EnumToken[EnumToken["StyleSheetNodeType"] = 3] = "StyleSheetNodeType";
     /**
      * at-rule node type
      */
-    EnumToken[EnumToken["AtRuleNodeType"] = 3] = "AtRuleNodeType";
+    EnumToken[EnumToken["AtRuleNodeType"] = 4] = "AtRuleNodeType";
     /**
      * rule node type
      */
-    EnumToken[EnumToken["RuleNodeType"] = 4] = "RuleNodeType";
+    EnumToken[EnumToken["RuleNodeType"] = 5] = "RuleNodeType";
     /**
      * declaration node type
      */
-    EnumToken[EnumToken["DeclarationNodeType"] = 5] = "DeclarationNodeType";
+    EnumToken[EnumToken["DeclarationNodeType"] = 6] = "DeclarationNodeType";
     /**
      * literal token type
      */
-    EnumToken[EnumToken["LiteralTokenType"] = 6] = "LiteralTokenType";
+    EnumToken[EnumToken["LiteralTokenType"] = 7] = "LiteralTokenType";
     /**
      * identifier token type
      */
-    EnumToken[EnumToken["IdenTokenType"] = 7] = "IdenTokenType";
+    EnumToken[EnumToken["IdenTokenType"] = 8] = "IdenTokenType";
     /**
      * dashed identifier token type
      */
-    EnumToken[EnumToken["DashedIdenTokenType"] = 8] = "DashedIdenTokenType";
+    EnumToken[EnumToken["DashedIdenTokenType"] = 9] = "DashedIdenTokenType";
     /**
      * comma token type
      */
-    EnumToken[EnumToken["CommaTokenType"] = 9] = "CommaTokenType";
+    EnumToken[EnumToken["CommaTokenType"] = 10] = "CommaTokenType";
     /**
      * colon token type
      */
-    EnumToken[EnumToken["ColonTokenType"] = 10] = "ColonTokenType";
+    EnumToken[EnumToken["ColonTokenType"] = 11] = "ColonTokenType";
     /**
      * semicolon token type
      */
-    EnumToken[EnumToken["SemiColonTokenType"] = 11] = "SemiColonTokenType";
+    EnumToken[EnumToken["SemiColonTokenType"] = 12] = "SemiColonTokenType";
     /**
      * number token type
      */
-    EnumToken[EnumToken["NumberTokenType"] = 12] = "NumberTokenType";
+    EnumToken[EnumToken["NumberTokenType"] = 13] = "NumberTokenType";
     /**
      * at-rule token type
      */
-    EnumToken[EnumToken["AtRuleTokenType"] = 13] = "AtRuleTokenType";
+    EnumToken[EnumToken["AtRuleTokenType"] = 14] = "AtRuleTokenType";
     /**
      * percentage token type
      */
-    EnumToken[EnumToken["PercentageTokenType"] = 14] = "PercentageTokenType";
+    EnumToken[EnumToken["PercentageTokenType"] = 15] = "PercentageTokenType";
     /**
      * function token type
      */
-    EnumToken[EnumToken["FunctionTokenType"] = 15] = "FunctionTokenType";
+    EnumToken[EnumToken["FunctionTokenType"] = 16] = "FunctionTokenType";
     /**
      * timeline function token type
      */
-    EnumToken[EnumToken["TimelineFunctionTokenType"] = 16] = "TimelineFunctionTokenType";
+    EnumToken[EnumToken["TimelineFunctionTokenType"] = 17] = "TimelineFunctionTokenType";
     /**
      * timing function token type
      */
-    EnumToken[EnumToken["TimingFunctionTokenType"] = 17] = "TimingFunctionTokenType";
+    EnumToken[EnumToken["TimingFunctionTokenType"] = 18] = "TimingFunctionTokenType";
     /**
      * url function token type
      */
-    EnumToken[EnumToken["UrlFunctionTokenType"] = 18] = "UrlFunctionTokenType";
+    EnumToken[EnumToken["UrlFunctionTokenType"] = 19] = "UrlFunctionTokenType";
     /**
      * image function token type
      */
-    EnumToken[EnumToken["ImageFunctionTokenType"] = 19] = "ImageFunctionTokenType";
+    EnumToken[EnumToken["ImageFunctionTokenType"] = 20] = "ImageFunctionTokenType";
     /**
      * string token type
      */
-    EnumToken[EnumToken["StringTokenType"] = 20] = "StringTokenType";
+    EnumToken[EnumToken["StringTokenType"] = 21] = "StringTokenType";
     /**
      * unclosed string token type
      */
-    EnumToken[EnumToken["UnclosedStringTokenType"] = 21] = "UnclosedStringTokenType";
+    EnumToken[EnumToken["UnclosedStringTokenType"] = 22] = "UnclosedStringTokenType";
     /**
      * dimension token type
      */
-    EnumToken[EnumToken["DimensionTokenType"] = 22] = "DimensionTokenType";
+    EnumToken[EnumToken["DimensionTokenType"] = 23] = "DimensionTokenType";
     /**
      * length token type
      */
-    EnumToken[EnumToken["LengthTokenType"] = 23] = "LengthTokenType";
+    EnumToken[EnumToken["LengthTokenType"] = 24] = "LengthTokenType";
     /**
      * angle token type
      */
-    EnumToken[EnumToken["AngleTokenType"] = 24] = "AngleTokenType";
+    EnumToken[EnumToken["AngleTokenType"] = 25] = "AngleTokenType";
     /**
      * time token type
      */
-    EnumToken[EnumToken["TimeTokenType"] = 25] = "TimeTokenType";
+    EnumToken[EnumToken["TimeTokenType"] = 26] = "TimeTokenType";
     /**
      * frequency token type
      */
-    EnumToken[EnumToken["FrequencyTokenType"] = 26] = "FrequencyTokenType";
+    EnumToken[EnumToken["FrequencyTokenType"] = 27] = "FrequencyTokenType";
     /**
      * resolution token type
      */
-    EnumToken[EnumToken["ResolutionTokenType"] = 27] = "ResolutionTokenType";
+    EnumToken[EnumToken["ResolutionTokenType"] = 28] = "ResolutionTokenType";
     /**
      * hash token type
      */
-    EnumToken[EnumToken["HashTokenType"] = 28] = "HashTokenType";
+    EnumToken[EnumToken["HashTokenType"] = 29] = "HashTokenType";
     /**
      * block start token type
      */
-    EnumToken[EnumToken["BlockStartTokenType"] = 29] = "BlockStartTokenType";
+    EnumToken[EnumToken["BlockStartTokenType"] = 30] = "BlockStartTokenType";
     /**
      * block end token type
      */
-    EnumToken[EnumToken["BlockEndTokenType"] = 30] = "BlockEndTokenType";
+    EnumToken[EnumToken["BlockEndTokenType"] = 31] = "BlockEndTokenType";
     /**
      * attribute start token type
      */
-    EnumToken[EnumToken["AttrStartTokenType"] = 31] = "AttrStartTokenType";
+    EnumToken[EnumToken["AttrStartTokenType"] = 32] = "AttrStartTokenType";
     /**
      * attribute end token type
      */
-    EnumToken[EnumToken["AttrEndTokenType"] = 32] = "AttrEndTokenType";
+    EnumToken[EnumToken["AttrEndTokenType"] = 33] = "AttrEndTokenType";
     /**
      * start parentheses token type
      */
-    EnumToken[EnumToken["StartParensTokenType"] = 33] = "StartParensTokenType";
+    EnumToken[EnumToken["StartParensTokenType"] = 34] = "StartParensTokenType";
     /**
      * end parentheses token type
      */
-    EnumToken[EnumToken["EndParensTokenType"] = 34] = "EndParensTokenType";
+    EnumToken[EnumToken["EndParensTokenType"] = 35] = "EndParensTokenType";
     /**
      * parentheses token type
      */
-    EnumToken[EnumToken["ParensTokenType"] = 35] = "ParensTokenType";
+    EnumToken[EnumToken["ParensTokenType"] = 36] = "ParensTokenType";
     /**
      * whitespace token type
      */
-    EnumToken[EnumToken["WhitespaceTokenType"] = 36] = "WhitespaceTokenType";
+    EnumToken[EnumToken["WhitespaceTokenType"] = 37] = "WhitespaceTokenType";
     /**
      * include match token type
      */
-    EnumToken[EnumToken["IncludeMatchTokenType"] = 37] = "IncludeMatchTokenType";
+    EnumToken[EnumToken["IncludeMatchTokenType"] = 38] = "IncludeMatchTokenType";
     /**
      * dash match token type
      */
-    EnumToken[EnumToken["DashMatchTokenType"] = 38] = "DashMatchTokenType";
+    EnumToken[EnumToken["DashMatchTokenType"] = 39] = "DashMatchTokenType";
     /**
      * equal match token type
      */
-    EnumToken[EnumToken["EqualMatchTokenType"] = 39] = "EqualMatchTokenType";
+    EnumToken[EnumToken["EqualMatchTokenType"] = 40] = "EqualMatchTokenType";
     /**
      * less than token type
      */
-    EnumToken[EnumToken["LtTokenType"] = 40] = "LtTokenType";
+    EnumToken[EnumToken["LtTokenType"] = 41] = "LtTokenType";
     /**
      * less than or equal to token type
      */
-    EnumToken[EnumToken["LteTokenType"] = 41] = "LteTokenType";
+    EnumToken[EnumToken["LteTokenType"] = 42] = "LteTokenType";
     /**
      * greater than token type
      */
-    EnumToken[EnumToken["GtTokenType"] = 42] = "GtTokenType";
+    EnumToken[EnumToken["GtTokenType"] = 43] = "GtTokenType";
     /**
      * greater than or equal to token type
      */
-    EnumToken[EnumToken["GteTokenType"] = 43] = "GteTokenType";
+    EnumToken[EnumToken["GteTokenType"] = 44] = "GteTokenType";
     /**
      * pseudo-class token type
      */
-    EnumToken[EnumToken["PseudoClassTokenType"] = 44] = "PseudoClassTokenType";
+    EnumToken[EnumToken["PseudoClassTokenType"] = 45] = "PseudoClassTokenType";
     /**
      * pseudo-class function token type
      */
-    EnumToken[EnumToken["PseudoClassFuncTokenType"] = 45] = "PseudoClassFuncTokenType";
+    EnumToken[EnumToken["PseudoClassFuncTokenType"] = 46] = "PseudoClassFuncTokenType";
     /**
      * delimiter token type
      */
-    EnumToken[EnumToken["DelimTokenType"] = 46] = "DelimTokenType";
+    EnumToken[EnumToken["DelimTokenType"] = 47] = "DelimTokenType";
     /**
      * URL token type
      */
-    EnumToken[EnumToken["UrlTokenTokenType"] = 47] = "UrlTokenTokenType";
+    EnumToken[EnumToken["UrlTokenTokenType"] = 48] = "UrlTokenTokenType";
     /**
      * end of file token type
      */
-    EnumToken[EnumToken["EOFTokenType"] = 48] = "EOFTokenType";
+    EnumToken[EnumToken["EOFTokenType"] = 49] = "EOFTokenType";
     /**
      * important token type
      */
-    EnumToken[EnumToken["ImportantTokenType"] = 49] = "ImportantTokenType";
+    EnumToken[EnumToken["ImportantTokenType"] = 50] = "ImportantTokenType";
     /**
      * color token type
      */
-    EnumToken[EnumToken["ColorTokenType"] = 50] = "ColorTokenType";
+    EnumToken[EnumToken["ColorTokenType"] = 51] = "ColorTokenType";
     /**
      * attribute token type
      */
-    EnumToken[EnumToken["AttrTokenType"] = 51] = "AttrTokenType";
+    EnumToken[EnumToken["AttrTokenType"] = 52] = "AttrTokenType";
     /**
      * bad comment token type
      */
-    EnumToken[EnumToken["BadCommentTokenType"] = 52] = "BadCommentTokenType";
+    EnumToken[EnumToken["BadCommentTokenType"] = 53] = "BadCommentTokenType";
     /**
      * bad cdo token type
      */
-    EnumToken[EnumToken["BadCdoTokenType"] = 53] = "BadCdoTokenType";
+    EnumToken[EnumToken["BadCdoTokenType"] = 54] = "BadCdoTokenType";
     /**
      * bad URL token type
      */
-    EnumToken[EnumToken["BadUrlTokenType"] = 54] = "BadUrlTokenType";
+    EnumToken[EnumToken["BadUrlTokenType"] = 55] = "BadUrlTokenType";
     /**
      * bad string token type
      */
-    EnumToken[EnumToken["BadStringTokenType"] = 55] = "BadStringTokenType";
+    EnumToken[EnumToken["BadStringTokenType"] = 56] = "BadStringTokenType";
     /**
      * binary expression token type
      */
-    EnumToken[EnumToken["BinaryExpressionTokenType"] = 56] = "BinaryExpressionTokenType";
+    EnumToken[EnumToken["BinaryExpressionTokenType"] = 57] = "BinaryExpressionTokenType";
     /**
      * unary expression token type
      */
-    EnumToken[EnumToken["UnaryExpressionTokenType"] = 57] = "UnaryExpressionTokenType";
+    EnumToken[EnumToken["UnaryExpressionTokenType"] = 58] = "UnaryExpressionTokenType";
     /**
      * flex token type
      */
-    EnumToken[EnumToken["FlexTokenType"] = 58] = "FlexTokenType";
+    EnumToken[EnumToken["FlexTokenType"] = 59] = "FlexTokenType";
     /**
      *  token list token type
      */
-    EnumToken[EnumToken["ListToken"] = 59] = "ListToken";
+    EnumToken[EnumToken["ListToken"] = 60] = "ListToken";
     /* arithmetic tokens */
     /**
      * addition token type
      */
-    EnumToken[EnumToken["Add"] = 60] = "Add";
+    EnumToken[EnumToken["Add"] = 61] = "Add";
     /**
      * multiplication token type
      */
-    EnumToken[EnumToken["Mul"] = 61] = "Mul";
+    EnumToken[EnumToken["Mul"] = 62] = "Mul";
     /**
      * division token type
      */
-    EnumToken[EnumToken["Div"] = 62] = "Div";
+    EnumToken[EnumToken["Div"] = 63] = "Div";
     /**
      * subtraction token type
      */
-    EnumToken[EnumToken["Sub"] = 63] = "Sub";
+    EnumToken[EnumToken["Sub"] = 64] = "Sub";
     /* new tokens */
     /**
      * column combinator token type
      */
-    EnumToken[EnumToken["ColumnCombinatorTokenType"] = 64] = "ColumnCombinatorTokenType";
+    EnumToken[EnumToken["ColumnCombinatorTokenType"] = 65] = "ColumnCombinatorTokenType";
     /**
      * contain match token type
      */
-    EnumToken[EnumToken["ContainMatchTokenType"] = 65] = "ContainMatchTokenType";
+    EnumToken[EnumToken["ContainMatchTokenType"] = 66] = "ContainMatchTokenType";
     /**
      * start match token type
      */
-    EnumToken[EnumToken["StartMatchTokenType"] = 66] = "StartMatchTokenType";
+    EnumToken[EnumToken["StartMatchTokenType"] = 67] = "StartMatchTokenType";
     /**
      * end match token type
      */
-    EnumToken[EnumToken["EndMatchTokenType"] = 67] = "EndMatchTokenType";
+    EnumToken[EnumToken["EndMatchTokenType"] = 68] = "EndMatchTokenType";
     /**
      * match expression token type
      */
-    EnumToken[EnumToken["MatchExpressionTokenType"] = 68] = "MatchExpressionTokenType";
+    EnumToken[EnumToken["MatchExpressionTokenType"] = 69] = "MatchExpressionTokenType";
     /**
      * namespace attribute token type
      */
-    EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 69] = "NameSpaceAttributeTokenType";
+    EnumToken[EnumToken["NameSpaceAttributeTokenType"] = 70] = "NameSpaceAttributeTokenType";
     /**
      * fraction token type
      */
-    EnumToken[EnumToken["FractionTokenType"] = 70] = "FractionTokenType";
+    EnumToken[EnumToken["FractionTokenType"] = 71] = "FractionTokenType";
     /**
      * identifier list token type
      */
-    EnumToken[EnumToken["IdenListTokenType"] = 71] = "IdenListTokenType";
+    EnumToken[EnumToken["IdenListTokenType"] = 72] = "IdenListTokenType";
     /**
      * grid template function token type
      */
-    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 72] = "GridTemplateFuncTokenType";
+    EnumToken[EnumToken["GridTemplateFuncTokenType"] = 73] = "GridTemplateFuncTokenType";
     /**
      * keyframe rule node type
      */
-    EnumToken[EnumToken["KeyframesRuleNodeType"] = 73] = "KeyframesRuleNodeType";
+    EnumToken[EnumToken["KeyframesRuleNodeType"] = 74] = "KeyframesRuleNodeType";
     /**
      * class selector token type
      */
-    EnumToken[EnumToken["ClassSelectorTokenType"] = 74] = "ClassSelectorTokenType";
+    EnumToken[EnumToken["ClassSelectorTokenType"] = 75] = "ClassSelectorTokenType";
     /**
      * universal selector token type
      */
-    EnumToken[EnumToken["UniversalSelectorTokenType"] = 75] = "UniversalSelectorTokenType";
+    EnumToken[EnumToken["UniversalSelectorTokenType"] = 76] = "UniversalSelectorTokenType";
     /**
      * child combinator token type
      */
-    EnumToken[EnumToken["ChildCombinatorTokenType"] = 76] = "ChildCombinatorTokenType";
+    EnumToken[EnumToken["ChildCombinatorTokenType"] = 77] = "ChildCombinatorTokenType";
     /**
      * descendant combinator token type
      */
-    EnumToken[EnumToken["DescendantCombinatorTokenType"] = 77] = "DescendantCombinatorTokenType";
+    EnumToken[EnumToken["DescendantCombinatorTokenType"] = 78] = "DescendantCombinatorTokenType";
     /**
      * next sibling combinator token type
      */
-    EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 78] = "NextSiblingCombinatorTokenType";
+    EnumToken[EnumToken["NextSiblingCombinatorTokenType"] = 79] = "NextSiblingCombinatorTokenType";
     /**
      * subsequent sibling combinator token type
      */
-    EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 79] = "SubsequentSiblingCombinatorTokenType";
+    EnumToken[EnumToken["SubsequentSiblingCombinatorTokenType"] = 80] = "SubsequentSiblingCombinatorTokenType";
     /**
      * nesting selector token type
      */
-    EnumToken[EnumToken["NestingSelectorTokenType"] = 80] = "NestingSelectorTokenType";
+    EnumToken[EnumToken["NestingSelectorTokenType"] = 81] = "NestingSelectorTokenType";
     /**
      * Invalid rule token type
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidRuleNodeType"] = 81] = "InvalidRuleNodeType";
+    EnumToken[EnumToken["InvalidRuleNodeType"] = 82] = "InvalidRuleNodeType";
     /**
      * invalid class selector token type
      */
-    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 82] = "InvalidClassSelectorTokenType";
+    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 83] = "InvalidClassSelectorTokenType";
     /**
      * invalid attribute token type
      */
-    EnumToken[EnumToken["InvalidAttrTokenType"] = 83] = "InvalidAttrTokenType";
+    EnumToken[EnumToken["InvalidAttrTokenType"] = 84] = "InvalidAttrTokenType";
     /**
      * Invalid at rule token type
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 84] = "InvalidAtRuleNodeType";
+    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 85] = "InvalidAtRuleNodeType";
     /**
      * media query condition token type
      */
-    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 85] = "MediaQueryConditionTokenType";
+    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 86] = "MediaQueryConditionTokenType";
     /**
      * media feature token type
      */
-    EnumToken[EnumToken["MediaFeatureTokenType"] = 86] = "MediaFeatureTokenType";
+    EnumToken[EnumToken["MediaFeatureTokenType"] = 87] = "MediaFeatureTokenType";
     /**
      * media feature only token type
      */
-    EnumToken[EnumToken["OnlyTokenType"] = 87] = "OnlyTokenType";
+    EnumToken[EnumToken["OnlyTokenType"] = 88] = "OnlyTokenType";
     /**
      * media feature not token type
      */
-    EnumToken[EnumToken["NotTokenType"] = 88] = "NotTokenType";
+    EnumToken[EnumToken["NotTokenType"] = 89] = "NotTokenType";
     /**
      * media feature and token type
      */
-    EnumToken[EnumToken["AndTokenType"] = 89] = "AndTokenType";
+    EnumToken[EnumToken["AndTokenType"] = 90] = "AndTokenType";
     /**
      * media feature or token type
      */
-    EnumToken[EnumToken["OrTokenType"] = 90] = "OrTokenType";
+    EnumToken[EnumToken["OrTokenType"] = 91] = "OrTokenType";
     /**
      * pseudo page token type
      */
-    EnumToken[EnumToken["PseudoPageTokenType"] = 91] = "PseudoPageTokenType";
+    EnumToken[EnumToken["PseudoPageTokenType"] = 92] = "PseudoPageTokenType";
     /**
      * pseudo element token type
      */
-    EnumToken[EnumToken["PseudoElementTokenType"] = 92] = "PseudoElementTokenType";
+    EnumToken[EnumToken["PseudoElementTokenType"] = 93] = "PseudoElementTokenType";
     /**
      * keyframe at rule node type
      */
-    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 93] = "KeyframesAtRuleNodeType";
+    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 94] = "KeyframesAtRuleNodeType";
     /**
      * invalid declaration node type.
      * @deprecated
      */
-    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 94] = "InvalidDeclarationNodeType";
+    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 95] = "InvalidDeclarationNodeType";
     /* css module nodes */
     /**
      * composes token node type
      */
-    EnumToken[EnumToken["ComposesSelectorNodeType"] = 95] = "ComposesSelectorNodeType";
+    EnumToken[EnumToken["ComposesSelectorNodeType"] = 96] = "ComposesSelectorNodeType";
     /**
      * css variable token type
      */
-    EnumToken[EnumToken["CssVariableTokenType"] = 96] = "CssVariableTokenType";
+    EnumToken[EnumToken["CssVariableTokenType"] = 97] = "CssVariableTokenType";
     /**
      * css variable import token type
      */
-    EnumToken[EnumToken["CssVariableImportTokenType"] = 97] = "CssVariableImportTokenType";
+    EnumToken[EnumToken["CssVariableImportTokenType"] = 98] = "CssVariableImportTokenType";
     /**
      * css variable declaration map token type
      */
-    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 98] = "CssVariableDeclarationMapTokenType";
+    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 99] = "CssVariableDeclarationMapTokenType";
     /**
      * media range query token type
      */
-    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 99] = "MediaRangeQueryTokenType";
+    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 100] = "MediaRangeQueryTokenType";
     /**
      * invalid media query token type
      */
-    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 100] = "InvalidMediaQueryTokenType";
+    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 101] = "InvalidMediaQueryTokenType";
     /**
      * supports query condition token type
      */
-    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 101] = "SupportsQueryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 102] = "SupportsQueryConditionTokenType";
     /**
      * supports query unary condition token type
      */
-    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 102] = "SupportsQueryUnaryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 103] = "SupportsQueryUnaryConditionTokenType";
     /**
      * when else query condition token type
      */
-    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 103] = "WhenElseQueryConditionTokenType";
+    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 104] = "WhenElseQueryConditionTokenType";
     /**
      * when else query unary condition token type
      */
-    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 104] = "WhenElseUnaryConditionTokenType";
+    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 105] = "WhenElseUnaryConditionTokenType";
     /**
      * container style range token type
      */
-    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 105] = "ContainerStyleRangeTokenType";
+    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 106] = "ContainerStyleRangeTokenType";
     /**
      * '*'
      */
-    EnumToken[EnumToken["Star"] = 106] = "Star";
+    EnumToken[EnumToken["Star"] = 107] = "Star";
     /**
      * '+'
      */
-    EnumToken[EnumToken["Plus"] = 107] = "Plus";
+    EnumToken[EnumToken["Plus"] = 108] = "Plus";
     /**
      * '~'
      */
-    EnumToken[EnumToken["Tilda"] = 108] = "Tilda";
+    EnumToken[EnumToken["Tilda"] = 109] = "Tilda";
     /**
      * '|'
      */
-    EnumToken[EnumToken["PipeTokenType"] = 109] = "PipeTokenType";
+    EnumToken[EnumToken["PipeTokenType"] = 110] = "PipeTokenType";
     /**
      * '::'
      */
-    EnumToken[EnumToken["DoubleColonTokenType"] = 110] = "DoubleColonTokenType";
+    EnumToken[EnumToken["DoubleColonTokenType"] = 111] = "DoubleColonTokenType";
     /**
      * math function token type  such as'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenType"] = 111] = "MathFunctionTokenType";
+    EnumToken[EnumToken["MathFunctionTokenType"] = 112] = "MathFunctionTokenType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenType"] = 112] = "TransformFunctionTokenType";
+    EnumToken[EnumToken["TransformFunctionTokenType"] = 113] = "TransformFunctionTokenType";
     /**
      * when function token type such as 'supports(' etc.
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 113] = "WhenElseFunctionTokenType";
+    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 114] = "WhenElseFunctionTokenType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 114] = "GeneralEnclosedFunctionTokenType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 115] = "GeneralEnclosedFunctionTokenType";
     /**
      * supports function token type such as 'at-rule('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenType"] = 115] = "SupportsFunctionTokenType";
+    EnumToken[EnumToken["SupportsFunctionTokenType"] = 116] = "SupportsFunctionTokenType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenType"] = 116] = "ContainerFunctionTokenType";
+    EnumToken[EnumToken["ContainerFunctionTokenType"] = 117] = "ContainerFunctionTokenType";
     /**
      * unrecognized node token type
      */
-    EnumToken[EnumToken["RawNodeTokenType"] = 117] = "RawNodeTokenType";
+    EnumToken[EnumToken["RawNodeTokenType"] = 118] = "RawNodeTokenType";
     /**
      * media query boolean token type
      * at-rule media not ()
      * at-rule media only ()
      */
-    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 118] = "MediaQueryUnaryFeatureTokenType";
+    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 119] = "MediaQueryUnaryFeatureTokenType";
     /**
      * grid template function token type such as 'minmax('
      */
-    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 119] = "GridTemplateFuncTokenDefType";
+    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 120] = "GridTemplateFuncTokenDefType";
     /**
      * image function token type such as 'image(' etc.
      */
-    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 120] = "ImageFunctionTokenDefType";
+    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 121] = "ImageFunctionTokenDefType";
     /**
      * function token type such as 'view(' etc.
      */
-    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 121] = "TimelineFunctionTokenDefType";
+    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 122] = "TimelineFunctionTokenDefType";
     /**
      * function token type
      */
-    EnumToken[EnumToken["FunctionTokenDefType"] = 122] = "FunctionTokenDefType";
+    EnumToken[EnumToken["FunctionTokenDefType"] = 123] = "FunctionTokenDefType";
     /**
      * timing function token type such as 'linear(' etc.
      */
-    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 123] = "TimingFunctionTokenDefType";
+    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 124] = "TimingFunctionTokenDefType";
     /**
      * color function token type such as 'rgb(' etc.
      */
-    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 124] = "ColorFunctionTokenDefType";
+    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 125] = "ColorFunctionTokenDefType";
     /**
      * math function token type such as 'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenDefType"] = 125] = "MathFunctionTokenDefType";
+    EnumToken[EnumToken["MathFunctionTokenDefType"] = 126] = "MathFunctionTokenDefType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 126] = "ContainerFunctionTokenDefType";
+    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 127] = "ContainerFunctionTokenDefType";
     /**
      * url function token type 'url('
      */
-    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 127] = "UrlFunctionTokenDefType";
+    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 128] = "UrlFunctionTokenDefType";
     /**
      * pseudo-class function token type
      */
-    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 128] = "PseudoClassFunctionTokenDefType";
+    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 129] = "PseudoClassFunctionTokenDefType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 129] = "TransformFunctionTokenDefType";
+    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 130] = "TransformFunctionTokenDefType";
     /**
      * when function token type such as 'supports(' or 'media('
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 130] = "WhenElseFunctionTokenDefType";
+    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 131] = "WhenElseFunctionTokenDefType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 131] = "GeneralEnclosedFunctionTokenDefType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 132] = "GeneralEnclosedFunctionTokenDefType";
     /**
      * supports function token type 'font-tech('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 132] = "SupportsFunctionTokenDefType";
+    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 133] = "SupportsFunctionTokenDefType";
     /**
      *  CDOCOMMTokenType not allowed in this context
      */
-    EnumToken[EnumToken["InvalidCommentTokenType"] = 133] = "InvalidCommentTokenType";
+    EnumToken[EnumToken["InvalidCommentTokenType"] = 134] = "InvalidCommentTokenType";
     /**
      * custom function token type '--function-name('
      */
-    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 134] = "CustomFunctionTokenDefType";
+    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 135] = "CustomFunctionTokenDefType";
     /**
      * custom function token type
      */
-    EnumToken[EnumToken["CustomFunctionTokenType"] = 135] = "CustomFunctionTokenType";
+    EnumToken[EnumToken["CustomFunctionTokenType"] = 136] = "CustomFunctionTokenType";
     /**
      * function tokens such as 'var(', 'env(', 'if(')
      */
-    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 136] = "WildCardFunctionTokenDefType";
+    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 137] = "WildCardFunctionTokenDefType";
     /**
      * function such as 'var()', 'env()', 'if()'
      */
-    EnumToken[EnumToken["WildCardFunctionTokenType"] = 137] = "WildCardFunctionTokenType";
+    EnumToken[EnumToken["WildCardFunctionTokenType"] = 138] = "WildCardFunctionTokenType";
     /**
      * if condition token
      */
-    EnumToken[EnumToken["IfConditionTokenType"] = 138] = "IfConditionTokenType";
+    EnumToken[EnumToken["IfConditionTokenType"] = 139] = "IfConditionTokenType";
     /**
      * if-Else condition token
      */
-    EnumToken[EnumToken["IfElseConditionTokenType"] = 139] = "IfElseConditionTokenType";
+    EnumToken[EnumToken["IfElseConditionTokenType"] = 140] = "IfElseConditionTokenType";
     /**
      * wrapped values token type like {Arial, sans-serif}
      */
-    EnumToken[EnumToken["WrappedValuesTokenType"] = 140] = "WrappedValuesTokenType";
+    EnumToken[EnumToken["WrappedValuesTokenType"] = 141] = "WrappedValuesTokenType";
     /**
      * list of arena tokens (binary expression operands)
      */
-    EnumToken[EnumToken["ListTokenType"] = 141] = "ListTokenType";
+    EnumToken[EnumToken["ListTokenType"] = 142] = "ListTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["NaNTokenType"] = 142] = "NaNTokenType";
+    EnumToken[EnumToken["NaNTokenType"] = 143] = "NaNTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["InfinityTokenType"] = 143] = "InfinityTokenType";
+    EnumToken[EnumToken["InfinityTokenType"] = 144] = "InfinityTokenType";
     /**
      * negative infinity token
      */
-    EnumToken[EnumToken["NegativeInfinityTokenType"] = 144] = "NegativeInfinityTokenType";
+    EnumToken[EnumToken["NegativeInfinityTokenType"] = 145] = "NegativeInfinityTokenType";
     /**
      * CSS type token
      */
-    EnumToken[EnumToken["CssTypeTokenType"] = 145] = "CssTypeTokenType";
+    EnumToken[EnumToken["CssTypeTokenType"] = 146] = "CssTypeTokenType";
     /**
      * user defined dimension token type
      */
-    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 146] = "UserDefinedDimensionTokenType";
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 147] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
      */
-    EnumToken[EnumToken["Time"] = 25] = "Time";
+    EnumToken[EnumToken["Time"] = 26] = "Time";
     /**
      * alias for identifier token type
      */
-    EnumToken[EnumToken["Iden"] = 7] = "Iden";
+    EnumToken[EnumToken["Iden"] = 8] = "Iden";
     /**
      * alias for end of file token type
      */
-    EnumToken[EnumToken["EOF"] = 48] = "EOF";
+    EnumToken[EnumToken["EOF"] = 49] = "EOF";
     /**
      * alias for hash token type
      */
-    EnumToken[EnumToken["Hash"] = 28] = "Hash";
+    EnumToken[EnumToken["Hash"] = 29] = "Hash";
     /**
      * alias for flex token type
      */
-    EnumToken[EnumToken["Flex"] = 58] = "Flex";
+    EnumToken[EnumToken["Flex"] = 59] = "Flex";
     /**
      * alias for angle token type
      */
-    EnumToken[EnumToken["Angle"] = 24] = "Angle";
+    EnumToken[EnumToken["Angle"] = 25] = "Angle";
     /**
      * alias for color token type
      */
-    EnumToken[EnumToken["Color"] = 50] = "Color";
+    EnumToken[EnumToken["Color"] = 51] = "Color";
     /**
      * alias for comma token type
      */
-    EnumToken[EnumToken["Comma"] = 9] = "Comma";
+    EnumToken[EnumToken["Comma"] = 10] = "Comma";
     /**
      * alias for string token type
      */
-    EnumToken[EnumToken["String"] = 20] = "String";
+    EnumToken[EnumToken["String"] = 21] = "String";
     /**
      * alias for length token type
      */
-    EnumToken[EnumToken["Length"] = 23] = "Length";
+    EnumToken[EnumToken["Length"] = 24] = "Length";
     /**
      * alias for number token type
      */
-    EnumToken[EnumToken["Number"] = 12] = "Number";
+    EnumToken[EnumToken["Number"] = 13] = "Number";
     /**
      * alias for percentage token type
      */
-    EnumToken[EnumToken["Perc"] = 14] = "Perc";
+    EnumToken[EnumToken["Perc"] = 15] = "Perc";
     /**
      * alias for literal token type
      */
-    EnumToken[EnumToken["Literal"] = 6] = "Literal";
+    EnumToken[EnumToken["Literal"] = 7] = "Literal";
     /**
      * alias for comment token type
      */
-    EnumToken[EnumToken["Comment"] = 0] = "Comment";
+    EnumToken[EnumToken["Comment"] = 1] = "Comment";
     /**
      * alias for url function token type
      */
-    EnumToken[EnumToken["UrlFunc"] = 18] = "UrlFunc";
+    EnumToken[EnumToken["UrlFunc"] = 19] = "UrlFunc";
     /**
      * alias for dimension token type
      */
-    EnumToken[EnumToken["Dimension"] = 22] = "Dimension";
+    EnumToken[EnumToken["Dimension"] = 23] = "Dimension";
     /**
      * alias for frequency token type
      */
-    EnumToken[EnumToken["Frequency"] = 26] = "Frequency";
+    EnumToken[EnumToken["Frequency"] = 27] = "Frequency";
     /**
      * alias for resolution token type
      */
-    EnumToken[EnumToken["Resolution"] = 27] = "Resolution";
+    EnumToken[EnumToken["Resolution"] = 28] = "Resolution";
     /**
      * alias for whitespace token type
      */
-    EnumToken[EnumToken["Whitespace"] = 36] = "Whitespace";
+    EnumToken[EnumToken["Whitespace"] = 37] = "Whitespace";
     /**
      * alias for identifier list token type
      */
-    EnumToken[EnumToken["IdenList"] = 71] = "IdenList";
+    EnumToken[EnumToken["IdenList"] = 72] = "IdenList";
     /**
      * alias for dashed identifier token type
      */
-    EnumToken[EnumToken["DashedIden"] = 8] = "DashedIden";
+    EnumToken[EnumToken["DashedIden"] = 9] = "DashedIden";
     /**
      * alias for grid template function token type
      */
-    EnumToken[EnumToken["GridTemplateFunc"] = 72] = "GridTemplateFunc";
+    EnumToken[EnumToken["GridTemplateFunc"] = 73] = "GridTemplateFunc";
     /**
      * alias for image function token type
      */
-    EnumToken[EnumToken["ImageFunc"] = 19] = "ImageFunc";
+    EnumToken[EnumToken["ImageFunc"] = 20] = "ImageFunc";
     /**
      * alias for comment node type
      */
-    EnumToken[EnumToken["CommentNodeType"] = 0] = "CommentNodeType";
+    EnumToken[EnumToken["CommentNodeType"] = 1] = "CommentNodeType";
     /**
      * alias for cdata section node type
      */
-    EnumToken[EnumToken["CDOCOMMNodeType"] = 1] = "CDOCOMMNodeType";
+    EnumToken[EnumToken["CDOCOMMNodeType"] = 2] = "CDOCOMMNodeType";
     /**
      * alias for timing function token type
      */
-    EnumToken[EnumToken["TimingFunction"] = 17] = "TimingFunction";
+    EnumToken[EnumToken["TimingFunction"] = 18] = "TimingFunction";
     /**
      * alias for timeline function token type
      */
-    EnumToken[EnumToken["TimelineFunction"] = 16] = "TimelineFunction";
+    EnumToken[EnumToken["TimelineFunction"] = 17] = "TimelineFunction";
 })(exports.EnumToken || (exports.EnumToken = {}));
 /**
  * Supported color types enum
@@ -1518,6 +1492,10 @@ class Arena {
      */
     current = 1;
     /**
+     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
+     */
+    freeList = 0;
+    /**
      * node EnumToken type array
      */
     dataTypes;
@@ -1693,11 +1671,38 @@ class Arena {
         this.errors = new Map(properties.errors);
     }
     allocate() {
-        const id = ++this.current;
-        if (this.current >= this.dataTypes.length) {
+        let id = this.freeList;
+        if (id != 0) {
+            // reuse a recycled node: its record is already zeroed, except the free list link
+            this.freeList = this.nextSibling[id];
+            this.nextSibling[id] = 0;
+            return id;
+        }
+        id = ++this.current;
+        if (id >= this.dataTypes.length) {
             this.resize(this.dataTypes.length * 2);
         }
         return id;
+    }
+    /**
+     * recycle a detached leaf node (no parent, no children, no tokens) that is no longer referenced:
+     * its id is reused by the next allocation. the record is zeroed, so a stale reference reads an empty node
+     * @param id
+     */
+    recycle(id) {
+        this.dataTypes[id] = 0;
+        this.name[id] = 0;
+        this.stringValue[id] = 0;
+        this.numericValue[id] = 0;
+        this.unit[id] = 0;
+        this.flags[id] = 0;
+        this.colorType[id] = 0;
+        this.spans[id] = 0n;
+        if (this.errors.size > 0) {
+            this.errors.delete(id);
+        }
+        this.nextSibling[id] = this.freeList;
+        this.freeList = id;
     }
     /**
      * Interns a string and returns its unique ID. If the string has already been interned, it returns the existing ID.
@@ -2444,6 +2449,29 @@ class Arena {
         this.lastToken[id] = 0;
         this.appendTokenList(id, tokens);
     }
+    /**
+     * move the children of a node into another node, in order
+     * @param from
+     * @param to
+     * @param before the children are inserted before this child of `to`. they are appended when 0
+     */
+    moveChildren(from, to, before = 0) {
+        if (from == to) {
+            return;
+        }
+        let child = this.firstChild[from];
+        while (child != 0) {
+            const next = this.nextSibling[child];
+            this.detach(child);
+            if (before == 0) {
+                this.appendChild(to, child);
+            }
+            else {
+                this.#insertBefore(to, before, child);
+            }
+            child = next;
+        }
+    }
     appendChildren(id, ...children) {
         this.appendChildList(id, children);
     }
@@ -2693,43 +2721,6 @@ class Arena {
         this.stringIds = stringIds;
     }
     /**
-     * current allocation position. the ids allocated after the mark can be released with {@link rewind}
-     */
-    mark() {
-        return this.current;
-    }
-    /**
-     * release the ids allocated after the mark. the released ids must not be referenced by the tree:
-     * this is used to drop the temporary tokens created while rendering
-     * @param mark
-     */
-    rewind(mark) {
-        if (mark >= this.current) {
-            return;
-        }
-        const start = mark + 1;
-        const end = this.current + 1;
-        this.dataTypes.fill(0, start, end);
-        this.parents.fill(0, start, end);
-        this.nextSibling.fill(0, start, end);
-        this.previousSibling.fill(0, start, end);
-        this.firstToken.fill(0, start, end);
-        this.lastToken.fill(0, start, end);
-        this.firstChild.fill(0, start, end);
-        this.lastChild.fill(0, start, end);
-        this.name.fill(0, start, end);
-        this.stringValue.fill(0, start, end);
-        this.numericValue.fill(0, start, end);
-        this.unit.fill(0, start, end);
-        this.flags.fill(0, start, end);
-        this.colorType.fill(0, start, end);
-        this.spans.fill(0n, start, end);
-        for (let id = start; id < end; id++) {
-            this.errors.delete(id);
-        }
-        this.current = mark;
-    }
-    /**
      * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
      * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
      * the unused strings are dropped too
@@ -2853,34 +2844,76 @@ class Arena {
         this.spans32 = new Uint32Array(spans.buffer);
         this.errors = nodeErrors;
         this.current = next - 1;
+        this.freeList = 0;
         return mapping;
     }
     /**
-     * shrink the columns to the allocated nodes. the arena grows again when new nodes are allocated.
-     * see {@link compactStrings} to drop the unused strings
+     * mark nodes to be released or trimmed later, see {@link release} and {@link trim}.
+     * the library never releases nor trims the arena by itself
+     * @param ids
      */
-    trim() {
-        // keep some room for the tokens allocated while rendering
-        const size = this.current + 1 + Math.max(64, this.current >> 5);
-        if (size >= this.dataTypes.length) {
+    mark(...ids) {
+        for (const id of ids) {
+            if (id != 0 && id != this.root) {
+                this.flags[id] |= exports.EnumAstNodeStatus.Marked;
+            }
+        }
+    }
+    /**
+     * true if the node is marked, see {@link mark}
+     * @param id
+     */
+    isMarked(id) {
+        return (this.flags[id] & exports.EnumAstNodeStatus.Marked) != 0;
+    }
+    /**
+     * release nodes: detach them and drop their data (interned strings, errors). node ids are never reused:
+     * the memory is reclaimed by {@link trim}
+     * @param id the node to release. every marked node (and its descendants) is released when omitted
+     * @param deep release the children and the tokens too
+     */
+    release(id, deep = false) {
+        if (id == null) {
+            for (let node = 1; node <= this.current; node++) {
+                if (this.flags[node] & exports.EnumAstNodeStatus.Marked) {
+                    this.flags[node] &= ~exports.EnumAstNodeStatus.Marked;
+                    this.release(node, true);
+                }
+            }
             return;
         }
-        this.dataTypes = this.dataTypes.slice(0, size);
-        this.parents = this.parents.slice(0, size);
-        this.nextSibling = this.nextSibling.slice(0, size);
-        this.previousSibling = this.previousSibling.slice(0, size);
-        this.firstToken = this.firstToken.slice(0, size);
-        this.lastToken = this.lastToken.slice(0, size);
-        this.firstChild = this.firstChild.slice(0, size);
-        this.lastChild = this.lastChild.slice(0, size);
-        this.name = this.name.slice(0, size);
-        this.stringValue = this.stringValue.slice(0, size);
-        this.numericValue = this.numericValue.slice(0, size);
-        this.unit = this.unit.slice(0, size);
-        this.flags = this.flags.slice(0, size);
-        this.colorType = this.colorType.slice(0, size);
-        this.spans = this.spans.slice(0, size);
-        this.spans32 = new Uint32Array(this.spans.buffer);
+        if (id == 0 || id == this.root) {
+            return;
+        }
+        if (deep) {
+            let child = this.firstChild[id];
+            while (child != 0) {
+                const next = this.nextSibling[child];
+                this.release(child, true);
+                child = next;
+            }
+            let token = this.firstToken[id];
+            while (token != 0) {
+                const next = this.nextSibling[token];
+                this.release(token, true);
+                token = next;
+            }
+        }
+        this.detach(id);
+        this.name[id] = 0;
+        this.stringValue[id] = 0;
+        this.unit[id] = 0;
+        this.errors.delete(id);
+    }
+    /**
+     * reclaim the memory: release the marked nodes, then drop the nodes that are not reachable from the root and
+     * renumber the remaining ones, see {@link compact}. the ids obtained before the call are no longer valid
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
+     */
+    trim(errors) {
+        this.release();
+        return this.compact(errors);
     }
     setErrors(id, errors) {
         // empty error lists are not stored
@@ -2954,27 +2987,17 @@ class AstArena extends Arena {
     /**
      * @inheritDoc
      */
-    trim() {
-        super.trim();
-        const size = this.dataTypes.length;
-        if (this.raw.length > size) {
-            this.raw.length = size;
+    release(id, deep = false) {
+        super.release(id, deep);
+        if (id != null) {
+            // drop the minification caches
+            if (this.raw[id] != null) {
+                this.raw[id] = undefined;
+            }
+            if (this.optimized[id] != null) {
+                this.optimized[id] = undefined;
+            }
         }
-        if (this.optimized.length > size) {
-            this.optimized.length = size;
-        }
-    }
-    /**
-     * @inheritDoc
-     */
-    rewind(mark) {
-        if (this.raw.length > mark + 1) {
-            this.raw.length = mark + 1;
-        }
-        if (this.optimized.length > mark + 1) {
-            this.optimized.length = mark + 1;
-        }
-        super.rewind(mark);
     }
     /**
      * @inheritDoc
@@ -3876,42 +3899,6 @@ class AstArena extends Arena {
         return target;
     }
     // ---- tree helpers --------------------------------------------------------------
-    /**
-     * detach a node and drop its tokens / cached data. node ids are never reused: this only releases
-     * the memory held by the node columns
-     * @param id
-     * @param deep release the children and the tokens
-     */
-    release(id, deep = false) {
-        if (id == 0 || id == this.root) {
-            return;
-        }
-        if (deep) {
-            let child = this.firstChild[id];
-            while (child != 0) {
-                const next = this.nextSibling[child];
-                this.release(child, true);
-                child = next;
-            }
-            let token = this.firstToken[id];
-            while (token != 0) {
-                const next = this.nextSibling[token];
-                this.release(token, true);
-                token = next;
-            }
-        }
-        this.detach(id);
-        if (this.raw[id] != null) {
-            this.raw[id] = undefined;
-        }
-        if (this.optimized[id] != null) {
-            this.optimized[id] = undefined;
-        }
-        this.name[id] = 0;
-        this.stringValue[id] = 0;
-        this.unit[id] = 0;
-        this.errors.delete(id);
-    }
     /**
      * index of a child in its parent's children (or tokens) list
      * @param id
@@ -13811,35 +13798,110 @@ const makeBinaryOp = new Map([
     [ValidationTokenEnum.Column, ValidationTokenEnum.ColumnToken],
     [ValidationTokenEnum.Ampersand, ValidationTokenEnum.AmpersandToken],
 ]);
-function move$1(position, chr) {
-    for (const c of chr) {
-        position.col++;
-        position.ind += c.length;
+/**
+ * single character symbols, by character code
+ */
+const symbolTypes = new Map();
+for (const [key, type] of Object.entries(SymbolsMapTokens$1)) {
+    if (key.length == 1) {
+        symbolTypes.set(key.charCodeAt(0), type);
     }
-    return position;
 }
-function getTokenType(token, position, currentPosition) {
-    const pos = { ...position };
-    Object.assign(position, currentPosition);
+/**
+ * two characters symbols (the second character code by first character code)
+ */
+const pairSymbols = new Map();
+for (const [key, type] of Object.entries(SymbolsMapTokens$1)) {
+    if (key.length == 2) {
+        const list = pairSymbols.get(key.charCodeAt(0)) ?? [];
+        list.push([key.charCodeAt(1), type]);
+        pairSymbols.set(key.charCodeAt(0), list);
+    }
+}
+/**
+ * symbol made of the character at index and the next one. at the end of the string, a single character symbol
+ * @param syntax
+ * @param index
+ */
+function pairSymbolType(syntax, index) {
+    if (index + 1 >= syntax.length) {
+        return symbolTypes.get(syntax.charCodeAt(index)) ?? null;
+    }
+    const list = pairSymbols.get(syntax.charCodeAt(index));
+    if (list != null) {
+        const next = syntax.charCodeAt(index + 1);
+        for (let k = 0; k < list.length; k++) {
+            if (list[k][0] == next) {
+                return list[k][1];
+            }
+        }
+    }
+    return null;
+}
+/**
+ * number of code points of a range of a string
+ * @param str
+ * @param start
+ * @param end
+ */
+function codePoints(str, start, end) {
+    let count = 0;
+    for (let k = start; k < end; k++) {
+        const code = str.charCodeAt(k);
+        // a surrogate pair is a single code point
+        if (code >= 0xd800 && code <= 0xdbff && k + 1 < end) {
+            const low = str.charCodeAt(k + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                k++;
+            }
+        }
+        count++;
+    }
+    return count;
+}
+/**
+ * true if the string is made of ascii digits
+ * @param str
+ */
+function isDigits(str) {
+    if (str.length == 0) {
+        return false;
+    }
+    for (let k = 0; k < str.length; k++) {
+        const code = str.charCodeAt(k);
+        if (code < 48 || code > 57) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * build a token from a buffered string
+ * @param token
+ * @param loc
+ */
+function getTokenType(token, loc) {
     if (token === "<an+b>") {
         return {
             typ: ValidationTokenEnum.PropertyType,
             val: token.slice(1, -1),
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
-    if (token.charAt(0) == '"' || token.charAt(0) == "'") {
+    const first = token.charCodeAt(0);
+    // " or '
+    if (first == 34 || first == 39) {
         return {
             typ: ValidationTokenEnum.StringToken,
             val: token,
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
-    if (token.match(/^\d+$/)) {
+    if (isDigits(token)) {
         return {
             typ: ValidationTokenEnum.Number,
             val: Number(token),
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
     let dimension = parseDimension(token);
@@ -13850,27 +13912,28 @@ function getTokenType(token, position, currentPosition) {
             unit: exports.EnumToken[dimension.typ],
             val: dimension.val,
             unitText: dimension.unit,
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
     if (isPseudo(token)) {
         return {
             typ: ValidationTokenEnum.PseudoClassToken,
             val: token,
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
-    if (token.startsWith("@") && isIdent(token.slice(1))) {
+    // @
+    if (first == 64 && isIdent(token.slice(1))) {
         return {
             typ: ValidationTokenEnum.AtRule,
             val: token.slice(1),
-            [LOC]: pos,
+            [LOC]: loc,
         };
     }
     return {
         typ: ValidationTokenEnum.Keyword,
         val: token,
-        [LOC]: pos,
+        [LOC]: loc,
     };
 }
 function trimSyntaxArray(tokens) {
@@ -13893,7 +13956,15 @@ function trimSyntaxArray(tokens) {
     }
     return tokens;
 }
-function* tokenizeSyntax(syntax, position = {
+/**
+ * tokenize a syntax definition. the characters are scanned by code: a string is allocated for each token only.
+ * the positions are tracked as numbers: `position` is the start of the pending token, `currentPosition` the current
+ * character (columns are counted in code points, indexes in utf-16 code units)
+ * @param syntax
+ * @param position
+ * @param currentPosition
+ */
+function tokenizeSyntax(syntax, position = {
     ind: 0,
     lin: 1,
     col: 0,
@@ -13902,135 +13973,169 @@ function* tokenizeSyntax(syntax, position = {
     lin: 1,
     col: 0,
 }) {
+    const tokens = [];
+    const length = syntax.length;
+    let posInd = position.ind;
+    let posLin = position.lin;
+    let posCol = position.col;
+    let curInd = currentPosition.ind;
+    let curLin = currentPosition.lin;
+    let curCol = currentPosition.col;
+    // the buffer is `prefix` + syntax[bufferStart, bufferEnd). the prefix is only used when `<an+b>` interrupts a word
+    let prefix = "";
+    let bufferStart = 0;
+    let bufferEnd = 0;
     let i = -1;
-    let buffer = "";
-    let pos;
-    while (++i < syntax.length) {
-        let chr = syntax.charAt(i);
-        move$1(currentPosition, chr);
-        if (chr === "<" && "an+b>" === syntax.slice(i + 1, i + 6)) {
-            // if (buffer.length > 0) {
-            //     yield getTokenType(buffer, position, currentPosition);
-            //     buffer = "";
-            // }
-            yield getTokenType("<an+b>", position, currentPosition);
-            move$1(currentPosition, "an+b>");
+    let code;
+    let type;
+    const bufferLength = () => prefix.length + bufferEnd - bufferStart;
+    const buffer = () => prefix.length == 0 ? syntax.slice(bufferStart, bufferEnd) : prefix + syntax.slice(bufferStart, bufferEnd);
+    const append = (index) => {
+        if (bufferEnd == bufferStart) {
+            bufferStart = index;
+        }
+        bufferEnd = index + 1;
+    };
+    const clear = () => {
+        prefix = "";
+        bufferStart = bufferEnd = 0;
+    };
+    // the location of the token starts at `position`. `position` moves to the current character
+    const startToken = () => {
+        const loc = { ind: posInd, lin: posLin, col: posCol };
+        posInd = curInd;
+        posLin = curLin;
+        posCol = curCol;
+        return loc;
+    };
+    while (++i < length) {
+        code = syntax.charCodeAt(i);
+        curCol++;
+        curInd++;
+        // <an+b>
+        if (code == 60 && syntax.startsWith("an+b>", i + 1)) {
+            if (bufferLength() > 0) {
+                prefix = buffer();
+                bufferStart = bufferEnd = 0;
+            }
+            tokens.push(getTokenType("<an+b>", startToken()));
+            curCol += 5;
+            curInd += 5;
             i += 5;
             continue;
         }
-        if (SymbolsMapTokens$1[chr + syntax.charAt(i + 1)] != null) {
-            chr += syntax.charAt(++i);
-            move$1(currentPosition, syntax.charAt(i));
-            pos = { ...position };
-            Object.assign(position, currentPosition);
-            if (buffer.length > 0) {
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = "";
+        type = pairSymbolType(syntax, i);
+        if (type != null) {
+            if (i + 1 < length) {
+                i++;
+                curCol++;
+                curInd++;
             }
-            yield {
-                typ: SymbolsMapTokens$1[chr],
-                [LOC]: pos,
-            };
+            const loc = startToken();
+            if (bufferLength() > 0) {
+                tokens.push(getTokenType(buffer(), startToken()));
+                clear();
+            }
+            tokens.push({
+                typ: type,
+                [LOC]: loc,
+            });
             continue;
         }
-        if (chr === ":") {
-            if (syntax.charAt(i + 1) === ":") {
+        // :
+        if (code == 58) {
+            if (syntax.charCodeAt(i + 1) == 58) {
                 if (isIdentStart(syntax.charCodeAt(i + 2)) ||
-                    (syntax.charAt(i + 2) === "-" && isIdentStart(syntax.charCodeAt(i + 3)))) {
-                    buffer += chr + ":";
-                    i++;
+                    (syntax.charCodeAt(i + 2) == 45 && isIdentStart(syntax.charCodeAt(i + 3)))) {
+                    append(i);
+                    append(++i);
                     continue;
                 }
             }
             if (isIdentStart(syntax.charCodeAt(i + 1)) ||
-                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2)))) {
-                buffer += chr;
+                (syntax.charCodeAt(i + 1) == 45 && isIdentStart(syntax.charCodeAt(i + 2)))) {
+                append(i);
                 continue;
             }
         }
-        if (SymbolsMapTokens$1[chr] != null) {
-            if (SymbolsMapTokens$1[chr] === ValidationTokenEnum.Whitespace) {
-                let ch;
+        type = symbolTypes.get(code) ?? null;
+        if (type != null) {
+            if (type === ValidationTokenEnum.Whitespace) {
                 let k = i;
-                while ((ch = syntax.charAt(k + 1)) && SymbolsMapTokens$1[ch] === ValidationTokenEnum.Whitespace) {
+                while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === ValidationTokenEnum.Whitespace) {
                     k++;
                 }
                 if (k != i) {
-                    move$1(currentPosition, syntax.slice(i + 1, k + 1));
+                    curCol += k - i;
+                    curInd += k - i;
                     i = k;
                 }
             }
-            pos = { ...position };
-            Object.assign(position, currentPosition);
-            if (buffer.length > 0) {
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = "";
+            const loc = startToken();
+            if (bufferLength() > 0) {
+                tokens.push(getTokenType(buffer(), startToken()));
+                clear();
             }
-            yield {
-                typ: SymbolsMapTokens$1[chr],
-                [LOC]: pos,
-            };
+            tokens.push({
+                typ: type,
+                [LOC]: loc,
+            });
             continue;
         }
-        switch (chr) {
-            // case "\\":
-            //     if (buffer.length > 0) {
-            //         yield getTokenType(buffer, position, currentPosition);
-            //         buffer = "";
-            //     }
-            //     buffer += chr;
-            //     chr = syntax.charAt(++i);
-            //     buffer += chr;
-            //     move(currentPosition, chr);
-            //     break;
-            case ":":
-                if (isIdent(buffer)) {
-                    yield {
+        switch (code) {
+            // :
+            case 58:
+                if (isIdent(buffer())) {
+                    tokens.push({
                         typ: ValidationTokenEnum.DeclarationNameToken,
-                        val: buffer,
-                        [LOC]: { ...position },
-                    };
-                    buffer = "";
-                    move$1(currentPosition, chr);
+                        val: buffer(),
+                        [LOC]: { ind: posInd, lin: posLin, col: posCol },
+                    });
+                    clear();
+                    curCol++;
+                    curInd++;
                     break;
                 }
-                buffer += chr;
+                append(i);
                 break;
-            case '"':
-            case "'":
-                // if (buffer.length > 0) {
-                //     yield getTokenType(buffer, position, currentPosition);
-                //     buffer = "";
-                // }
-                buffer += chr;
-                while (i + 1 < syntax.length) {
-                    chr = syntax.charAt(++i);
-                    buffer += chr;
-                    // if (chr == "\\") {
-                    //     chr = syntax.charAt(++i);
-                    //     buffer += chr;
-                    //     continue;
-                    // }
-                    if (chr == buffer.charAt(0)) {
-                        break;
+            // " and '
+            case 34:
+            case 39:
+                {
+                    const quote = bufferLength() > 0 ? buffer().charCodeAt(0) : code;
+                    append(i);
+                    while (i + 1 < length) {
+                        append(++i);
+                        if (syntax.charCodeAt(i) == quote) {
+                            break;
+                        }
                     }
+                    const str = buffer();
+                    tokens.push(getTokenType(str, startToken()));
+                    curCol += codePoints(str, 0, str.length);
+                    curInd += str.length;
+                    clear();
                 }
-                yield getTokenType(buffer, position, currentPosition);
-                move$1(currentPosition, buffer);
-                buffer = "";
                 break;
             default:
-                buffer += chr;
+                append(i);
                 break;
         }
     }
-    if (buffer.length > 0) {
-        yield getTokenType(buffer, position, currentPosition);
+    if (bufferLength() > 0) {
+        tokens.push(getTokenType(buffer(), startToken()));
     }
-    yield {
+    tokens.push({
         typ: ValidationTokenEnum.EOF,
-        [LOC]: { ...position },
-    };
+        [LOC]: { ind: posInd, lin: posLin, col: posCol },
+    });
+    position.ind = posInd;
+    position.lin = posLin;
+    position.col = posCol;
+    currentPosition.ind = curInd;
+    currentPosition.lin = curLin;
+    currentPosition.col = curCol;
+    return tokens;
 }
 /**
  * parse mdn data syntax
@@ -14623,6 +14728,18 @@ const getSyntaxRule = memoize((group, key) => {
 const config$3 = getSyntaxConfig();
 // @ts-expect-error
 const allValues = config$3.declarations.all.syntax.split(/[\s|]+/g);
+/**
+ * true if the value is a css wide keyword (`inherit`, `initial`, ...), ignoring the case
+ * @param value
+ */
+function isCssWideKeyword(value) {
+    for (let i = 0; i < allValues.length; i++) {
+        if (equalsIgnoreCase(allValues[i], value)) {
+            return true;
+        }
+    }
+    return false;
+}
 const selectorNodeTypes = [
     exports.EnumToken.CommaTokenType,
     exports.EnumToken.ColumnCombinatorTokenType,
@@ -14637,6 +14754,57 @@ const selectorEnumMap = new Map([
     [exports.EnumToken.GtTokenType, exports.EnumToken.ChildCombinatorTokenType],
 ]);
 const propertyKeywordValues = new Map();
+/**
+ * empty error list shared by the results
+ */
+const noErrors = Object.freeze([]);
+/**
+ * allocate a result. the results are passed to the matching functions that fill them (see {@link setMatch})
+ */
+function createMatch() {
+    return {
+        success: false,
+        valid: true,
+        token: null,
+        context: null,
+        syntaxToken: null,
+        errors: noErrors,
+    };
+}
+/**
+ * fill a result
+ * @param out
+ * @param success
+ * @param valid
+ * @param token
+ * @param context
+ * @param syntaxToken
+ * @param errors
+ */
+function setMatch(out, success, valid, token, context, syntaxToken, errors) {
+    out.success = success;
+    out.valid = valid;
+    out.token = token;
+    out.context = context;
+    out.syntaxToken = syntaxToken;
+    out.errors = errors;
+    return out;
+}
+/**
+ * the error list returned to the callers of {@link matchAllSyntaxes}: the callers may add errors to it
+ * @param errors
+ */
+function ownErrors(errors) {
+    return errors === noErrors ? [] : errors;
+}
+/**
+ * copy a result
+ * @param out
+ * @param from
+ */
+function copyMatch(out, from) {
+    return setMatch(out, from.success, from.valid, from.token, from.context, from.syntaxToken, from.errors);
+}
 /**
  * @type {Array.<EnumToken>}
  */
@@ -14748,156 +14916,166 @@ function isMFValue(arena, featureName, tokens, isMFRange) {
     };
 }
 /**
+ * validation context: a cursor over the tokens being validated. the methods are shared by all the contexts
+ */
+class ValidationTokenContext {
+    arena;
+    tokens;
+    index;
+    constructor(arena, tokens, index) {
+        this.arena = arena;
+        this.tokens = tokens;
+        this.index = index;
+    }
+    current() {
+        if (this.index < 0) {
+            return null;
+        }
+        return this.tokens[this.index];
+    }
+    peek(offset = 0) {
+        let index = this.index;
+        let token = this.tokens[++index];
+        while (offset >= 0 && index < this.tokens.length) {
+            while (this.arena.dataTypes[token] == exports.EnumToken.WhitespaceTokenType ||
+                this.arena.dataTypes[token] == exports.EnumToken.CommentTokenType ||
+                this.arena.dataTypes[token] == exports.EnumToken.CDOCOMMTokenType) {
+                token = this.tokens[++index];
+            }
+            if (token == null || offset === 0) {
+                return token;
+            }
+            offset--;
+            token = this.tokens[++index];
+        }
+        return token;
+    }
+    /**
+     *
+     * @returns
+     * @param open
+     * @param close
+     * @param counter
+     */
+    peekRange(close = exports.EnumToken.EndParensTokenType, counter = 0) {
+        let index = this.index;
+        let token = this.tokens[index];
+        // track balanced parens
+        let matchCount = 0;
+        const tokens = [];
+        while (index + 1 < this.tokens.length && this.arena.dataTypes[this.tokens[index + 1]] === exports.EnumToken.WhitespaceTokenType) {
+            index++;
+        }
+        while (index + 1 < this.tokens.length) {
+            token = this.tokens[++index];
+            if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                matchCount++;
+            }
+            else if (this.arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
+                matchCount--;
+            }
+            if (matchCount >= 0) {
+                tokens.push(token);
+            }
+            if (matchCount === 0) {
+                if (close !== exports.EnumToken.EndParensTokenType && this.arena.dataTypes[token] === close) {
+                    counter--;
+                }
+            }
+            if (matchCount <= 0 && counter <= 0) {
+                break;
+            }
+        }
+        return tokens;
+    }
+    // 2
+    split(split = exports.EnumToken.CommaTokenType) {
+        let index = this.index;
+        let token = this.tokens[index];
+        // track balanced parens
+        let matchCount = 0;
+        const tokens = [[]];
+        while (index + 1 < this.tokens.length) {
+            token = this.tokens[++index];
+            if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                matchCount++;
+            }
+            else if (this.arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
+                matchCount--;
+            }
+            if (matchCount === 0 && this.arena.dataTypes[token] === split) {
+                tokens.at(-1).push(token);
+                tokens.push([]);
+            }
+            else {
+                tokens.at(-1).push(token);
+            }
+        }
+        return tokens;
+    }
+    getRemainingTokens() {
+        return this.tokens.slice(this.index + 1);
+    }
+    end() {
+        this.index = this.tokens.length + 1;
+        return this;
+    }
+    next() {
+        let token = this.tokens[++this.index];
+        while (this.arena.dataTypes[token] === exports.EnumToken.WhitespaceTokenType ||
+            this.arena.dataTypes[token] === exports.EnumToken.CommentTokenType ||
+            this.arena.dataTypes[token] === exports.EnumToken.CDOCOMMTokenType ||
+            this.arena.dataTypes[token] === exports.EnumToken.InvalidCommentTokenType ||
+            this.arena.dataTypes[token] === exports.EnumToken.BadCommentTokenType ||
+            this.arena.dataTypes[token] === exports.EnumToken.BadStringTokenType) {
+            token = this.tokens[++this.index];
+        }
+        return token;
+    }
+    slice() {
+        return new ValidationTokenContext(this.arena, this.index == -1 ? this.tokens.slice() : this.tokens.slice(this.index), this.index == -1 ? -1 : 0);
+    }
+    update(token) {
+        const index = token == null ? -1 : this.tokens.indexOf(token);
+        if (index != -1) {
+            this.index = index;
+        }
+        return this;
+    }
+    done() {
+        if (this.index + 1 < this.tokens.length) {
+            let index = this.index + 1;
+            while (index < this.tokens.length) {
+                if (this.arena.dataTypes[this.tokens[index]] === exports.EnumToken.WhitespaceTokenType ||
+                    this.arena.dataTypes[this.tokens[index]] === exports.EnumToken.CommentTokenType) {
+                    index++;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+/**
  * create validation context
  * @param tokens
  * @returns
  */
 function createValidationContext(arena, tokens) {
-    tokens = trimArray(arena, tokens.filter((t) => arena.dataTypes[t] !== exports.EnumToken.CommentTokenType));
+    const filtered = [];
+    for (let i = 0; i < tokens.length; i++) {
+        if (arena.dataTypes[tokens[i]] !== exports.EnumToken.CommentTokenType) {
+            filtered.push(tokens[i]);
+        }
+    }
+    tokens = trimArray(arena, filtered);
     if (arena.typeOf(tokens.at(-1)) === exports.EnumToken.ImportantTokenType) {
         tokens.pop();
         trimArray(arena, tokens);
     }
-    const token = {
-        arena,
-        tokens,
-        index: -1,
-        current() {
-            if (this.index < 0) {
-                return null;
-            }
-            return this.tokens[this.index];
-        },
-        peek(offset = 0) {
-            let index = this.index;
-            let token = this.tokens[++index];
-            while (offset >= 0 && index < this.tokens.length) {
-                while (arena.dataTypes[token] == exports.EnumToken.WhitespaceTokenType ||
-                    arena.dataTypes[token] == exports.EnumToken.CommentTokenType ||
-                    arena.dataTypes[token] == exports.EnumToken.CDOCOMMTokenType) {
-                    token = this.tokens[++index];
-                }
-                if (token == null || offset === 0) {
-                    return token;
-                }
-                offset--;
-                token = this.tokens[++index];
-            }
-            return token;
-        },
-        /**
-         *
-         * @returns
-         * @param open
-         * @param close
-         * @param counter
-         */
-        peekRange(close = exports.EnumToken.EndParensTokenType, counter = 0) {
-            let index = this.index;
-            let token = this.tokens[index];
-            // track balanced parens
-            let matchCount = 0;
-            const tokens = [];
-            while (index + 1 < this.tokens.length && arena.dataTypes[this.tokens[index + 1]] === exports.EnumToken.WhitespaceTokenType) {
-                index++;
-            }
-            while (index + 1 < this.tokens.length) {
-                token = this.tokens[++index];
-                if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
-                    matchCount++;
-                }
-                else if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
-                    matchCount--;
-                }
-                if (matchCount >= 0) {
-                    tokens.push(token);
-                }
-                if (matchCount === 0) {
-                    if (close !== exports.EnumToken.EndParensTokenType && arena.dataTypes[token] === close) {
-                        counter--;
-                    }
-                }
-                if (matchCount <= 0 && counter <= 0) {
-                    break;
-                }
-            }
-            return tokens;
-        },
-        // 2
-        split(split = exports.EnumToken.CommaTokenType) {
-            let index = this.index;
-            let token = this.tokens[index];
-            // track balanced parens
-            let matchCount = 0;
-            const tokens = [[]];
-            while (index + 1 < this.tokens.length) {
-                token = this.tokens[++index];
-                if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
-                    matchCount++;
-                }
-                else if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
-                    matchCount--;
-                }
-                if (matchCount === 0 && arena.dataTypes[token] === split) {
-                    tokens.at(-1).push(token);
-                    tokens.push([]);
-                }
-                else {
-                    tokens.at(-1).push(token);
-                }
-            }
-            return tokens;
-        },
-        getRemainingTokens() {
-            return this.tokens.slice(this.index + 1);
-        },
-        end() {
-            this.index = this.tokens.length + 1;
-            return this;
-        },
-        next() {
-            let token = this.tokens[++this.index];
-            while (arena.dataTypes[token] === exports.EnumToken.WhitespaceTokenType ||
-                arena.dataTypes[token] === exports.EnumToken.CommentTokenType ||
-                arena.dataTypes[token] === exports.EnumToken.CDOCOMMTokenType ||
-                arena.dataTypes[token] === exports.EnumToken.InvalidCommentTokenType ||
-                arena.dataTypes[token] === exports.EnumToken.BadCommentTokenType ||
-                arena.dataTypes[token] === exports.EnumToken.BadStringTokenType) {
-                token = this.tokens[++this.index];
-            }
-            return token;
-        },
-        slice() {
-            return {
-                ...token,
-                index: this.index == -1 ? -1 : 0,
-                tokens: this.index == -1 ? this.tokens.slice() : this.tokens.slice(this.index),
-            };
-        },
-        update(token) {
-            const index = token == null ? -1 : this.tokens.indexOf(token);
-            if (index != -1) {
-                this.index = index;
-            }
-            return this;
-        },
-        done() {
-            if (this.index + 1 < this.tokens.length) {
-                let index = this.index + 1;
-                while (index < this.tokens.length) {
-                    if (arena.dataTypes[this.tokens[index]] === exports.EnumToken.WhitespaceTokenType ||
-                        arena.dataTypes[this.tokens[index]] === exports.EnumToken.CommentTokenType) {
-                        index++;
-                    }
-                    else {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        },
-    };
-    return token;
+    return new ValidationTokenContext(arena, tokens, -1);
 }
 /**
  * match selector syntax
@@ -15225,6 +15403,187 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
     return { success, errors };
 }
 /**
+ * successful declaration validations, by arena, by syntax and by hash of the value encoding (see {@link encodeToken})
+ */
+const validDeclarations = new WeakMap();
+/**
+ * shared result of a declaration whose validation is cached
+ */
+const cachedValidMatch = Object.freeze({
+    success: true,
+    valid: true,
+    context: null,
+    token: null,
+    syntaxToken: null,
+    errors: Object.freeze([]),
+});
+/**
+ * encoding of the value being validated: 6 fields per token (type, interned name, interned string value, numeric
+ * value, interned unit, color type), followed by the encoding of its tokens between markers -1 / -2 and of its
+ * children between markers -3 / -4. the buffer is reused: no allocation unless a new valid value is cached
+ */
+let encoding = new Float64Array(512);
+let encodingLength = 0;
+let encodingHash = 0;
+/**
+ * append a value to the encoding and update its hash
+ * @param value
+ */
+function encode$1(value) {
+    if (encodingLength == encoding.length) {
+        const previous = encoding;
+        encoding = new Float64Array(previous.length * 2);
+        encoding.set(previous);
+    }
+    encoding[encodingLength++] = value;
+    encodingHash = Math.imul(encodingHash ^ (Number.isInteger(value) ? value | 0 : (value * 4096) | 0), 0x01000193);
+}
+/**
+ * encode a token and its descendants. the validation only depends on these fields: two values with the same encoding
+ * are validated the same way
+ * @param arena
+ * @param token
+ */
+function encodeToken(arena, token) {
+    encode$1(arena.dataTypes[token]);
+    encode$1(arena.name[token]);
+    encode$1(arena.stringValue[token]);
+    encode$1(arena.numericValue[token]);
+    encode$1(arena.unit[token]);
+    encode$1(arena.colorType[token]);
+    if (arena.firstToken[token] != 0) {
+        encode$1(-1);
+        for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+            encodeToken(arena, child);
+        }
+        encode$1(-2);
+    }
+    if (arena.firstChild[token] != 0) {
+        encode$1(-3);
+        for (let child = arena.firstChild[token]; child != 0; child = arena.nextSibling[child]) {
+            encodeToken(arena, child);
+        }
+        encode$1(-4);
+    }
+}
+/**
+ * the cached valid encodings with the hash of the current encoding
+ * @param arena
+ * @param syntaxes
+ * @param create create the bucket when missing
+ */
+function validEncodings(arena, syntaxes, create) {
+    let bySyntax = validDeclarations.get(arena);
+    if (bySyntax == null) {
+        if (!create) {
+            return null;
+        }
+        bySyntax = new Map();
+        validDeclarations.set(arena, bySyntax);
+    }
+    let byHash = bySyntax.get(syntaxes);
+    if (byHash == null) {
+        if (!create) {
+            return null;
+        }
+        byHash = new Map();
+        bySyntax.set(syntaxes, byHash);
+    }
+    let bucket = byHash.get(encodingHash);
+    if (bucket == null && create) {
+        bucket = [];
+        byHash.set(encodingHash, bucket);
+    }
+    return bucket ?? null;
+}
+/**
+ * true if the current encoding has been validated for the syntax
+ * @param arena
+ * @param syntaxes
+ */
+function isCachedValid(arena, syntaxes) {
+    const bucket = validEncodings(arena, syntaxes, false);
+    if (bucket != null) {
+        for (let i = 0; i < bucket.length; i++) {
+            const candidate = bucket[i];
+            if (candidate.length == encodingLength) {
+                let k = 0;
+                while (k < encodingLength && candidate[k] === encoding[k]) {
+                    k++;
+                }
+                if (k == encodingLength) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+/**
+ * cache an encoding as valid for the syntax
+ * @param arena
+ * @param syntaxes
+ * @param value encoding
+ * @param hash encoding hash
+ */
+function cacheValid(arena, syntaxes, value, hash) {
+    encodingHash = hash;
+    validEncodings(arena, syntaxes, true).push(value);
+}
+/**
+ * validate the value of a declaration. a value that has already been validated for the same syntax in the same arena
+ * (same encoding, see {@link encodeToken}) is not validated again: `width: 10px` is validated once, whatever the number of rules that contain it.
+ * only the successful validations are cached, the failures are validated again to report their errors
+ * @param arena
+ * @param syntaxes declaration syntax
+ * @param tokens value tokens
+ * @param options
+ */
+function matchDeclarationSyntax(arena, syntaxes, tokens, options) {
+    encodingLength = 0;
+    encodingHash = 0x811c9dc5;
+    for (let i = 0; i < tokens.length; i++) {
+        encodeToken(arena, tokens[i]);
+    }
+    if (isCachedValid(arena, syntaxes)) {
+        return cachedValidMatch;
+    }
+    // the encoding is copied before the validation, which may encode other values
+    const value = encoding.slice(0, encodingLength);
+    const hash = encodingHash;
+    const result = matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, tokens), options);
+    if (result.success) {
+        cacheValid(arena, syntaxes, value, hash);
+    }
+    return result;
+}
+/**
+ * validate the value tokens of a declaration node, see {@link matchDeclarationSyntax}
+ * @param arena
+ * @param syntaxes declaration syntax
+ * @param declaration declaration node
+ * @param options
+ * @returns true if the value is valid
+ */
+function isValidDeclarationValue(arena, syntaxes, declaration, options) {
+    encodingLength = 0;
+    encodingHash = 0x811c9dc5;
+    for (let token = arena.firstToken[declaration]; token != 0; token = arena.nextSibling[token]) {
+        encodeToken(arena, token);
+    }
+    if (isCachedValid(arena, syntaxes)) {
+        return true;
+    }
+    // the encoding is copied before the validation, which may encode other values
+    const value = encoding.slice(0, encodingLength);
+    const hash = encodingHash;
+    if (matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, arena.tokens(declaration)), options).success) {
+        cacheValid(arena, syntaxes, value, hash);
+        return true;
+    }
+    return false;
+}
+/**
  * matches all syntaxes
  * @param syntaxes
  * @param context
@@ -15232,10 +15591,18 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
  * @returns
  */
 function matchAllSyntaxes(arena, syntaxes, context, options) {
-    const result = matchSyntax(arena, syntaxes, context, {
-        ...options,
-        visited: new Map(),
-    });
+    // the visited syntaxes are tracked per call. the options are not copied: the previous map is restored
+    const visited = options.visited;
+    // the result object is passed to the matching functions, which fill it
+    const out = createMatch();
+    let result;
+    options.visited = new Map();
+    try {
+        result = matchSyntax(arena, syntaxes, context, options, out);
+    }
+    finally {
+        options.visited = visited;
+    }
     if (syntaxes != null && result.success && result.syntaxToken != null) {
         const index = syntaxes.indexOf(result.syntaxToken);
         if (index != -1) {
@@ -15246,29 +15613,21 @@ function matchAllSyntaxes(arena, syntaxes, context, options) {
                     syntaxes[i].match?.min?.val === 0) {
                     continue;
                 }
-                return {
-                    ...result,
-                    success: false,
-                    syntaxToken: syntaxes[i],
-                };
+                return setMatch(out, false, result.valid, result.token, result.context, syntaxes[i], ownErrors(result.errors));
             }
         }
     }
-    return {
-        ...result,
-        errors: !result.success && result.errors.length === 0
-            ? [
-                {
-                    action: "drop",
-                    message: result.errors[0]?.message || "could not match syntax",
-                    node: result.token,
-                    syntax: result.syntaxToken,
-                    location: options.source.getSourceLocation(arena.getSpanStart(result.token ?? context.tokens[context.tokens.length - 1])),
-                },
-            ]
-            : result.errors,
-        syntaxToken: !result.success ? result.syntaxToken : null,
-    };
+    return setMatch(out, result.success, result.valid, result.token, result.context, !result.success ? result.syntaxToken : null, !result.success && result.errors.length === 0
+        ? [
+            {
+                action: "drop",
+                message: result.errors[0]?.message || "could not match syntax",
+                node: result.token,
+                syntax: result.syntaxToken,
+                location: options.source.getSourceLocation(arena.getSpanStart(result.token ?? context.tokens[context.tokens.length - 1])),
+            },
+        ]
+        : ownErrors(result.errors));
 }
 /**
  * matches a list of syntaxes
@@ -15377,16 +15736,9 @@ function matchOccurenceSyntax(arena, syntax, context, options) {
  * @param options
  * @returns
  */
-function matchSyntax(arena, syntaxes, context, options) {
+function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
     if (syntaxes == null) {
-        return {
-            syntaxToken: null,
-            token: context.peek(),
-            success: true,
-            valid: false,
-            context,
-            errors: [],
-        };
+        return setMatch(out, true, false, context.peek(), context, null, noErrors);
     }
     let i = -1;
     let success = false;
@@ -15395,16 +15747,9 @@ function matchSyntax(arena, syntaxes, context, options) {
     let isOptional;
     if (context.tokens.length == 1 &&
         arena.dataTypes[context.tokens[0]] == exports.EnumToken.IdenTokenType &&
-        allValues.some((v) => equalsIgnoreCase(v, arena.strings[arena.stringValue[context.tokens[0]]]))) {
+        isCssWideKeyword(arena.strings[arena.stringValue[context.tokens[0]]])) {
         context.end();
-        return {
-            syntaxToken: null,
-            token: context.peek(),
-            success: true,
-            valid: true,
-            context,
-            errors: [],
-        };
+        return setMatch(out, true, true, context.peek(), context, null, noErrors);
     }
     while (++i < syntaxes.length) {
         if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
@@ -15418,26 +15763,19 @@ function matchSyntax(arena, syntaxes, context, options) {
         token = context.peek();
         if (token == null) {
             if (!isOptional) {
-                return {
-                    success: false,
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "could not match syntax",
-                            node: null,
-                            syntax: syntaxes[i],
-                        },
-                    ],
-                    syntaxToken: syntaxes[i],
-                    valid: true,
-                    context,
-                    token: null,
-                };
+                return setMatch(out, false, true, null, context, syntaxes[i], [
+                    {
+                        action: "drop",
+                        message: "could not match syntax",
+                        node: null,
+                        syntax: syntaxes[i],
+                    },
+                ]);
             }
             break;
         }
         if (arena.dataTypes[token] === exports.EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[token]] === "var") {
-            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(token)), options);
+            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(token)), options, out);
             if (result.success && result.context.done()) {
                 context.next();
                 continue;
@@ -15447,15 +15785,11 @@ function matchSyntax(arena, syntaxes, context, options) {
         // @ts-ignore
         arena.dataTypes[token] === exports.EnumToken.WildCardFunctionTokenDefType) {
             const range = trimArray(arena, context.peekRange());
-            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, range.slice(1, -1)), options);
+            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, range.slice(1, -1)), options, out);
             if (result.success) {
                 context.update(range.at(-1));
                 if (context.done()) {
-                    return {
-                        ...result,
-                        context,
-                        syntaxToken: syntaxes[i + 1],
-                    };
+                    return setMatch(out, result.success, result.valid, result.token, context, syntaxes[i + 1], result.errors);
                 }
                 continue;
             }
@@ -15465,7 +15799,7 @@ function matchSyntax(arena, syntaxes, context, options) {
             if (result.success) {
                 if (result.context.done()) {
                     context.end();
-                    return { ...result, syntaxToken: syntaxes[i + 1] };
+                    return setMatch(out, result.success, result.valid, result.token, result.context, syntaxes[i + 1], result.errors);
                 }
                 context.update(result.context.current());
                 continue;
@@ -15481,14 +15815,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                 options.visited.get(token)?.delete?.(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
-                    return {
-                        ...result,
-                        success: true,
-                        valid: true,
-                        context,
-                        token: null,
-                        syntaxToken: syntaxes[i + 1],
-                    };
+                    return setMatch(out, true, true, null, context, syntaxes[i + 1], result.errors);
                 }
                 context.update(result.context.current());
                 continue;
@@ -15496,14 +15823,7 @@ function matchSyntax(arena, syntaxes, context, options) {
             if (isOptional) {
                 continue;
             }
-            return {
-                success: false,
-                valid: true,
-                token,
-                context,
-                syntaxToken: syntaxes[i],
-                errors: result.errors,
-            };
+            return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
         }
         if (syntaxes[i].match != null) {
             result = matchOccurenceSyntax(arena, syntaxes[i], context.slice(), options);
@@ -15511,11 +15831,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                 options.visited.get(token).delete(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
-                    return {
-                        ...result,
-                        context,
-                        syntaxToken: syntaxes[++i],
-                    };
+                    return setMatch(out, result.success, result.valid, result.token, context, syntaxes[++i], result.errors);
                 }
                 context.update(result.context.current());
                 continue;
@@ -15523,28 +15839,14 @@ function matchSyntax(arena, syntaxes, context, options) {
             if (isOptional) {
                 continue;
             }
-            return {
-                success: false,
-                valid: true,
-                token,
-                context,
-                syntaxToken: syntaxes[i],
-                errors: result.errors,
-            };
+            return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
         }
         if (!options.visited.has(token)) {
             options.visited.set(token, new Set());
         }
         if (options.visited.get(token).has(syntaxes[i])) {
             // cyclic definition
-            return {
-                success: false,
-                valid: true,
-                token,
-                context,
-                syntaxToken: syntaxes[i],
-                errors: [],
-            };
+            return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
         }
         options.visited.get(token).add(syntaxes[i]);
         success = false;
@@ -15556,14 +15858,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                     context.next();
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.Keyword:
                 if (arena.dataTypes[token] == exports.EnumToken.IdenTokenType &&
                     arena.strings[arena.stringValue[token]].toLowerCase() ===
@@ -15576,27 +15871,15 @@ function matchSyntax(arena, syntaxes, context, options) {
                 if (isOptional) {
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.DeclarationType:
-                result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntaxes[i].val), context, options);
+                result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntaxes[i].val), context, options, out);
                 if (result.success) {
                     success = true;
                     options.visited.get(token).delete(syntaxes[i]);
                     if (result.context.done()) {
                         context.end();
-                        return {
-                            ...result,
-                            token,
-                            context,
-                            syntaxToken: syntaxes[1 + i],
-                        };
+                        return setMatch(out, result.success, result.valid, token, context, syntaxes[1 + i], result.errors);
                     }
                     else {
                         if (result.context.current() != null) {
@@ -15607,20 +15890,13 @@ function matchSyntax(arena, syntaxes, context, options) {
                 if (success || isOptional) {
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: result.errors,
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
             case ValidationTokenEnum.OptionalGroupToken: {
                 //
                 const tokens = context.split();
                 let j = 0;
                 for (; j < tokens.length; j++) {
-                    result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options);
+                    result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options, out);
                     if (result.success) {
                         context.update(tokens[j].at(-1));
                     }
@@ -15651,41 +15927,20 @@ function matchSyntax(arena, syntaxes, context, options) {
                 if (isOptional) {
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.PropertyType:
                 result = matchProperty(arena, syntaxes[i], context, options);
                 if (!result.success) {
                     if (isOptional) {
                         break;
                     }
-                    return {
-                        success: false,
-                        valid: true,
-                        token: context.current() ?? token,
-                        context,
-                        syntaxToken: syntaxes[i],
-                        errors: [],
-                    };
+                    return setMatch(out, false, true, context.current() ?? token, context, syntaxes[i], noErrors);
                 }
                 success = true;
                 options.visited.get(token).delete(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
-                    return {
-                        success,
-                        valid: true,
-                        token: null,
-                        context,
-                        syntaxToken: syntaxes[i + 1],
-                        errors: [],
-                    };
+                    return setMatch(out, success, true, null, context, syntaxes[i + 1], noErrors);
                 }
                 else {
                     context.update(result.context.current());
@@ -15693,20 +15948,23 @@ function matchSyntax(arena, syntaxes, context, options) {
                 break;
             case ValidationTokenEnum.PipeToken:
                 {
-                    result = null;
+                    // each alternative is matched in the same scratch result, the best match is copied
+                    const scratch = createMatch();
+                    let best = null;
                     let tmp = null;
                     for (const syntax of syntaxes[i].chi) {
-                        tmp = matchSyntax(arena, syntax, context.slice(), options);
+                        tmp = matchSyntax(arena, syntax, context.slice(), options, scratch);
                         if (tmp.success) {
-                            if (result == null || tmp.context.index >= result.context.index) {
-                                result = tmp;
+                            if (best == null || tmp.context.index >= best.context.index) {
+                                best = copyMatch(best ?? createMatch(), tmp);
                             }
                             if (tmp.context.done()) {
                                 context.end();
-                                return { ...tmp, context, syntaxToken: syntaxes[i + 1] };
+                                return setMatch(out, tmp.success, tmp.valid, tmp.token, context, syntaxes[i + 1], tmp.errors);
                             }
                         }
                     }
+                    result = best;
                     if (result?.success) {
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
@@ -15714,38 +15972,24 @@ function matchSyntax(arena, syntaxes, context, options) {
                         break;
                     }
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [
-                        {
-                            action: "drop",
-                            message: "could not match syntax",
-                            node: token,
-                            // @ts-ignore
-                            // location: options.source!.getSourceLocation(token[LOC]?.sta),
-                            syntax: syntaxes[i],
-                        },
-                    ],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], [
+                    {
+                        action: "drop",
+                        message: "could not match syntax",
+                        node: token,
+                        // @ts-ignore
+                        // location: options.source!.getSourceLocation(token[LOC]?.sta),
+                        syntax: syntaxes[i],
+                    },
+                ]);
             case ValidationTokenEnum.Bracket:
-                result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options);
+                result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options, out);
                 if (result.success) {
                     success = true;
                     options.visited.get(token).delete(syntaxes[i]);
                     if (result.context.done()) {
                         context.end();
-                        return {
-                            success,
-                            valid: true,
-                            token: null,
-                            context,
-                            syntaxToken: syntaxes[1 + i],
-                            errors: [],
-                        };
+                        return setMatch(out, success, true, null, context, syntaxes[1 + i], noErrors);
                     }
                     else {
                         context.update(result.context.current());
@@ -15755,14 +15999,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                 if (isOptional) {
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.ColumnToken:
                 result = matchColumnSyntax(arena, syntaxes[i], context.slice(), options);
                 if (result.success) {
@@ -15770,28 +16007,14 @@ function matchSyntax(arena, syntaxes, context, options) {
                     options.visited.get(token).delete(syntaxes[i]);
                     if (result.context.done()) {
                         context.end();
-                        return {
-                            success,
-                            valid: true,
-                            token: null,
-                            context,
-                            syntaxToken: syntaxes[1 + i],
-                            errors: [],
-                        };
+                        return setMatch(out, success, true, null, context, syntaxes[1 + i], noErrors);
                     }
                     else {
                         context.update(result.context.current());
                     }
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.AmpersandToken:
                 result = matchAmpersandSyntax(arena, syntaxes[i], context.slice(), options);
                 if (result.success) {
@@ -15799,51 +16022,30 @@ function matchSyntax(arena, syntaxes, context, options) {
                     options.visited.get(token).delete(syntaxes[i]);
                     if (result.context.done()) {
                         context.end();
-                        return {
-                            success,
-                            valid: true,
-                            token: null,
-                            context,
-                            syntaxToken: syntaxes[1 + i],
-                            errors: [],
-                        };
+                        return setMatch(out, success, true, null, context, syntaxes[1 + i], noErrors);
                     }
                     else {
                         context.update(result.context.current());
                     }
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.Function:
                 if ((!tokensfuncDefMap.has(arena.dataTypes[token]) &&
                     !funcLike.includes(arena.dataTypes[token]) &&
                     !funcTypes.includes(arena.dataTypes[token])) ||
                     !equalsIgnoreCase(syntaxes[i].val, arena.strings[arena.stringValue[token]].toLowerCase())) {
-                    return {
-                        success: false,
-                        valid: true,
-                        token,
-                        context,
-                        syntaxToken: syntaxes[i],
-                        errors: [
-                            {
-                                action: "drop",
-                                message: `Expecting a function ${exports.EnumToken[arena.dataTypes[token]]}`,
-                                node: token,
-                            },
-                        ],
-                    };
+                    return setMatch(out, false, true, token, context, syntaxes[i], [
+                        {
+                            action: "drop",
+                            message: `Expecting a function ${exports.EnumToken[arena.dataTypes[token]]}`,
+                            node: token,
+                        },
+                    ]);
                 }
                 if (tokensfuncDefMap.has(arena.dataTypes[token])) {
                     const range = context.peekRange();
-                    result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, range.slice(1, -1)), options);
+                    result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, range.slice(1, -1)), options, out);
                     if (result.success && result.context.done()) {
                         context.update(range.at(-1));
                         options.visited.get(token).delete(syntaxes[i]);
@@ -15851,7 +16053,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                     }
                 }
                 else {
-                    result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, arena.tokens(token)), options);
+                    result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, arena.tokens(token)), options, out);
                     if (result.success && result.context.done()) {
                         success = true;
                         options.visited.get(token).delete(syntaxes[i]);
@@ -15859,34 +16061,20 @@ function matchSyntax(arena, syntaxes, context, options) {
                         break;
                     }
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: result.errors,
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
             case ValidationTokenEnum.Separator:
                 if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType && arena.strings[arena.stringValue[token]] === "/") {
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.FunctionDefinition:
                 if (arena.strings[arena.stringValue[token]] &&
                     equalsIgnoreCase(arena.strings[arena.stringValue[token]], syntaxes[i].val)) {
                     if (tokensfuncDefMap.has(arena.dataTypes[token])) {
                         const children = trimArray(arena, context.peekRange());
-                        result = matchSyntax(arena, (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(arena, children.slice(1, -1)), options);
+                        result = matchSyntax(arena, (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(arena, children.slice(1, -1)), options, out);
                         if (result.success && result.context.done()) {
                             success = true;
                             options.visited.get(token).delete(syntaxes[i]);
@@ -15895,7 +16083,7 @@ function matchSyntax(arena, syntaxes, context, options) {
                         }
                     }
                     else if (tokensfuncSet.has(arena.dataTypes[token])) {
-                        result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()") ?? [], createValidationContext(arena, [token]), options);
+                        result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()") ?? [], createValidationContext(arena, [token]), options, out);
                         if (result.success && result.context.done()) {
                             success = true;
                             options.visited.get(token).delete(syntaxes[i]);
@@ -15904,56 +16092,28 @@ function matchSyntax(arena, syntaxes, context, options) {
                         }
                     }
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.OpenParenthesis:
                 if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType) {
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.OpenCurlyBrace:
                 if (arena.dataTypes[token] === exports.EnumToken.BlockStartTokenType) {
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             case ValidationTokenEnum.CloseParenthesis:
                 if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
                     options.visited.get(token).delete(syntaxes[i]);
                     context.next();
                     break;
                 }
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             default:
                 throw new Error(`Unexpected syntax ${ValidationTokenEnum[syntaxes[i].typ]}`);
         }
@@ -15982,27 +16142,11 @@ function matchSyntax(arena, syntaxes, context, options) {
                         syntaxes[i].range.max.val;
             }
             if (!success) {
-                return {
-                    success: false,
-                    valid: true,
-                    token,
-                    context,
-                    syntaxToken: syntaxes[i],
-                    errors: [],
-                };
+                return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
             }
         }
     }
-    return result?.success
-        ? result
-        : {
-            success: true,
-            context,
-            syntaxToken: syntaxes[i] ?? null,
-            token,
-            valid: true,
-            errors: [],
-        };
+    return result?.success ? result : setMatch(out, true, true, token, context, syntaxes[i] ?? null, noErrors);
 }
 /**
  * matches a column of syntaxes
@@ -19832,7 +19976,7 @@ class InlineCssVariablesFeature {
                     if (arena.parents[info.node] == parent) {
                         const comment = arena.createComment(exports.EnumToken.CommentTokenType, `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc, curr) => acc + renderValue(arena, curr, { convertColor: false }), "")} */`);
                         arena.replaceChild(info.node, comment);
-                        arena.release(info.node);
+                        arena.detach(info.node);
                     }
                 }
             }
@@ -22515,8 +22659,9 @@ class PropertyMap {
                 }) ||
                 // @ts-ignore
                 !Object.values(tokens).every((v) => 
-                // @ts-expect-error
-                v.filter((t) => arena.dataTypes[t] != exports.EnumToken.CommentTokenType).length === count)) {
+                // `v` holds token groups: only single token groups were type checked by the former
+                // `arena.dataTypes[group]` lookup (the group is converted to a string key)
+                v.filter((t) => t.length != 1 || arena.dataTypes[t[0]] != exports.EnumToken.CommentTokenType).length === count)) {
                 // @ts-ignore
                 iterable = declarations.values();
             }
@@ -22852,148 +22997,155 @@ class PropertyList {
      * @returns
      */
     add(declarations) {
+        for (const declaration of declarations) {
+            this.addDeclaration(declaration);
+        }
+        return this;
+    }
+    /**
+     * add a declaration
+     * @param declaration node id
+     */
+    addDeclaration(declaration) {
         let name;
         let syntaxRules = null;
-        let result;
         const arena = this.arena;
-        for (const declaration of declarations) {
-            name =
-                arena.dataTypes[declaration] != exports.EnumToken.DeclarationNodeType
-                    ? null
-                    : arena.strings[arena.name[declaration]];
-            // do not compute shorthand for invalid declarations
-            if (name == null) {
-                this.declarations.set(nodeHash(arena, declaration), declaration);
-                continue;
+        name =
+            arena.dataTypes[declaration] != exports.EnumToken.DeclarationNodeType
+                ? null
+                : arena.strings[arena.name[declaration]];
+        // do not compute shorthand for invalid declarations
+        if (name == null) {
+            this.declarations.set(nodeHash(arena, declaration), declaration);
+            return this;
+        }
+        // @functiom / result
+        if (arena.flags[declaration] & exports.EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name)) {
+            this.declarations.set(name, declaration);
+            return this;
+        }
+        if (arena.flags[declaration] &
+            (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ValidationFailed) ||
+            equalsIgnoreCase("composes", name) ||
+            (typeof this.options.removeDuplicateDeclarations === "string" &&
+                this.options.removeDuplicateDeclarations === name) ||
+            (Array.isArray(this.options.removeDuplicateDeclarations)
+                ? this.options.removeDuplicateDeclarations.includes(name)
+                : !this.options.removeDuplicateDeclarations)) {
+            const key = nodeHash(arena, declaration);
+            if (this.declarations.has(key)) {
+                this.declarations.delete(key);
             }
-            // @functiom / result
-            if (arena.flags[declaration] & exports.EnumAstNodeStatus.Unknown && equalsIgnoreCase("result", name)) {
-                this.declarations.set(name, declaration);
-                continue;
+            this.declarations.set(key, declaration);
+            return this;
+        }
+        if (!this.options.computeShorthand) {
+            this.declarations.set(name, declaration);
+            return this;
+        }
+        if (arena.flags[declaration] & exports.EnumAstNodeStatus.Unvalidated) {
+            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
+            if (syntaxRules != null) {
+                arena.flags[declaration] |=
+                    (isValidDeclarationValue(arena, syntaxRules, declaration, this.options)
+                        ? exports.EnumAstNodeStatus.Validated
+                        : exports.EnumAstNodeStatus.ValidationFailed) & ~exports.EnumAstNodeStatus.Unvalidated;
             }
-            if (arena.flags[declaration] &
-                (exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ValidationFailed) ||
-                equalsIgnoreCase("composes", name) ||
-                (typeof this.options.removeDuplicateDeclarations === "string" &&
-                    this.options.removeDuplicateDeclarations === name) ||
-                (Array.isArray(this.options.removeDuplicateDeclarations)
-                    ? this.options.removeDuplicateDeclarations.includes(name)
-                    : !this.options.removeDuplicateDeclarations)) {
-                const key = nodeHash(arena, declaration);
-                if (this.declarations.has(key)) {
-                    this.declarations.delete(key);
-                }
-                this.declarations.set(key, declaration);
-                continue;
-            }
-            if (!this.options.computeShorthand) {
-                this.declarations.set(name, declaration);
-                continue;
-            }
-            if (arena.flags[declaration] & exports.EnumAstNodeStatus.Unvalidated) {
-                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, name.toLowerCase());
-                if (syntaxRules != null) {
-                    result = matchAllSyntaxes(arena, syntaxRules, createValidationContext(arena, arena.tokens(declaration)), this.options);
-                    arena.flags[declaration] |=
-                        (result.success ? exports.EnumAstNodeStatus.Validated : exports.EnumAstNodeStatus.ValidationFailed) &
-                            ~exports.EnumAstNodeStatus.Unvalidated;
-                }
-            }
-            // do not compute shorthand for invalid declarations
-            if (!(arena.flags[declaration] & exports.EnumAstNodeStatus.Validated)) {
-                this.declarations.set(nodeHash(arena, declaration), declaration);
-                continue;
-            }
-            let propertyName = name;
-            let shortHandType;
-            let shorthand = null;
-            if (propertyName in config.properties) {
-                // @ts-ignore
-                if ("map" in config.properties[propertyName]) {
-                    shortHandType = "map";
-                    // @ts-ignore
-                    shorthand = config.properties[propertyName].map;
-                }
-                else {
-                    shortHandType = "set";
-                    // @ts-ignore
-                    shorthand = config.properties[propertyName].shorthand;
-                }
-            }
-            else if (propertyName in config.map) {
+        }
+        // do not compute shorthand for invalid declarations
+        if (!(arena.flags[declaration] & exports.EnumAstNodeStatus.Validated)) {
+            this.declarations.set(nodeHash(arena, declaration), declaration);
+            return this;
+        }
+        let propertyName = name;
+        let shortHandType;
+        let shorthand = null;
+        if (propertyName in config.properties) {
+            // @ts-ignore
+            if ("map" in config.properties[propertyName]) {
                 shortHandType = "map";
                 // @ts-ignore
-                shorthand = config.map[propertyName].shorthand;
-            }
-            else if (propertyName in config.property) {
-                shortHandType = "single";
-                // @ts-ignore
-                shorthand = config.property[propertyName];
-            }
-            if (this.declarations.has(shorthand)) {
-                let existing = this.declarations.get(shorthand);
-                if (existing instanceof PropertySet || existing instanceof PropertyMap) {
-                    existing = existing.declarations.get(name);
-                }
-                if (existing != null &&
-                    typeof existing == "number" &&
-                    arena.flags[existing] & exports.EnumAstNodeStatus.ImportantDeclaration &&
-                    arena.flags[declaration] & ~exports.EnumAstNodeStatus.ImportantDeclaration) {
-                    continue;
-                }
-            }
-            // @ts-ignore
-            if (shortHandType == "map") {
-                let owner = this;
-                const mapName = 
-                // @ts-ignore
-                config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
-                if (typeof mapName === "string") {
-                    if (!this.declarations.has(mapName)) {
-                        this.declarations.set(mapName, 
-                        // @ts-ignore
-                        new PropertyMap(arena, config.map[mapName]));
-                    }
-                    owner = this.declarations.get(mapName);
-                }
-                else if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand]));
-                }
-                if (owner == this) {
-                    // @ts-ignore
-                    owner.declarations.get(shorthand).add(declaration);
-                }
-                else {
-                    if (!owner.declarations.has(shorthand)) {
-                        owner.declarations.set(shorthand, 
-                        // @ts-ignore
-                        new PropertyMap(arena, config.map[shorthand]));
-                    }
-                    // @ts-ignore
-                    owner.declarations.get(shorthand).add(declaration);
-                }
-            }
-            // @ts-ignore
-            else if (shortHandType == "set") {
-                // @ts-ignore
-                if (!this.declarations.has(shorthand)) {
-                    // @ts-ignore
-                    this.declarations.set(
-                    // @ts-ignore
-                    shorthand, 
-                    // @ts-ignore
-                    new PropertySet(arena, config.properties[shorthand]));
-                }
-                // @ts-ignore
-                this.declarations.get(shorthand).add(declaration);
+                shorthand = config.properties[propertyName].map;
             }
             else {
-                if (shorthand != null) {
-                    this.mapValues(declaration, shorthand);
-                }
-                this.declarations.set(propertyName, declaration);
+                shortHandType = "set";
+                // @ts-ignore
+                shorthand = config.properties[propertyName].shorthand;
             }
+        }
+        else if (propertyName in config.map) {
+            shortHandType = "map";
+            // @ts-ignore
+            shorthand = config.map[propertyName].shorthand;
+        }
+        else if (propertyName in config.property) {
+            shortHandType = "single";
+            // @ts-ignore
+            shorthand = config.property[propertyName];
+        }
+        if (this.declarations.has(shorthand)) {
+            let existing = this.declarations.get(shorthand);
+            if (existing instanceof PropertySet || existing instanceof PropertyMap) {
+                existing = existing.declarations.get(name);
+            }
+            if (existing != null &&
+                typeof existing == "number" &&
+                arena.flags[existing] & exports.EnumAstNodeStatus.ImportantDeclaration &&
+                arena.flags[declaration] & ~exports.EnumAstNodeStatus.ImportantDeclaration) {
+                return this;
+            }
+        }
+        // @ts-ignore
+        if (shortHandType == "map") {
+            let owner = this;
+            const mapName = 
+            // @ts-ignore
+            config.map[propertyName]?.map ?? config.map[shorthand]?.properties?.[propertyName]?.map;
+            if (typeof mapName === "string") {
+                if (!this.declarations.has(mapName)) {
+                    this.declarations.set(mapName, 
+                    // @ts-ignore
+                    new PropertyMap(arena, config.map[mapName]));
+                }
+                owner = this.declarations.get(mapName);
+            }
+            else if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
+                this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand]));
+            }
+            if (owner == this) {
+                // @ts-ignore
+                owner.declarations.get(shorthand).add(declaration);
+            }
+            else {
+                if (!owner.declarations.has(shorthand)) {
+                    owner.declarations.set(shorthand, 
+                    // @ts-ignore
+                    new PropertyMap(arena, config.map[shorthand]));
+                }
+                // @ts-ignore
+                owner.declarations.get(shorthand).add(declaration);
+            }
+        }
+        // @ts-ignore
+        else if (shortHandType == "set") {
+            // @ts-ignore
+            if (!this.declarations.has(shorthand)) {
+                // @ts-ignore
+                this.declarations.set(
+                // @ts-ignore
+                shorthand, 
+                // @ts-ignore
+                new PropertySet(arena, config.properties[shorthand]));
+            }
+            // @ts-ignore
+            this.declarations.get(shorthand).add(declaration);
+        }
+        else {
+            if (shorthand != null) {
+                this.mapValues(declaration, shorthand);
+            }
+            this.declarations.set(propertyName, declaration);
         }
         return this;
     }
@@ -23114,13 +23266,9 @@ class ComputeShorthandFeature {
         if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;
         }
-        const children = arena.children(ast);
-        const j = children.length;
-        let k = 0;
-        let l;
-        const rules = [];
-        const declarations = [];
+        const list = new PropertyList(arena, options);
         let doNotSort = false;
+        let hasDeclarations = false;
         if (arena.dataTypes[ast] == exports.EnumToken.AtRuleNodeType) {
             switch (arena.strings[arena.name[ast]]) {
                 case "function":
@@ -23129,50 +23277,39 @@ class ComputeShorthandFeature {
                     break;
             }
         }
-        // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
-        if (doNotSort) {
-            for (const node of children) {
-                declarations.push(node);
-            }
-        }
-        else {
-            for (; k < j; k++) {
-                l = k;
-                // capture comments with the next token
-                while (l + 1 < j) {
-                    const node = children[l];
-                    if (arena.dataTypes[node] == exports.EnumToken.CommentNodeType) {
-                        l++;
-                        continue;
-                    }
-                    break;
+        // the declarations (with their leading comments) are moved into the property list,
+        // the rules (with their leading comments) stay in place
+        let child = arena.firstChild[ast];
+        while (child != 0) {
+            let last = child;
+            if (!doNotSort) {
+                // capture comments with the next node
+                while (arena.nextSibling[last] != 0 && arena.dataTypes[last] == exports.EnumToken.CommentNodeType) {
+                    last = arena.nextSibling[last];
                 }
-                const node = children[l];
-                if (arena.dataTypes[node] == exports.EnumToken.DeclarationNodeType) {
-                    for (let m = k; m <= l; m++) {
-                        declarations.push(children[m]);
-                    }
+            }
+            const next = arena.nextSibling[last];
+            // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+            if (doNotSort || arena.dataTypes[last] == exports.EnumToken.DeclarationNodeType) {
+                hasDeclarations = true;
+                for (let node = child; node != next;) {
+                    const nextNode = arena.nextSibling[node];
+                    arena.detach(node);
+                    list.addDeclaration(node);
+                    node = nextNode;
+                }
+            }
+            child = next;
+        }
+        if (hasDeclarations) {
+            // the declarations are inserted before the rules
+            const first = arena.firstChild[ast];
+            for (const node of list) {
+                if (first == 0) {
+                    arena.appendChild(ast, node);
                 }
                 else {
-                    for (let m = k; m <= l; m++) {
-                        rules.push(children[m]);
-                    }
-                }
-                k = l;
-            }
-        }
-        if (declarations.length > 0) {
-            const first = arena.current + 1;
-            arena.setChildren(ast, ...new PropertyList(arena, options).add(declarations), ...rules);
-            // release the dropped declarations and the temporary nodes
-            for (const node of children) {
-                if (arena.parents[node] == 0) {
-                    arena.release(node);
-                }
-            }
-            for (let node = first; node <= arena.current; node++) {
-                if (arena.parents[node] == 0) {
-                    arena.release(node);
+                    arena.insertBefore(first, node);
                 }
             }
         }
@@ -24834,13 +24971,13 @@ function processNode(arena, declarationNode, cache, parent = 0) {
         }
         // the node is substituted: release it unless it is the node being replaced
         if (astNode != declarationNode) {
-            arena.release(astNode);
+            arena.detach(astNode);
         }
     }
     if (result.length > 0 && arena.parents[declarationNode] != 0) {
         replaceNode(arena, declarationNode, result);
         if (!result.includes(declarationNode)) {
-            arena.release(declarationNode);
+            arena.detach(declarationNode);
         }
     }
     // else remove node?
@@ -25075,52 +25212,39 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
         if (!nestingContent) {
             nestingContent = options.nestingRules && arena.dataTypes[ast] == exports.EnumToken.RuleNodeType;
         }
-        // mirror of the children list. the arena is updated through splice()
-        const chi = arena.children(ast);
-        /**
-         * remove / insert children. the arena children list is kept in sync
-         * @param index
-         * @param deleteCount
-         * @param items
-         */
-        const splice = (index, deleteCount, ...items) => {
-            const removed = chi.splice(index, deleteCount, ...items);
-            if (items.length > 0) {
-                const reference = index + items.length;
-                if (reference < chi.length) {
-                    arena.insertBefore(chi[reference], ...items);
-                }
-                else {
-                    arena.appendChildList(ast, items);
-                }
-            }
-            for (const node of removed) {
-                if (arena.parents[node] == ast && !items.includes(node)) {
-                    // dropped node. the children may have been moved into the items
-                    arena.release(node, true);
-                }
-            }
-            return removed;
-        };
-        let i = 0;
+        // the children list is modified while it is visited: every branch sets the next child to visit
+        let cursor = arena.firstChild[ast];
         let previous = null;
         let node = null;
-        let nodeIndex = -1;
         let nodeType;
         let previousType;
-        for (; i < chi.length; i++) {
-            if (arena.dataTypes[chi[i]] === exports.EnumToken.CommentNodeType) {
+        /**
+         * the node located `count` positions before a child of ast (the end of the list when 0). null when out of range
+         * @param child
+         * @param count
+         */
+        const before = (child, count) => {
+            let result = child == 0 ? arena.lastChild[ast] : arena.previousSibling[child];
+            while (--count > 0 && result != 0) {
+                result = arena.previousSibling[result];
+            }
+            return result == 0 ? null : result;
+        };
+        while (cursor != 0) {
+            if (arena.dataTypes[cursor] === exports.EnumToken.CommentNodeType) {
+                cursor = arena.nextSibling[cursor];
                 continue;
             }
             while (previous != null && arena.dataTypes[previous] === exports.EnumToken.CommentNodeType) {
-                previous = chi[--nodeIndex] ?? null;
+                previous = arena.previousSibling[previous] || null;
             }
-            node = chi[i];
+            node = cursor;
             nodeType = arena.dataTypes[node];
             previousType = previous == null ? null : arena.dataTypes[previous];
             if (nodeType === exports.EnumToken.AtRuleNodeType) {
                 const nam = arena.strings[arena.name[node]];
                 if (nam === "font-face") {
+                    cursor = arena.nextSibling[node];
                     continue;
                 }
                 // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
@@ -25145,7 +25269,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         while (k != 0) {
                             const previousNode = arena.previousSibling[k];
                             if (arena.dataTypes[k] === exports.EnumToken.AtRuleNodeType) {
-                                arena.release(k, true);
+                                arena.detach(k);
                             }
                             k = previousNode;
                         }
@@ -25156,9 +25280,11 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 if (previousType === exports.EnumToken.KeyframesAtRuleNodeType &&
                     arena.name[node] === arena.name[previous] &&
                     arena.stringValue[node] === arena.stringValue[previous]) {
-                    splice(nodeIndex--, 1);
-                    previous = chi[nodeIndex] ?? null;
-                    i = nodeIndex;
+                    // the previous keyframes are dropped, the node is visited again
+                    const previousNode = arena.previousSibling[previous];
+                    cursor = arena.nextSibling[previous];
+                    arena.detach(previous);
+                    previous = previousNode || null;
                     continue;
                 }
             }
@@ -25167,11 +25293,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     arena.name[node] === arena.name[previous]) {
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
-                    arena.appendChildList(previous, arena.children(node));
+                    arena.moveChildren(node, previous);
                     options.cache?.delete(previous);
-                    splice(i, 1);
-                    previous = chi[nodeIndex] ?? null;
-                    i = nodeIndex;
+                    arena.detach(node);
+                    cursor = arena.nextSibling[previous];
                     continue;
                 }
                 let k = arena.firstChild[node];
@@ -25181,7 +25306,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         let l = arena.lastToken[k];
                         while (l != 0) {
                             if (arena.dataTypes[l] == exports.EnumToken.ImportantTokenType) {
-                                arena.release(k);
+                                arena.detach(k);
                                 break;
                             }
                             if (arena.dataTypes[l] == exports.EnumToken.WhitespaceTokenType ||
@@ -25215,7 +25340,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         }
                     }
                     if (["all", ""].includes(arena.strings[arena.stringValue[node]])) {
-                        splice(i--, 1, ...arena.children(node));
+                        // the node is replaced by its children
+                        cursor = arena.firstChild[node] || arena.nextSibling[node];
+                        arena.moveChildren(node, ast, node);
+                        arena.detach(node);
                         continue;
                     }
                 }
@@ -25241,7 +25369,10 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 else if (arena.dataTypes[ast] === nodeType &&
                     arena.name[ast] === arena.name[node] &&
                     arena.stringValue[ast] === arena.stringValue[node]) {
-                    splice(i--, 1, ...arena.children(node));
+                    // the node is replaced by its children
+                    cursor = arena.firstChild[node] || arena.nextSibling[node];
+                    arena.moveChildren(node, ast, node);
+                    arena.detach(node);
                     continue;
                 }
                 if (previousType == exports.EnumToken.AtRuleNodeType &&
@@ -25249,21 +25380,22 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     arena.name[previous] === arena.name[node] &&
                     arena.stringValue[previous] === arena.stringValue[node]) {
                     if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
-                        arena.appendChildList(previous, arena.children(node));
+                        arena.moveChildren(node, previous);
                         options.cache?.delete(previous);
                         if (!hasDeclaration(arena, previous)) {
                             context.nodes.delete(previous);
                             doMinify(arena, previous, options, recursive, errors, nestingContent, context);
                         }
                     }
-                    splice(i--, 1);
+                    cursor = arena.nextSibling[node];
+                    arena.detach(node);
                     continue;
                 }
                 if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
                 previous = node;
-                nodeIndex = i;
+                cursor = arena.nextSibling[node];
                 continue;
             }
             else if (nodeType === exports.EnumToken.RuleNodeType) {
@@ -25275,26 +25407,23 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         reduceRuleSelector(arena, previous);
                         match = matchSelectors(arena.raw[previous], arena.raw[node]);
                         if (match != null) {
-                            wrapper = wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex);
-                            nodeIndex = i - 1;
-                            previous = chi[nodeIndex];
+                            wrapper = wrapNodes(arena, previous, node, match, reducer);
                         }
                     }
                     if (wrapper != null) {
-                        while (i < chi.length) {
-                            const nextNode = chi[i];
-                            if (arena.dataTypes[nextNode] != exports.EnumToken.RuleNodeType) {
-                                break;
-                            }
+                        // wrap the following rules that match the wrapper selector
+                        let nextNode = arena.nextSibling[wrapper];
+                        while (nextNode != 0 && arena.dataTypes[nextNode] == exports.EnumToken.RuleNodeType) {
                             reduceRuleSelector(arena, nextNode);
                             match = matchSelectors(arena.raw[wrapper], arena.raw[nextNode]);
                             if (match == null) {
                                 break;
                             }
-                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer, splice, i, nodeIndex);
+                            wrapper = wrapNodes(arena, wrapper, nextNode, match, reducer);
+                            nextNode = arena.nextSibling[wrapper];
                         }
-                        nodeIndex = --i;
-                        previous = chi[nodeIndex];
+                        previous = wrapper;
+                        cursor = arena.nextSibling[wrapper];
                         doMinify(arena, wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
@@ -25309,9 +25438,9 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","));
                         arena.raw[node] = optimized.selector.slice();
                         arena.setTokens(node);
-                        // move the node into the wrapper before replacing it in the children list
-                        arena.appendChildren(wrapper, node);
-                        splice(i, 1, wrapper);
+                        // the wrapper takes the place of the node
+                        arena.insertBefore(node, wrapper);
+                        arena.appendChild(wrapper, node);
                         node = wrapper;
                         nodeType = exports.EnumToken.RuleNodeType;
                     }
@@ -25479,63 +25608,45 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                                 (nodeType == exports.EnumToken.AtRuleNodeType &&
                                     arena.strings[arena.name[node]] !== "font-face" &&
                                     arena.name[node] === arena.name[previous])) {
-                                arena.prependChildren(node, ...arena.children(previous));
+                                arena.moveChildren(previous, node, arena.firstChild[node]);
                                 options.cache?.delete(node);
                                 doMinify(arena, node, options, recursive, errors, nestingContent, context);
-                                splice(nodeIndex, 1);
-                                previous = chi[--i];
-                                nodeIndex = i;
+                                arena.detach(previous);
+                                previous = node;
+                                cursor = arena.nextSibling[node];
                                 continue;
                             }
                             else if (nodeType == previousType &&
                                 [exports.EnumToken.KeyframesRuleNodeType, exports.EnumToken.RuleNodeType].includes(nodeType)) {
                                 const intersect = diff$1(arena, previous, node, options);
                                 if (intersect != null) {
-                                    // node1 takes the place of node, [result, node2] take the place of previous
+                                    // [result, node2] take the place of node1 (previous), node1 takes the place of node2 (node)
                                     const { node1, node2, result } = intersect;
                                     const after = arena.nextSibling[node2];
-                                    const head = [];
+                                    const keep2 = arena.firstChild[node2] != 0;
                                     if (result != null) {
-                                        head.push(result);
+                                        arena.insertBefore(node1, result);
                                     }
-                                    if (arena.firstChild[node2] != 0) {
-                                        head.push(node2);
+                                    if (keep2) {
+                                        arena.insertBefore(node1, node2);
                                     }
-                                    arena.insertBefore(node1, ...head);
-                                    if (arena.firstChild[node2] == 0) {
-                                        arena.release(node2);
+                                    else {
+                                        arena.detach(node2);
                                     }
                                     if (arena.firstChild[node1] == 0) {
-                                        arena.release(node1);
+                                        arena.detach(node1);
                                     }
                                     else if (after == 0) {
-                                        arena.appendChildren(ast, node1);
+                                        arena.appendChild(ast, node1);
                                     }
                                     else {
                                         arena.insertBefore(after, node1);
                                     }
-                                    // update the mirror
-                                    if (arena.firstChild[node1] == 0) {
-                                        chi.splice(i--, 1);
-                                    }
-                                    else {
-                                        chi.splice(i--, 1, node1);
-                                    }
-                                    chi.splice(nodeIndex, 1, ...head);
-                                    if (arena.firstChild[node2] == 0) {
-                                        i--;
-                                        if (nodeIndex == i) {
-                                            nodeIndex = i;
-                                        }
-                                    }
-                                    else {
-                                        i = (nodeIndex ?? 0) + 1;
-                                    }
-                                    if (node != chi[i]) {
-                                        node = chi[i];
-                                    }
+                                    // next node to visit
+                                    node = keep2
+                                        ? arena.nextSibling[result ?? node2] || null
+                                        : before(arena.parents[node1] == ast ? node1 : after, result == null ? 1 : 2);
                                     previous = result;
-                                    nodeIndex = i;
                                 }
                             }
                         }
@@ -25554,11 +25665,12 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 fixSelector(arena, previous);
             }
             previous = node;
-            nodeIndex = i;
+            cursor = node == null ? arena.firstChild[ast] : arena.nextSibling[node];
         }
         if (recursive && node != null && arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
             if (arena.dataTypes[node] == exports.EnumToken.KeyframesAtRuleNodeType || !hasDeclarationChild(arena, node)) {
-                if (!(arena.dataTypes[node] == exports.EnumToken.AtRuleNodeType && arena.strings[arena.name[node]] != "font-face")) {
+                if (!(arena.dataTypes[node] == exports.EnumToken.AtRuleNodeType &&
+                    arena.strings[arena.name[node]] != "font-face")) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -26029,19 +26141,16 @@ function fixSelector(arena, node) {
     }
 }
 /**
- * Wrap nodes
+ * Wrap two sibling rules into a new rule. the wrapper takes the place of node, previous is removed
  * @param arena
  * @param previous
  * @param node
  * @param match
  * @param reducer
- * @param splice children mirror splice
- * @param i
- * @param nodeIndex
  *
  * @private
  */
-function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) {
+function wrapNodes(arena, previous, node, match, reducer) {
     // @ts-ignore
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
@@ -26052,21 +26161,29 @@ function wrapNodes(arena, previous, node, match, reducer, splice, i, nodeIndex) 
     arena.raw[wrapper] = match.match.map((t) => t.slice());
     arena.optimized[wrapper] = null;
     arena.setTokens(wrapper);
+    const parent = arena.parents[node];
+    // the wrapper takes the place of node
+    arena.insertBefore(node, wrapper);
     if (pSel == "&" || pSel === "") {
-        arena.appendChildList(wrapper, arena.children(previous));
+        arena.moveChildren(previous, wrapper);
         if (nSel == "&" || nSel === "") {
-            arena.appendChildList(wrapper, arena.children(node));
+            arena.moveChildren(node, wrapper);
         }
         else {
-            arena.appendChildren(wrapper, node);
+            arena.appendChild(wrapper, node);
         }
     }
     else {
-        arena.appendChildren(wrapper, previous, node);
+        arena.appendChild(wrapper, previous);
+        arena.appendChild(wrapper, node);
     }
-    // insert the wrapper at the position of node, then remove previous
-    splice(i, 1, wrapper);
-    splice(nodeIndex, 1);
+    // the nodes whose children were moved into the wrapper are dropped
+    if (arena.parents[previous] == parent) {
+        arena.detach(previous);
+    }
+    if (arena.parents[node] == parent) {
+        arena.detach(node);
+    }
     // update the selectors of the wrapped nodes
     if (arena.parents[previous] == wrapper) {
         arena.setSelector(previous, pSel);
@@ -26152,45 +26269,41 @@ function diff$1(arena, n1, n2, options = {}) {
             }
         }
     }
-    const children1 = arena.children(node1);
-    const children2 = arena.children(node2);
-    const remaining1 = children1.slice();
-    const remaining2 = children2.slice();
-    const intersect = [];
-    let i = remaining1.length;
-    let j;
-    while (i--) {
-        if (arena.dataTypes[remaining1[i]] == exports.EnumToken.CommentNodeType) {
+    // match the declarations of both rules, from the last to the first
+    let matches = 0;
+    for (let child1 = arena.lastChild[node1]; child1 != 0; child1 = arena.previousSibling[child1]) {
+        if (arena.dataTypes[child1] == exports.EnumToken.CommentNodeType) {
             continue;
         }
-        j = remaining2.length;
-        while (j--) {
-            if (arena.dataTypes[remaining2[j]] == exports.EnumToken.CommentNodeType) {
+        for (let child2 = arena.lastChild[node2]; child2 != 0; child2 = arena.previousSibling[child2]) {
+            if (arena.dataTypes[child2] == exports.EnumToken.CommentNodeType ||
+                arena.flags[child2] & exports.EnumAstNodeStatus.Matched) {
                 continue;
             }
-            if (arena.name[remaining1[i]] == arena.name[remaining2[j]]) {
-                if (eqNode(arena, remaining1[i], remaining2[j])) {
-                    intersect.push(remaining1[i]);
-                    remaining1.splice(i, 1);
-                    remaining2.splice(j, 1);
-                    break;
-                }
+            if (arena.name[child1] == arena.name[child2] && eqNode(arena, child1, child2)) {
+                arena.flags[child1] |= exports.EnumAstNodeStatus.Matched;
+                arena.flags[child2] |= exports.EnumAstNodeStatus.Matched;
+                matches++;
+                break;
             }
         }
     }
-    if (intersect.length === 0 && (remaining1.length > 0 || remaining2.length > 0)) {
+    if (matches == 0 && (arena.firstChild[node1] != 0 || arena.firstChild[node2] != 0)) {
         return null;
     }
     const op = { ...options };
-    // size of the original nodes
-    const size = [n1, n2].reduce((acc, curr) => {
-        let css = options.cache.get(curr);
+    const renderedSize = (node, cache) => {
+        let css = cache ? options.cache.get(node) : undefined;
         if (css == null) {
-            css = doRender(arena, curr, op).code;
-            options.cache.set(curr, css);
+            css = doRender(arena, node, op).code;
+            if (cache) {
+                options.cache.set(node, css);
+            }
         }
-        return arena.firstChild[curr] == 0 ? acc : acc + css.length;
-    }, 0);
+        return arena.firstChild[node] == 0 ? 0 : css.length;
+    };
+    // size of the original nodes
+    const size = renderedSize(n1, true) + renderedSize(n2, true);
     // the shared declarations are moved into the result node
     const result = arena.clone(node1);
     arena.setSelector(result, [
@@ -26198,29 +26311,45 @@ function diff$1(arena, n1, n2, options = {}) {
             .concat(splitRule(arena.strings[arena.name[node2]]))
             .map((s) => s.join(""))),
     ].join(","));
-    arena.setChildList(result, intersect.reverse());
-    arena.setChildList(node1, remaining1);
-    arena.setChildList(node2, remaining2);
+    // the matched declarations of node1 are moved into the result, the duplicates in node2 are dropped.
+    // the moves are recorded (node, parent, next sibling) to be undone when the result is not smaller
+    const moves = [];
+    const moveMatched = (parent, target) => {
+        let child = arena.firstChild[parent];
+        while (child != 0) {
+            const next = arena.nextSibling[child];
+            if (arena.flags[child] & exports.EnumAstNodeStatus.Matched) {
+                arena.flags[child] &= ~exports.EnumAstNodeStatus.Matched;
+                moves.push(child, parent, next);
+                if (target == null) {
+                    arena.detach(child);
+                }
+                else {
+                    arena.appendChild(target, child);
+                }
+            }
+            child = next;
+        }
+    };
+    moveMatched(node1, result);
+    moveMatched(node2, null);
     arena.insertBefore(n1, result);
-    // duplicates of node2 are dropped
-    const dropped = children2.filter((node) => arena.parents[node] == 0);
     options.cache.delete(node1);
     options.cache.delete(node2);
-    if (size <=
-        [node1, node2, result].reduce((acc, curr) => {
-            const css = doRender(arena, curr, op).code;
-            return arena.firstChild[curr] == 0 ? acc : acc + css.length;
-        }, 0)) {
-        if (remaining1.length != 0 && remaining2.length != 0) {
-            // restore the nodes
-            arena.setChildList(node1, children1);
-            arena.setChildList(node2, children2);
-            arena.release(result);
-            return null;
+    if (size <= renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false) &&
+        arena.firstChild[node1] != 0 &&
+        arena.firstChild[node2] != 0) {
+        // restore the nodes: undo the moves in reverse order
+        for (let k = moves.length - 3; k >= 0; k -= 3) {
+            if (moves[k + 2] == 0) {
+                arena.appendChild(moves[k + 1], moves[k]);
+            }
+            else {
+                arena.insertBefore(moves[k + 2], moves[k]);
+            }
         }
-    }
-    for (const node of dropped) {
-        arena.release(node, true);
+        arena.detach(result);
+        return null;
     }
     arena.setTokens(result);
     arena.raw[result] = null;
@@ -26371,50 +26500,50 @@ function expand(arena, ast) {
     if (arena.flags[ast] & skipStates) {
         return ast;
     }
-    const children = arena.children(ast);
-    const result = [];
-    for (let i = 0; i < children.length; i++) {
-        let node = children[i];
+    let node = arena.firstChild[ast];
+    while (node != 0) {
+        const next = arena.nextSibling[node];
         const typ = arena.dataTypes[node];
         if (typ === exports.EnumToken.RuleNodeType) {
-            for (const child of expandRule(arena, node)) {
-                result.push(child);
-            }
+            // the expanded rules are inserted after the rule
+            expandRule(arena, node, ast, next);
         }
         else if (typ == exports.EnumToken.AtRuleNodeType && arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
-            let hasRule = false;
             let j = arena.lastChild[node];
             while (j != 0) {
                 if (arena.dataTypes[j] == exports.EnumToken.RuleNodeType || arena.dataTypes[j] == exports.EnumToken.AtRuleNodeType) {
-                    hasRule = true;
+                    expand(arena, node);
                     break;
                 }
                 j = arena.previousSibling[j];
             }
-            if (hasRule) {
-                node = expand(arena, node);
-            }
-            result.push(node);
         }
-        else {
-            result.push(node);
-        }
+        node = next;
     }
-    arena.setChildList(ast, result);
     return ast;
 }
 /**
- * expand a rule. nested rules and at-rules are detached from the rule and returned
+ * expand a rule: the nested rules and at-rules are moved out of the rule, into `parent` before `before`.
+ * the rule is detached when it has no children left
  * @param arena
  * @param node
+ * @param parent
+ * @param before the expanded nodes are inserted before this child of parent. they are appended when 0
  */
-function expandRule(arena, node) {
+function expandRule(arena, node, parent, before) {
     if (arena.flags[node] & skipStates) {
-        return [node];
+        return;
     }
     const ast = node;
-    const result = [];
     const sel = arena.strings[arena.name[ast]];
+    const place = (child) => {
+        if (before == 0) {
+            arena.appendChild(parent, child);
+        }
+        else {
+            arena.insertBefore(before, child);
+        }
+    };
     if (arena.dataTypes[ast] == exports.EnumToken.RuleNodeType) {
         let child = arena.firstChild[ast];
         while (child != 0) {
@@ -26430,7 +26559,7 @@ function expandRule(arena, node) {
                         .reduce((acc, curr) => acc.concat([curr.join("")]), [])
                         .join(",");
                     if (arSelf.length == 0) {
-                        arena.release(rule, true);
+                        arena.detach(rule);
                         child = next;
                         continue;
                     }
@@ -26454,7 +26583,7 @@ function expandRule(arena, node) {
                     const rules = splitRule(sel).filter((r) => r.every((t) => t != ":before" && t != ":after" && !t.startsWith("::")));
                     const parentSelector = !sel.includes("&");
                     if (rules.length == 0) {
-                        arena.release(rule, true);
+                        arena.detach(rule);
                         child = next;
                         continue;
                     }
@@ -26533,14 +26662,11 @@ function expandRule(arena, node) {
                     }
                     arena.setSelector(rule, selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), ""));
                 }
-                arena.detach(rule);
-                for (const s of expandRule(arena, rule)) {
-                    result.push(s);
-                }
+                place(rule);
+                expandRule(arena, rule, parent, before);
             }
             else if (typ == exports.EnumToken.AtRuleNodeType) {
                 const astAtRule = child;
-                const values = [];
                 const atRuleName = arena.strings[arena.name[astAtRule]];
                 if (atRuleName === "scope") {
                     const atRuleValue = arena.strings[arena.stringValue[astAtRule]];
@@ -26558,56 +26684,64 @@ function expandRule(arena, node) {
                     if (hasNesting) {
                         // expand the nested rules against the parent selector
                         const clone = arena.clone(node);
-                        arena.setChildList(clone, arena.children(astAtRule));
-                        const expanded = expandRule(arena, clone);
-                        // declarations stay in the at-rule
-                        arena.setChildList(astAtRule, arena.children(clone));
-                        arena.release(clone);
-                        for (const r of expanded) {
-                            if (r != clone) {
-                                arena.appendChildren(astAtRule, r);
-                            }
-                        }
+                        arena.moveChildren(astAtRule, clone);
+                        expandRule(arena, clone, astAtRule, 0);
+                        // declarations stay in the at-rule, before the expanded rules
+                        arena.moveChildren(clone, astAtRule, arena.firstChild[astAtRule]);
                     }
+                    place(astAtRule);
                 }
                 else {
                     const clone = arena.clone(ast);
-                    arena.setChildList(clone, arena.children(astAtRule));
-                    for (const r of expandRule(arena, clone)) {
-                        if (arena.dataTypes[r] == exports.EnumToken.AtRuleNodeType &&
-                            arena.flags[r] & exports.EnumAstNodeStatus.HasChildren) {
-                            const val = arena.strings[arena.stringValue[astAtRule]];
-                            const rVal = arena.strings[arena.stringValue[r]];
-                            if (val !== "" && rVal !== "") {
-                                const rName = arena.strings[arena.name[r]];
-                                if (atRuleName === "media" && rName === "media") {
-                                    arena.setValueString(r, val + " and " + rVal);
-                                }
-                                else if (atRuleName == "layer" && rName == "layer") {
-                                    arena.setValueString(r, val + "." + rVal);
-                                }
-                            }
-                            values.push(r);
+                    // the rules are expanded inside the at-rule: [clone, ...expanded nodes]
+                    arena.moveChildren(astAtRule, clone);
+                    expandRule(arena, clone, astAtRule, 0);
+                    if (arena.firstChild[clone] != 0) {
+                        // the rule declarations are wrapped in the clone, before the expanded nodes
+                        if (arena.firstChild[astAtRule] == 0) {
+                            arena.appendChild(astAtRule, clone);
                         }
-                        else if (arena.dataTypes[r] == exports.EnumToken.RuleNodeType) {
-                            for (const rule of expandRule(arena, r)) {
-                                arena.appendChildren(astAtRule, rule);
-                            }
+                        else {
+                            arena.insertBefore(arena.firstChild[astAtRule], clone);
                         }
                     }
+                    place(astAtRule);
+                    // the expanded at-rules are moved after the at-rule
+                    let r = arena.firstChild[astAtRule];
+                    while (r != 0) {
+                        const nextRule = arena.nextSibling[r];
+                        if (arena.dataTypes[r] == exports.EnumToken.AtRuleNodeType) {
+                            if (arena.flags[r] & exports.EnumAstNodeStatus.HasChildren) {
+                                const val = arena.strings[arena.stringValue[astAtRule]];
+                                const rVal = arena.strings[arena.stringValue[r]];
+                                if (val !== "" && rVal !== "") {
+                                    const rName = arena.strings[arena.name[r]];
+                                    if (atRuleName === "media" && rName === "media") {
+                                        arena.setValueString(r, val + " and " + rVal);
+                                    }
+                                    else if (atRuleName == "layer" && rName == "layer") {
+                                        arena.setValueString(r, val + "." + rVal);
+                                    }
+                                }
+                                place(r);
+                            }
+                            else {
+                                arena.detach(r);
+                            }
+                        }
+                        r = nextRule;
+                    }
                 }
-                arena.detach(astAtRule);
-                if (arena.firstChild[astAtRule] != 0) {
-                    result.push(astAtRule);
-                }
-                for (const r of values) {
-                    result.push(r);
+                if (arena.firstChild[astAtRule] == 0) {
+                    arena.detach(astAtRule);
                 }
             }
             child = next;
         }
     }
-    return arena.firstChild[ast] != 0 ? [ast].concat(result) : result;
+    if (arena.firstChild[ast] == 0) {
+        arena.detach(ast);
+    }
 }
 /**
  * replace compound selector
@@ -27445,21 +27579,24 @@ function doRender(arena, data, options = {}, mapping) {
     const expandNesting = options.expandNestingRules &&
         [exports.EnumToken.StyleSheetNodeType, exports.EnumToken.AtRuleNodeType, exports.EnumToken.RuleNodeType].includes(arena.dataTypes[data]) &&
         (arena.flags[data] & exports.EnumAstNodeStatus.HasChildren) != 0;
+    // temporary stylesheet holding the rendered copy
+    let sheet = 0;
     if (options.withParents || expandNesting) {
-        // render a copy allocated in a temporary arena: the original tree is not modified
-        const source = arena;
-        let parent = source.parents[data];
-        arena = new AstArena(Math.min(source.current, 1024));
-        data = arena.import(source, data);
+        // render a copy: the original tree is not modified. the copy is allocated in the same arena,
+        // under a temporary stylesheet node that is not attached to the tree
+        let parent = arena.parents[data];
+        sheet = arena.createStyleSheet();
+        data = arena.clone(data, true);
         if (options.withParents) {
             // wrap the node into shallow copies of its ancestors
             while (parent != 0) {
-                const clone = arena.import(source, parent, false);
-                arena.appendChildren(clone, data);
+                const clone = arena.clone(parent, false);
+                arena.appendChild(clone, data);
                 data = clone;
-                parent = source.parents[parent];
+                parent = arena.parents[parent];
             }
         }
+        arena.appendChild(sheet, data);
         if (expandNesting) {
             data = expand(arena, data);
         }
@@ -27494,8 +27631,6 @@ function doRender(arena, data, options = {}, mapping) {
         // @ts-ignore
         options.output = options.resolve(options.output, options.cwd).absolute;
     }
-    // the tokens allocated while rendering (color conversion, gradients, ...) are released
-    const mark = arena.mark();
     const result = {
         code: code +
             renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, function reducer(acc, curr) {
@@ -27512,7 +27647,11 @@ function doRender(arena, data, options = {}, mapping) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
-    arena.rewind(mark);
+    if (sheet != 0) {
+        // drop the temporary stylesheet. the tokens allocated while rendering (color conversion, gradients, ...)
+        // are not attached to the tree either: the memory is not reclaimed, the ids are never reused
+        arena.detach(data);
+    }
     if (sourcemap != null) {
         let source;
         for (const sourceId of sourcemaps.sources) {
@@ -30927,7 +31066,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     let syntaxRules = null;
     let success = true;
     let hasImportantFlag = false;
-    let validate = typeof options.validation === "boolean" ? options.validation : !!options.validation;
+    let validate = !!options.validation;
     if (renamedStandardProperties.has(nam)) {
         nam = renamedStandardProperties.get(nam);
         arena.setStr(name, nam);
@@ -31015,7 +31154,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     let index;
     if (syntaxRules != null) {
         const doNotValidate = options.validation === false;
-        result = doNotValidate ? null : matchAllSyntaxes(arena, syntaxRules, createValidationContext(arena, tokens), options);
+        result = doNotValidate ? null : matchDeclarationSyntax(arena, syntaxRules, tokens, options);
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
             if (success) {
@@ -32697,11 +32836,13 @@ function createCommentNode(arena, token) {
     return node;
 }
 /**
- * initial arena capacity: about one node for every 2.5 bytes of css, capped to 256K nodes
+ * initial arena capacity: one node for every 4 bytes of css. the statement tokens that are not attached to the tree
+ * are recycled, so a parse + minify allocates 0.07 to 0.22 node per byte (up to 0.5 for keyframes heavy stylesheets
+ * or when nesting rules are expanded): the arena seldom grows
  * @param tokenizer
  */
 function arenaCapacity(tokenizer) {
-    return Math.min(1 << 18, Math.max(4096, Math.ceil(tokenizer.streamLength / 2.5)));
+    return Math.min(1 << 25, Math.max(4096, Math.ceil(tokenizer.streamLength / 4) + 1024));
 }
 /**
  * allocate the current tokenizer token in the arena
@@ -32736,6 +32877,35 @@ function allocateToken(arena, tokenizer, sourceIndex) {
         arena.setTokenLocation(item, sourceIndex, tokenizer.sta, tokenizer.end);
     }
     return item;
+}
+/**
+ * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
+ * the tokens referenced by the errors or the invalid nodes of the statement are kept
+ * @param arena
+ * @param tokens statement tokens
+ * @param errors
+ * @param errorStart index of the first error of the statement
+ * @param invalidNodes
+ * @param invalidStart index of the first invalid node of the statement
+ */
+function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes, invalidStart) {
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        // already recycled (a token can be recorded twice), attached or holding other tokens
+        if (arena.dataTypes[token] == 0 ||
+            arena.parents[token] != 0 ||
+            arena.firstChild[token] != 0 ||
+            arena.firstToken[token] != 0) {
+            continue;
+        }
+        let referenced = invalidNodes.indexOf(token, invalidStart) != -1;
+        for (let j = errorStart; !referenced && j < errors.length; j++) {
+            referenced = errors[j].node === token;
+        }
+        if (!referenced) {
+            arena.recycle(token);
+        }
+    }
 }
 /**
  * build a css variable token from a css variable node
@@ -33037,6 +33207,13 @@ function parseVisitors(visitorsDef, errors) {
             if (typeof value == "function") {
                 key = value.name;
             }
+            else if (value != null && typeof value == "object") {
+                // array of visitor maps: flatten. this used to depend on the array index being an EnumToken value
+                for (const val of Object.entries(value)) {
+                    visitors.push(val);
+                }
+                continue;
+            }
         }
         if (key in exports.EnumToken) {
             if (typeof value == "function") {
@@ -33207,9 +33384,7 @@ function doParseSync(tokenizer, options = {}) {
         lenient: true,
         ...options,
     };
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
     if (options.module) {
         options.expandNestingRules = true;
     }
@@ -33233,8 +33408,12 @@ function doParseSync(tokenizer, options = {}) {
         imports: [],
     };
     const invalidNodes = [];
+    // first error / invalid node of the current statement
+    let errorStart = errors.length;
+    let invalidStart = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement = [];
     // nested parses share the arena of the parent
-    const ownArena = options.arena == null;
     const arena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
     let ast = arena.current == 1 ? arena.root : arena.createStyleSheet();
     let tokens = [];
@@ -33256,6 +33435,7 @@ function doParseSync(tokenizer, options = {}) {
         stats.tokensCount++;
         if (BadTokensTypes.includes(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
@@ -33279,6 +33459,7 @@ function doParseSync(tokenizer, options = {}) {
             curlyBracketMatch--;
         }
         tokens.push(item);
+        statement.push(item);
         if (parensMatch === 0 &&
             (itemType === exports.EnumToken.SemiColonTokenType ||
                 itemType === exports.EnumToken.BlockStartTokenType ||
@@ -33299,6 +33480,7 @@ function doParseSync(tokenizer, options = {}) {
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ;
                     tokens.push(item);
+                    statement.push(item);
                     if (itemType === exports.EnumToken.BlockStartTokenType) {
                         inBlock++;
                     }
@@ -33314,7 +33496,11 @@ function doParseSync(tokenizer, options = {}) {
                     });
                 }
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
@@ -33325,9 +33511,13 @@ function doParseSync(tokenizer, options = {}) {
                 previousNode != null &&
                 arena.firstChild[previousNode] == 0 &&
                 arena.lastChild[context] == previousNode) {
-                arena.release(previousNode);
+                arena.detach(previousNode);
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -33638,7 +33828,7 @@ function doParseSync(tokenizer, options = {}) {
                         }
                     }
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == exports.EnumToken.CssVariableTokenType) {
@@ -33648,7 +33838,7 @@ function doParseSync(tokenizer, options = {}) {
                     }
                     result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == exports.EnumToken.DeclarationNodeType) {
@@ -34025,10 +34215,6 @@ function doParseSync(tokenizer, options = {}) {
     if (options.signal != null) {
         options.signal.removeEventListener("abort", reject);
     }
-    if (ownArena) {
-        // drop the tokens and nodes that are no longer referenced and renumber the nodes in document order
-        arena.compact(errors);
-    }
     return result;
 }
 /**
@@ -34067,9 +34253,7 @@ async function doParse(iter, options = {}) {
         ...options,
     };
     options.minifyAST ??= options.minify;
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
     if (options.module) {
         options.expandNestingRules = true;
     }
@@ -34095,9 +34279,13 @@ async function doParse(iter, options = {}) {
         imports: [],
     };
     const invalidNodes = [];
+    // first error / invalid node of the current statement
+    let errorStart = errors.length;
+    let invalidStart = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement = [];
     let tokenizer = iter instanceof Promise ? await iter : iter;
     // nested parses share the arena of the parent
-    const ownArena = options.arena == null;
     const arena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
     let ast = arena.current == 1 ? arena.root : arena.createStyleSheet();
     let tokens = [];
@@ -34120,6 +34308,7 @@ async function doParse(iter, options = {}) {
         stats.tokensCount++;
         if (BadTokensTypes.includes(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
@@ -34143,6 +34332,7 @@ async function doParse(iter, options = {}) {
             curlyBracketMatch--;
         }
         tokens.push(item);
+        statement.push(item);
         if (parensMatch === 0 &&
             (itemType === exports.EnumToken.SemiColonTokenType ||
                 itemType === exports.EnumToken.BlockStartTokenType ||
@@ -34167,6 +34357,7 @@ async function doParse(iter, options = {}) {
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ;
                     tokens.push(item);
+                    statement.push(item);
                     if (itemType === exports.EnumToken.BlockStartTokenType) {
                         inBlock++;
                     }
@@ -34182,7 +34373,11 @@ async function doParse(iter, options = {}) {
                     });
                 }
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
@@ -34193,9 +34388,13 @@ async function doParse(iter, options = {}) {
                 previousNode != null &&
                 arena.firstChild[previousNode] == 0 &&
                 arena.lastChild[context] == previousNode) {
-                arena.release(previousNode);
+                arena.detach(previousNode);
             }
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -34250,8 +34449,11 @@ async function doParse(iter, options = {}) {
                 stats.nodesCount += root.stats.nodesCount;
                 stats.tokensCount += root.stats.tokensCount;
                 stats.imports.push(root.stats);
-                // the imported stylesheet is allocated in the same arena
-                arena.replaceChild(node, ...arena.children(root.ast));
+                // the imported stylesheet is allocated in the same arena: its children replace the @import rule
+                if (arena.parents[node] != 0) {
+                    arena.moveChildren(root.ast, arena.parents[node], node);
+                    arena.detach(node);
+                }
                 if (root.errors.length > 0) {
                     for (const error of root.errors) {
                         errors.push(error);
@@ -34592,7 +34794,7 @@ async function doParse(iter, options = {}) {
                         }
                     }
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == exports.EnumToken.CssVariableTokenType) {
@@ -34602,7 +34804,7 @@ async function doParse(iter, options = {}) {
                     }
                     result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
                 }
-                arena.release(node);
+                arena.detach(node);
                 continue;
             }
             if (nodeType == exports.EnumToken.DeclarationNodeType) {
@@ -35061,10 +35263,6 @@ async function doParse(iter, options = {}) {
     }
     if (options.signal != null) {
         options.signal.removeEventListener("abort", reject);
-    }
-    if (ownArena) {
-        // drop the tokens and nodes that are no longer referenced and renumber the nodes in document order
-        arena.compact(errors);
     }
     return result;
 }
@@ -35944,14 +36142,14 @@ function parseDeclarations(declaration, arena) {
     });
     const rule = result.arena.firstChild[result.ast];
     const nodes = [];
-    if (rule != 0) {
-        for (const node of result.arena.children(rule)) {
-            if (result.arena.dataTypes[node] == exports.EnumToken.DeclarationNodeType ||
-                result.arena.dataTypes[node] == exports.EnumToken.CommentNodeType) {
-                result.arena.detach(node);
-                nodes.push(node);
-            }
+    for (let node = rule == 0 ? 0 : result.arena.firstChild[rule]; node != 0;) {
+        const next = result.arena.nextSibling[node];
+        if (result.arena.dataTypes[node] == exports.EnumToken.DeclarationNodeType ||
+            result.arena.dataTypes[node] == exports.EnumToken.CommentNodeType) {
+            result.arena.detach(node);
+            nodes.push(node);
         }
+        node = next;
     }
     return { arena: result.arena, nodes };
 }
@@ -35996,8 +36194,13 @@ function parseString(arena, src, options = { parseColor: true }, errors) {
         mapped.push(allocateToken(arena, tokenizer, -1));
     }
     const result = parseTokens(arena, mapped, options, errors);
-    // remove EOF token
-    result.splice(result.length - (arena.dataTypes[result[result.length - 2]] === exports.EnumToken.WhitespaceTokenType ? 2 : 1), 2);
+    // remove the EOF token and the whitespace before it: their ids are recycled
+    const removed = result.splice(result.length - (arena.dataTypes[result[result.length - 2]] === exports.EnumToken.WhitespaceTokenType ? 2 : 1), 2);
+    for (let i = 0; i < removed.length; i++) {
+        if (arena.parents[removed[i]] == 0 && arena.firstToken[removed[i]] == 0 && arena.firstChild[removed[i]] == 0) {
+            arena.recycle(removed[i]);
+        }
+    }
     return result;
 }
 /**
@@ -36487,32 +36690,6 @@ function render(arena, data, options = {}, mapping) {
     return doRender(arena, data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? node_path.resolve() }), mapping);
 }
 /**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @see {@link parse}
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-const parseFile = node_util.deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
-/**
  * Parse CSS
  * @param args
  *
@@ -36731,35 +36908,6 @@ async function parse(...args) {
         : parseResult(result, options));
 }
 /**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated Use transform() instead.
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-const transformFile = node_util.deprecate(async (file, options = {}, asStream = false) => transform({
-    file,
-    asStream,
-    ...options,
-}), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
-/**
  * Transform CSS
  *
  * Parsing a string
@@ -36880,7 +37028,6 @@ exports.minify = minify;
 exports.okLabDistance = okLabDistance;
 exports.parse = parse;
 exports.parseDeclarations = parseDeclarations;
-exports.parseFile = parseFile;
 exports.parseString = parseString;
 exports.parseSync = parseSync;
 exports.parseSyntax = parseSyntax;
@@ -36891,7 +37038,6 @@ exports.replaceNodeOrValue = replaceNodeOrValue;
 exports.resolve = resolve;
 exports.setNodeProperty = setNodeProperty;
 exports.transform = transform;
-exports.transformFile = transformFile;
 exports.transformSync = transformSync;
 exports.version = version;
 exports.walk = walk;

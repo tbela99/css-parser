@@ -5,7 +5,7 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { EnumAstNodeStatus, EnumToken, ColorType } from './types.js';
+import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';
 import { WalkerOptionEnum, WalkerEvent } from './walk.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 
@@ -133,6 +133,10 @@ class Arena {
      * current free node id. This is used to allocate new nodes in the arena. It starts at 1 because 0 is reserved for the root node.
      */
     current = 1;
+    /**
+     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
+     */
+    freeList = 0;
     /**
      * node EnumToken type array
      */
@@ -309,11 +313,38 @@ class Arena {
         this.errors = new Map(properties.errors);
     }
     allocate() {
-        const id = ++this.current;
-        if (this.current >= this.dataTypes.length) {
+        let id = this.freeList;
+        if (id != 0) {
+            // reuse a recycled node: its record is already zeroed, except the free list link
+            this.freeList = this.nextSibling[id];
+            this.nextSibling[id] = 0;
+            return id;
+        }
+        id = ++this.current;
+        if (id >= this.dataTypes.length) {
             this.resize(this.dataTypes.length * 2);
         }
         return id;
+    }
+    /**
+     * recycle a detached leaf node (no parent, no children, no tokens) that is no longer referenced:
+     * its id is reused by the next allocation. the record is zeroed, so a stale reference reads an empty node
+     * @param id
+     */
+    recycle(id) {
+        this.dataTypes[id] = 0;
+        this.name[id] = 0;
+        this.stringValue[id] = 0;
+        this.numericValue[id] = 0;
+        this.unit[id] = 0;
+        this.flags[id] = 0;
+        this.colorType[id] = 0;
+        this.spans[id] = 0n;
+        if (this.errors.size > 0) {
+            this.errors.delete(id);
+        }
+        this.nextSibling[id] = this.freeList;
+        this.freeList = id;
     }
     /**
      * Interns a string and returns its unique ID. If the string has already been interned, it returns the existing ID.
@@ -1060,6 +1091,29 @@ class Arena {
         this.lastToken[id] = 0;
         this.appendTokenList(id, tokens);
     }
+    /**
+     * move the children of a node into another node, in order
+     * @param from
+     * @param to
+     * @param before the children are inserted before this child of `to`. they are appended when 0
+     */
+    moveChildren(from, to, before = 0) {
+        if (from == to) {
+            return;
+        }
+        let child = this.firstChild[from];
+        while (child != 0) {
+            const next = this.nextSibling[child];
+            this.detach(child);
+            if (before == 0) {
+                this.appendChild(to, child);
+            }
+            else {
+                this.#insertBefore(to, before, child);
+            }
+            child = next;
+        }
+    }
     appendChildren(id, ...children) {
         this.appendChildList(id, children);
     }
@@ -1309,43 +1363,6 @@ class Arena {
         this.stringIds = stringIds;
     }
     /**
-     * current allocation position. the ids allocated after the mark can be released with {@link rewind}
-     */
-    mark() {
-        return this.current;
-    }
-    /**
-     * release the ids allocated after the mark. the released ids must not be referenced by the tree:
-     * this is used to drop the temporary tokens created while rendering
-     * @param mark
-     */
-    rewind(mark) {
-        if (mark >= this.current) {
-            return;
-        }
-        const start = mark + 1;
-        const end = this.current + 1;
-        this.dataTypes.fill(0, start, end);
-        this.parents.fill(0, start, end);
-        this.nextSibling.fill(0, start, end);
-        this.previousSibling.fill(0, start, end);
-        this.firstToken.fill(0, start, end);
-        this.lastToken.fill(0, start, end);
-        this.firstChild.fill(0, start, end);
-        this.lastChild.fill(0, start, end);
-        this.name.fill(0, start, end);
-        this.stringValue.fill(0, start, end);
-        this.numericValue.fill(0, start, end);
-        this.unit.fill(0, start, end);
-        this.flags.fill(0, start, end);
-        this.colorType.fill(0, start, end);
-        this.spans.fill(0n, start, end);
-        for (let id = start; id < end; id++) {
-            this.errors.delete(id);
-        }
-        this.current = mark;
-    }
-    /**
      * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
      * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
      * the unused strings are dropped too
@@ -1469,34 +1486,76 @@ class Arena {
         this.spans32 = new Uint32Array(spans.buffer);
         this.errors = nodeErrors;
         this.current = next - 1;
+        this.freeList = 0;
         return mapping;
     }
     /**
-     * shrink the columns to the allocated nodes. the arena grows again when new nodes are allocated.
-     * see {@link compactStrings} to drop the unused strings
+     * mark nodes to be released or trimmed later, see {@link release} and {@link trim}.
+     * the library never releases nor trims the arena by itself
+     * @param ids
      */
-    trim() {
-        // keep some room for the tokens allocated while rendering
-        const size = this.current + 1 + Math.max(64, this.current >> 5);
-        if (size >= this.dataTypes.length) {
+    mark(...ids) {
+        for (const id of ids) {
+            if (id != 0 && id != this.root) {
+                this.flags[id] |= EnumAstNodeStatus.Marked;
+            }
+        }
+    }
+    /**
+     * true if the node is marked, see {@link mark}
+     * @param id
+     */
+    isMarked(id) {
+        return (this.flags[id] & EnumAstNodeStatus.Marked) != 0;
+    }
+    /**
+     * release nodes: detach them and drop their data (interned strings, errors). node ids are never reused:
+     * the memory is reclaimed by {@link trim}
+     * @param id the node to release. every marked node (and its descendants) is released when omitted
+     * @param deep release the children and the tokens too
+     */
+    release(id, deep = false) {
+        if (id == null) {
+            for (let node = 1; node <= this.current; node++) {
+                if (this.flags[node] & EnumAstNodeStatus.Marked) {
+                    this.flags[node] &= ~EnumAstNodeStatus.Marked;
+                    this.release(node, true);
+                }
+            }
             return;
         }
-        this.dataTypes = this.dataTypes.slice(0, size);
-        this.parents = this.parents.slice(0, size);
-        this.nextSibling = this.nextSibling.slice(0, size);
-        this.previousSibling = this.previousSibling.slice(0, size);
-        this.firstToken = this.firstToken.slice(0, size);
-        this.lastToken = this.lastToken.slice(0, size);
-        this.firstChild = this.firstChild.slice(0, size);
-        this.lastChild = this.lastChild.slice(0, size);
-        this.name = this.name.slice(0, size);
-        this.stringValue = this.stringValue.slice(0, size);
-        this.numericValue = this.numericValue.slice(0, size);
-        this.unit = this.unit.slice(0, size);
-        this.flags = this.flags.slice(0, size);
-        this.colorType = this.colorType.slice(0, size);
-        this.spans = this.spans.slice(0, size);
-        this.spans32 = new Uint32Array(this.spans.buffer);
+        if (id == 0 || id == this.root) {
+            return;
+        }
+        if (deep) {
+            let child = this.firstChild[id];
+            while (child != 0) {
+                const next = this.nextSibling[child];
+                this.release(child, true);
+                child = next;
+            }
+            let token = this.firstToken[id];
+            while (token != 0) {
+                const next = this.nextSibling[token];
+                this.release(token, true);
+                token = next;
+            }
+        }
+        this.detach(id);
+        this.name[id] = 0;
+        this.stringValue[id] = 0;
+        this.unit[id] = 0;
+        this.errors.delete(id);
+    }
+    /**
+     * reclaim the memory: release the marked nodes, then drop the nodes that are not reachable from the root and
+     * renumber the remaining ones, see {@link compact}. the ids obtained before the call are no longer valid
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
+     */
+    trim(errors) {
+        this.release();
+        return this.compact(errors);
     }
     setErrors(id, errors) {
         // empty error lists are not stored
@@ -1570,27 +1629,17 @@ class AstArena extends Arena {
     /**
      * @inheritDoc
      */
-    trim() {
-        super.trim();
-        const size = this.dataTypes.length;
-        if (this.raw.length > size) {
-            this.raw.length = size;
+    release(id, deep = false) {
+        super.release(id, deep);
+        if (id != null) {
+            // drop the minification caches
+            if (this.raw[id] != null) {
+                this.raw[id] = undefined;
+            }
+            if (this.optimized[id] != null) {
+                this.optimized[id] = undefined;
+            }
         }
-        if (this.optimized.length > size) {
-            this.optimized.length = size;
-        }
-    }
-    /**
-     * @inheritDoc
-     */
-    rewind(mark) {
-        if (this.raw.length > mark + 1) {
-            this.raw.length = mark + 1;
-        }
-        if (this.optimized.length > mark + 1) {
-            this.optimized.length = mark + 1;
-        }
-        super.rewind(mark);
     }
     /**
      * @inheritDoc
@@ -2492,42 +2541,6 @@ class AstArena extends Arena {
         return target;
     }
     // ---- tree helpers --------------------------------------------------------------
-    /**
-     * detach a node and drop its tokens / cached data. node ids are never reused: this only releases
-     * the memory held by the node columns
-     * @param id
-     * @param deep release the children and the tokens
-     */
-    release(id, deep = false) {
-        if (id == 0 || id == this.root) {
-            return;
-        }
-        if (deep) {
-            let child = this.firstChild[id];
-            while (child != 0) {
-                const next = this.nextSibling[child];
-                this.release(child, true);
-                child = next;
-            }
-            let token = this.firstToken[id];
-            while (token != 0) {
-                const next = this.nextSibling[token];
-                this.release(token, true);
-                token = next;
-            }
-        }
-        this.detach(id);
-        if (this.raw[id] != null) {
-            this.raw[id] = undefined;
-        }
-        if (this.optimized[id] != null) {
-            this.optimized[id] = undefined;
-        }
-        this.name[id] = 0;
-        this.stringValue[id] = 0;
-        this.unit[id] = 0;
-        this.errors.delete(id);
-    }
     /**
      * index of a child in its parent's children (or tokens) list
      * @param id
