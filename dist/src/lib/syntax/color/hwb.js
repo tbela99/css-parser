@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -10,159 +10,151 @@ import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { cmyk2srgbvalues, lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hslvalues } from './srgb.js';
 
-function rgb2hwbToken(token) {
-    const values = rgb2hwbvalues(token);
+function rgb2hwbToken(arena, token) {
+    const values = rgb2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function hsl2hwbToken(token) {
-    const values = hsl2hwbvalues(token);
+function hsl2hwbToken(arena, token) {
+    const values = hsl2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // console.error(new Error("hsl2hwbToken"));
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function cmyk2hwbToken(token) {
-    const values = cmyk2hwbvalues(token);
+function cmyk2hwbToken(arena, token) {
+    const values = cmyk2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function oklab2hwbToken(token) {
-    const values = oklab2hwbvalues(token);
+function oklab2hwbToken(arena, token) {
+    const values = oklab2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function oklch2hwbToken(token) {
-    const values = oklch2hwbvalues(token);
+function oklch2hwbToken(arena, token) {
+    const values = oklch2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function lab2hwbToken(token) {
-    const values = lab2hwbvalues(token);
+function lab2hwbToken(arena, token) {
+    const values = lab2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function lch2hwbToken(token) {
-    const values = lch2hwbvalues(token);
+function lch2hwbToken(arena, token) {
+    const values = lch2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function color2hwbToken(token) {
-    const values = color2hwbvalues(token);
+function color2hwbToken(arena, token) {
+    const values = color2hwbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
-function hwbToken(values) {
+function hwbToken(arena, values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] },
-        { typ: EnumToken.PercentageTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.PercentageTokenType, values[1]),
+        arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "hwb",
-        chi,
-        kin: ColorType.HWB,
-    };
+    return arena.createColor("hwb", ColorType.HWB, chi);
 }
-function rgb2hwbvalues(token) {
-    const values = getColorComponents(token).map((t, index) => {
+function rgb2hwbvalues(arena, token) {
+    const values = getColorComponents(arena, token).map((t, index) => {
         if (index == 3) {
-            return getNumber(t);
+            return getNumber(arena, t);
         }
-        return getNumber(t) / 255;
+        return getNumber(arena, t) / 255;
     });
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function cmyk2hwbvalues(token) {
-    const values = cmyk2srgbvalues(token);
+function cmyk2hwbvalues(arena, token) {
+    const values = cmyk2srgbvalues(arena, token);
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function hsl2hwbvalues(token) {
-    const values = hslvalues(token);
+function hsl2hwbvalues(arena, token) {
+    const values = hslvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return hslvalues2hwbvalues(values.h, values.s, values.l, values.a);
 }
-function lab2hwbvalues(token) {
-    const values = lab2srgbvalues(token);
+function lab2hwbvalues(arena, token) {
+    const values = lab2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function lch2hwbvalues(token) {
-    const values = lch2srgbvalues(token);
+function lch2hwbvalues(arena, token) {
+    const values = lch2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function oklab2hwbvalues(token) {
-    const values = oklab2srgbvalues(token);
+function oklab2hwbvalues(arena, token) {
+    const values = oklab2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function oklch2hwbvalues(token) {
-    const values = oklch2srgbvalues(token);
+function oklch2hwbvalues(arena, token) {
+    const values = oklch2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function color2hwbvalues(token) {
-    const values = color2srgbvalues(token);
+function color2hwbvalues(arena, token) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
-function hwbvalues(token) {
-    const components = getColorComponents(token);
+function hwbvalues(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) {
         return null;
     }
     let t;
     // @ts-ignore
-    let h = getAngle(components[0]) * 360;
+    let h = getAngle(arena, components[0]) * 360;
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    let w = getNumber(t);
+    let w = getNumber(arena, t);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    let b = getNumber(t);
-    // if (components[1].typ == EnumToken.NumberTokenType) {
+    let b = getNumber(arena, t);
+    // if (arena.dataTypes[components[1]] == EnumToken.NumberTokenType) {
     w *= 100;
     // }
-    // if (components[2].typ == EnumToken.NumberTokenType) {
+    // if (arena.dataTypes[components[2]] == EnumToken.NumberTokenType) {
     b *= 100;
     // }
     let a = null;
@@ -170,11 +162,11 @@ function hwbvalues(token) {
         // @ts-ignore
         t = components[3];
         // @ts-ignore
-        a = getNumber(t);
+        a = getNumber(arena, t);
     }
     return a == null ? { h, w, b } : { h, w, b, a };
 }
-function srgb2hwb(r, g, b, a = null, fallback = 0) {
+function srgb2hwb(r, g, b, a = null) {
     // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
     const rClamp = Math.min(1, Math.max(0, r));
     const gClamp = Math.min(1, Math.max(0, g));

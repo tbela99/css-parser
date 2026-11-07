@@ -7,40 +7,42 @@ category: Guides
 # Color manipulation
 
 ```ts
-import {parseString, convertColor, getColorComponents, renderValue, okLabDistance, isOkLabClose} from '@tbela99/css-parser';
-import type {ColorToken} from '@tbela99/css-parser';
+import {AstArena, ColorType, parseString, convertColor, renderToken, okLabDistance, isOkLabClose} from '@tbela99/css-parser';
 
-const color = parseString(`color-mix(red, green)`)[0] as ColorToken;
+// tokens are allocated in an arena
+const arena = new AstArena();
+const color = parseString(arena, `color-mix(red, green)`)[0];
 
-// get color components
-const components = getColorComponents(color);
+// the color function arguments
+const components = arena.tokens(color);
 // do something with the color components ...
 
-// convert to SRGB color space
-const srgbColor = convertColor(color, ColorType.SRGB) as ColorToken;
+// convert to SRGB color space. the converted color is a new token allocated in the arena
+const srgbColor = convertColor(arena, color, ColorType.SRGB) as number;
 
 // render value token
-const srgbColorString = renderValue(srgbColor, { convertColor: false });
+const srgbColorString = renderToken(arena, srgbColor, { convertColor: false });
 console.debug(srgbColorString);
-// color(srgb .651595 .412381 .000822)
+// color(srgb .651595 .41238 .000819)
 
 // calculate the color distance
-const distance = okLabDistance(color, srgbColor);
+const distance = okLabDistance(arena, color, srgbColor);
 // ...
 
 // are colors visually close?
-console.debug(isOkLabClose(color, srgbColor));
+console.debug(isOkLabClose(arena, color, srgbColor));
 ```
 
 # Ast utility functions
 
-## cloneNode()
+## arena.clone()
 
-[Clone](../functions/node.cloneNode.html) an ast node.
+[Clone](../classes/node.AstArena.html#clone) an ast node. The clone is allocated in the same arena, detached, and
+returned as a node id. The children are cloned too when `deep` is true.
 
 ```ts
 
-import {cloneNode, walk} from '@tbela99/css-parser';
+import {parse} from '@tbela99/css-parser';
 
 const css = `
 body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
@@ -59,16 +61,45 @@ body {
 const result = await parse(css);
 
 // deep clone
-const clonedAst = cloneNode(result.ast, true);
+const clonedAst = result.arena.clone(result.ast, true);
 ```
 
 
-### replaceNodeOrValue()
+### Replacing AST nodes
 
-The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) replaced a node in the specified parent. Throws an error if the target node is not found in the parent.
+`arena.replaceChild()` replaces an AST node in its parent with one or more node IDs.
 
 ```ts
-replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
+import {parse, render} from '@tbela99/css-parser';
+
+const result = await parse(`.foo { color: red } .bar { color: blue }`);
+const arena = result.arena;
+const [foo, bar] = arena.children(result.ast);
+
+arena.replaceChild(foo, arena.clone(bar, true));
+
+console.debug(render(arena, result.ast).code); // .bar{color:blue}.bar{color:blue}
+```
+
+### Replacing value tokens
+
+`arena.replaceToken()` replaces a value token in its parent token list with one or more token IDs.
+
+```ts
+arena.replaceToken(target: Token, ...replacement: Token[]): void;
+```
+
+```ts
+import {parse, render, EnumToken} from '@tbela99/css-parser';
+
+const result = await parse(`.foo { width: calc(1px + 2px) }`);
+const arena = result.arena;
+const declaration = arena.getFirstChild(arena.getFirstChild(result.ast));
+
+// replace the first value token
+arena.replaceToken(arena.getFirstToken(declaration), arena.createToken(EnumToken.LengthTokenType, 3, 'px'));
+
+console.debug(render(arena, result.ast).code); // .foo{width:3px}
 ```
 
 # CSS Parsing utility functions
@@ -77,36 +108,33 @@ replaceNodeOrValue(parent: Token, target: Token, replacement: Tokan | Token[]);
 
 ## Parsing CSS values
 
-[parseString()](../functions/node.parseString.html) is used to parse CSS values.
+[parseString()](../functions/node.parseString.html) is used to parse CSS values. The tokens are allocated in the arena
+passed as the first argument and returned as ids.
 
 ```ts
-import {parseString} from '@tbela99/css-parser';
+import {AstArena, parseString} from '@tbela99/css-parser';
 
-const values = parseString(`linear-gradient(to bottom, white, black) color-mix(red, green)`);
+const arena = new AstArena();
+const values = parseString(arena, `linear-gradient(to bottom, white, black) color-mix(red, green)`);
 
-console.debug(values[0]); // image function
-console.debug(values[2]); // color function
+console.debug(arena.toObject(values[0])); // image function
+console.debug(arena.toObject(values[2])); // color function
 
 // {
 //   typ: 19,
 //   val: "linear-gradient",
-//   loc: {
-//     src: "",
-//     sta: {
-//       ind: 0,
-//       lin: 1,
-//       col: 1,
-//     },
-//     end: {
-//       ind: 15,
-//       lin: 1,
-//       col: 16,
-//     },
-//   },
 //   chi: [
 //     {
 //       typ: 7,
 //       val: "to",
+//     },
+//     {
+//       typ: 36,
+//     },
+//     {
+//       typ: 7,
+//       val: "bottom",
+//     },
 // ...
 ```
 
@@ -117,10 +145,11 @@ console.debug(values[2]); // color function
 ```ts
 import {parseDeclarations} from '@tbela99/css-parser';
 
-const values = parseDeclarations(`width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)`);
+// the declarations are allocated in the arena passed as the second argument, or in a new arena
+const {arena, nodes} = parseDeclarations(`width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)`);
 
-console.debug(values[0]); // first declaration
-console.debug(values[1]); // second declaration
+console.debug(arena.toObject(nodes[0])); // first declaration
+console.debug(arena.toObject(nodes[1])); // second declaration
 
 ```
 
@@ -131,17 +160,19 @@ CSS rules and at-rules are parsed using [parse()](../functions/node.parse.html) 
 ```ts
 import {parseSync} from '@tbela99/css-parser';
 
-const values = parseSync(`
+const result = parseSync(`
 .s {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
 }
 .g {width: 2px; background: linear-gradient(to bottom, white, black) color-mix(red, green)
 }
-`).ast.chi;
+`);
 
-console.debug(values[0]); // first rule
-console.debug(values[1]); // second rule
+const values = result.arena.children(result.ast);
+
+console.debug(result.arena.toObject(values[0])); // first rule
+console.debug(result.arena.toObject(values[1])); // second rule
 
 ```
 
 ------
-[← Ast Manipulation](./ast.md) | [Node Module →](../docs/modules/node.html)
+[← Arena Memory](./arena.md) | [Migration →](./migration.md)

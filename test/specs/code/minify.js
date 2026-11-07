@@ -830,4 +830,28 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
             );
         });
     });
+
+    describe("minify prelude tokens", function () {
+        it("at-rule prelude tokens #1", function () {
+            // the prelude tokens are not parsed from the at-rule name
+            return parse(
+                `@font-face { font-family: x; src: url(a.woff) } @media screen { .a { color: red } } @media screen { .b { color: red } }`,
+            ).then((result) => {
+                const arena = result.arena;
+                const preludes = [];
+
+                for (let node = arena.firstChild[result.ast]; node != 0; node = arena.nextSibling[node]) {
+                    preludes.push([
+                        arena.strings[arena.name[node]],
+                        arena.tokens(node).map((token) => arena.strings[arena.stringValue[token]]),
+                    ]);
+                }
+
+                expect(preludes).deep.equals([
+                    ["font-face", []],
+                    ["media", ["screen"]],
+                ]);
+            });
+        });
+    });
 }

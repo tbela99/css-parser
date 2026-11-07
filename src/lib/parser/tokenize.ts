@@ -68,11 +68,197 @@ function decodeEscapeSequences(value: string): string {
     });
 }
 
+/**
+ * hash table of ascii strings, looked up by a range of the css source without allocating a string.
+ * the keys are lowercase, the lookups ignore the case of ascii letters
+ */
+class RangeTable<T> {
+    private keys: string[] = [];
+    private values: T[] = [];
+    private slots: Int32Array = new Int32Array(1024).fill(-1);
+
+    /**
+     * hash of a range of a string, ascii letters are lowercased. -1 when the range contains a non ascii character
+     * @param str
+     * @param start
+     * @param end
+     */
+    private static hash(str: string, start: number, end: number): number {
+        let hash: number = 0x811c9dc5;
+
+        for (let i = start; i < end; i++) {
+            let code: number = str.charCodeAt(i);
+
+            if (code > 0x7f) {
+                return -1;
+            }
+
+            if (code >= 65 && code <= 90) {
+                code += 32;
+            }
+
+            hash = Math.imul(hash ^ code, 0x01000193);
+        }
+
+        return hash >>> 0;
+    }
+
+    /**
+     * slot of a key. the table is never full: it is sized for the static tables of the tokenizer
+     * @param str
+     * @param start
+     * @param end
+     * @param hash
+     */
+    private find(str: string, start: number, end: number, hash: number): number {
+        const mask: number = this.slots.length - 1;
+        const length: number = end - start;
+        let slot: number = hash & mask;
+
+        for (;;) {
+            const index: number = this.slots[slot];
+
+            if (index == -1) {
+                return slot;
+            }
+
+            const key: string = this.keys[index];
+
+            if (key.length == length) {
+                let k: number = 0;
+
+                while (k < length) {
+                    let code: number = str.charCodeAt(start + k);
+
+                    if (code >= 65 && code <= 90) {
+                        code += 32;
+                    }
+
+                    if (code != key.charCodeAt(k)) {
+                        break;
+                    }
+
+                    k++;
+                }
+
+                if (k == length) {
+                    return slot;
+                }
+            }
+
+            slot = (slot + 1) & mask;
+        }
+    }
+
+    get(str: string, start: number, end: number): T | undefined {
+        const hash: number = RangeTable.hash(str, start, end);
+
+        if (hash == -1) {
+            return undefined;
+        }
+
+        const index: number = this.slots[this.find(str, start, end, hash)];
+
+        return index == -1 ? undefined : this.values[index];
+    }
+
+    set(key: string, value: T): void {
+        const slot: number = this.find(key, 0, key.length, RangeTable.hash(key, 0, key.length));
+
+        if (this.slots[slot] == -1) {
+            this.slots[slot] = this.keys.length;
+            this.keys.push(key);
+            this.values.push(value);
+        } else {
+            this.values[this.slots[slot]] = value;
+        }
+    }
+}
+
+/**
+ * value of a number: the digits are read from the source without creating a string when the result is exact
+ * (at most 15 significant digits, no exponent), parseFloat() otherwise
+ * @param stream
+ * @param start
+ * @param end
+ */
+function parseNumber(stream: string, start: number, end: number): number {
+    let i: number = start;
+    let code: number = stream.charCodeAt(i);
+    let negative: boolean = false;
+
+    if (code == 0x2d || code == 0x2b) {
+        negative = code == 0x2d;
+        code = stream.charCodeAt(++i);
+    }
+
+    let mantissa: number = 0;
+    let count: number = 0;
+    let digits: number = 0;
+    let decimals: number = -1;
+
+    for (; i < end; code = stream.charCodeAt(++i)) {
+        if (code >= 0x30 && code <= 0x39) {
+            mantissa = mantissa * 10 + (code - 0x30);
+            count++;
+
+            if (mantissa > 0) {
+                digits++;
+            }
+
+            if (decimals >= 0) {
+                decimals++;
+            }
+        } else if (code == 0x2e && decimals == -1) {
+            decimals = 0;
+        } else {
+            break;
+        }
+    }
+
+    // exponent, too many digits or not a number: the (correctly rounded) result of parseFloat()
+    if (i != end || count == 0 || digits > 15 || decimals > 22 || decimals == 0) {
+        return parseFloat(stream.slice(start, end));
+    }
+
+    // mantissa and 10^decimals are exact: the division is correctly rounded like parseFloat()
+    const value: number = decimals > 0 ? mantissa / powersOf10[decimals] : mantissa;
+
+    return negative ? -value : value;
+}
+
+const powersOf10: number[] = [
+    1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20,
+    1e21, 1e22,
+];
+
+/**
+ * token type of a symbol, unit or function name (the name followed by `(`), ignoring the case
+ */
+const symbolTable: RangeTable<EnumToken> = new RangeTable();
+
+/**
+ * units and function names of each token type, by lowercase name: the spelling of the first matching item
+ */
+const itemTable: RangeTable<Map<EnumToken, string>> = new RangeTable();
+
 function assignTokenMap(entries: string[], tokenType: EnumToken, suffix: string = "", lowercase: boolean = false) {
     for (const entry of entries) {
         const key = (lowercase ? entry.toLowerCase() : entry) + suffix;
         SymbolsMapTokens[key] = tokenType;
         SymbolsMapTokensLower[key.toLowerCase()] = tokenType;
+
+        let items: Map<EnumToken, string> | undefined = itemTable.get(entry, 0, entry.length);
+
+        if (items == null) {
+            items = new Map();
+            itemTable.set(entry.toLowerCase(), items);
+        }
+
+        // the first item wins, like a search of the array
+        if (!items.has(tokenType)) {
+            items.set(tokenType, entry);
+        }
     }
 }
 
@@ -127,7 +313,9 @@ assignTokenMap(transformFunctions, EnumToken.TransformFunctionTokenDefType, "(",
 assignTokenMap(whenElseFunc, EnumToken.WhenElseFunctionTokenDefType, "(");
 assignTokenMap(wildCardFuncs, EnumToken.WildCardFunctionTokenDefType, "(");
 
-const SymbolsMapTokensKeys = Object.keys(SymbolsMapTokens);
+for (const key of Object.keys(SymbolsMapTokens)) {
+    symbolTable.set(key.toLowerCase(), SymbolsMapTokens[key]);
+}
 
 // do not capture the value
 export const hintsEnum = new Set([
@@ -175,82 +363,48 @@ export const enum TokenMap {
 }
 
 function getSymbolHint(parseInfo: ParseInfo, start: number, end: number): EnumToken | null {
-    const len: number = end - start;
+    const stream: string = parseInfo.stream;
 
-    if (len <= 0) return null;
-
-    const value = parseInfo.stream.slice(start, end);
-
-    // Direct lookup handles the hottest punctuation and keyword cases without
-    // scanning the entire symbol table on every token.
-    const match = SymbolsMapTokens[value] ?? SymbolsMapTokensLower[value.toLowerCase()];
-    if (match != null) {
-        return match;
+    if (end > stream.length) {
+        end = stream.length;
     }
 
-    const keysLength = SymbolsMapTokensKeys.length;
+    if (end - start <= 0) {
+        return null;
+    }
 
-    for (let i = 0; i < keysLength; i++) {
-        const key = SymbolsMapTokensKeys[i];
-        if (key.length !== len) continue;
+    // ascii names are looked up without allocating a string
+    const type: EnumToken | undefined = symbolTable.get(stream, start, end);
 
-        let match = true;
+    if (type !== undefined) {
+        return type;
+    }
 
-        for (let j = 0; j < len; j++) {
-            let ca = key.charCodeAt(j);
-            let cb = value.charCodeAt(j);
+    for (let i = start; i < end; i++) {
+        // the unicode case mapping of toLowerCase() may produce ascii letters
+        if (stream.charCodeAt(i) > 0x7f) {
+            const value: string = stream.slice(start, end);
 
-            if (ca >= 65 && ca <= 90) ca += 32;
-            if (cb >= 65 && cb <= 90) cb += 32;
-
-            if (ca !== cb) {
-                match = false;
-                break;
-            }
-        }
-
-        if (match) {
-            return SymbolsMapTokens[key];
+            return SymbolsMapTokens[value] ?? SymbolsMapTokensLower[value.toLowerCase()] ?? null;
         }
     }
 
     return null;
 }
 
-function searchArray(array: string[], parseInfo: ParseInfo, start: number, end: number): string | null {
-    const len: number = end - start;
-
-    if (len <= 0) return null;
-
-    let match: boolean;
-    let item: string;
-
-    for (let i = 0; i < array.length; i++) {
-        item = array[i];
-
-        if (item.length !== len) continue;
-
-        match = true;
-
-        for (let j = 0; j < len; j++) {
-            let ca = parseInfo.stream.charCodeAt(start + j);
-            let cb = item.charCodeAt(j);
-
-            if (ca >= 65 && ca <= 90) ca += 32;
-            if (cb >= 65 && cb <= 90) cb += 32;
-
-            if (ca !== cb) {
-                match = false;
-                break;
-            }
-        }
-
-        if (match) {
-            return item;
-        }
+/**
+ * spelling of a unit or a function name of the given token type, ignoring the case
+ * @param type
+ * @param parseInfo
+ * @param start
+ * @param end
+ */
+function findItem(type: EnumToken, parseInfo: ParseInfo, start: number, end: number): string | null {
+    if (end - start <= 0) {
+        return null;
     }
 
-    return null;
+    return itemTable.get(parseInfo.stream, start, end)?.get(type) ?? null;
 }
 
 /**
@@ -261,6 +415,11 @@ export class Tokenizer {
      * token type
      */
     typ: EnumToken | null = null;
+    /**
+     * the identifier read by the last call of consumeIdentToken() has non ascii characters: they may be new lines
+     * (U+2028, U+2029)
+     */
+    private identNonAscii: boolean = false;
     /**
      * token kind
      */
@@ -311,6 +470,22 @@ export class Tokenizer {
     private hint: EnumToken | null = null;
     private state: EnumToken | null = null;
 
+    /**
+     * id of the source file being tokenized
+     */
+    get sourceId(): number {
+        return (this.parseInfo as ParseInfo).source.id;
+    }
+
+    /**
+     * length of the css input. 0 when the input is a stream
+     */
+    get streamLength(): number {
+        const stream: unknown = (this.parseInfo as ParseInfo).stream;
+
+        return typeof stream == "string" ? stream.length : 0;
+    }
+
     constructor(
         private readonly parseInfo: ParseInfo | string,
         private input: ReadableStream<Uint8Array> | null = null,
@@ -334,7 +509,7 @@ export class Tokenizer {
      * @returns
      */
     consumeString(parseInfo: ParseInfo): this {
-        const quote: number = this.advance(parseInfo).charCodeAt(0);
+        const quote: number = this.advanceCode(parseInfo);
         let charCode: number;
         let decodeSegments: boolean = false;
 
@@ -392,9 +567,7 @@ export class Tokenizer {
                     const length: number =
                         escapeSequence.length +
                         1 +
-                        (isWhiteSpace(
-                            parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0),
-                        )
+                        (isWhiteSpace(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))
                             ? 1
                             : 0);
 
@@ -408,26 +581,27 @@ export class Tokenizer {
             }
 
             if (charCode == quote) {
-                this.advance(parseInfo);
+                this.advanceCode(parseInfo);
 
                 return this.makeToken(
                     parseInfo,
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType,
-                    decodeSegments ? { decodeSegments } : null,
-                    // ),
+                    null,
+                    decodeSegments,
+                    //),
                 );
             }
 
             if (isNewLine(charCode)) {
-                this.advance(parseInfo);
+                this.advanceCode(parseInfo);
                 return this.makeToken(parseInfo, EnumToken.BadStringTokenType);
             }
 
-            this.advance(parseInfo);
+            this.advanceCode(parseInfo);
         }
 
         // EOF - 'Unclosed-string' fixed
-        return this.makeToken(parseInfo, EnumToken.StringTokenType, decodeSegments ? { decodeSegments } : null);
+        return this.makeToken(parseInfo, EnumToken.StringTokenType, null, decodeSegments);
         // return result;
     }
 
@@ -437,7 +611,7 @@ export class Tokenizer {
      * @returns
      */
     consumeStringAsURLToken(parseInfo: ParseInfo): this {
-        const quote: number = this.advance(parseInfo).charCodeAt(0);
+        const quote: number = this.advanceCode(parseInfo);
         let charCode: number;
         let decodeSegments: boolean = false;
 
@@ -478,9 +652,7 @@ export class Tokenizer {
                     const length: number =
                         escapeSequence.length +
                         1 +
-                        (isWhiteSpace(
-                            parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset)?.charCodeAt(0),
-                        )
+                        (isWhiteSpace(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))
                             ? 1
                             : 0);
 
@@ -496,7 +668,7 @@ export class Tokenizer {
             }
 
             if (charCode == quote) {
-                this.advance(parseInfo);
+                this.advanceCode(parseInfo);
 
                 let k: number = 1;
                 let end: number = parseInfo.stream.length - parseInfo.offset;
@@ -528,14 +700,15 @@ export class Tokenizer {
                 return this.makeToken(
                     parseInfo,
                     /* hasNewLine ? EnumToken.BadStringTokenType : */ EnumToken.StringTokenType,
-                    decodeSegments ? { decodeSegments } : null,
+                    null,
+                    decodeSegments,
                 );
                 // return result;
             }
 
             if (isNewLine(charCode)) {
                 // bad string
-                this.advance(parseInfo);
+                this.advanceCode(parseInfo);
 
                 while (
                     (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode
@@ -549,13 +722,13 @@ export class Tokenizer {
                         return this.makeToken(parseInfo, EnumToken.BadUrlTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.advanceCode(parseInfo);
                 }
 
                 return this.makeToken(parseInfo, EnumToken.BadStringTokenType);
             }
 
-            this.advance(parseInfo);
+            this.advanceCode(parseInfo);
         }
 
         // EOF - bad url token
@@ -878,6 +1051,8 @@ export class Tokenizer {
         let position: number = parseInfo.currentPosition - parseInfo.offset;
         let offset: number = position;
 
+        this.identNonAscii = false;
+
         let codepoint: number = parseInfo.stream.charCodeAt(position);
 
         if (!isIdentStart(codepoint) && codepoint != TokenMap.MINUS) {
@@ -917,6 +1092,10 @@ export class Tokenizer {
             }
 
             if (codepoint == 0x2d || isIdentCodepoint(codepoint)) {
+                if (codepoint > 0x7f) {
+                    this.identNonAscii = true;
+                }
+
                 position++;
             } else {
                 switch (codepoint) {
@@ -1015,19 +1194,22 @@ export class Tokenizer {
         let charCode: number;
 
         // consume an <url>
-        while (isWhiteSpace(this.peekCharCode(parseInfo))) {
-            this.advance(parseInfo);
+        // inlined: this.peekCharCode(parseInfo)
+        while (isWhiteSpace(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
+            this.advanceCode(parseInfo);
         }
 
-        charCode = this.peekCharCode(parseInfo);
+        // inlined: this.peekCharCode(parseInfo)
+        charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
         if (charCode == TokenMap.DOUBLE_QUOTE || charCode == TokenMap.SINGLE_QUOTE) {
             return this.consumeStringAsURLToken(parseInfo);
         }
 
         do {
-            this.advance(parseInfo);
-            charCode = this.peekCharCode(parseInfo);
+            this.advanceCode(parseInfo);
+            // inlined: this.peekCharCode(parseInfo)
+            charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
         } while (
             // !(value === "/" && this.match(parseInfo, "/*") &&
             charCode !== TokenMap.RIGHT_PARENTHESIS &&
@@ -1056,7 +1238,8 @@ export class Tokenizer {
         return this.makeToken(
             parseInfo,
             // parseInfo.position < parseInfo.currentPosition
-            (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
+            // inlined: this.peekCharCode(parseInfo)
+            (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode || !this.isURLToken(parseInfo)
                 ? EnumToken.BadUrlTokenType
                 : EnumToken.UrlTokenTokenType,
         );
@@ -1068,11 +1251,7 @@ export class Tokenizer {
      * @param options
      * @returns
      */
-    makeToken(
-        parseInfo: ParseInfo,
-        hint?: EnumToken | null,
-        options?: { decodeSegments?: boolean; slice?: number | null; sign?: "+" | "-" | null } | null,
-    ): this {
+    makeToken(parseInfo: ParseInfo, hint?: EnumToken | null, slice?: number | null, decodeSegments?: boolean): this {
         let val: string | null = null;
 
         this.typ = null;
@@ -1084,80 +1263,81 @@ export class Tokenizer {
         this.slice = null;
         this.hint = null;
 
-        if (options?.slice) {
-            this.slice = options.slice;
+        if (slice) {
+            this.slice = slice;
         }
 
-        if (options?.decodeSegments) {
+        if (decodeSegments) {
             this.decodeString = true;
         }
 
         if (hint != null) {
-            let array: string[] | null = null;
+            // the spelling of units and function names is looked up in the tables
+            let isList: boolean = false;
             let hasUnit: boolean = false;
 
             switch (hint) {
                 case EnumToken.TransformFunctionTokenDefType:
-                    array = transformFunctions;
+                    isList = true;
                     break;
                 case EnumToken.ColorFunctionTokenDefType:
-                    array = colorsFunc;
+                    isList = true;
                     break;
                 case EnumToken.ContainerFunctionTokenDefType:
-                    array = containerFunc;
+                    isList = true;
                     break;
                 case EnumToken.UrlFunctionTokenDefType:
-                    array = urlFunc;
+                    isList = true;
                     break;
                 case EnumToken.GridTemplateFuncTokenDefType:
-                    array = gridTemplateFunc;
+                    isList = true;
                     break;
                 case EnumToken.ImageFunctionTokenDefType:
-                    array = imageFunc;
+                    isList = true;
                     break;
                 case EnumToken.TimelineFunctionTokenDefType:
-                    array = timelineFunc;
+                    isList = true;
                     break;
                 // case EnumToken.GeneralEnclosedFunctionTokenDefType:
                 //     searchArray = generalEnclosedFunc;
                 //     break;
                 case EnumToken.SupportsFunctionTokenDefType:
-                    array = supportFunc;
+                    isList = true;
                     break;
                 case EnumToken.TimingFunctionTokenDefType:
-                    array = timingFunc;
+                    isList = true;
                     break;
                 case EnumToken.MathFunctionTokenDefType:
-                    array = mathFuncs;
+                    isList = true;
                     break;
                 case EnumToken.WhenElseFunctionTokenDefType:
-                    array = whenElseFunc;
+                    isList = true;
                     break;
                 case EnumToken.WildCardFunctionTokenDefType:
-                    array = wildCardFuncs;
+                    isList = true;
                     break;
                 case EnumToken.FrequencyTokenType:
-                    array = frequencyUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.ResolutionTokenType:
-                    array = resolutionUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.LengthTokenType:
-                    array = dimensionUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.FlexTokenType:
-                    array = flexUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.AngleTokenType:
-                    array = angleUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.TimeTokenType:
-                    array = timeUnits;
+                    isList = true;
                     hasUnit = true;
                     break;
                 case EnumToken.DimensionTokenType:
@@ -1165,16 +1345,21 @@ export class Tokenizer {
                     break;
             }
 
-            if (array != null) {
-                val = searchArray(
-                    array,
+            const isHint: boolean = hintsEnum.has(hint);
+
+            if (isList) {
+                val = findItem(
+                    hint,
                     parseInfo,
-                    hasUnit ? (options?.slice as number) : parseInfo.position - parseInfo.offset,
+                    hasUnit ? (slice as number) : parseInfo.position - parseInfo.offset,
                     parseInfo.currentPosition - parseInfo.offset,
                 ) as string;
-            } else if (!hintsEnum.has(hint)) {
+            } else if (hint == EnumToken.NumberTokenType || hint == EnumToken.WhitespaceTokenType) {
+                // the number is read from the source below. the whitespace is rendered as a single space: the text
+                // is not kept
+            } else if (!isHint) {
                 val = parseInfo.stream.slice(
-                    (options?.slice as number) ?? parseInfo.position - parseInfo.offset,
+                    (slice as number) ?? parseInfo.position - parseInfo.offset,
                     parseInfo.currentPosition - parseInfo.offset,
                 );
             }
@@ -1183,15 +1368,13 @@ export class Tokenizer {
                 val = decodeEscapeSequences(val as string);
             }
 
-            if (hintsEnum.has(hint)) {
+            if (isHint) {
                 this.typ = hint;
             } else {
                 this.typ = hint;
 
                 if (hasUnit || hint == EnumToken.PercentageTokenType || hint == EnumToken.DimensionTokenType) {
-                    this.val = parseFloat(
-                        parseInfo.stream.slice(parseInfo.position - parseInfo.offset, options?.slice as number),
-                    );
+                    this.val = parseNumber(parseInfo.stream, parseInfo.position - parseInfo.offset, slice as number);
 
                     if (hint != EnumToken.PercentageTokenType) {
                         this.unit = val;
@@ -1201,7 +1384,11 @@ export class Tokenizer {
                         }
                     }
                 } else if (hint == EnumToken.NumberTokenType) {
-                    this.val = parseFloat(val as string);
+                    this.val = parseNumber(
+                        parseInfo.stream,
+                        (slice as number) ?? parseInfo.position - parseInfo.offset,
+                        parseInfo.currentPosition - parseInfo.offset,
+                    );
                 } else if (hint == EnumToken.AtRuleTokenType) {
                     this.nam = val;
                 } else {
@@ -1224,7 +1411,7 @@ export class Tokenizer {
                 parseInfo.currentPosition - parseInfo.offset,
             );
 
-            if (options?.decodeSegments) {
+            if (decodeSegments) {
                 val = decodeEscapeSequences(val);
                 this.decodeString = true;
             }
@@ -1279,8 +1466,9 @@ export class Tokenizer {
     match(parseInfo: ParseInfo, input: string): boolean {
         let position: number = parseInfo.currentPosition - parseInfo.offset;
 
+        // compare the character codes: no single character strings
         for (let i: number = 0; i < input.length; i++) {
-            if (parseInfo.stream[position + i] != input.charAt(i)) {
+            if (parseInfo.stream.charCodeAt(position + i) != input.charCodeAt(i)) {
                 return false;
             }
         }
@@ -1313,22 +1501,21 @@ export class Tokenizer {
     }
 
     /**
-     *
+     * move forward by count characters (at most to the end of the stream) and record the new lines. the characters
+     * are read from the stream: no string is created
      * @param parseInfo
      * @param count
-     * @returns
      */
-    advance(parseInfo: ParseInfo, count: number = 1): string {
-        let position = parseInfo.currentPosition - parseInfo.offset;
-
-        let char: string =
-            count == 1 ? parseInfo.stream.charAt(position) : parseInfo.stream.slice(position, position + count);
-        let i: number = 0;
-        let codepoint: number;
+    advance(parseInfo: ParseInfo, count: number = 1): void {
+        const stream: string = parseInfo.stream;
+        const position: number = parseInfo.currentPosition - parseInfo.offset;
+        const remaining: number = stream.length - position;
+        const length: number = count < remaining ? (count > 0 ? count : 0) : remaining > 0 ? remaining : 0;
         const lineStarts = parseInfo.source.lineStarts.lineStarts;
+        let codepoint: number;
 
-        for (; i < char.length; i++) {
-            codepoint = char.charCodeAt(i);
+        for (let i: number = 0; i < length; i++) {
+            codepoint = stream.charCodeAt(position + i);
 
             if (
                 codepoint == 0xa || // \n
@@ -1338,8 +1525,8 @@ export class Tokenizer {
                 codepoint == 0x2028 || // \u2028
                 codepoint == 0x2029 // \u2029
             ) {
-                // \r\n
-                if (codepoint == 0xa && i > 0 && char.charCodeAt(i - 1) == 0xd) {
+                // \r\n: a single line start
+                if (codepoint == 0xa && i > 0 && stream.charCodeAt(position + i - 1) == 0xd) {
                     // nope
                 } else {
                     lineStarts.push(position + parseInfo.offset + i);
@@ -1347,8 +1534,61 @@ export class Tokenizer {
             }
         }
 
-        parseInfo.currentPosition += char.length;
-        return char;
+        parseInfo.currentPosition += length;
+    }
+
+    /**
+     * move forward over characters that are not new lines (ascii identifiers, numbers, colors, punctuation):
+     * no string is created and the characters are not read again. see {@link advance}
+     * @param parseInfo
+     * @param count
+     */
+    skip(parseInfo: ParseInfo, count: number): void {
+        const remaining: number = parseInfo.stream.length - (parseInfo.currentPosition - parseInfo.offset);
+
+        parseInfo.currentPosition += count < remaining ? count : remaining > 0 ? remaining : 0;
+    }
+
+    /**
+     * move forward over the identifier read by consumeIdentToken(): the new lines are recorded when it has non ascii
+     * characters, see {@link advance}
+     * @param parseInfo
+     * @param count
+     */
+    skipIdent(parseInfo: ParseInfo, count: number): void {
+        if (this.identNonAscii) {
+            this.advance(parseInfo, count);
+        } else {
+            this.skip(parseInfo, count);
+        }
+    }
+
+    /**
+     * move forward by one character and return its code (NaN at the end of the stream). new lines are recorded
+     * like {@link advance}
+     * @param parseInfo
+     */
+    advanceCode(parseInfo: ParseInfo): number {
+        const position: number = parseInfo.currentPosition - parseInfo.offset;
+        const codepoint: number = parseInfo.stream.charCodeAt(position);
+
+        if (codepoint != codepoint) {
+            return codepoint;
+        }
+
+        if (
+            codepoint == 0xa || // \n
+            codepoint == 0xb || // \v
+            codepoint == 0xc || // \f
+            codepoint == 0xd || // \r
+            codepoint == 0x2028 ||
+            codepoint == 0x2029
+        ) {
+            parseInfo.source.lineStarts.lineStarts.push(position + parseInfo.offset);
+        }
+
+        parseInfo.currentPosition++;
+        return codepoint;
     }
 
     /**
@@ -1437,8 +1677,9 @@ export class Tokenizer {
         let i: number = 0;
         let j: number = input.length;
 
+        // compare the character codes: no single character strings
         while (i < j) {
-            if (parseInfo.stream.charAt(parseInfo.position - parseInfo.offset + i) != input.charAt(i)) {
+            if (parseInfo.stream.charCodeAt(parseInfo.position - parseInfo.offset + i) != input.charCodeAt(i)) {
                 return false;
             }
             i++;
@@ -1512,7 +1753,8 @@ export class Tokenizer {
         let tokensCount: number;
 
         // NaN is not equal to NaN
-        while ((charCode = this.peekCharCode(parseInfo)) == charCode) {
+        // inlined: this.peekCharCode(parseInfo)
+        while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
             if (this.state === EnumToken.UrlFunctionTokenDefType) {
                 this.state = null;
                 return this.consumeURLToken(parseInfo, endPosition);
@@ -1528,11 +1770,9 @@ export class Tokenizer {
                     tokensCount = this.consumeNumericToken(parseInfo);
 
                     if (tokensCount > 0) {
+                        // the range of an invalid exponent may contain new lines
                         this.advance(parseInfo, tokensCount);
-                        return this.makeToken(parseInfo, this.hint ?? EnumToken.NumberTokenType, {
-                            slice: this.slice,
-                            sign: charCode == TokenMap.MINUS ? "-" : charCode == TokenMap.PLUS ? "+" : null,
-                        });
+                        return this.makeToken(parseInfo, this.hint ?? EnumToken.NumberTokenType, this.slice);
                     }
                 }
 
@@ -1540,9 +1780,10 @@ export class Tokenizer {
                     tokensCount = this.consumeIdentToken(parseInfo);
 
                     if (tokensCount > 0) {
-                        this.advance(parseInfo, tokensCount);
+                        this.skipIdent(parseInfo, tokensCount);
 
-                        charCode = this.peekCharCode(parseInfo);
+                        // inlined: this.peekCharCode(parseInfo)
+                        charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                         // do not match function
                         if (TokenMap.LEFT_PARENTHESIS != charCode) {
@@ -1557,18 +1798,20 @@ export class Tokenizer {
                 }
 
                 if (charCode == TokenMap.AT) {
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
 
-                    charCode = this.peekCharCode(parseInfo);
+                    // inlined: this.peekCharCode(parseInfo)
+                    charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                     // match at-rule
-                    if (charCode == TokenMap.MINUS || isIdentStart(this.peekCharCode(parseInfo))) {
+                    // inlined: this.peekCharCode(parseInfo)
+                    if (charCode == TokenMap.MINUS || isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
                         // consume '@'
                         parseInfo.position = parseInfo.currentPosition;
                         tokensCount = this.consumeIdentToken(parseInfo);
 
                         if (tokensCount > 0) {
-                            this.advance(parseInfo, tokensCount);
+                            this.skipIdent(parseInfo, tokensCount);
 
                             return this.makeToken(parseInfo, EnumToken.AtRuleTokenType);
                         }
@@ -1579,16 +1822,16 @@ export class Tokenizer {
                     tokensCount = this.consumeColor(parseInfo);
 
                     if (tokensCount > 0) {
-                        this.advance(parseInfo, tokensCount);
+                        this.skip(parseInfo, tokensCount);
                         return this.makeToken(parseInfo, EnumToken.ColorTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
 
                     tokensCount = this.consumeIdentToken(parseInfo);
 
                     if (tokensCount > 0) {
-                        this.advance(parseInfo, tokensCount);
+                        this.skipIdent(parseInfo, tokensCount);
                         return this.makeToken(parseInfo, EnumToken.HashTokenType);
                     }
                 }
@@ -1600,7 +1843,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.DelimTokenType);
 
                 // '+' or '-'
@@ -1609,7 +1852,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
 
                     charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
@@ -1617,7 +1860,7 @@ export class Tokenizer {
                     //     tokensCount = this.consumeNumericToken(parseInfo);
 
                     //     if (tokensCount > 0) {
-                    //         this.advance(parseInfo, tokensCount);
+                    //         this.skip(parseInfo, tokensCount);
                     //         return this.makeToken(parseInfo, this.hint ?? EnumToken.NumberTokenType, {
                     //             slice: this.slice,
                     //             sign: "+",
@@ -1633,7 +1876,7 @@ export class Tokenizer {
 
                         // not a number
                         if (isWhiteSpace(nextCharCode)) {
-                            this.advance(parseInfo);
+                            this.skip(parseInfo, 1);
 
                             return this.makeToken(parseInfo, EnumToken.Sub);
                         }
@@ -1641,19 +1884,19 @@ export class Tokenizer {
                         // if (
                         //     charCode == TokenMap.MINUS &&
                         //     (nextCharCode == TokenMap.MINUS || isIdentStart(nextCharCode))
-                        // ) {
-                        //     this.advance(parseInfo);
+                        //) {
+                        //     this.skip(parseInfo, 1);
 
                         //     tokensCount = this.consumeIdentToken(parseInfo);
 
                         //     if (tokensCount > 0) {
-                        //         this.advance(parseInfo, tokensCount);
+                        //         this.skip(parseInfo, tokensCount);
                         //         return this.makeToken(parseInfo, EnumToken.IdenTokenType);
                         //     }
                         // }
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
 
                 // '{'
@@ -1662,7 +1905,7 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.BlockStartTokenType);
 
                 // '}'
@@ -1671,7 +1914,7 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.BlockEndTokenType);
 
                 // '('
@@ -1680,8 +1923,8 @@ export class Tokenizer {
                         // if (
                         //     parseInfo.stream[parseInfo.position - parseInfo.offset] === ":" &&
                         //     this.isPseudo(parseInfo)
-                        // ) {
-                        //     this.advance(parseInfo);
+                        //) {
+                        //     this.skip(parseInfo, 1);
                         //     return this.makeToken(parseInfo, EnumToken.PseudoClassFunctionTokenDefType);
 
                         // } else
@@ -1695,7 +1938,7 @@ export class Tokenizer {
                                   ) ?? EnumToken.FunctionTokenDefType);
 
                             this.makeToken(parseInfo, hint);
-                            this.advance(parseInfo);
+                            this.skip(parseInfo, 1);
 
                             // consume '('
                             parseInfo.position = parseInfo.currentPosition;
@@ -1708,7 +1951,7 @@ export class Tokenizer {
                         }
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.StartParensTokenType);
 
                 // ')'
@@ -1717,7 +1960,7 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.EndParensTokenType);
 
                 // '['
@@ -1726,7 +1969,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.AttrStartTokenType);
 
                 // ']'
@@ -1735,7 +1978,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.AttrEndTokenType);
 
                 case TokenMap.SEMICOLON:
@@ -1743,7 +1986,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.SemiColonTokenType);
 
                 case TokenMap.COLON:
@@ -1751,10 +1994,11 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
 
-                    if (this.peekCharCode(parseInfo) == TokenMap.COLON) {
-                        this.advance(parseInfo);
+                    // inlined: this.peekCharCode(parseInfo)
+                    if (parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset) == TokenMap.COLON) {
+                        this.skip(parseInfo, 1);
 
                         return this.makeToken(parseInfo, EnumToken.DoubleColonTokenType);
                     }
@@ -1774,8 +2018,9 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
-                    nextCharCode = parseInfo.stream.charAt(parseInfo.currentPosition - parseInfo.offset).charCodeAt(0);
+                    this.advanceCode(parseInfo);
+                    // inlined: this.peekCharCode(parseInfo)
+                    nextCharCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                     while (
                         nextCharCode == 0x20 ||
@@ -1783,10 +2028,9 @@ export class Tokenizer {
                         nextCharCode == 0x2028 ||
                         nextCharCode == 0x2029
                     ) {
-                        this.advance(parseInfo);
-                        nextCharCode = parseInfo.stream
-                            .charAt(parseInfo.currentPosition - parseInfo.offset)
-                            .charCodeAt(0);
+                        this.advanceCode(parseInfo);
+                        // inlined: this.peekCharCode(parseInfo)
+                        nextCharCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
                     }
 
                     return this.makeToken(parseInfo, EnumToken.WhitespaceTokenType);
@@ -1796,7 +2040,7 @@ export class Tokenizer {
                     //     return this.makeToken(parseInfo);
                     // }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.CommaTokenType);
 
                 case TokenMap.DOLLAR:
@@ -1805,11 +2049,11 @@ export class Tokenizer {
                     // }
 
                     if (this.match(parseInfo, "$=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.EndMatchTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
 
                 case TokenMap.TILDA:
@@ -1818,11 +2062,11 @@ export class Tokenizer {
                     // }
 
                     if (this.match(parseInfo, "~=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.IncludeMatchTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.Tilda);
 
                 // case '^':
@@ -1832,11 +2076,11 @@ export class Tokenizer {
                     // }
 
                     if (this.match(parseInfo, "^=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.StartMatchTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
 
                 case TokenMap.STAR:
@@ -1845,11 +2089,11 @@ export class Tokenizer {
                     // }
 
                     if (this.match(parseInfo, "*=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.ContainMatchTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.Star);
 
                 case TokenMap.AMPERSAND:
@@ -1857,7 +2101,7 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.NestingSelectorTokenType);
 
                 case TokenMap.PIPE:
@@ -1867,14 +2111,14 @@ export class Tokenizer {
 
                     // '||'
                     if (this.match(parseInfo, "||")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.ColumnCombinatorTokenType);
                     } else if (this.match(parseInfo, "|=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.DashMatchTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.PipeTokenType);
 
                 case TokenMap.EXCLAMATION:
@@ -1883,11 +2127,11 @@ export class Tokenizer {
                     }
 
                     if (this.match(parseInfo, "!important")) {
-                        this.advance(parseInfo, 10);
+                        this.skip(parseInfo, 10);
                         return this.makeToken(parseInfo, EnumToken.ImportantTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
 
                 case TokenMap.SLASH:
@@ -1896,7 +2140,7 @@ export class Tokenizer {
                     // }
 
                     if (!this.match(parseInfo, "/*")) {
-                        this.advance(parseInfo);
+                        this.skip(parseInfo, 1);
                         return this.makeToken(
                             parseInfo,
 
@@ -1908,12 +2152,12 @@ export class Tokenizer {
                         );
                     }
 
-                    this.advance(parseInfo, 2);
+                    this.skip(parseInfo, 2);
 
-                    while ((charCode = this.advance(parseInfo).charCodeAt(0)) == charCode) {
+                    while ((charCode = this.advanceCode(parseInfo)) == charCode) {
                         if (charCode == TokenMap.STAR) {
                             if (this.match(parseInfo, "/")) {
-                                this.advance(parseInfo);
+                                this.skip(parseInfo, 1);
                                 return this.makeToken(parseInfo, EnumToken.CommentTokenType);
                             }
                         }
@@ -1931,11 +2175,11 @@ export class Tokenizer {
                     // }
 
                     if (this.match(parseInfo, ">=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.GteTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     return this.makeToken(parseInfo, EnumToken.GtTokenType);
 
                 case TokenMap.LOWERTHAN:
@@ -1944,16 +2188,16 @@ export class Tokenizer {
                     }
 
                     if (this.match(parseInfo, "<=")) {
-                        this.advance(parseInfo, 2);
+                        this.skip(parseInfo, 2);
                         return this.makeToken(parseInfo, EnumToken.LteTokenType);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
 
                     if (this.match(parseInfo, "!--")) {
-                        this.advance(parseInfo, 3);
+                        this.skip(parseInfo, 3);
 
-                        while ((charCode = this.advance(parseInfo).charCodeAt(0)) == charCode) {
+                        while ((charCode = this.advanceCode(parseInfo)) == charCode) {
                             if (charCode == TokenMap.MINUS && this.match(parseInfo, "->")) {
                                 break;
                             }
@@ -1962,7 +2206,7 @@ export class Tokenizer {
                         if (parseInfo.currentPosition >= endPosition) {
                             return this.makeToken(parseInfo, EnumToken.BadCdoTokenType);
                         } else {
-                            this.advance(parseInfo, 2);
+                            this.skip(parseInfo, 2);
                             return this.makeToken(parseInfo, EnumToken.CDOCOMMTokenType);
                         }
                     }
@@ -1980,7 +2224,7 @@ export class Tokenizer {
                             }
 
                             if (offset > 1 && charCode == TokenMap.GREATERTHAN) {
-                                this.advance(parseInfo, offset);
+                                this.skip(parseInfo, offset);
                                 return this.makeToken(parseInfo, EnumToken.CssTypeTokenType);
                             }
                         }
@@ -1993,10 +2237,11 @@ export class Tokenizer {
                         return this.makeToken(parseInfo);
                     }
 
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
 
                 case TokenMap.REVERSE_SOLIDUS:
+                    // a new line may follow the backslash
                     this.advance(parseInfo);
 
                     // EOF
@@ -2024,25 +2269,26 @@ export class Tokenizer {
                         //     return this.makeToken(parseInfo);
                         // }
 
-                        this.advance(parseInfo);
+                        this.skip(parseInfo, 1);
                         let tokensCount: number = this.consumeIdentToken(parseInfo);
 
                         if (tokensCount > 0) {
-                            this.advance(parseInfo, tokensCount);
+                            this.skipIdent(parseInfo, tokensCount);
                             return this.makeToken(parseInfo, EnumToken.ClassSelectorTokenType);
                         }
                     }
 
                     // if (!isDigit(codepoint) && parseInfo.position !== parseInfo.currentPosition) {
                     //     this.makeToken(parseInfo);
-                    //     this.advance(parseInfo, 2);
+                    //     this.skip(parseInfo, 2);
                     //     return this;
                     // }
 
-                    this.advance(parseInfo);
+                    // the dot, or the character that follows it (U+2028 / U+2029 are identifier characters)
+                    this.advanceCode(parseInfo);
                     break;
                 default:
-                    this.advance(parseInfo);
+                    this.skip(parseInfo, 1);
                     break;
             }
         }
@@ -2070,13 +2316,15 @@ export class Tokenizer {
             const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
 
             if (!done) {
-                parseInfo.source.append(stream as string);
+                // inlined: parseInfo.source.append(stream as string)
+                parseInfo.source.content += (stream as string);
             } else {
                 break;
             }
         }
 
-        parseInfo.stream = parseInfo.source.getContent();
+        // inlined: parseInfo.source.getContent()
+        parseInfo.stream = parseInfo.source.content;
         return this; // .next();
     }
 }

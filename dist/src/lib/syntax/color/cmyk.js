@@ -2,69 +2,69 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
-import { ColorType, EnumToken } from '../../ast/types.js';
+import { EnumToken, ColorType } from '../../ast/types.js';
 import { color2srgbvalues } from './color.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
 import { hsl2srgbvalues } from './rgb.js';
 
-function rgb2cmykToken(token) {
-    let components = rgb2srgbvalues(token);
+function rgb2cmykToken(arena, token) {
+    let components = rgb2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
-function hsl2cmykToken(token) {
-    let values = hsl2srgbvalues(token);
+function hsl2cmykToken(arena, token) {
+    let values = hsl2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
-function hwb2cmykToken(token) {
-    const values = hwb2srgbvalues(token);
+function hwb2cmykToken(arena, token) {
+    const values = hwb2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
-function lab2cmykToken(token) {
-    const components = lab2srgbvalues(token);
+function lab2cmykToken(arena, token) {
+    const components = lab2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
-function lch2cmykToken(token) {
-    const components = lch2srgbvalues(token);
+function lch2cmykToken(arena, token) {
+    const components = lch2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
-function oklab2cmyk(token) {
-    const components = oklab2srgbvalues(token);
+function oklab2cmyk(arena, token) {
+    const components = oklab2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
-function oklch2cmykToken(token) {
-    const components = oklch2srgbvalues(token);
+function oklch2cmykToken(arena, token) {
+    const components = oklch2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
-function color2cmykToken(token) {
-    const values = color2srgbvalues(token);
+function color2cmykToken(arena, token) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);
@@ -78,32 +78,15 @@ function srgb2cmykvalues(r, g, b, a = null) {
     }
     return result;
 }
-function cmyktoken(values) {
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "device-cmyk",
-        chi: values.reduce((acc, curr, index) => index < 4
-            ? [
-                ...acc,
-                {
-                    typ: EnumToken.PercentageTokenType,
-                    // @ts-ignore
-                    val: curr * 100,
-                },
-            ]
-            : [
-                ...acc,
-                {
-                    typ: EnumToken.LiteralTokenType,
-                    val: "/",
-                },
-                {
-                    typ: EnumToken.PercentageTokenType,
-                    val: curr * 100,
-                },
-            ], []),
-        kin: ColorType.DEVICE_CMYK,
-    };
+function cmyktoken(arena, values) {
+    const chi = [];
+    for (let index = 0; index < values.length; index++) {
+        if (index == 4) {
+            chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"));
+        }
+        chi.push(arena.createToken(EnumToken.PercentageTokenType, values[index] * 100));
+    }
+    return arena.createColor("device-cmyk", ColorType.DEVICE_CMYK, chi);
 }
 
 export { color2cmykToken, hsl2cmykToken, hwb2cmykToken, lab2cmykToken, lch2cmykToken, oklab2cmyk, oklch2cmykToken, rgb2cmykToken, srgb2cmykvalues };

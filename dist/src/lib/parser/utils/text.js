@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 /**
@@ -11,7 +11,7 @@
  * @returns
  */
 function dasherize(value) {
-    return value.replace(/([A-Z])/g, (all, one) => `-${one.toLowerCase()}`);
+    return value.replace(/[A-Z]/g, (one) => `-${one.toLowerCase()}`);
 }
 /**
  *
@@ -19,7 +19,21 @@ function dasherize(value) {
  * @returns
  */
 function camelize(value) {
-    return value.replace(/-([a-z])/g, (all, one) => one.toUpperCase());
+    return value.replace(/-[a-z]/g, (match) => match[1].toUpperCase());
+}
+/**
+ * lowercase string, like String.prototype.toLowerCase(). the string is returned when it has no ascii uppercase and
+ * no non ascii character: no new string is created
+ * @param value
+ */
+function lowercase(value) {
+    for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i);
+        if ((code >= 65 && code <= 90) || code > 0x7f) {
+            return value.toLowerCase();
+        }
+    }
+    return value;
 }
 /**
  *
@@ -46,4 +60,4 @@ function equalsIgnoreCase(a, b) {
     return true;
 }
 
-export { camelize, dasherize, equalsIgnoreCase };
+export { camelize, dasherize, equalsIgnoreCase, lowercase };

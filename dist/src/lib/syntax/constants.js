@@ -2,30 +2,16 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { EnumToken } from '../ast/types.js';
 import config from '../../data/validation.json.js';
 
 /**
- * Location source id
- */
-const LOCSRCID = Symbol.for("locSrcId");
-const LOCSTA = Symbol.for("locSta");
-const LOCEND = Symbol.for("locEnd");
-/**
  * Used by the validation parser
  */
 const LOC = Symbol.for("loc");
-const RAW = Symbol.for("raw");
-const STATE = Symbol.for("state");
-const ROOT = Symbol.for("root");
-const ERRORS = Symbol.for("errors");
-const TOKENS = Symbol.for("tokens");
-const PARENT = Symbol.for("parent");
-const OPTIMIZED = Symbol.for("optimized");
-const PROPERTYNAME = Symbol.for("propertyName");
 const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
@@ -506,4 +492,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, ERRORS, LOC, LOCEND, LOCSRCID, LOCSTA, NAMES_COLORS, OPTIMIZED, PARENT, PROPERTYNAME, RAW, ROOT, STATE, TOKENS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, LOC, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };

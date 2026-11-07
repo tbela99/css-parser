@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { e, k, D50 } from '../constants.js';
@@ -15,125 +15,117 @@ import { color2srgbvalues, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 
-function hex2labToken(token) {
-    const values = hex2labvalues(token);
-    return values == null ? null : labToken(values);
+function hex2labToken(arena, token) {
+    const values = hex2labvalues(arena, token);
+    return values == null ? null : labToken(arena, values);
 }
-function rgb2labToken(token) {
-    const values = rgb2labvalues(token);
+function rgb2labToken(arena, token) {
+    const values = rgb2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function hsl2labToken(token) {
-    const values = hsl2labvalues(token);
+function hsl2labToken(arena, token) {
+    const values = hsl2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function hwb2labToken(token) {
-    const values = hwb2labvalues(token);
+function hwb2labToken(arena, token) {
+    const values = hwb2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function cmyk2labToken(token) {
-    const values = cmyk2labvalues(token);
+function cmyk2labToken(arena, token) {
+    const values = cmyk2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function lch2labToken(token) {
-    const values = lch2labvalues(token);
+function lch2labToken(arena, token) {
+    const values = lch2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function oklab2labToken(token) {
-    const values = oklab2labvalues(token);
+function oklab2labToken(arena, token) {
+    const values = oklab2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function oklch2labToken(token) {
-    const values = oklch2labvalues(token);
+function oklch2labToken(arena, token) {
+    const values = oklch2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function color2labToken(token) {
-    const values = color2labvalues(token);
+function color2labToken(arena, token) {
+    const values = color2labvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return labToken(values);
+    return labToken(arena, values);
 }
-function labToken(values) {
+function labToken(arena, values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "lab",
-        chi,
-        kin: ColorType.LAB,
-    };
+    return arena.createColor("lab", ColorType.LAB, chi);
 }
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
-function hex2labvalues(token) {
-    let values = hex2srgbvalues(token);
+function hex2labvalues(arena, token) {
+    let values = hex2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function rgb2labvalues(token) {
-    const values = rgb2srgb(token);
+function rgb2labvalues(arena, token) {
+    const values = rgb2srgb(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function cmyk2labvalues(token) {
-    const values = cmyk2srgbvalues(token);
+function cmyk2labvalues(arena, token) {
+    const values = cmyk2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function hsl2labvalues(token) {
-    const values = hsl2srgb(token);
+function hsl2labvalues(arena, token) {
+    const values = hsl2srgb(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function hwb2labvalues(token) {
-    const values = hwb2srgbvalues(token);
+function hwb2labvalues(arena, token) {
+    const values = hwb2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function lch2labvalues(token) {
-    const values = getLCHComponents(token);
+function lch2labvalues(arena, token) {
+    const values = getLCHComponents(arena, token);
     // @ts-ignore
     return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
-function oklab2labvalues(token) {
-    let values = getOKLABComponents(token);
+function oklab2labvalues(arena, token) {
+    let values = getOKLABComponents(arena, token);
     if (values == null) {
         return null;
     }
@@ -141,16 +133,16 @@ function oklab2labvalues(token) {
     values = XYZ_D65_to_D50(values[0], values[1], values[2], values[3]);
     return xyz2lab(values[0], values[1], values[2], values[3]);
 }
-function oklch2labvalues(token) {
-    const values = oklch2srgbvalues(token);
+function oklch2labvalues(arena, token) {
+    const values = oklch2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
     // @ts-ignore
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
-function color2labvalues(token) {
-    const val = color2srgbvalues(token);
+function color2labvalues(arena, token) {
+    const val = color2srgbvalues(arena, token);
     if (val == null) {
         return null;
     }
@@ -198,8 +190,8 @@ function lchvalues2labvalues(l, c, h, a = null) {
     }
     return result;
 }
-function getLABComponents(token) {
-    const components = getColorComponents(token);
+function getLABComponents(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) {
         return null;
     }
@@ -209,26 +201,26 @@ function getLABComponents(token) {
             EnumToken.PercentageTokenType,
             EnumToken.AngleTokenType,
             EnumToken.IdenTokenType,
-        ].includes(components[i].typ)) {
+        ].includes(arena.dataTypes[components[i]])) {
             return null;
         }
     }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
+    const l = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const a = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
+    const a = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const b = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
+    const b = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const alpha = t == null ? 1 : getNumber(arena, t);
     const result = [l, a, b];
     if (alpha != null && alpha != 1) {
         result.push(alpha);

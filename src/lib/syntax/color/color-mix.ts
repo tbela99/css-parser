@@ -1,4 +1,5 @@
-import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { getNumber, minmax } from "./color.ts";
 import { hslvalues, srgb2lsrgbvalues, srgbvalues } from "./srgb.ts";
@@ -17,7 +18,7 @@ import { srgb2rec2020values } from "./rec2020.ts";
 import { isPolarColorspace, isRectangularOrthogonalColorspace } from "../syntax.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { srgb2a98values } from "./a98rgb.ts";
-import { colorRange, epsilon, PARENT, STATE } from "../constants.ts";
+import { colorRange, epsilon } from "../constants.ts";
 
 function interpolateHue(interpolationMethod: string, h1: number, h2: number): number[] {
     switch (interpolationMethod) {
@@ -63,9 +64,9 @@ function interpolateHue(interpolationMethod: string, h1: number, h2: number): nu
  * @param args
  * @returns
  */
-export function colorMix(...args: Token[]): ColorToken | null {
+export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
     // invalid color or custom color profile
-    if (args.length == 0 || args[0].typ === EnumToken.DashedIdenTokenType) {
+    if (args.length == 0 || arena.dataTypes[args[0]] === EnumToken.DashedIdenTokenType) {
         return null;
     }
 
@@ -76,36 +77,36 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let colorSpace: string = "oklab";
     let hueInterpolationMethod: string = "shorter";
     let values: number[] | null = null;
-    // const colors: ColorToken[] = [];
+    // const colors: Token[] = [];
     const percentages: Array<number | null> = [];
     const srgbComponentValues: number[][] = [];
     const colorComponents: Token[][] = [];
-    const colors: ColorToken[] = [];
+    const colors: Token[] = [];
 
-    if (args[i]?.typ === EnumToken.IdenTokenType) {
-        if (!equalsIgnoreCase((args[i++] as IdentToken).val, "in")) {
+    if (arena.dataTypes[args[i]] === EnumToken.IdenTokenType) {
+        if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "in")) {
             return null;
         }
 
-        if (args[i]?.typ !== EnumToken.IdenTokenType) {
+        if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType) {
             return null;
         }
 
-        if (isRectangularOrthogonalColorspace(args[i] as IdentToken)) {
-            colorSpace = (args[i++] as IdentToken).val;
-        } else if (isPolarColorspace(args[i] as IdentToken)) {
-            colorSpace = (args[i++] as IdentToken).val;
+        if (isRectangularOrthogonalColorspace(arena, args[i])) {
+            colorSpace = arena.strings[arena.stringValue[args[i++]]];
+        } else if (isPolarColorspace(arena, args[i])) {
+            colorSpace = arena.strings[arena.stringValue[args[i++]]];
 
-            if (args[i]?.typ !== EnumToken.IdenTokenType && args[i]?.typ !== EnumToken.ColorTokenType) {
+            if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType && arena.dataTypes[args[i]] !== EnumToken.ColorTokenType) {
                 return null;
             }
 
-            if (args[i].typ === EnumToken.IdenTokenType && !equalsIgnoreCase((args[i] as IdentToken).val, "hue")) {
-                if (args[i]?.typ !== EnumToken.IdenTokenType) {
+            if (arena.dataTypes[args[i]] === EnumToken.IdenTokenType && !equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "hue")) {
+                if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType) {
                     return null;
                 }
 
-                hueInterpolationMethod = (args[i++] as IdentToken).val;
+                hueInterpolationMethod = arena.strings[arena.stringValue[args[i++]]];
 
                 switch (hueInterpolationMethod) {
                     case "increasing":
@@ -117,7 +118,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
                         return null;
                 }
 
-                if (!equalsIgnoreCase((args[i++] as IdentToken).val, "hue")) {
+                if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "hue")) {
                     return null;
                 }
             }
@@ -126,18 +127,18 @@ export function colorMix(...args: Token[]): ColorToken | null {
 
     while (i < args.length) {
         if (
-            args[i].typ !== EnumToken.ColorTokenType ||
-            ColorType.SYS == (args[i] as ColorToken).kin ||
-            ColorType.DPSYS == (args[i] as ColorToken).kin ||
-            ColorType.NON_STD == (args[i] as ColorToken).kin ||
-            ColorType.CUSTOM_COLOR == (args[i] as ColorToken).kin ||
-            equalsIgnoreCase((args[i] as ColorToken).val, "currentcolor")
+            arena.dataTypes[args[i]] !== EnumToken.ColorTokenType ||
+            ColorType.SYS == arena.colorType[args[i]] ||
+            ColorType.DPSYS == arena.colorType[args[i]] ||
+            ColorType.NON_STD == arena.colorType[args[i]] ||
+            ColorType.CUSTOM_COLOR == arena.colorType[args[i]] ||
+            equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "currentcolor")
         ) {
             return null;
         }
 
-        colorComponents.push(getColorComponents(args[i] as ColorToken) as Token[]);
-        values = srgbvalues(args[i] as ColorToken);
+        colorComponents.push(getColorComponents(arena, args[i]) as number[]);
+        values = srgbvalues(arena, args[i]);
 
         if (values == null) {
             return null;
@@ -147,7 +148,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
         //     colorSpace = "srgb";
         // }
 
-        colors.push(processPowerlessComponents(args[i] as ColorToken));
+        colors.push(processPowerlessComponents(arena, args[i]));
 
         switch (colorSpace) {
             case "srgb":
@@ -216,7 +217,7 @@ export function colorMix(...args: Token[]): ColorToken | null {
         }
 
         srgbComponentValues.push(values as number[]);
-        // colors.push(args[i++] as ColorToken);
+        // colors.push(args[i++]);
         i++;
 
         if (i >= args.length) {
@@ -225,21 +226,21 @@ export function colorMix(...args: Token[]): ColorToken | null {
             break;
         }
 
-        if (args[i]?.typ === EnumToken.ColorTokenType) {
+        if (arena.dataTypes[args[i]] === EnumToken.ColorTokenType) {
             percentages.push(null);
             missingPercentageCount++;
             continue;
         }
 
         if (
-            args[i]?.typ === EnumToken.PercentageTokenType ||
-            (args[i]?.typ === EnumToken.NumberTokenType && 0 == (args[i] as NumberToken).val)
+            arena.dataTypes[args[i]] === EnumToken.PercentageTokenType ||
+            (arena.dataTypes[args[i]] === EnumToken.NumberTokenType && 0 == arena.numericValue[args[i]])
         ) {
-            if (((args[i] as PercentageToken | NumberToken).val as number) < 0) {
+            if (arena.numericValue[args[i]] < 0) {
                 return null;
             }
 
-            percentages.push(minmax(getNumber(args[i++] as PercentageToken | NumberToken), 0, 1));
+            percentages.push(minmax(getNumber(arena, args[i++]), 0, 1));
             totalPercentage += percentages.at(-1) as number;
         }
     }
@@ -299,12 +300,12 @@ export function colorMix(...args: Token[]): ColorToken | null {
     let premult1: number[];
     let premult2: number[];
     let mixedPremult: number[];
-    let offset1: number = colors[0].kin == ColorType.COLOR ? 1 : 0;
+    let offset1: number = arena.colorType[colors[0]] == ColorType.COLOR ? 1 : 0;
 
     if (
         colorComponents[0][offset1 + 3] != null &&
-        colorComponents[0][offset1 + 3].typ == EnumToken.IdenTokenType &&
-        (colorComponents[0][offset1 + 3] as IdentToken).val == "none" &&
+        arena.dataTypes[colorComponents[0][offset1 + 3]] == EnumToken.IdenTokenType &&
+        arena.strings[arena.stringValue[colorComponents[0][offset1 + 3]]] == "none" &&
         colorComponents[1].length == offset1 + 4
     ) {
         // fix powerless alpha for last color if previous color has alpha
@@ -318,48 +319,48 @@ export function colorMix(...args: Token[]): ColorToken | null {
         // if (lchSpaces.includes(colorSpace)) {
         // console.error(JSON.stringify({colorSpace1, colorSpace, stack, colorComponents}, null, 1));
         if (
-            (stack[stack.length - 1].color[0] == 0 && colorComponents[0][offset1].typ == EnumToken.IdenTokenType &&
-                (colorComponents[0][offset1] as IdentToken).val == "none") ||
-            colorComponents[0][0][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+            (stack[stack.length - 1].color[0] == 0 && arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[0][offset1]]] == "none") ||
+            arena.flags[colorComponents[0][0]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             stack[stack.length - 1].color[0] = stack[stack.length - 2].color[0]!;
         }
         if (
-            (stack[stack.length - 1].color[1] == 0 && colorComponents[0][offset1 + 1].typ == EnumToken.IdenTokenType &&
-                (colorComponents[0][offset1 + 1] as IdentToken).val == "none") ||
-            colorComponents[0][1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+            (stack[stack.length - 1].color[1] == 0 && arena.dataTypes[colorComponents[0][offset1 + 1]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[0][offset1 + 1]]] == "none") ||
+            arena.flags[colorComponents[0][1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             stack[stack.length - 1].color[1] = stack[stack.length - 2].color[1]!;
         }
         if (
-            (stack[stack.length - 1].color[2] == 0 && colorComponents[0][offset1 + 2].typ == EnumToken.IdenTokenType &&
-                (colorComponents[0][offset1 + 2] as IdentToken).val == "none") ||
-            colorComponents[0][2][STATE] & EnumAstNodeStatus.PowerlessColorComponent ||
+            (stack[stack.length - 1].color[2] == 0 && arena.dataTypes[colorComponents[0][offset1 + 2]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[0][offset1 + 2]]] == "none") ||
+            arena.flags[colorComponents[0][2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (stack[stack.length - 1].color[1] == 0 ||
                     stack[stack.length - 1].color[0] == 0 ||
                     stack[stack.length - 1].color[0] ==
-                        colorRange[colors[0].kin == ColorType.LCH ? "lch" : "oklch"].l[1]))
+                        colorRange[arena.colorType[colors[0]] == ColorType.LCH ? "lch" : "oklch"].l[1]))
         ) {
             stack[stack.length - 1].color[2] = stack[stack.length - 2].color[2]!;
         }
         // }
     }
 
-    // console.error([colorComponents[0][offset1].typ == EnumToken.IdenTokenType, (colorComponents[0][offset1] as IdentToken).val == "none"]);
+    // console.error([arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType, arena.strings[arena.stringValue[colorComponents[0][offset1]]] == "none"]);
     // console.error(isLCHOrOKLCH, colorComponents, stack);
 
     while (stack.length > 1) {
         r1 = stack.pop()!;
         r2 = stack.pop()!;
 
-        offset1 = colors[++currentIndex].kin == ColorType.COLOR ? 1 : 0;
+        offset1 = arena.colorType[colors[++currentIndex]] == ColorType.COLOR ? 1 : 0;
 
         // r2 powerless alpha
         if (
             colorComponents[currentIndex][offset1 + 3] != null &&
-            colorComponents[currentIndex][offset1 + 3].typ == EnumToken.IdenTokenType &&
-            (colorComponents[currentIndex][offset1 + 3] as IdentToken).val == "none"
+            arena.dataTypes[colorComponents[currentIndex][offset1 + 3]] == EnumToken.IdenTokenType &&
+            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 3]]] == "none"
         ) {
             // fix powerless alpha for last color if previous color has alpha
             r2.color[3] = r1.color[3];
@@ -367,27 +368,27 @@ export function colorMix(...args: Token[]): ColorToken | null {
 
         // powerless hue for lch spaces
         if (
-            (r2.color[0] == 0 && colorComponents[currentIndex][offset1].typ == EnumToken.IdenTokenType &&
-                (colorComponents[currentIndex][offset1] as IdentToken).val == "none") ||
-            colorComponents[currentIndex][offset1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+            (r2.color[0] == 0 && arena.dataTypes[colorComponents[currentIndex][offset1]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1]]] == "none") ||
+            arena.flags[colorComponents[currentIndex][offset1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             r2.color[0] = r1.color[0];
         }
         if (
-            (r2.color[1] == 0 && colorComponents[currentIndex][offset1 + 1].typ == EnumToken.IdenTokenType &&
-                (colorComponents[currentIndex][offset1 + 1] as IdentToken).val == "none") ||
-            colorComponents[currentIndex][offset1 + 1][STATE] & EnumAstNodeStatus.PowerlessColorComponent
+            (r2.color[1] == 0 && arena.dataTypes[colorComponents[currentIndex][offset1 + 1]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 1]]] == "none") ||
+            arena.flags[colorComponents[currentIndex][offset1 + 1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             r2.color[1] = r1.color[1];
         }
         if (
-            (r2.color[2] == 0 && colorComponents[currentIndex][offset1 + 2].typ == EnumToken.IdenTokenType &&
-                (colorComponents[currentIndex][offset1 + 2] as IdentToken).val == "none") ||
-            colorComponents[currentIndex][offset1 + 2][STATE] & EnumAstNodeStatus.PowerlessColorComponent ||
+            (r2.color[2] == 0 && arena.dataTypes[colorComponents[currentIndex][offset1 + 2]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 2]]] == "none") ||
+            arena.flags[colorComponents[currentIndex][offset1 + 2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (r2.color[1] == 0 ||
                     r2.color[0] == 0 ||
-                    r2.color[0] == colorRange[colors[currentIndex].kin == ColorType.LCH ? "lch" : "oklch"].l[1]))
+                    r2.color[0] == colorRange[arena.colorType[colors[currentIndex]] == ColorType.LCH ? "lch" : "oklch"].l[1]))
         ) {
             r2.color[2] = r1.color[2];
         }
@@ -461,17 +462,11 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 values = xyz2lchvalues(values[0], values[1], values[2], values[3]) as number[];
             }
 
-            return {
-                typ: EnumToken.ColorTokenType,
-                val: "lch",
-                chi: values.map((val: number) => {
-                    return {
-                        typ: EnumToken.NumberTokenType,
-                        val,
-                    };
-                }),
-                kin: ColorType.LCH,
-            } as ColorToken;
+            return arena.createColor(
+                "lch",
+                ColorType.LCH,
+                values.map((val: number) => arena.createToken(EnumToken.NumberTokenType, val)),
+            );
 
         case "srgb":
         case "srgb-linear":
@@ -480,22 +475,19 @@ export function colorMix(...args: Token[]): ColorToken | null {
         case "display-p3":
         case "display-p3-linear":
         case "prophoto-rgb":
-            // @ts-ignore
-            return {
-                typ: EnumToken.ColorTokenType,
-                val: "color",
-                chi: [{ typ: EnumToken.IdenTokenType, val: colorSpace }].concat(
-                    // @ts-expect-error
-                    values.map((v: number) => {
-                        return {
-                            typ: EnumToken.NumberTokenType,
-                            val: v,
-                        };
-                    }) as Token[],
-                ) as Token[],
-                kin: ColorType.COLOR,
-                cal: "col",
-            } as ColorToken;
+            {
+                const color: Token = arena.createColor(
+                    "color",
+                    ColorType.COLOR,
+                    [arena.createToken(EnumToken.IdenTokenType, colorSpace)].concat(
+                        values.map((v: number) => arena.createToken(EnumToken.NumberTokenType, v)),
+                    ),
+                );
+
+                // inlined: arena.setUnitString(color, "col")
+                arena.unit[color] = "col" == null ? 0 : arena.internString("col");
+                return color;
+            }
 
         // case "rgb":
         case "hsl":
@@ -521,65 +513,57 @@ export function colorMix(...args: Token[]): ColorToken | null {
                 }
             }
 
-            // @ts-ignore
-            const result: ColorToken = {
-                typ: EnumToken.ColorTokenType,
-                val: colorSpace,
-                chi: values.map((v) => {
-                    return {
-                        typ: EnumToken.NumberTokenType,
-                        val: v,
-                    };
-                }),
-                kin: ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
-            } as ColorToken;
+            const components: Token[] = values.map((v: number): Token => arena.createToken(EnumToken.NumberTokenType, v));
 
             if (colorSpace == "hsl") {
-                // @ts-ignore
-                result.chi[0] = { typ: EnumToken.AngleTokenType, val: result.chi[0].val };
-                // @ts-ignore
-                result.chi[1] = { typ: EnumToken.PercentageTokenType, val: result.chi[1].val };
-                // @ts-ignore
-                result.chi[2] = { typ: EnumToken.PercentageTokenType, val: result.chi[2].val };
+                arena.dataTypes[components[0]] = EnumToken.AngleTokenType;
+                // inlined: arena.setUnitString(components[0], "deg")
+                arena.unit[components[0]] = "deg" == null ? 0 : arena.internString("deg");
+                arena.dataTypes[components[1]] = EnumToken.PercentageTokenType;
+                arena.dataTypes[components[2]] = EnumToken.PercentageTokenType;
             }
 
-            return result;
+            return arena.createColor(
+                colorSpace,
+                ColorType[colorSpace.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
+                components,
+            );
     }
 
     return null;
 }
 
-function processPowerlessComponents(color: ColorToken): ColorToken {
+function processPowerlessComponents(arena: AstArena, color: Token): Token {
     let components: Token[] | null;
     let values: number[] | null;
 
-    switch (color.kin) {
+    switch (arena.colorType[color]) {
         case ColorType.LCH:
         case ColorType.OKLCH:
-            values = color.kin == ColorType.LCH ? getLCHComponents(color) : getOKLCHComponents(color);
-            components = getColorComponents(color);
+            values = arena.colorType[color] == ColorType.LCH ? getLCHComponents(arena, color) : getOKLCHComponents(arena, color);
+            components = getColorComponents(arena, color);
             if (values == null || values.length < 3 || components == null) {
                 break;
             }
 
-            const max = color.kin == ColorType.LCH ? colorRange.lch.l[1] : colorRange.oklch.l[1];
+            const max = arena.colorType[color] == ColorType.LCH ? colorRange.lch.l[1] : colorRange.oklch.l[1];
             // https://www.w3.org/TR/css-color-4/#specifying-lab-lch
             // https://www.w3.org/TR/css-color-4/#specifying-oklab-oklch
-            const epsilon = color.kin == ColorType.LCH ? 0.0015 : 0.000004;
+            const epsilon = arena.colorType[color] == ColorType.LCH ? 0.0015 : 0.000004;
 
             if (values[0] < epsilon || Math.abs(values[0] - max) < epsilon) {
-                Object.assign(components[0], { val: values[0] < epsilon ? 0 : max, typ: EnumToken.NumberTokenType });
-                Object.assign(components[1], { val: "none", typ: EnumToken.IdenTokenType });
-                Object.assign(components[2], { val: "none", typ: EnumToken.IdenTokenType });
+                arena.resetToken(components[0], EnumToken.NumberTokenType, values[0] < epsilon ? 0 : max);
+                arena.resetToken(components[1], EnumToken.IdenTokenType, "none");
+                arena.resetToken(components[2], EnumToken.IdenTokenType, "none");
 
-                setColorFlag(components[1], EnumAstNodeStatus.PowerlessColorComponent);
-                setColorFlag(components[2], EnumAstNodeStatus.PowerlessColorComponent);
+                setColorFlag(arena, components[1], EnumAstNodeStatus.PowerlessColorComponent);
+                setColorFlag(arena, components[2], EnumAstNodeStatus.PowerlessColorComponent);
             } else if (values[1] < epsilon) {
                 values[1] = 0;
 
-                Object.assign(components[1], { val: 0, typ: EnumToken.NumberTokenType });
-                Object.assign(components[2], { val: "none", typ: EnumToken.IdenTokenType });
-                setColorFlag(components[2], EnumAstNodeStatus.PowerlessColorComponent);
+                arena.resetToken(components[1], EnumToken.NumberTokenType, 0);
+                arena.resetToken(components[2], EnumToken.IdenTokenType, "none");
+                setColorFlag(arena, components[2], EnumAstNodeStatus.PowerlessColorComponent);
             }
 
             break;
@@ -587,9 +571,9 @@ function processPowerlessComponents(color: ColorToken): ColorToken {
         case ColorType.HSL:
         case ColorType.HWB:
             values = Object.values(
-                (color.kin == ColorType.HSL ? hslvalues(color) : hwbvalues(color)) ?? {},
+                (arena.colorType[color] == ColorType.HSL ? hslvalues(arena, color) : hwbvalues(arena, color)) ?? {},
             ) as number[];
-            components = getColorComponents(color);
+            components = getColorComponents(arena, color);
             if (values == null || values.length < 3 || components == null) {
                 break;
             }
@@ -597,24 +581,20 @@ function processPowerlessComponents(color: ColorToken): ColorToken {
             // https://www.w3.org/TR/css-color-4/#the-hsl-notation
             // https://www.w3.org/TR/css-color-4/#the-hwb-notation
             if (
-                (color.kin == ColorType.HSL && values[1] <= 0.001) ||
-                (color.kin == ColorType.HWB && values[1] + values[2] >= 99.999)
+                (arena.colorType[color] == ColorType.HSL && values[1] <= 0.001) ||
+                (arena.colorType[color] == ColorType.HWB && values[1] + values[2] >= 99.999)
             ) {
-                Object.assign(components[0], { val: "none", typ: EnumToken.IdenTokenType });
-                setColorFlag(components[0], EnumAstNodeStatus.PowerlessColorComponent);
+                arena.resetToken(components[0], EnumToken.IdenTokenType, "none");
+                setColorFlag(arena, components[0], EnumAstNodeStatus.PowerlessColorComponent);
             }
 
             break;
     }
 
-    // console.error({ color: color.chi ?? color, values });
+    // console.error({ color: arena.tokens(color) ?? color, values });
     return color;
 }
 
-function setColorFlag(token: Token, flag: EnumAstNodeStatus) {
-    if (token[STATE] == null) {
-        token[STATE] = flag;
-    } else {
-        token[STATE] |= flag;
-    }
+function setColorFlag(arena: AstArena, token: Token, flag: EnumAstNodeStatus) {
+    arena.flags[token] |= flag;
 }

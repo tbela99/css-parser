@@ -11,7 +11,7 @@ export function run(describe, expect, it, transform, parse, render) {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  color: blue
 }
 Bar.foo {
@@ -35,7 +35,7 @@ Bar.foo {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.header {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.header {
  background-color: blue
 }
 .header p {
@@ -60,7 +60,7 @@ Bar.foo {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -82,7 +82,7 @@ Bar.foo {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -108,7 +108,7 @@ Bar.foo {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {
@@ -134,7 +134,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
  html {
   block-size: 100%
  }
@@ -162,7 +162,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`@layer base {
  html {
   block-size: 100%
  }
@@ -189,7 +189,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.card {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.card {
  inline-size: 40ch;
  aspect-ratio: 3/4
 }
@@ -209,7 +209,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  color: blue
 }
 .foo.foo {
@@ -233,7 +233,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`@scope (.card) to (>header) {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`@scope (.card) to (>header) {
  :scope {
   inline-size: 40ch;
   aspect-ratio: 3/4
@@ -391,7 +391,7 @@ html {
 `;
             return parse(nesting1, {
                 minify: true, nestingRules: true
-            }).then((result) => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
+            }).then((result) => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo {
  display: grid
 }
 @media (orientation:landscape) {

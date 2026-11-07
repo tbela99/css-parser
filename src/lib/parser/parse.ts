@@ -1,11 +1,17 @@
 import { isColor, isIdentColor, parseColor } from "../syntax/syntax.ts";
 import { camelize, dasherize, equalsIgnoreCase } from "./utils/text.ts";
 import { renderValue } from "../printer/render.ts";
-import { EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
+import {
+    EnumAstNodeStatus,
+    EnumToken,
+    ModuleCaseTransformEnum,
+    ModuleScopeEnumOptions,
+    WalkerEvent,
+} from "../ast/types.ts";
 import { minify } from "../ast/minify.ts";
-import { expand } from "../ast/expand.ts";
-import { walk, WalkerEvent, walkValues } from "../ast/walk.ts";
 import { Tokenizer } from "./tokenize.ts";
+import { AstArena, TokenField } from "../ast/arena.ts";
+import { ARENAID, AstArenaNode } from "../ast/arena-node.ts";
 import type {
     AstAtRule,
     AstComment,
@@ -21,11 +27,11 @@ import type {
     BinaryExpressionToken,
     ClassSelectorToken,
     ColorToken,
+    CommentToken,
     ComposesSelectorToken,
     ContainerStyleRangeToken,
     CssVariableImportTokenType,
     CssVariableMapTokenType,
-    CssVariableToken,
     DashedIdentToken,
     DimensionToken,
     ErrorDescription,
@@ -56,19 +62,10 @@ import type {
     VisitorNodeMap,
     WhenElseUnaryConditionToken,
     WhitespaceToken,
+    PlainAstNode,
+    PlainToken,
 } from "../../@types/index.d.ts";
-import {
-    ERRORS,
-    LOCEND,
-    LOCSRCID,
-    LOCSTA,
-    pageMarginBoxType,
-    PARENT,
-    ROOT,
-    STATE,
-    TOKENS,
-    tokensfuncDefMap,
-} from "../syntax/constants.ts";
+import { pageMarginBoxType, tokensfuncDefMap } from "../syntax/constants.ts";
 import { hash, hashAlgorithms, syncHash } from "../parser/utils/hash.ts";
 import { parseSelector } from "./utils/selector.ts";
 import { parseDeclaration } from "./utils/declaration.ts";
@@ -80,7 +77,7 @@ import { matchAtRuleImportSyntax } from "./utils/at-rule-import.ts";
 import type { ValidationMatch } from "../validation/types.d.ts";
 import { matchAtRuleWhenElseSyntax } from "./utils/at-rule-when-else.ts";
 import { parseAtRuleSupportSyntax } from "./utils/at-rule-support.ts";
-import { replaceNodeOrValue, trimWhiteSpaceTokens } from "./utils/token.ts";
+import { trimWhiteSpaceTokens } from "./utils/token.ts";
 import { parseAtRuleContainerQueryList } from "./utils/at-rule-container.ts";
 import { parseMediaqueryList } from "./utils/at-rule-media.ts";
 import { matchAtRuleSyntax } from "./utils/at-rule.ts";
@@ -89,14 +86,184 @@ import { matchGenericSyntax } from "./utils/at-rule-generic.ts";
 import { memoize } from "./utils/cache.ts";
 import { SourceFile } from "./source.ts";
 import { dirname } from "../fs/resolve.ts";
+import { NodeWalker, ValueWalker } from "../ast/walk.ts";
 
-function renderTokens(tokens: Token[] | null | undefined, options?: any): string {
+function renderTokens(arena: AstArena, tokens: Token[] | null | undefined, options?: any): string {
     if (tokens == null || tokens.length === 0) return "";
-    if (options != null) return tokens.map((t) => renderValue(t, options)).join("");
-    return tokens.map((t) => renderValue(t)).join("");
+    if (options != null) return tokens.map((t) => renderValue(arena, t, options)).join("");
+    return tokens.map((t) => renderValue(arena, t)).join("");
 }
 
 declare type T = AstDeclaration | AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule;
+
+/**
+ * allocate an at-rule node from an at-rule token
+ * @param arena
+ * @param atRule at-rule token: name and location
+ * @param typ
+ * @param tokens prelude tokens
+ * @param state
+ * @param errors
+ * @param end last token of the at-rule
+ * @param val
+ * @param block
+ */
+function createAtRuleNode(
+    arena: AstArena,
+    atRule: Token,
+    typ: EnumToken,
+    tokens: Token[] | null,
+    state: EnumAstNodeStatus,
+    errors: ErrorDescription[] | null,
+    end: Token,
+    val: string,
+    block: boolean,
+): AstNode {
+    const node: AstNode = arena.createAtRule(typ, arena.strings[arena.name[atRule]], val, block, tokens, state, errors);
+
+    arena.spanLocation(node, atRule, end);
+    return node;
+}
+
+/**
+ * convert a visitor result to node ids. the object views of the arena ({@link AstArenaNode}) are not copied, the views
+ * of another arena are imported, plain objects are allocated in the arena
+ * @param arena
+ * @param replacement
+ */
+function visitorResult(arena: AstArena, replacement: unknown): number | number[] | null {
+    if (Array.isArray(replacement)) {
+        const result: number[] = [];
+
+        for (const item of replacement) {
+            if (typeof item == "number") {
+                result.push(item);
+            } else if (item != null && typeof item == "object") {
+                result.push(arena.fromObject(item as AstArenaNode | PlainAstNode | PlainToken));
+            } else {
+                return null;
+            }
+        }
+
+        return result;
+    }
+
+    if (typeof replacement == "number") {
+        return replacement;
+    }
+
+    if (replacement != null && typeof replacement == "object") {
+        return arena.fromObject(replacement as AstArenaNode | PlainAstNode | PlainToken);
+    }
+
+    return null;
+}
+
+/**
+ * allocate a comment node from a comment token
+ * @param arena
+ * @param token
+ */
+function createCommentNode(arena: AstArena, token: Token): AstNode {
+    const node: AstNode = arena.createComment(arena.dataTypes[token], arena.strings[arena.stringValue[token]]);
+
+    arena.copyLocation(node, token);
+    return node;
+}
+
+/**
+ * initial arena capacity: one node for every 4 bytes of css. the statement tokens that are not attached to the tree
+ * are recycled, so a parse + minify allocates 0.07 to 0.22 node per byte (up to 0.5 for keyframes heavy stylesheets
+ * or when nesting rules are expanded): the arena seldom grows. the length of a stream is unknown: 4096 nodes
+ * @param tokenizer
+ */
+function arenaCapacity(tokenizer: Tokenizer): number {
+    const length: number = tokenizer.streamLength;
+
+    // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
+    return length == 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
+}
+
+/**
+ * allocate the current tokenizer token in the arena
+ * @param arena
+ * @param tokenizer
+ * @param sourceIndex index of the source in the arena sources table. negative when the token has no location
+ */
+function allocateToken(arena: AstArena, tokenizer: Tokenizer, sourceIndex: number): Token {
+    const item: Token = arena.allocate();
+    const val: string | number | null = tokenizer.val;
+
+    arena.dataTypes[item] = tokenizer.typ as EnumToken;
+
+    if (tokenizer.unit != null) {
+        arena.numericValue[item] = val as number;
+        arena.unit[item] = arena.internString(tokenizer.unit);
+    } else if (tokenizer.nam != null) {
+        arena.name[item] = arena.internString(tokenizer.nam);
+    } else if (val !== null) {
+        if (typeof val == "number") {
+            arena.numericValue[item] = val;
+        } else if (tokenizer.typ != EnumToken.WhitespaceTokenType) {
+            // whitespace is always rendered as a single space: the text is not kept
+            arena.stringValue[item] = arena.internString(val);
+        }
+
+        if (tokenizer.kin != null) {
+            // inlined: arena.setColorType(item, tokenizer.kin)
+            arena.colorType[item] = tokenizer.kin;
+        }
+    }
+
+    if (sourceIndex >= 0) {
+        arena.setTokenLocation(item, sourceIndex, tokenizer.sta as number, tokenizer.end as number);
+    }
+
+    return item;
+}
+
+/**
+ * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
+ * the tokens referenced by the errors or the invalid nodes of the statement are kept
+ * @param arena
+ * @param tokens statement tokens
+ * @param errors
+ * @param errorStart index of the first error of the statement
+ * @param invalidNodes
+ * @param invalidStart index of the first invalid node of the statement
+ */
+function recycleStatementTokens(
+    arena: AstArena,
+    tokens: Token[],
+    errors: ErrorDescription[],
+    errorStart: number,
+    invalidNodes: AstNode[],
+    invalidStart: number,
+): void {
+    for (let i = 0; i < tokens.length; i++) {
+        const token: Token = tokens[i];
+
+        // already recycled (a token can be recorded twice), attached or holding other tokens
+        if (
+            arena.dataTypes[token] == 0 ||
+            arena.parents[token] != 0 ||
+            arena.firstChild[token] != 0 ||
+            arena.firstToken[token] != 0
+        ) {
+            continue;
+        }
+
+        let referenced: boolean = invalidNodes.indexOf(token, invalidStart) != -1;
+
+        for (let j = errorStart; !referenced && j < errors.length; j++) {
+            referenced = errors[j].node === token;
+        }
+
+        if (!referenced) {
+            arena.recycle(token);
+        }
+    }
+}
 
 export const trimWhiteSpace: EnumToken[] = [
     EnumToken.CommentTokenType,
@@ -106,12 +273,18 @@ export const trimWhiteSpace: EnumToken[] = [
     EnumToken.LteTokenType,
     EnumToken.ColumnCombinatorTokenType,
 ];
-const BadTokensTypes: EnumToken[] = [
-    EnumToken.BadCommentTokenType,
-    EnumToken.BadCdoTokenType,
-    EnumToken.BadUrlTokenType,
-    EnumToken.BadStringTokenType,
-];
+/**
+ * bad comment, cdo, url or string token
+ * @param type
+ */
+function isBadToken(type: EnumToken): boolean {
+    return (
+        type == EnumToken.BadCommentTokenType ||
+        type == EnumToken.BadCdoTokenType ||
+        type == EnumToken.BadUrlTokenType ||
+        type == EnumToken.BadStringTokenType
+    );
+}
 new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
 let keyNameCounter: number = 0;
 
@@ -473,6 +646,13 @@ function parseVisitors(
         if (Number.isInteger(+key)) {
             if (typeof value == "function") {
                 key = value.name;
+            } else if (value != null && typeof value == "object") {
+                // array of visitor maps: flatten. this used to depend on the array index being an EnumToken value
+                for (const val of Object.entries(value)) {
+                    visitors.push(val);
+                }
+
+                continue;
             }
         }
 
@@ -697,9 +877,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         ...options,
     };
 
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
 
     if (options.module) {
         options.expandNestingRules = true;
@@ -728,105 +906,88 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     };
 
     const invalidNodes: Array<AstNode> = [];
+    // first error / invalid node of the current statement
+    let errorStart: number = errors.length;
+    let invalidStart: number = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement: Token[] = [];
 
-    let ast: AstStyleSheet = {
-        typ: EnumToken.StyleSheetNodeType,
-        chi: [],
-    };
+    // nested parses share the arena of the parent
+    const arena: AstArena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
+    let ast: AstStyleSheet = arena.current == 1 ? arena.root : arena.createStyleSheet();
 
     let tokens: Token[] = [];
-    let context: AstRuleList = ast;
+    let context: AstNode = ast;
 
     let item: Token;
-    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstNode | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
 
-    ast[LOCSRCID] = options.source!.id;
-    ast[LOCSTA] = 0;
+    // tokens are located in the tokenizer source (the imported file when parsing an @import)
+    arena.setLocation(ast, tokenizer.sourceId, 0, 0);
 
-    while (!tokenizer.done()) {
+    const sourceIndex: number = arena.sourceIndex(tokenizer.sourceId);
+    const dataTypes: Uint8Array = arena.dataTypes;
+    let itemType: EnumToken;
+
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
-        if (tokenizer.unit != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                unit: tokenizer.unit,
-            } as DimensionToken;
-        } else if (tokenizer.nam != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                nam: tokenizer.nam,
-            } as Token;
-        } else if (tokenizer.val === null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-            } as Token;
-        } else if (tokenizer.kin != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                kin: tokenizer.kin,
-            } as ColorToken;
-        } else {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-            } as Token;
-        }
-
-        item[LOCSRCID] = tokenizer.srcId as number;
-        item[LOCSTA] = tokenizer.sta as number;
-        item[LOCEND] = tokenizer.end as number;
+        item = allocateToken(arena, tokenizer, sourceIndex);
+        itemType = tokenizer.typ as EnumToken;
 
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
 
-        if (BadTokensTypes.includes(item.typ)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
                 syntax: null,
                 node: item,
-                location: options.source!.getSourceLocation(item[LOCSTA]),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(item))
+                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(item))],
             });
 
             // bad token
             continue;
         }
 
-        if (item.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.typ)) {
+        if (itemType === EnumToken.StartParensTokenType || tokensfuncDefMap.has(itemType)) {
             parensMatch++;
-        } else if (item.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+        } else if (itemType === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
 
-        if (item.typ === EnumToken.BlockStartTokenType) {
+        if (itemType === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
-        } else if (item.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+        } else if (itemType === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
             curlyBracketMatch--;
         }
 
         tokens.push(item);
+        statement.push(item);
 
         if (
             parensMatch === 0 &&
-            (item.typ === EnumToken.SemiColonTokenType ||
-                item.typ === EnumToken.BlockStartTokenType ||
-                item.typ === EnumToken.EOFTokenType)
+            (itemType === EnumToken.SemiColonTokenType ||
+                itemType === EnumToken.BlockStartTokenType ||
+                itemType === EnumToken.EOFTokenType)
         ) {
-            node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             if (node != null) {
-                if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
-                    context = node as AstRuleList;
+                if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                    stack.push(node);
+                    context = node;
                 }
-            } else if (item.typ == EnumToken.BlockStartTokenType) {
+            } else if (itemType == EnumToken.BlockStartTokenType) {
                 let inBlock: number = 1;
 
                 tokens.length = 0;
@@ -835,87 +996,70 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 do {
                     tokenizer.next();
 
-                    if (tokenizer.unit != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                            unit: tokenizer.unit,
-                        } as DimensionToken;
-                    } else if (tokenizer.nam != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            nam: tokenizer.nam,
-                        } as Token;
-                    } else if (tokenizer.val === null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                        } as Token;
-                    } else if (tokenizer.kin != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                            kin: tokenizer.kin,
-                        } as ColorToken;
-                    } else {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                        } as Token;
-                    }
-
-                    item[LOCSRCID] = tokenizer.srcId as number;
-                    item[LOCSTA] = tokenizer.sta as number;
-                    item[LOCEND] = tokenizer.end as number;
+                    item = allocateToken(arena, tokenizer, sourceIndex);
+                    itemType = tokenizer.typ as EnumToken;
 
                     tokens.push(item);
+                    statement.push(item);
 
-                    if (item.typ === EnumToken.BlockStartTokenType) {
+                    if (itemType === EnumToken.BlockStartTokenType) {
                         inBlock++;
-                    } else if (item.typ === EnumToken.BlockEndTokenType) {
+                    } else if (itemType === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0 && !tokenizer.done());
+                // inlined: tokenizer.done()
+                } while (inBlock != 0 && !((tokenizer.typ as EnumToken | null) === EnumToken.EOF));
 
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: options.source!.getSourceLocation(tokens[0][LOCSTA]!),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
                     });
                 }
             }
 
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
-        } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
-            parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
+        } else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
+            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
-            context[LOCEND] = item[LOCEND];
+            // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
+            arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
 
-            const previousNode = stack.pop() as AstRuleList;
-            context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+            const previousNode: AstNode | undefined = stack.pop();
+            context = stack[stack.length - 1] ?? ast;
 
             if (
                 options.removeEmpty &&
                 previousNode != null &&
-                previousNode.chi!.length == 0 &&
-                context.chi![context.chi!.length - 1] == previousNode
+                arena.firstChild[previousNode] == 0 &&
+                arena.lastChild[context] == previousNode
             ) {
-                context.chi!.pop();
+                arena.detach(previousNode);
             }
 
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
     }
 
     if (tokens.length > 0) {
-        node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
         if (node != null) {
-            if ("chi" in node) {
+            if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                 stack.push(node);
-                context = node as AstRuleList;
+                context = node;
             }
         }
     }
@@ -923,7 +1067,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     const endParseTime: number = performance.now();
 
     if (options.expandNestingRules) {
-        ast = expand(ast) as AstStyleSheet;
+        ast = arena.expand(ast) as AstStyleSheet;
     }
 
     let replacement: GenericVisitorResult<T>;
@@ -932,289 +1076,64 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         const handlers = [] as Array<GenericVisitorHandler<T>>;
         const visitors = parseVisitors(options.visitor, errors);
 
-        let parens: Token[] | null;
-
         let genericKey: string | null;
-        let nodes: Array<AstNode | Token> | null = [ast];
-        let i: number;
-        let node: AstNode | Token | null;
+        let nodes: AstNode[] | null = [ast];
+        let node: AstNode;
+        let nodeType: EnumToken;
+
+        // push the children of a node or the sub tokens of a value token onto the stack
+        const enqueue = (node: AstNode): void => {
+            if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
+                    nodes!.push(child);
+                }
+            }
+
+            if (
+                visitors.includeTokens &&
+                arena.dataTypes[node] != EnumToken.RuleNodeType &&
+                arena.dataTypes[node] != EnumToken.KeyframesRuleNodeType
+            ) {
+                // at-rule prelude, declaration values or token children. selector tokens are not visited
+                const values: Token[] = arena.subTokens(node);
+
+                for (let i = values.length - 1; i >= 0; i--) {
+                    nodes!.push(values[i]);
+                }
+            }
+        };
+
         while (nodes.length > 0) {
-            node = nodes.pop() as AstNode | Token;
-
-            if (visitors.includeTokens) {
-                switch (node.typ) {
-                    case EnumToken.RuleNodeType:
-                    case EnumToken.AtRuleNodeType:
-                    case EnumToken.KeyframesRuleNodeType:
-                    case EnumToken.KeyframesAtRuleNodeType:
-                        for (
-                            let i =
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS].length -
-                                1;
-                            i >= 0;
-                            i--
-                        ) {
-                            // @ts-ignore
-                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i][PARENT] =
-                                node;
-                            nodes.push(
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i],
-                            );
-                        }
-
-                        break;
-                    case EnumToken.DeclarationNodeType:
-                        for (
-                            let i =
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val.length - 1;
-                            i >= 0;
-                            i--
-                        ) {
-                            (node as AstDeclaration).val[i][PARENT] = node;
-                            // @ts-ignore
-                            nodes.push((node as AstDeclaration).val[i]);
-                        }
-
-                        break;
-                }
-
-                // @ts-ignore
-                // if (node.l != null) {
-                //     // @ts-ignore
-                //     if (node.op2 != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op2);
-                //         // @ts-ignore
-                //         node.op2[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (node.op1 != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op1);
-                //         // @ts-ignore
-                //         node.op1[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (nodes.op != null && node.op.typ != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op);
-                //         // @ts-ignore
-                //         node.op[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (node.r != null) {
-                //         // @ts-ignore
-                //         if (Array.isArray(node.r)) {
-                //             // @ts-ignore
-                //             for (let i = node.r.length - 1; i >= 0; i--) {
-                //                 // @ts-ignore
-                //                 nodes.push(node.r[i]);
-                //                 //  @ts-ignore
-                //                 node.r[i][PARENT] = node;
-                //             }
-                //         } else {
-                //             // @ts-ignore
-                //             nodes.push(node.r);
-                //             // @ts-ignore
-                //             node.r[PARENT] = node;
-                //         }
-                //     }
-
-                //     // @ts-ignore
-                //     if (Array.isArray(node.l)) {
-                //         // @ts-ignore
-                //         for (let i = node.l.length - 1; i >= 0; i--) {
-                //             // @ts-ignore
-                //             nodes.push(node.l[i]);
-                //             // @ts-ignore
-                //             node.l[i][PARENT] = node;
-                //         }
-                //     } else {
-                //         // @ts-ignore
-                //         nodes.push(node.l);
-                //         // @ts-ignore
-                //         node.l[PARENT] = node;
-                //     }
-                // }
-            }
-
-            switch (node.typ) {
-                case EnumToken.BinaryExpressionTokenType:
-                case EnumToken.IfElseConditionTokenType:
-                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).r);
-                    (node as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = node;
-
-                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).l);
-                    (node as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = node;
-
-                    break;
-
-                case EnumToken.MatchExpressionTokenType:
-                    nodes.push((node as MatchExpressionToken).r);
-                    (node as MatchExpressionToken).r[PARENT] = node;
-
-                    nodes.push((node as MatchExpressionToken).op);
-                    (node as MatchExpressionToken).op[PARENT] = node;
-
-                    nodes.push((node as MatchExpressionToken).l);
-                    (node as MatchExpressionToken).l[PARENT] = node;
-                    break;
-
-                case EnumToken.SupportsQueryConditionTokenType:
-                case EnumToken.MediaQueryConditionTokenType:
-                    for (let i = (node as SupportsQueryConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as SupportsQueryConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as SupportsQueryConditionToken).op);
-                    (node as SupportsQueryConditionToken).op[PARENT] = node;
-
-                    for (let i = (node as SupportsQueryConditionToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as SupportsQueryConditionToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-                case EnumToken.WhenElseQueryConditionTokenType:
-                    for (let i = (node as WhenElseUnaryConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as WhenElseUnaryConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-                    nodes.push((node as WhenElseUnaryConditionToken).l);
-                    (node as WhenElseUnaryConditionToken).l[PARENT] = node;
-
-                    break;
-
-                case EnumToken.IfConditionTokenType:
-                    for (let i = (node as IfConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as IfConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    for (let i = (node as IfConditionToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as IfConditionToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.ComposesSelectorNodeType:
-                    if ((node as ComposesSelectorToken).r != null) {
-                        nodes.push((node as ComposesSelectorToken).r as Token);
-                        ((node as ComposesSelectorToken).r as Token)[PARENT] = node;
-                    }
-
-                    for (let i = (node as ComposesSelectorToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as ComposesSelectorToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.ContainerStyleRangeTokenType:
-                    for (let i = (node as ContainerStyleRangeToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    for (let i = (node as ContainerStyleRangeToken).op.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).op[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-                    for (let i = (node as ContainerStyleRangeToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.MediaRangeQueryTokenType:
-                    for (let i = (node as MediaRangeQueryToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as MediaRangeQueryToken).op2);
-                    (node as MediaRangeQueryToken).op2[PARENT] = node;
-
-                    for (let i = (node as MediaRangeQueryToken).val.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).val[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as MediaRangeQueryToken).op1);
-                    (node as MediaRangeQueryToken).op1[PARENT] = node;
-
-                    for (let i = (node as MediaRangeQueryToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-            }
-
-            // @ts-ignore
-            if (node.chi != null) {
-                for (
-                    // @ts-ignore
-                    let i = (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi.length - 1;
-                    i >= 0;
-                    i--
-                ) {
-                    // @ts-ignore
-                    nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi[i]);
-                }
-            }
-
-            parens = null;
+            node = nodes.pop() as AstNode;
+            nodeType = arena.dataTypes[node];
+            replacement = null;
             handlers.length = 0;
 
             if (visitors.preAllVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.preAllVisitorsHandlers!);
+                handlers.push(...(visitors.preAllVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
             genericKey =
-                node.typ == EnumToken.DeclarationNodeType
+                nodeType == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : node.typ == EnumToken.AtRuleNodeType
+                    : nodeType == EnumToken.AtRuleNodeType
                       ? "AtRule"
-                      : node.typ == EnumToken.KeyframesAtRuleNodeType
+                      : nodeType == EnumToken.KeyframesAtRuleNodeType
                         ? "KeyframesAtRule"
-                        : node.typ === EnumToken.KeyframesRuleNodeType
+                        : nodeType === EnumToken.KeyframesRuleNodeType
                           ? "KeyframesRule"
-                          : node.typ == EnumToken.RuleNodeType
+                          : nodeType == EnumToken.RuleNodeType
                             ? "Rule"
-                            : node.typ == EnumToken.KeyframesRuleNodeType
-                              ? "KeyframesRule"
-                              : null;
+                            : null;
             let keyName: string | null =
-                node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
-                    ? camelize((node as AstDeclaration | AstAtRule).nam)
-                    : node.typ == EnumToken.KeyframesAtRuleNodeType
-                      ? camelize((node as AstKeyframesAtRule).val)
+                nodeType == EnumToken.DeclarationNodeType || nodeType == EnumToken.AtRuleNodeType
+                    ? camelize(arena.strings[arena.name[node]])
+                    : nodeType == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize(arena.strings[arena.stringValue[node]])
                       : null;
 
             if (visitors.allVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.allVisitorsHandlers!);
+                handlers.push(...(visitors.allVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
             for (const map of visitors.allHandlers) {
@@ -1234,9 +1153,9 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     }
                 }
 
-                if (map!.has(node.typ)) {
+                if (map!.has(nodeType)) {
                     // @ts-ignore
-                    for (const handler of map!.get(node.typ)!) {
+                    for (const handler of map!.get(nodeType)!) {
                         if (typeof handler == "function") {
                             handlers.push(handler as GenericVisitorHandler<T>);
                         } else if (Array.isArray(handler)) {
@@ -1259,52 +1178,60 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
             }
 
             if (visitors.postAllVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.postAllVisitorsHandlers!);
+                handlers.push(...(visitors.postAllVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
-            if (handlers.length == 0) {
-                continue;
-            }
+            if (handlers.length > 0) {
+                for (const callable of handlers) {
+                    // the parent, the root, ... are read from the arena
+                    replacement = (callable as GenericVisitorHandler<T>)(arena, node as T) as GenericVisitorResult<T>;
 
-            for (const callable of handlers) {
-                replacement = (callable as GenericVisitorHandler<T>)(
-                    node as T,
-                    node[PARENT] as AstNode,
-                    ast as AstStyleSheet,
-                    // @ts-expect-error
-                    function* () {
-                        if (parens == null) {
-                            let parent = node![PARENT] as AstNode;
+                    if (replacement == null) {
+                        continue;
+                    }
+                    if (replacement == node) {
+                        continue;
+                    }
 
-                            while (parent != null) {
-                                yield parent;
-                                parent = parent[PARENT] as AstNode;
-                            }
+                    //
+                    if (Array.isArray(replacement)) {
+                        break;
+                    }
+                }
+
+                // @ts-ignore
+                if (replacement != null && node != replacement) {
+                    // nodes and tokens are replaced by ids allocated in the arena. the object views of the arena are
+                    // not copied, plain objects are imported
+                    replacement = visitorResult(arena, replacement as GenericVisitorResult<T>) as GenericVisitorResult<T>;
+
+                    if (replacement == node) {
+                        // the object view of the node
+                    } else if (replacement != null) {
+                        if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement as AstNode[] : [replacement as AstNode]));
+                        } else {
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement as Token[] : [replacement as Token]));
                         }
-                    },
-                ) as GenericVisitorResult<T>;
-
-                if (replacement == null) {
-                    continue;
-                }
-
-                if (replacement == node) {
-                    continue;
-                }
-
-                // @ts-ignore
-                // node = replacement as AstNode;
-
-                //
-                if (Array.isArray(replacement)) {
-                    break;
+                    } else {
+                        errors.push({
+                            action: "ignore",
+                            message: "doParse: visitor must return node ids, objects or arrays of node ids and objects",
+                            node,
+                        });
+                    }
                 }
             }
 
-            // @ts-ignore
-            if (replacement != null && node != replacement) {
-                // @ts-ignore
-                replaceNodeOrValue(node[PARENT], node, replacement);
+            // visit the children of the node or of its replacement
+            if (replacement == null || replacement == node) {
+                enqueue(node);
+            } else if (Array.isArray(replacement)) {
+                for (let i = replacement.length - 1; i >= 0; i--) {
+                    enqueue(replacement[i] as AstNode);
+                }
+            } else {
+                enqueue(replacement as AstNode);
             }
         }
 
@@ -1313,30 +1240,29 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
     if (invalidNodes.length > 0) {
         for (const node of invalidNodes) {
-            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
+            if (options.lenient && arena.flags[node] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] &
+                arena.flags[node] &
                 (EnumAstNodeStatus.Invalid |
                     EnumAstNodeStatus.Unknown |
                     EnumAstNodeStatus.Unparsed |
                     EnumAstNodeStatus.Malformed |
                     EnumAstNodeStatus.Disallowed)
             ) {
-                // @ts-ignore
-                node[PARENT].chi.splice(node[PARENT]!.chi.indexOf(node), 1);
+                arena.detach(node);
             }
         }
     }
 
     if (options.minifyAST) {
-        if (ast.chi.length > 0) {
+        if (arena.firstChild[ast] != 0) {
             let passes: number = options.pass ?? (1 as number);
 
             while (passes--) {
-                minify(ast, options, true, errors, false);
+                minify(arena, ast, options, true, errors, false);
             }
         }
     }
@@ -1346,6 +1272,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     let endTime: number = performance.now();
     const result = {
         ast,
+        arena,
         errors,
         stats: {
             ...stats,
@@ -1372,8 +1299,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         const processed = new Set<Token>();
         const pattern: string | null = typeof options.module == "boolean" ? null : (moduleSettings.pattern as string);
         const importMapping: Record<string, Record<string, string>> = {} as Record<string, Record<string, string>>;
-        const cssVariablesMap: Record<string, Record<string, CssVariableToken>> = {};
-        const importedCssVariables: Record<string, CssVariableToken> = {};
+        const cssVariablesMap: Record<string, Record<string, AstArenaNode>> = {};
+        const importedCssVariables: Record<string, AstArenaNode> = {};
         let mapping: Record<string, string> = {};
         let revMapping = {} as Record<string, string>;
         let filePath: string =
@@ -1431,20 +1358,26 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         moduleSettings.pattern =
             pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
 
-        for (const { node, parent } of walk(ast)) {
-            if (node.typ == EnumToken.CssVariableImportTokenType) {
+        // inlined: arena.walk(ast)
+        for (const node of new NodeWalker(arena, ast)) {
+            const parent: AstNode = arena.parents[node];
+            const nodeType: EnumToken = arena.dataTypes[node as AstNode];
+
+            if (nodeType == EnumToken.CssVariableImportTokenType) {
                 throw new Error(
                     "css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
-                        options.source!.getSourceLocation(node[LOCSTA]!).join(":"),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(node as AstNode))
+                        [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node as AstNode))].join(":"),
                 );
             }
 
             // @ts-ignore
-            if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+            if (nodeType == EnumToken.CssVariableDeclarationMapTokenType) {
                 // @ts-ignore
-                const from = (node as CssVariableMapTokenType).from.find(
-                    (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
-                ) as IdentToken;
+                const fromToken: Token = arena
+                    .fieldTokens(node as AstNode, TokenField.L)
+                    .find((t) => arena.dataTypes[t] == EnumToken.IdenTokenType || isIdentColor(arena, t)) as Token;
+                const from: { val: string } = { val: arena.strings[arena.stringValue[fromToken]] };
 
                 if (!(from.val in cssVariablesMap)) {
                     errors.push({
@@ -1454,12 +1387,12 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                     });
                 } else {
                     // @ts-ignore
-                    for (const token of (node as CssVariableMapTokenType).vars) {
-                        if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
-                            if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
+                    for (const token of arena.tokens(node as AstNode)) {
+                        if (arena.dataTypes[token] == EnumToken.IdenTokenType || isIdentColor(arena, token)) {
+                            if (!(arena.strings[arena.stringValue[token]] in cssVariablesMap[from.val])) {
                                 errors.push({
                                     node,
-                                    message: `value '${(token as IdentToken).val}' is not exported from '${from.val}'`,
+                                    message: `value '${arena.strings[arena.stringValue[token]]}' is not exported from '${from.val}'`,
                                     action: "drop",
                                 });
 
@@ -1467,70 +1400,73 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                             }
 
                             result.cssModuleVariables ??= {};
-                            result.cssModuleVariables[(token as IdentToken).val] = importedCssVariables[
-                                (token as IdentToken).val
-                            ] = cssVariablesMap[from.val][(token as IdentToken).val];
+                            result.cssModuleVariables[arena.strings[arena.stringValue[token]]] = importedCssVariables[
+                                arena.strings[arena.stringValue[token]]
+                            ] = cssVariablesMap[from.val][arena.strings[arena.stringValue[token]]];
                         }
                     }
                 }
 
-                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                arena.detach(node as AstNode);
                 continue;
             }
 
-            if (node.typ == EnumToken.CssVariableTokenType) {
-                if (parent?.typ == EnumToken.StyleSheetNodeType) {
+            if (nodeType == EnumToken.CssVariableTokenType) {
+                if (parent != null && arena.dataTypes[parent as AstNode] == EnumToken.StyleSheetNodeType) {
                     if (result.cssModuleVariables == null) {
-                        result.cssModuleVariables = {} as Record<string, CssVariableToken>;
+                        result.cssModuleVariables = {} as Record<string, AstArenaNode>;
                     }
 
-                    // @ts-ignore
-                    result.cssModuleVariables[(node as AstDeclaration).nam] = node;
+                    // inlined: cssVariableToken(arena, node as AstNode): the object view of the css variable node
+                    // inlined: arena.toObject(node as AstNode)
+                    result.cssModuleVariables[arena.strings[arena.name[node as AstNode]]] = new AstArenaNode(arena, node as AstNode);
                 }
-                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                arena.detach(node as AstNode);
                 continue;
             }
 
-            if (node.typ == EnumToken.DeclarationNodeType) {
-                if ((node as AstDeclaration).nam.startsWith("--")) {
-                    if (!((node as AstDeclaration).nam in namesMapping)) {
+            if (nodeType == EnumToken.DeclarationNodeType) {
+                if (arena.strings[arena.name[node as AstNode]].startsWith("--")) {
+                    if (!(arena.strings[arena.name[node as AstNode]] in namesMapping)) {
                         let value: string =
                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                ? (node as AstDeclaration).nam
+                                ? arena.strings[arena.name[node as AstNode]]
                                 : moduleSettings.generateScopedName!(
-                                      (node as AstDeclaration).nam,
+                                      arena.strings[arena.name[node as AstNode]],
                                       moduleSettings.filePath as string,
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
                                   );
 
-                        mapping[(node as AstDeclaration).nam] =
+                        mapping[arena.strings[arena.name[node as AstNode]]] =
                             "--" +
                             (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                             moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                 ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                 : value);
-                        revMapping[(node as AstDeclaration).nam] = (node as AstDeclaration).nam;
+                        revMapping[arena.strings[arena.name[node as AstNode]]] =
+                            arena.strings[arena.name[node as AstNode]];
                     }
 
-                    (node as AstDeclaration).nam = mapping[(node as AstDeclaration).nam];
+                    // inlined: arena.setNameString(node as AstNode, mapping[arena.strings[arena.name[node as AstNode]]])
+                    arena.name[(node as AstNode)] = arena.internString(mapping[arena.strings[arena.name[node as AstNode]]]);
                 }
 
-                if (equalsIgnoreCase("composes", (node as AstDeclaration).nam)) {
-                    const composeSelectors = [] as ComposesSelectorToken[];
+                if (equalsIgnoreCase("composes", arena.strings[arena.name[node as AstNode]])) {
+                    const composeSelectors = [] as Token[];
                     // let isValid: boolean = true;
 
-                    for (const token of (node as AstDeclaration).val) {
-                        if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            composeSelectors.push(token as ComposesSelectorToken);
+                    for (let token = arena.firstToken[node as AstNode]; token != 0; token = arena.nextSibling[token]) {
+                        if (arena.dataTypes[token] == EnumToken.ComposesSelectorNodeType) {
+                            composeSelectors.push(token);
                         }
                     }
 
                     // find parent rule
-                    let parentRule = parent as AstRule;
+                    let parentRule: AstNode = (parent as AstNode) ?? 0;
 
-                    while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
-                        parentRule = parentRule[PARENT] as AstRule;
+                    while (parentRule != 0 && arena.dataTypes[parentRule] != EnumToken.RuleNodeType) {
+                        parentRule = arena.parents[parentRule];
                     }
 
                     if (/* !isValid || */ composeSelectors.length == 0) {
@@ -1540,57 +1476,53 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                             node,
                         });
 
-                        (parentRule as AstRule).chi.splice(
-                            (parentRule as AstRule).chi.indexOf(node as AstDeclaration),
-                            1,
-                        );
+                        arena.detach(node as AstNode);
                         continue;
                     }
 
                     for (const token of composeSelectors) {
                         // composes: a b c;
-                        if (token.r == null) {
-                            for (const rule of token.l) {
+                        if (!arena.hasField(token, TokenField.R)) {
+                            for (const rule of arena.fieldTokens(token, TokenField.L)) {
                                 if (
-                                    rule.typ == EnumToken.WhitespaceTokenType ||
-                                    rule.typ == EnumToken.CommentTokenType
+                                    arena.dataTypes[rule] == EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[rule] == EnumToken.CommentTokenType
                                 ) {
                                     continue;
                                 }
 
-                                if (!((rule as IdentToken).val in mapping)) {
+                                if (!(arena.strings[arena.stringValue[rule]] in mapping)) {
                                     let value: string =
                                         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                            ? (rule as IdentToken).val
+                                            ? arena.strings[arena.stringValue[rule]]
                                             : moduleSettings.generateScopedName!(
-                                                  (rule as IdentToken).val,
+                                                  arena.strings[arena.stringValue[rule]],
                                                   moduleSettings.filePath as string,
                                                   moduleSettings.pattern as string,
                                                   moduleSettings.hashLength,
                                               );
 
-                                    mapping[(rule as DashedIdentToken | IdentToken).val] =
-                                        (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
+                                    mapping[arena.strings[arena.stringValue[rule]]] =
+                                        (arena.dataTypes[rule] == EnumToken.DashedIdenTokenType ? "--" : "") +
                                         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                                         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                             ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                             : value);
-                                    revMapping[mapping[(rule as DashedIdentToken).val]] = (
-                                        rule as DashedIdentToken | IdentToken
-                                    ).val;
+                                    revMapping[mapping[arena.strings[arena.stringValue[rule]]]] =
+                                        arena.strings[arena.stringValue[rule]];
                                 }
 
-                                if (parentRule != null) {
-                                    for (const tk of (parentRule as AstRule)[TOKENS]!) {
-                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
-                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+                                if (parentRule != 0) {
+                                    for (const tk of arena.tokens(parentRule)) {
+                                        if (arena.dataTypes[tk] == EnumToken.ClassSelectorTokenType) {
+                                            const val: string = arena.strings[arena.stringValue[tk]].slice(1);
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        mapping[(rule as IdentToken).val],
+                                                        mapping[arena.strings[arena.stringValue[rule]]],
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -1601,33 +1533,36 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         }
 
                         // composes: a b c from 'file.css';
-                        else if (token.r.typ == EnumToken.String) {
+                        else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.StringTokenType) {
                             throw new Error(
-                                `composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${options.source!.getSourceLocation(node[LOCSTA]!).join(":")}`,
+                                // inlined: options.source!.getSourceLocation(arena.getSpanStart(node as AstNode))
+                                `composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${[options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node as AstNode))].join(":")}`,
                             );
                         }
 
                         // composes: a b c from global;
-                        else if (token.r.typ == EnumToken.IdenTokenType) {
+                        else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.IdenTokenType) {
                             // global
-                            if (parentRule != null) {
-                                if (equalsIgnoreCase("global", (token.r as IdentToken).val)) {
-                                    for (const tk of (parentRule as AstRule)[TOKENS]!) {
-                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
-                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+                            if (parentRule != 0) {
+                                if (equalsIgnoreCase("global", arena.strings[arena.stringValue[arena.field(token, TokenField.R)]])) {
+                                    for (const tk of arena.tokens(parentRule)) {
+                                        if (arena.dataTypes[tk] == EnumToken.ClassSelectorTokenType) {
+                                            const val: string = arena.strings[arena.stringValue[tk]].slice(1);
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
+                                                const composedNames: string[] = [];
+
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
+
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...(token as ComposesSelectorToken).l.reduce((acc, curr) => {
-                                                            if (curr.typ == EnumToken.IdenTokenType) {
-                                                                acc.push((curr as IdentToken).val);
-                                                            }
-
-                                                            return acc;
-                                                        }, [] as string[]),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -1636,7 +1571,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                                 } else {
                                     errors.push({
                                         action: "drop",
-                                        message: `composes '${(token.r as IdentToken).val}' is not supported`,
+                                        message: `composes '${arena.strings[arena.stringValue[arena.field(token, TokenField.R)]]}' is not supported`,
                                         node,
                                     });
                                 }
@@ -1644,11 +1579,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         }
                     }
 
-                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node as AstDeclaration), 1);
+                    arena.detach(node as AstNode);
                 }
 
                 if (
-                    node.typ == EnumToken.DeclarationNodeType &&
                     [
                         "grid-column",
                         "grid-column-start",
@@ -1659,14 +1593,15 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         "grid-template",
                         "grid-template-columns",
                         "grid-template-rows",
-                    ].includes((node as AstDeclaration).nam)
+                    ].includes(arena.strings[arena.name[node as AstNode]])
                 ) {
-                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
-                        if (value.typ != EnumToken.IdenTokenType) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node as AstNode)) {
+                        if (arena.dataTypes[value] != EnumToken.IdenTokenType) {
                             continue;
                         }
 
-                        let idenToken = (value as IdentToken).val;
+                        let idenToken = arena.strings[arena.stringValue[value]];
                         let suffix: string = "";
 
                         if (idenToken.endsWith("-start")) {
@@ -1701,58 +1636,58 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                             }
                         }
 
-                        (value as IdentToken).val = mapping[idenToken];
+                        // inlined: arena.setStr(value, mapping[idenToken])
+                        arena.stringValue[value] = arena.internString(mapping[idenToken]);
                     }
                 } else if (
-                    (node as AstDeclaration).nam == "grid-template-areas" ||
-                    (node as AstDeclaration).nam == "grid-template"
+                    arena.strings[arena.name[node as AstNode]] == "grid-template-areas" ||
+                    arena.strings[arena.name[node as AstNode]] == "grid-template"
                 ) {
-                    for (let i = 0; i < (node as AstDeclaration).val.length; i++) {
-                        if ((node as AstDeclaration).val[i].typ == EnumToken.String) {
-                            const tokens = parseString(
-                                ((node as AstDeclaration).val[i] as StringToken).val.slice(1, -1),
-                            );
+                    for (let token = arena.firstToken[node as AstNode]; token != 0; token = arena.nextSibling[token]) {
+                        if (arena.dataTypes[token] == EnumToken.StringTokenType) {
+                            const str: string = arena.strings[arena.stringValue[token]];
+                            const tokens = parseString(arena, str.slice(1, -1));
 
-                            for (const { value } of walkValues(tokens)) {
+                            // inlined: arena.walkValues(tokens)
+                            for (const value of new ValueWalker(arena, tokens)) {
                                 if (
-                                    value.typ == EnumToken.IdenTokenType ||
-                                    value.typ == EnumToken.DashedIdenTokenType
+                                    arena.dataTypes[value] == EnumToken.IdenTokenType ||
+                                    arena.dataTypes[value] == EnumToken.DashedIdenTokenType
                                 ) {
-                                    if ((value as IdentToken).val in mapping) {
-                                        (value as IdentToken).val = mapping[(value as IdentToken).val];
+                                    if (arena.strings[arena.stringValue[value]] in mapping) {
+                                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                                     } else {
                                         let result =
                                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                                ? (value as IdentToken).val
+                                                ? arena.strings[arena.stringValue[value]]
                                                 : moduleSettings.generateScopedName!(
-                                                      (value as IdentToken).val,
+                                                      arena.strings[arena.stringValue[value]],
                                                       moduleSettings.filePath as string,
                                                       moduleSettings.pattern as string,
                                                       moduleSettings.hashLength,
                                                   );
 
-                                        mapping[(value as IdentToken).val] = result;
-                                        revMapping[result] = (value as IdentToken).val;
-                                        (value as IdentToken).val = result;
+                                        mapping[arena.strings[arena.stringValue[value]]] = result;
+                                        revMapping[result] = arena.strings[arena.stringValue[value]];
+                                        // inlined: arena.setStr(value, result)
+                                        arena.stringValue[value] = arena.internString(result);
                                     }
                                 }
                             }
 
-                            ((node as AstDeclaration).val[i] as StringToken).val =
-                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(0) +
-                                renderTokens(tokens) +
-                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(
-                                    ((node as AstDeclaration).val[i] as StringToken).val.length - 1,
-                                );
+                            // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
+                            arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
                         }
                     }
                 } else if (
-                    (node as AstDeclaration).nam == "animation" ||
-                    (node as AstDeclaration).nam == "animation-name"
+                    arena.strings[arena.name[node as AstNode]] == "animation" ||
+                    arena.strings[arena.name[node as AstNode]] == "animation-name"
                 ) {
-                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node as AstNode)) {
                         if (
-                            value.typ == EnumToken.IdenTokenType &&
+                            arena.dataTypes[value] == EnumToken.IdenTokenType &&
                             ![
                                 "none",
                                 "infinite",
@@ -1781,95 +1716,102 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                                 "inherit",
                                 "initial",
                                 "unset",
-                            ].includes((value as IdentToken).val)
+                            ].includes(arena.strings[arena.stringValue[value]])
                         ) {
-                            if (!((value as IdentToken).val in mapping)) {
-                                mapping[(value as IdentToken).val] =
+                            if (!(arena.strings[arena.stringValue[value]] in mapping)) {
+                                mapping[arena.strings[arena.stringValue[value]]] =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                        ? (value as IdentToken).val
+                                        ? arena.strings[arena.stringValue[value]]
                                         : moduleSettings.generateScopedName!(
-                                              (value as IdentToken).val,
+                                              arena.strings[arena.stringValue[value]],
                                               moduleSettings.filePath as string,
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
-                                revMapping[mapping[(value as IdentToken).val]] = (value as IdentToken).val;
+                                revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
 
-                            (value as IdentToken).val = mapping[(value as IdentToken).val];
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
                 }
 
-                for (const r of walkValues((node as AstDeclaration).val, node)) {
-                    if (r.value.typ == EnumToken.DashedIdenTokenType) {
-                        (r.value as DashedIdentToken).val = mapping[(r.value as DashedIdentToken).val];
+                // inlined: arena.walkValues(node as AstNode)
+                for (const value of new ValueWalker(arena, node as AstNode)) {
+                    if (arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
+                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                     } else if (
-                        (r.value.typ == EnumToken.IdenTokenType || isIdentColor(r.value)) &&
-                        (r.value as IdentToken).val in importedCssVariables
+                        (arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
+                        arena.strings[arena.stringValue[value]] in importedCssVariables
                     ) {
-                        // @ts-ignore
-                        replaceNodeOrValue(r.parent, r.value, importedCssVariables[(value as IdentToken).val].val);
+                        arena.replaceToken(
+                            value,
+                            ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map(
+                                (token: Token) => arena.clone(token, true),
+                            ),
+                        );
                     }
                 }
-            } else if (node.typ == EnumToken.RuleNodeType) {
+            } else if (nodeType == EnumToken.RuleNodeType) {
                 // if (node[TOKENS] == null) {
-                const tokens = parseString((node as AstRule).sel);
-                matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
+                const tokens = parseString(arena, arena.strings[arena.name[node as AstNode]]);
+                matchSelectorSyntax(arena, tokens, [] as ErrorDescription[], options);
 
-                node[TOKENS] = trimArray(tokens);
+                arena.setTokenList(node as AstNode, trimArray(arena, tokens));
 
                 let hasIdOrClass: boolean = false;
 
-                for (const { value } of walkValues(
-                    (node as AstRule)[TOKENS] as Token[],
-                    node,
-                    // @ts-ignore
-                    (value: Token, parent: AstRule) => {
+                // inlined: arena.walkValues(node as AstNode, filter)
+                for (const value of new ValueWalker(arena, node as AstNode,
+                    (arena: AstArena, value: Token): Token[] | null => {
                         if (
-                            value.typ == EnumToken.PseudoClassTokenType ||
-                            value.typ == EnumToken.PseudoElementTokenType
+                            arena.dataTypes[value] == EnumToken.PseudoClassTokenType ||
+                            arena.dataTypes[value] == EnumToken.PseudoElementTokenType
                         ) {
-                            const val: string = (value as PseudoClassToken).val.toLowerCase();
+                            const val: string = arena.strings[arena.stringValue[value]].toLowerCase();
                             switch (val) {
                                 case ":local":
                                 case ":global":
                                     {
-                                        let index: number = (parent as AstRule)[TOKENS]!.indexOf(value);
+                                        // remove the pseudo class and the following whitespace
+                                        const next: Token = arena.nextSibling[value];
 
-                                        (parent as AstRule)[TOKENS]!.splice(index, 1);
+                                        arena.detach(value);
 
                                         if (
-                                            (parent as AstRule)[TOKENS]![index]?.typ == EnumToken.WhitespaceTokenType ||
-                                            (parent as AstRule)[TOKENS]![index]?.typ ==
-                                                EnumToken.DescendantCombinatorTokenType
+                                            next != 0 &&
+                                            (arena.dataTypes[next] == EnumToken.WhitespaceTokenType ||
+                                                arena.dataTypes[next] == EnumToken.DescendantCombinatorTokenType)
                                         ) {
-                                            (parent as AstRule)[TOKENS]!.splice(index, 1);
+                                            arena.detach(next);
                                         }
                                     }
 
                                     break;
                             }
-                        } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
-                            switch ((value as FunctionToken).val.toLowerCase()) {
+                        } else if (arena.dataTypes[value] == EnumToken.PseudoClassFuncTokenType) {
+                            switch (arena.strings[arena.stringValue[value]].toLowerCase()) {
                                 case ":global":
-                                    for (const token of (value as FunctionToken).chi) {
+                                    for (const token of arena.tokens(value)) {
                                         global.add(token);
                                     }
 
-                                case ":local":
-                                    (parent as AstRule)[TOKENS]!.splice(
-                                        (parent as AstRule)[TOKENS]!.indexOf(value),
-                                        1,
-                                        ...(value as FunctionToken).chi,
-                                    );
+                                case ":local": {
+                                    // replace the function by its arguments. the arguments are visited
+                                    const children: Token[] = arena.tokens(value);
 
-                                    break;
+                                    arena.replaceToken(value, ...children);
+                                    return children;
+                                }
                             }
                         }
+
+                        return null;
                     },
                 )) {
-                    if (value.typ == EnumToken.HashTokenType || value.typ == EnumToken.ClassSelectorTokenType) {
+                    if (arena.dataTypes[value] == EnumToken.HashTokenType || arena.dataTypes[value] == EnumToken.ClassSelectorTokenType) {
                         hasIdOrClass = true;
                     }
 
@@ -1879,15 +1821,15 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
 
                     processed.add(value);
 
-                    if (value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) {
-                    } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
+                    if (arena.dataTypes[value] == EnumToken.PseudoClassTokenType || arena.dataTypes[value] == EnumToken.PseudoElementTokenType) {
+                    } else if (arena.dataTypes[value] == EnumToken.PseudoClassFuncTokenType) {
                     } else {
                         if (global.has(value)) {
                             continue;
                         }
 
-                        if (value.typ == EnumToken.ClassSelectorTokenType) {
-                            const val: string = (value as ClassSelectorToken).val.slice(1);
+                        if (arena.dataTypes[value] == EnumToken.ClassSelectorTokenType) {
+                            const val: string = arena.strings[arena.stringValue[value]].slice(1);
 
                             if (!(val in mapping)) {
                                 let value: string =
@@ -1908,7 +1850,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                                 revMapping[mapping[val]] = val;
                             }
 
-                            (value as ClassSelectorToken).val = "." + mapping[val];
+                            // inlined: arena.setStr(value, "." + mapping[val])
+                            arena.stringValue[value] = arena.internString(("." + mapping[val]));
                         }
                     }
                 }
@@ -1916,56 +1859,57 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${(node as AstRule).sel}' at '${options.source!.getOffsets(node[LOCSTA] as number).join(":")}'`,
+                            // inlined: options.source!.getOffsets(arena.getSpanStart(node as AstNode))
+                            `pure module: No id or class found in selector '${arena.strings[arena.name[node as AstNode]]}' at '${options.source!.lineStarts.getOffsets(arena.getSpanStart(node as AstNode)).join(":")}'`,
                         );
                     }
                 }
 
-                (node as AstRule).sel = "";
+                // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
+                arena.name[(node as AstNode)] = arena.internString(arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""));
+            } else if (nodeType == EnumToken.AtRuleNodeType || nodeType == EnumToken.KeyframesAtRuleNodeType) {
+                const val: string = arena.strings[arena.name[node as AstNode]].toLowerCase();
 
-                for (const token of node[TOKENS]! as Token[]) {
-                    (node as AstRule).sel += renderValue(token);
-                }
-            } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-                const val: string = (node as AstAtRule).nam.toLowerCase();
-
-                if (node[TOKENS] == null) {
-                    node[TOKENS] = parseString((node as AstAtRule).val);
+                if (arena.firstToken[node as AstNode] == 0) {
+                    // inlined: arena.setTokens(node as AstNode, ...parseString(arena, arena.strings[arena.stringValue[node as AstNode]]))
+                    arena.setTokenList((node as AstNode), parseString(arena, arena.strings[arena.stringValue[node as AstNode]]));
                 }
 
                 if (val == "property" || val == "keyframes") {
                     const prefix: string = val == "property" ? "--" : "";
 
-                    for (const value of node[TOKENS] as Token[]) {
+                    for (const value of arena.tokens(node as AstNode)) {
                         if (
-                            (prefix == "--" && value.typ == EnumToken.DashedIdenTokenType) ||
-                            (prefix == "" && value.typ == EnumToken.IdenTokenType)
+                            (prefix == "--" && arena.dataTypes[value] == EnumToken.DashedIdenTokenType) ||
+                            (prefix == "" && arena.dataTypes[value] == EnumToken.IdenTokenType)
                         ) {
-                            if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
+                            if (!(arena.strings[arena.stringValue[value]] in mapping)) {
                                 let val: string =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                        ? (value as DashedIdentToken | IdentToken).val
+                                        ? arena.strings[arena.stringValue[value]]
                                         : moduleSettings.generateScopedName!(
-                                              (value as DashedIdentToken).val,
+                                              arena.strings[arena.stringValue[value]],
                                               moduleSettings.filePath as string,
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
 
-                                mapping[(value as DashedIdentToken | IdentToken).val] =
+                                mapping[arena.strings[arena.stringValue[value]]] =
                                     prefix +
                                     (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                                     moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                         ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
                                         : val);
-                                revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                                revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
 
-                            (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
 
-                    (node as AstAtRule).val = renderTokens(node[TOKENS]!);
+                    // inlined: arena.setValueString(node as AstNode, renderTokens(arena, arena.tokens(node as AstNode)))
+                    arena.stringValue[(node as AstNode)] = arena.internString(renderTokens(arena, arena.tokens(node as AstNode)));
                 }
             }
         }
@@ -2041,9 +1985,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
     options.minifyAST ??= options.minify;
 
-    if (typeof options.validation !== "boolean") {
-        options.validation = !!options.validation;
-    }
+    options.validation = !!options.validation;
 
     if (options.module) {
         options.expandNestingRules = true;
@@ -2074,111 +2016,97 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     };
 
     const invalidNodes: Array<AstNode> = [];
+    // first error / invalid node of the current statement
+    let errorStart: number = errors.length;
+    let invalidStart: number = 0;
+    // tokens allocated for the current statement (parseNode() may remove tokens from the statement array)
+    const statement: Token[] = [];
 
-    let ast: AstStyleSheet = {
-        typ: EnumToken.StyleSheetNodeType,
-        chi: [],
-    };
+    let tokenizer: Tokenizer = iter instanceof Promise ? await iter : iter;
+
+    // nested parses share the arena of the parent
+    const arena: AstArena = options.arena ?? (options.arena = new AstArena(arenaCapacity(tokenizer)));
+    let ast: AstStyleSheet = arena.current == 1 ? arena.root : arena.createStyleSheet();
 
     let tokens: Token[] = [];
-    let context: AstRuleList = ast;
+    let context: AstNode = ast;
 
     const imports: AstAtRule[] = [];
 
     let item: Token;
-    let node: AstAtRule | AstRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null;
+    let node: AstNode | null;
 
     // @ts-ignore ignore error
     let parensMatch: number = 0;
     let curlyBracketMatch: number = 0;
-    let tokenizer: Tokenizer = iter instanceof Promise ? await iter : iter;
 
-    ast[LOCSRCID] = options.source!.id;
-    ast[LOCSTA] = 0;
-    ast[LOCEND] = 0;
+    // tokens are located in the tokenizer source (the imported file when parsing an @import)
+    arena.setLocation(ast, tokenizer.sourceId, 0, 0);
 
-    while (!tokenizer.done()) {
+    const sourceIndex: number = arena.sourceIndex(tokenizer.sourceId);
+    const dataTypes: Uint8Array = arena.dataTypes;
+    let itemType: EnumToken;
+
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
-        if (tokenizer.unit != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                unit: tokenizer.unit,
-            } as DimensionToken;
-        } else if (tokenizer.nam != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                nam: tokenizer.nam,
-            } as Token;
-        } else if (tokenizer.val === null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-            } as Token;
-        } else if (tokenizer.kin != null) {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                kin: tokenizer.kin,
-            } as ColorToken;
-        } else {
-            item = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-            } as Token;
-        }
-
-        item[LOCSRCID] = tokenizer.srcId as number;
-        item[LOCSTA] = tokenizer.sta as number;
-        item[LOCEND] = tokenizer.end as number;
+        item = allocateToken(arena, tokenizer, sourceIndex);
+        itemType = tokenizer.typ as EnumToken;
 
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
 
-        if (BadTokensTypes.includes(item.typ)) {
+        if (isBadToken(itemType)) {
             tokens.push(item);
+            statement.push(item);
             errors.push({
                 action: "drop",
                 message: "Bad token",
                 syntax: null,
                 node: item,
-                location: options.source!.getSourceLocation(item[LOCSTA]),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(item))
+                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(item))],
             });
 
             // bad token
             continue;
         }
 
-        if (item.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(item.typ)) {
+        if (itemType === EnumToken.StartParensTokenType || tokensfuncDefMap.has(itemType)) {
             parensMatch++;
-        } else if (item.typ === EnumToken.EndParensTokenType && parensMatch > 0) {
+        } else if (itemType === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
         }
 
-        if (item.typ === EnumToken.BlockStartTokenType) {
+        if (itemType === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
-        } else if (item.typ === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
+        } else if (itemType === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
             curlyBracketMatch--;
         }
 
         tokens.push(item);
+        statement.push(item);
 
         if (
             parensMatch === 0 &&
-            (item.typ === EnumToken.SemiColonTokenType ||
-                item.typ === EnumToken.BlockStartTokenType ||
-                item.typ === EnumToken.EOFTokenType)
+            (itemType === EnumToken.SemiColonTokenType ||
+                itemType === EnumToken.BlockStartTokenType ||
+                itemType === EnumToken.EOFTokenType)
         ) {
-            node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
             if (node != null) {
-                if ("chi" in node) {
-                    stack.push(node as AstAtRule | AstRule | AstKeyframesRule);
-                    context = node as AstRuleList;
-                } else if (node.typ == EnumToken.AtRuleNodeType && (node as AstAtRule).nam === "import") {
+                if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                    stack.push(node);
+                    context = node;
+                } else if (
+                    arena.dataTypes[node] == EnumToken.AtRuleNodeType &&
+                    arena.strings[arena.name[node]] === "import"
+                ) {
                     imports.push(node);
                 }
-            } else if (item.typ == EnumToken.BlockStartTokenType) {
+            } else if (itemType == EnumToken.BlockStartTokenType) {
                 let inBlock: number = 1;
                 tokens.length = 0;
                 tokens.push(item);
@@ -2186,75 +2114,58 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 do {
                     tokenizer.next();
 
-                    if (tokenizer.unit != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                            unit: tokenizer.unit,
-                        } as DimensionToken;
-                    } else if (tokenizer.nam != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            nam: tokenizer.nam,
-                        } as Token;
-                    } else if (tokenizer.val === null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                        } as Token;
-                    } else if (tokenizer.kin != null) {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                            kin: tokenizer.kin,
-                        } as ColorToken;
-                    } else {
-                        item = {
-                            typ: tokenizer.typ as EnumToken,
-                            val: tokenizer.val,
-                        } as Token;
-                    }
-
-                    item[LOCSRCID] = tokenizer.srcId as number;
-                    item[LOCSTA] = tokenizer.sta as number;
-                    item[LOCEND] = tokenizer.end as number;
+                    item = allocateToken(arena, tokenizer, sourceIndex);
+                    itemType = tokenizer.typ as EnumToken;
 
                     tokens.push(item);
+                    statement.push(item);
 
-                    if (item.typ === EnumToken.BlockStartTokenType) {
+                    if (itemType === EnumToken.BlockStartTokenType) {
                         inBlock++;
-                    } else if (item.typ === EnumToken.BlockEndTokenType) {
+                    } else if (itemType === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0 && !tokenizer.done());
+                // inlined: tokenizer.done()
+                } while (inBlock != 0 && !((tokenizer.typ as EnumToken | null) === EnumToken.EOF));
 
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: options.source!.getSourceLocation(tokens[0][LOCSTA]!),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
                     });
                 }
             }
 
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
-        } else if ((parensMatch === 0 || curlyBracketMatch === 0) && item.typ === EnumToken.BlockEndTokenType) {
-            parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
+        } else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
+            parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
-            context[LOCEND] = item[LOCEND];
+            // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
+            arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
 
-            const previousNode = stack.pop() as AstRuleList;
-            context = (stack[stack.length - 1] ?? ast) as AstRuleList;
+            const previousNode: AstNode | undefined = stack.pop();
+            context = stack[stack.length - 1] ?? ast;
 
             if (
                 options.removeEmpty &&
                 previousNode != null &&
-                previousNode.chi!.length == 0 &&
-                context.chi![context.chi!.length - 1] == previousNode
+                arena.firstChild[previousNode] == 0 &&
+                arena.lastChild[context] == previousNode
             ) {
-                context.chi!.pop();
+                arena.detach(previousNode);
             }
 
+            recycleStatementTokens(arena, statement, errors, errorStart, invalidNodes, invalidStart);
+            statement.length = 0;
             tokens.length = 0;
+            errorStart = errors.length;
+            invalidStart = invalidNodes.length;
             parensMatch = 0;
             curlyBracketMatch = 0;
         }
@@ -2262,16 +2173,19 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     }
 
     if (tokens.length > 0) {
-        node = parseNode(tokens, context, options as ParserOptions, errors, stats, invalidNodes);
+        node = parseNode(arena, tokens, context, options as ParserOptions, errors, stats, invalidNodes, parensMatch);
 
         if (node != null) {
-            if (node.typ == EnumToken.AtRuleNodeType && "import" === (node as AstAtRule).val) {
+            if (
+                arena.dataTypes[node] == EnumToken.AtRuleNodeType &&
+                "import" === arena.strings[arena.stringValue[node]]
+            ) {
                 imports.push(node);
             }
 
-            if ("chi" in node /* && node.typ != EnumToken.InvalidRuleNodeType */) {
+            if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
                 stack.push(node);
-                context = node as AstRuleList;
+                context = node;
             }
         }
     }
@@ -2279,12 +2193,15 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     if (imports.length > 0 && options.resolveImport) {
         await Promise.all(
             imports.map(async (node: AstAtRule) => {
-                if (node[STATE] !== EnumAstNodeStatus.Validated) {
+                if ((arena.flags[node] & EnumAstNodeStatus.StateMask) !== EnumAstNodeStatus.Validated) {
                     return;
                 }
 
-                const token = (node[TOKENS] as Token[])[0] as UrlToken | StringToken;
-                const url: string = token.typ == EnumToken.StringTokenType ? token.val.slice(1, -1) : token.val;
+                const token: Token = arena.firstToken[node];
+                const url: string =
+                    arena.dataTypes[token] == EnumToken.StringTokenType
+                        ? arena.strings[arena.stringValue[token]].slice(1, -1)
+                        : arena.strings[arena.stringValue[token]];
 
                 try {
                     const src = options.resolve!(
@@ -2322,8 +2239,11 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     stats.nodesCount += root.stats.nodesCount;
                     stats.tokensCount += root.stats.tokensCount;
                     stats.imports.push(root.stats);
-                    // @ts-ignore
-                    node[PARENT]!.chi!.splice(node[PARENT]!.chi!.indexOf(node), 1, ...root.ast.chi);
+                    // the imported stylesheet is allocated in the same arena: its children replace the @import rule
+                    if (arena.parents[node] != 0) {
+                        arena.moveChildren(root.ast, arena.parents[node], node);
+                        arena.detach(node);
+                    }
 
                     if (root.errors.length > 0) {
                         for (const error of root.errors) {
@@ -2341,305 +2261,73 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     const endParseTime: number = performance.now();
 
     if (options.expandNestingRules) {
-        ast = expand(ast) as AstStyleSheet;
+        ast = arena.expand(ast) as AstStyleSheet;
     }
 
     let replacement: GenericVisitorResult<T>;
 
     if (options.visitor != null) {
-        let parens: Token[] | null;
-
-        let genericKey: string | null;
         const handlers = [] as Array<GenericVisitorHandler<T>>;
         const visitors = parseVisitors(options.visitor, errors);
 
-        let nodes: Array<AstNode | Token> | null = [ast];
-        let i: number;
-        let k: number;
-        let j: number;
-        let freeblock: number = 1;
-        let node: AstNode | Token;
-        // nodes[0] = ast;
+        let genericKey: string | null;
+        let nodes: AstNode[] | null = [ast];
+        let node: AstNode;
+        let nodeType: EnumToken;
+
+        // push the children of a node or the sub tokens of a value token onto the stack
+        const enqueue = (node: AstNode): void => {
+            if (arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
+                    nodes!.push(child);
+                }
+            }
+
+            if (
+                visitors.includeTokens &&
+                arena.dataTypes[node] != EnumToken.RuleNodeType &&
+                arena.dataTypes[node] != EnumToken.KeyframesRuleNodeType
+            ) {
+                // at-rule prelude, declaration values or token children. selector tokens are not visited
+                const values: Token[] = arena.subTokens(node);
+
+                for (let i = values.length - 1; i >= 0; i--) {
+                    nodes!.push(values[i]);
+                }
+            }
+        };
 
         while (nodes.length > 0) {
-            node = nodes.pop() as AstNode | Token;
-
-            if (visitors.includeTokens) {
-                switch (node.typ) {
-                    case EnumToken.RuleNodeType:
-                    case EnumToken.AtRuleNodeType:
-                    case EnumToken.KeyframesRuleNodeType:
-                    case EnumToken.KeyframesAtRuleNodeType:
-                        for (
-                            let i =
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS].length -
-                                1;
-                            i >= 0;
-                            i--
-                        ) {
-                            // @ts-ignore
-                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i][PARENT] =
-                                node;
-                            nodes.push(
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule)[TOKENS][i],
-                            );
-                        }
-
-                        break;
-                    case EnumToken.DeclarationNodeType:
-                        for (
-                            let i =
-                                // @ts-ignore
-                                (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val.length - 1;
-                            i >= 0;
-                            i--
-                        ) {
-                            // @ts-ignore
-                            (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val[i][PARENT] = node;
-                            // @ts-ignore
-                            nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).val[i]);
-                        }
-
-                        break;
-                }
-
-                // @ts-ignore
-                // if (node.l != null) {
-                //     // @ts-ignore
-                //     if (node.op2 != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op2);
-                //         // @ts-ignore
-                //         nodes.op2[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (node.op1 != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op1);
-                //         // @ts-ignore
-                //         nodes.op1[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (nodes.op != null && node.op.typ != null) {
-                //         // @ts-ignore
-                //         nodes.push(node.op);
-                //         // @ts-ignore
-                //         nodes.op[PARENT] = node;
-                //     }
-
-                //     // @ts-ignore
-                //     if (node.r != null) {
-                //         // @ts-ignore
-                //         if (Array.isArray(node.r)) {
-                //             // @ts-ignore
-                //             for (let i = node.r.length - 1; i >= 0; i--) {
-                //                 // @ts-ignore
-                //                 nodes.push(node.r[i]);
-                //                 // @ts-ignore
-                //                 node.r[i][PARENT] = node;
-                //             }
-                //         } else {
-                //             // @ts-ignore
-                //             nodes.push(node.r);
-                //             // @ts-ignore
-                //             node.r[PARENT] = node;
-                //         }
-                //     }
-
-                //     // @ts-ignore
-                //     if (Array.isArray(node.l)) {
-                //         // @ts-ignore
-                //         for (let i = node.l.length - 1; i >= 0; i--) {
-                //             // @ts-ignore
-                //             node.l[i][PARENT] = node;
-                //             // @ts-ignore
-                //             nodes.push(node.l[i]);
-                //         }
-                //     } else {
-                //         // @ts-ignore
-                //         nodes.push(node.l);
-
-                //         // @ts-ignore
-                //         node.l[PARENT] = node;
-                //     }
-                // }
-            }
-
-            switch (node.typ) {
-                case EnumToken.BinaryExpressionTokenType:
-                case EnumToken.IfElseConditionTokenType:
-                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).r);
-                    (node as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = node;
-
-                    nodes.push((node as BinaryExpressionToken | IfElseConditionToken).l);
-                    (node as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = node;
-
-                    break;
-
-                case EnumToken.MatchExpressionTokenType:
-                    nodes.push((node as MatchExpressionToken).r);
-                    (node as MatchExpressionToken).r[PARENT] = node;
-
-                    nodes.push((node as MatchExpressionToken).op);
-                    (node as MatchExpressionToken).op[PARENT] = node;
-
-                    nodes.push((node as MatchExpressionToken).l);
-                    (node as MatchExpressionToken).l[PARENT] = node;
-                    break;
-
-                case EnumToken.SupportsQueryConditionTokenType:
-                case EnumToken.MediaQueryConditionTokenType:
-                    for (let i = (node as SupportsQueryConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as SupportsQueryConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as SupportsQueryConditionToken).op);
-                    (node as SupportsQueryConditionToken).op[PARENT] = node;
-
-                    for (let i = (node as SupportsQueryConditionToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as SupportsQueryConditionToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-                case EnumToken.WhenElseQueryConditionTokenType:
-                    for (let i = (node as WhenElseUnaryConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as WhenElseUnaryConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-                    nodes.push((node as WhenElseUnaryConditionToken).l);
-                    (node as WhenElseUnaryConditionToken).l[PARENT] = node;
-
-                    break;
-
-                case EnumToken.IfConditionTokenType:
-                    for (let i = (node as IfConditionToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as IfConditionToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    for (let i = (node as IfConditionToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as IfConditionToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.ComposesSelectorNodeType:
-                    if ((node as ComposesSelectorToken).r != null) {
-                        nodes.push((node as ComposesSelectorToken).r as Token);
-                        ((node as ComposesSelectorToken).r as Token)[PARENT] = node;
-                    }
-
-                    for (let i = (node as ComposesSelectorToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as ComposesSelectorToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.ContainerStyleRangeTokenType:
-                    for (let i = (node as ContainerStyleRangeToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    for (let i = (node as ContainerStyleRangeToken).op.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).op[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-                    for (let i = (node as ContainerStyleRangeToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as ContainerStyleRangeToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-
-                case EnumToken.MediaRangeQueryTokenType:
-                    for (let i = (node as MediaRangeQueryToken).r.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).r[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as MediaRangeQueryToken).op2);
-                    (node as MediaRangeQueryToken).op2[PARENT] = node;
-
-                    for (let i = (node as MediaRangeQueryToken).val.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).val[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    nodes.push((node as MediaRangeQueryToken).op1);
-                    (node as MediaRangeQueryToken).op1[PARENT] = node;
-
-                    for (let i = (node as MediaRangeQueryToken).l.length - 1; i >= 0; i--) {
-                        const element = (node as MediaRangeQueryToken).l[i];
-                        nodes.push(element);
-                        element[PARENT] = node;
-                    }
-
-                    break;
-            }
-
-            // @ts-ignore
-            if (node.chi != null) {
-                for (
-                    // @ts-ignore
-                    let i = (node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi.length - 1;
-                    i >= 0;
-                    i--
-                ) {
-                    // @ts-ignore
-                    nodes.push((node as AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule).chi[i]);
-                }
-            }
-
-            parens = null;
+            node = nodes.pop() as AstNode;
+            nodeType = arena.dataTypes[node];
+            replacement = null;
             handlers.length = 0;
 
             if (visitors.preAllVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.preAllVisitorsHandlers!);
+                handlers.push(...(visitors.preAllVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
             genericKey =
-                node.typ == EnumToken.DeclarationNodeType
+                nodeType == EnumToken.DeclarationNodeType
                     ? "Declaration"
-                    : node.typ == EnumToken.AtRuleNodeType
+                    : nodeType == EnumToken.AtRuleNodeType
                       ? "AtRule"
-                      : node.typ == EnumToken.KeyframesAtRuleNodeType
+                      : nodeType == EnumToken.KeyframesAtRuleNodeType
                         ? "KeyframesAtRule"
-                        : node.typ === EnumToken.KeyframesRuleNodeType
+                        : nodeType === EnumToken.KeyframesRuleNodeType
                           ? "KeyframesRule"
-                          : node.typ == EnumToken.RuleNodeType
+                          : nodeType == EnumToken.RuleNodeType
                             ? "Rule"
-                            : node.typ == EnumToken.KeyframesRuleNodeType
-                              ? "KeyframesRule"
-                              : null;
+                            : null;
             let keyName: string | null =
-                node.typ == EnumToken.DeclarationNodeType || node.typ == EnumToken.AtRuleNodeType
-                    ? camelize((node as AstDeclaration | AstAtRule).nam)
-                    : node.typ == EnumToken.KeyframesAtRuleNodeType
-                      ? camelize((node as AstKeyframesAtRule).val)
+                nodeType == EnumToken.DeclarationNodeType || nodeType == EnumToken.AtRuleNodeType
+                    ? camelize(arena.strings[arena.name[node]])
+                    : nodeType == EnumToken.KeyframesAtRuleNodeType
+                      ? camelize(arena.strings[arena.stringValue[node]])
                       : null;
 
             if (visitors.allVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.allVisitorsHandlers!);
+                handlers.push(...(visitors.allVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
             for (const map of visitors.allHandlers) {
@@ -2659,9 +2347,9 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     }
                 }
 
-                if (map!.has(node.typ)) {
+                if (map!.has(nodeType)) {
                     // @ts-ignore
-                    for (const handler of map!.get(node.typ)!) {
+                    for (const handler of map!.get(nodeType)!) {
                         if (typeof handler == "function") {
                             handlers.push(handler as GenericVisitorHandler<T>);
                         } else if (Array.isArray(handler)) {
@@ -2684,57 +2372,65 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
             }
 
             if (visitors.postAllVisitorsHandlers?.size! > 0) {
-                handlers.push(...visitors.postAllVisitorsHandlers!);
+                handlers.push(...(visitors.postAllVisitorsHandlers! as Set<GenericVisitorHandler<T>>));
             }
 
-            if (handlers.length == 0) {
-                continue;
-            }
+            if (handlers.length > 0) {
+                for (const callable of handlers) {
+                    // the parent, the root, ... are read from the arena
+                    replacement = (callable as GenericVisitorHandler<T>)(arena, node as T) as GenericVisitorResult<T>;
 
-            for (const callable of handlers) {
-                replacement = (callable as GenericVisitorHandler<T>)(
-                    node as T,
-                    node[PARENT] as AstNode,
-                    ast as AstStyleSheet,
-                    // @ts-expect-error
-                    function* () {
-                        if (parens == null) {
-                            let parent: AstNode | AstNode[] = node[PARENT] as AstNode;
-                            // let node = node[PARENT] as AstNode;
+                    if (replacement == null) {
+                        continue;
+                    }
 
-                            while (parent != null) {
-                                yield parent;
-                                parent = parent[PARENT] as AstNode;
-                            }
+                    if (replacement instanceof Promise) {
+                        replacement = await replacement;
+                    }
+
+                    if (replacement == node) {
+                        continue;
+                    }
+
+                    //
+                    if (Array.isArray(replacement)) {
+                        break;
+                    }
+                }
+
+                // @ts-ignore
+                if (replacement != null && node != replacement) {
+                    // nodes and tokens are replaced by ids allocated in the arena. the object views of the arena are
+                    // not copied, plain objects are imported
+                    replacement = visitorResult(arena, replacement as GenericVisitorResult<T>) as GenericVisitorResult<T>;
+
+                    if (replacement == node) {
+                        // the object view of the node
+                    } else if (replacement != null) {
+                        if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement as AstNode[] : [replacement as AstNode]));
+                        } else {
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement as Token[] : [replacement as Token]));
                         }
-                    },
-                ) as GenericVisitorResult<T>;
-
-                if (replacement == null) {
-                    continue;
-                }
-
-                if (replacement instanceof Promise) {
-                    replacement = await replacement;
-                }
-
-                if (replacement == null || replacement == node) {
-                    continue;
-                }
-
-                // @ts-ignore
-                // node = replacement as AstNode;
-
-                //
-                if (Array.isArray(replacement)) {
-                    break;
+                    } else {
+                        errors.push({
+                            action: "ignore",
+                            message: "doParse: visitor must return node ids, objects or arrays of node ids and objects",
+                            node,
+                        });
+                    }
                 }
             }
 
-            // @ts-ignore
-            if (replacement != null && node != replacement) {
-                // @ts-ignore
-                replaceNodeOrValue(node![PARENT] as AstNode, node, replacement);
+            // visit the children of the node or of its replacement
+            if (replacement == null || replacement == node) {
+                enqueue(node);
+            } else if (Array.isArray(replacement)) {
+                for (let i = replacement.length - 1; i >= 0; i--) {
+                    enqueue(replacement[i] as AstNode);
+                }
+            } else {
+                enqueue(replacement as AstNode);
             }
         }
 
@@ -2743,30 +2439,29 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
     if (invalidNodes.length > 0) {
         for (const node of invalidNodes) {
-            if (options.lenient && node[STATE] & EnumAstNodeStatus.Unknown) {
+            if (options.lenient && arena.flags[node] & EnumAstNodeStatus.Unknown) {
                 continue;
             }
 
             if (
-                node[STATE] &
+                arena.flags[node] &
                 (EnumAstNodeStatus.Invalid |
                     EnumAstNodeStatus.Unknown |
                     EnumAstNodeStatus.Unparsed |
                     EnumAstNodeStatus.Malformed |
                     EnumAstNodeStatus.Disallowed)
             ) {
-                // @ts-ignore
-                node[PARENT]!.chi.splice(node[PARENT]!.chi.indexOf(node), 1);
+                arena.detach(node);
             }
         }
     }
 
     if (options.minifyAST) {
-        if (ast.chi.length > 0) {
+        if (arena.firstChild[ast] != 0) {
             let passes: number = options.pass ?? (1 as number);
 
             while (passes--) {
-                minify(ast, options, true, errors, false);
+                minify(arena, ast, options, true, errors, false);
             }
         }
     }
@@ -2776,6 +2471,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     let endTime: number = performance.now();
     const result = {
         ast,
+        arena,
         errors,
         stats: {
             ...stats,
@@ -2803,8 +2499,8 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         const processed = new Set<Token>();
         const pattern: string | null = typeof options.module == "boolean" ? null : (moduleSettings.pattern as string);
         const importMapping: Record<string, Record<string, string>> = {} as Record<string, Record<string, string>>;
-        const cssVariablesMap: Record<string, Record<string, CssVariableToken>> = {};
-        const importedCssVariables: Record<string, CssVariableToken> = {};
+        const cssVariablesMap: Record<string, Record<string, AstArenaNode>> = {};
+        const importedCssVariables: Record<string, AstArenaNode> = {};
         let mapping: Record<string, string> = {};
         let revMapping = {} as Record<string, string>;
         let filePath: string =
@@ -2862,13 +2558,17 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         moduleSettings.pattern =
             pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
 
-        for (const { node, parent } of walk(ast)) {
-            if (node.typ == EnumToken.CssVariableImportTokenType) {
-                const url: string = (
-                    (node as CssVariableImportTokenType).val.find(
-                        (t) => t.typ == EnumToken.StringTokenType,
-                    ) as StringToken
-                ).val.slice(1, -1);
+        // inlined: arena.walk(ast)
+        for (const node of new NodeWalker(arena, ast)) {
+            const parent: AstNode = arena.parents[node];
+            const nodeType: EnumToken = arena.dataTypes[node as AstNode];
+
+            if (nodeType == EnumToken.CssVariableImportTokenType) {
+                const url: string = arena.strings[
+                    arena.stringValue[
+                        arena.findToken(node as AstNode, (arena: AstArena, t: Token) => arena.dataTypes[t] == EnumToken.StringTokenType) as Token
+                    ]
+                ].slice(1, -1);
                 const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
                 const result = options.load!(src, "") as LoadResult;
                 const stream =
@@ -2903,17 +2603,18 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                 // options.parseInfo!.time += parseInfo.time;
 
-                cssVariablesMap[(node as CssVariableImportTokenType).nam] = root.cssModuleVariables!;
-                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                cssVariablesMap[arena.strings[arena.name[node as AstNode]]] = root.cssModuleVariables!;
+                arena.detach(node as AstNode);
                 continue;
             }
 
             // @ts-ignore
-            if (node.typ == EnumToken.CssVariableDeclarationMapTokenType) {
+            if (nodeType == EnumToken.CssVariableDeclarationMapTokenType) {
                 // @ts-ignore
-                const from = (node as CssVariableMapTokenType).from.find(
-                    (t) => t.typ == EnumToken.IdenTokenType || isIdentColor(t),
-                ) as IdentToken;
+                const fromToken: Token = arena
+                    .fieldTokens(node as AstNode, TokenField.L)
+                    .find((t) => arena.dataTypes[t] == EnumToken.IdenTokenType || isIdentColor(arena, t)) as Token;
+                const from: { val: string } = { val: arena.strings[arena.stringValue[fromToken]] };
 
                 if (!(from.val in cssVariablesMap)) {
                     errors.push({
@@ -2923,12 +2624,12 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                     });
                 } else {
                     // @ts-ignore
-                    for (const token of (node as CssVariableMapTokenType).vars) {
-                        if (token.typ == EnumToken.IdenTokenType || isIdentColor(token)) {
-                            if (!((token as IdentToken).val in cssVariablesMap[from.val])) {
+                    for (const token of arena.tokens(node as AstNode)) {
+                        if (arena.dataTypes[token] == EnumToken.IdenTokenType || isIdentColor(arena, token)) {
+                            if (!(arena.strings[arena.stringValue[token]] in cssVariablesMap[from.val])) {
                                 errors.push({
                                     node,
-                                    message: `value '${(token as IdentToken).val}' is not exported from '${from.val}'`,
+                                    message: `value '${arena.strings[arena.stringValue[token]]}' is not exported from '${from.val}'`,
                                     action: "drop",
                                 });
 
@@ -2936,38 +2637,39 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                             }
 
                             result.cssModuleVariables ??= {};
-                            result.cssModuleVariables[(token as IdentToken).val] = importedCssVariables[
-                                (token as IdentToken).val
-                            ] = cssVariablesMap[from.val][(token as IdentToken).val];
+                            result.cssModuleVariables[arena.strings[arena.stringValue[token]]] = importedCssVariables[
+                                arena.strings[arena.stringValue[token]]
+                            ] = cssVariablesMap[from.val][arena.strings[arena.stringValue[token]]];
                         }
                     }
                 }
 
-                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                arena.detach(node as AstNode);
                 continue;
             }
 
-            if (node.typ == EnumToken.CssVariableTokenType) {
-                if (parent?.typ == EnumToken.StyleSheetNodeType) {
+            if (nodeType == EnumToken.CssVariableTokenType) {
+                if (parent != null && arena.dataTypes[parent as AstNode] == EnumToken.StyleSheetNodeType) {
                     if (result.cssModuleVariables == null) {
-                        result.cssModuleVariables = {} as Record<string, CssVariableToken>;
+                        result.cssModuleVariables = {} as Record<string, AstArenaNode>;
                     }
 
-                    // @ts-ignore
-                    result.cssModuleVariables[(node as AstDeclaration).nam] = node;
+                    // inlined: cssVariableToken(arena, node as AstNode): the object view of the css variable node
+                    // inlined: arena.toObject(node as AstNode)
+                    result.cssModuleVariables[arena.strings[arena.name[node as AstNode]]] = new AstArenaNode(arena, node as AstNode);
                 }
-                parent!.chi!.splice(parent!.chi!.indexOf(node), 1);
+                arena.detach(node as AstNode);
                 continue;
             }
 
-            if (node.typ == EnumToken.DeclarationNodeType) {
-                if ((node as AstDeclaration).nam.startsWith("--")) {
-                    if (!((node as AstDeclaration).nam in namesMapping)) {
+            if (nodeType == EnumToken.DeclarationNodeType) {
+                if (arena.strings[arena.name[node as AstNode]].startsWith("--")) {
+                    if (!(arena.strings[arena.name[node as AstNode]] in namesMapping)) {
                         let result =
                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                ? (node as AstDeclaration).nam
+                                ? arena.strings[arena.name[node as AstNode]]
                                 : moduleSettings.generateScopedName!(
-                                      (node as AstDeclaration).nam,
+                                      arena.strings[arena.name[node as AstNode]],
                                       moduleSettings.filePath as string,
                                       moduleSettings.pattern as string,
                                       moduleSettings.hashLength,
@@ -2975,33 +2677,35 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         // @ts-ignore
                         let value: string = result instanceof Promise ? await result : result;
 
-                        mapping[(node as AstDeclaration).nam] =
+                        mapping[arena.strings[arena.name[node as AstNode]]] =
                             "--" +
                             (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                             moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                 ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                 : value);
-                        revMapping[(node as AstDeclaration).nam] = (node as AstDeclaration).nam;
+                        revMapping[arena.strings[arena.name[node as AstNode]]] =
+                            arena.strings[arena.name[node as AstNode]];
                     }
 
-                    (node as AstDeclaration).nam = mapping[(node as AstDeclaration).nam];
+                    // inlined: arena.setNameString(node as AstNode, mapping[arena.strings[arena.name[node as AstNode]]])
+                    arena.name[(node as AstNode)] = arena.internString(mapping[arena.strings[arena.name[node as AstNode]]]);
                 }
 
-                if (equalsIgnoreCase("composes", (node as AstDeclaration).nam)) {
-                    const composeSelectors = [] as ComposesSelectorToken[];
+                if (equalsIgnoreCase("composes", arena.strings[arena.name[node as AstNode]])) {
+                    const composeSelectors = [] as Token[];
                     // let isValid: boolean = true;
 
-                    for (const token of (node as AstDeclaration).val) {
-                        if (token.typ == EnumToken.ComposesSelectorNodeType) {
-                            composeSelectors.push(token as ComposesSelectorToken);
+                    for (let token = arena.firstToken[node as AstNode]; token != 0; token = arena.nextSibling[token]) {
+                        if (arena.dataTypes[token] == EnumToken.ComposesSelectorNodeType) {
+                            composeSelectors.push(token);
                         }
                     }
 
                     // find parent rule
-                    let parentRule = parent as AstRule;
+                    let parentRule: AstNode = (parent as AstNode) ?? 0;
 
-                    while (parentRule != null && parentRule.typ != EnumToken.RuleNodeType) {
-                        parentRule = parentRule[PARENT] as AstRule;
+                    while (parentRule != 0 && arena.dataTypes[parentRule] != EnumToken.RuleNodeType) {
+                        parentRule = arena.parents[parentRule];
                     }
 
                     if (/* !isValid || */ composeSelectors.length == 0) {
@@ -3011,10 +2715,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                             node,
                         });
 
-                        (parentRule as AstRule).chi.splice(
-                            (parentRule as AstRule).chi.indexOf(node as AstDeclaration),
-                            1,
-                        );
+                        arena.detach(node as AstNode);
                         continue;
                     }
 
@@ -3022,21 +2723,21 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                     for (const token of composeSelectors) {
                         // composes: a b c;
-                        if (token.r == null) {
-                            for (const rule of token.l) {
+                        if (!arena.hasField(token, TokenField.R)) {
+                            for (const rule of arena.fieldTokens(token, TokenField.L)) {
                                 if (
-                                    rule.typ == EnumToken.WhitespaceTokenType ||
-                                    rule.typ == EnumToken.CommentTokenType
+                                    arena.dataTypes[rule] == EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[rule] == EnumToken.CommentTokenType
                                 ) {
                                     continue;
                                 }
 
-                                if (!((rule as IdentToken).val in mapping)) {
+                                if (!(arena.strings[arena.stringValue[rule]] in mapping)) {
                                     let result =
                                         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                            ? (rule as IdentToken).val
+                                            ? arena.strings[arena.stringValue[rule]]
                                             : moduleSettings.generateScopedName!(
-                                                  (rule as IdentToken).val,
+                                                  arena.strings[arena.stringValue[rule]],
                                                   moduleSettings.filePath as string,
                                                   moduleSettings.pattern as string,
                                                   moduleSettings.hashLength,
@@ -3044,28 +2745,27 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                     // @ts-expect-error
                                     let value: string = result instanceof Promise ? await result : result;
 
-                                    mapping[(rule as DashedIdentToken | IdentToken).val] =
-                                        (rule.typ == EnumToken.DashedIdenTokenType ? "--" : "") +
+                                    mapping[arena.strings[arena.stringValue[rule]]] =
+                                        (arena.dataTypes[rule] == EnumToken.DashedIdenTokenType ? "--" : "") +
                                         (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                                         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                             ? getKeyName(value, moduleSettings.naming as ModuleCaseTransformEnum)
                                             : value);
-                                    revMapping[mapping[(rule as DashedIdentToken).val]] = (
-                                        rule as DashedIdentToken | IdentToken
-                                    ).val;
+                                    revMapping[mapping[arena.strings[arena.stringValue[rule]]]] =
+                                        arena.strings[arena.stringValue[rule]];
                                 }
 
-                                if (parentRule != null) {
-                                    for (const tk of (parentRule as AstRule)[TOKENS]!) {
-                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
-                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+                                if (parentRule != 0) {
+                                    for (const tk of arena.tokens(parentRule)) {
+                                        if (arena.dataTypes[tk] == EnumToken.ClassSelectorTokenType) {
+                                            const val: string = arena.strings[arena.stringValue[tk]].slice(1);
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        mapping[(rule as IdentToken).val],
+                                                        mapping[arena.strings[arena.stringValue[rule]]],
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -3076,8 +2776,8 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         }
 
                         // composes: a b c from 'file.css';
-                        else if (token.r.typ == EnumToken.String) {
-                            const url: string = (token.r as StringToken).val.slice(1, -1);
+                        else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.StringTokenType) {
+                            const url: string = arena.strings[arena.stringValue[arena.field(token, TokenField.R)]].slice(1, -1);
                             const src = options.resolve!(url, options.dirname!(options.src as string), options.cwd);
                             const result = options.load!(src, "") as LoadResult;
                             const stream =
@@ -3121,29 +2821,29 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 importMapping[srcIndex] = {} as Record<string, string>;
                             }
 
-                            if (parentRule != null) {
-                                for (const tk of (parentRule as AstRule)[TOKENS]!) {
-                                    if (tk.typ == EnumToken.ClassSelectorTokenType) {
-                                        const val: string = (tk as ClassSelectorToken).val.slice(1);
+                            if (parentRule != 0) {
+                                for (const tk of arena.tokens(parentRule)) {
+                                    if (arena.dataTypes[tk] == EnumToken.ClassSelectorTokenType) {
+                                        const val: string = arena.strings[arena.stringValue[tk]].slice(1);
 
                                         if (val in revMapping) {
                                             const key = revMapping[val] as string;
                                             const values = [] as string[];
 
-                                            for (const iden of token.l) {
+                                            for (const iden of arena.fieldTokens(token, TokenField.L)) {
                                                 if (
-                                                    iden.typ != EnumToken.IdenTokenType &&
-                                                    iden.typ != EnumToken.DashedIdenTokenType
+                                                    arena.dataTypes[iden] != EnumToken.IdenTokenType &&
+                                                    arena.dataTypes[iden] != EnumToken.DashedIdenTokenType
                                                 ) {
                                                     continue;
                                                 }
 
-                                                if (!((iden as IdentToken | DashedIdentToken).val in root.mapping!)) {
+                                                if (!(arena.strings[arena.stringValue[iden]] in root.mapping!)) {
                                                     const result =
                                                         moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                                            ? (iden as IdentToken | DashedIdentToken).val
+                                                            ? arena.strings[arena.stringValue[iden]]
                                                             : moduleSettings.generateScopedName!(
-                                                                  (iden as IdentToken | DashedIdentToken).val,
+                                                                  arena.strings[arena.stringValue[iden]],
                                                                   srcIndex,
                                                                   moduleSettings.pattern as string,
                                                                   moduleSettings.hashLength,
@@ -3153,7 +2853,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                                         // @ts-expect-error
                                                         result instanceof Promise ? await result : result;
 
-                                                    root.mapping![(iden as IdentToken | DashedIdentToken).val] =
+                                                    root.mapping![arena.strings[arena.stringValue[iden]]] =
                                                         moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                                                         moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                                             ? getKeyName(
@@ -3162,13 +2862,13 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                                               )
                                                             : value;
                                                     root.revMapping![
-                                                        root.mapping![(iden as IdentToken | DashedIdentToken).val]
-                                                    ] = (iden as IdentToken | DashedIdentToken).val;
+                                                        root.mapping![arena.strings[arena.stringValue[iden]]]
+                                                    ] = arena.strings[arena.stringValue[iden]];
                                                 }
 
-                                                importMapping[srcIndex][(iden as IdentToken | DashedIdentToken).val] =
-                                                    root.mapping![(iden as IdentToken | DashedIdentToken).val];
-                                                values.push(root.mapping![(iden as IdentToken | DashedIdentToken).val]);
+                                                importMapping[srcIndex][arena.strings[arena.stringValue[iden]]] =
+                                                    root.mapping![arena.strings[arena.stringValue[iden]]];
+                                                values.push(root.mapping![arena.strings[arena.stringValue[iden]]]);
                                             }
 
                                             mapping[key] = [...new Set([...mapping[key].split(" "), ...values])].join(
@@ -3181,26 +2881,28 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         }
 
                         // composes: a b c from global;
-                        else if (token.r.typ == EnumToken.IdenTokenType) {
+                        else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.IdenTokenType) {
                             // global
-                            if (parentRule != null) {
-                                if (equalsIgnoreCase("global", (token.r as IdentToken).val)) {
-                                    for (const tk of (parentRule as AstRule)[TOKENS]!) {
-                                        if (tk.typ == EnumToken.ClassSelectorTokenType) {
-                                            const val: string = (tk as ClassSelectorToken).val.slice(1);
+                            if (parentRule != 0) {
+                                if (equalsIgnoreCase("global", arena.strings[arena.stringValue[arena.field(token, TokenField.R)]])) {
+                                    for (const tk of arena.tokens(parentRule)) {
+                                        if (arena.dataTypes[tk] == EnumToken.ClassSelectorTokenType) {
+                                            const val: string = arena.strings[arena.stringValue[tk]].slice(1);
 
                                             if (val in revMapping) {
                                                 const key = revMapping[val] as string;
+                                                const composedNames: string[] = [];
+
+                                                for (const curr of arena.fieldTokens(token, TokenField.L)) {
+                                                    if (arena.dataTypes[curr] == EnumToken.IdenTokenType) {
+                                                        composedNames.push(arena.strings[arena.stringValue[curr]]);
+                                                    }
+                                                }
+
                                                 mapping[key] = [
                                                     ...new Set([
                                                         ...mapping[key].split(" "),
-                                                        ...(token as ComposesSelectorToken).l.reduce((acc, curr) => {
-                                                            if (curr.typ == EnumToken.IdenTokenType) {
-                                                                acc.push((curr as IdentToken).val);
-                                                            }
-
-                                                            return acc;
-                                                        }, [] as string[]),
+                                                        ...composedNames,
                                                     ]),
                                                 ].join(" ");
                                             }
@@ -3209,7 +2911,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 } else {
                                     errors.push({
                                         action: "drop",
-                                        message: `composes '${(token.r as IdentToken).val}' is not supported`,
+                                        message: `composes '${arena.strings[arena.stringValue[arena.field(token, TokenField.R)]]}' is not supported`,
                                         node,
                                     });
                                 }
@@ -3217,11 +2919,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         }
                     }
 
-                    (parent as AstRule).chi.splice((parent as AstRule).chi.indexOf(node as AstDeclaration), 1);
+                    arena.detach(node as AstNode);
                 }
 
                 if (
-                    node.typ == EnumToken.DeclarationNodeType &&
                     [
                         "grid-column",
                         "grid-column-start",
@@ -3232,14 +2933,15 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         "grid-template",
                         "grid-template-columns",
                         "grid-template-rows",
-                    ].includes((node as AstDeclaration).nam)
+                    ].includes(arena.strings[arena.name[node as AstNode]])
                 ) {
-                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
-                        if (value.typ != EnumToken.IdenTokenType) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node as AstNode)) {
+                        if (arena.dataTypes[value] != EnumToken.IdenTokenType) {
                             continue;
                         }
 
-                        let idenToken = (value as IdentToken).val;
+                        let idenToken = arena.strings[arena.stringValue[value]];
                         let suffix: string = "";
 
                         if (idenToken.endsWith("-start")) {
@@ -3279,31 +2981,33 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                             }
                         }
 
-                        (value as IdentToken).val = mapping[idenToken];
+                        // inlined: arena.setStr(value, mapping[idenToken])
+                        arena.stringValue[value] = arena.internString(mapping[idenToken]);
                     }
                 } else if (
-                    (node as AstDeclaration).nam == "grid-template-areas" ||
-                    (node as AstDeclaration).nam == "grid-template"
+                    arena.strings[arena.name[node as AstNode]] == "grid-template-areas" ||
+                    arena.strings[arena.name[node as AstNode]] == "grid-template"
                 ) {
-                    for (let i = 0; i < (node as AstDeclaration).val.length; i++) {
-                        if ((node as AstDeclaration).val[i].typ == EnumToken.String) {
-                            const tokens = parseString(
-                                ((node as AstDeclaration).val[i] as StringToken).val.slice(1, -1),
-                            );
+                    for (let token = arena.firstToken[node as AstNode]; token != 0; token = arena.nextSibling[token]) {
+                        if (arena.dataTypes[token] == EnumToken.StringTokenType) {
+                            const str: string = arena.strings[arena.stringValue[token]];
+                            const tokens = parseString(arena, str.slice(1, -1));
 
-                            for (const { value } of walkValues(tokens)) {
+                            // inlined: arena.walkValues(tokens)
+                            for (const value of new ValueWalker(arena, tokens)) {
                                 if (
-                                    value.typ == EnumToken.IdenTokenType ||
-                                    value.typ == EnumToken.DashedIdenTokenType
+                                    arena.dataTypes[value] == EnumToken.IdenTokenType ||
+                                    arena.dataTypes[value] == EnumToken.DashedIdenTokenType
                                 ) {
-                                    if ((value as IdentToken).val in mapping) {
-                                        (value as IdentToken).val = mapping[(value as IdentToken).val];
+                                    if (arena.strings[arena.stringValue[value]] in mapping) {
+                                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                                     } else {
                                         let result =
                                             moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                                ? (value as IdentToken).val
+                                                ? arena.strings[arena.stringValue[value]]
                                                 : moduleSettings.generateScopedName!(
-                                                      (value as IdentToken).val,
+                                                      arena.strings[arena.stringValue[value]],
                                                       moduleSettings.filePath as string,
                                                       moduleSettings.pattern as string,
                                                       moduleSettings.hashLength,
@@ -3314,28 +3018,26 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                             result = await result;
                                         }
 
-                                        mapping[(value as IdentToken).val] = result;
-                                        revMapping[result] = (value as IdentToken).val;
-                                        (value as IdentToken).val = result;
+                                        mapping[arena.strings[arena.stringValue[value]]] = result;
+                                        revMapping[result] = arena.strings[arena.stringValue[value]];
+                                        // inlined: arena.setStr(value, result)
+                                        arena.stringValue[value] = arena.internString(result);
                                     }
                                 }
                             }
 
-                            ((node as AstDeclaration).val[i] as StringToken).val =
-                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(0) +
-                                renderTokens(tokens) +
-                                ((node as AstDeclaration).val[i] as StringToken).val.charAt(
-                                    ((node as AstDeclaration).val[i] as StringToken).val.length - 1,
-                                );
+                            // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
+                            arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
                         }
                     }
                 } else if (
-                    (node as AstDeclaration).nam == "animation" ||
-                    (node as AstDeclaration).nam == "animation-name"
+                    arena.strings[arena.name[node as AstNode]] == "animation" ||
+                    arena.strings[arena.name[node as AstNode]] == "animation-name"
                 ) {
-                    for (const { value } of walkValues((node as AstDeclaration).val, node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node as AstNode)) {
                         if (
-                            value.typ == EnumToken.IdenTokenType &&
+                            arena.dataTypes[value] == EnumToken.IdenTokenType &&
                             ![
                                 "none",
                                 "infinite",
@@ -3364,102 +3066,104 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 "inherit",
                                 "initial",
                                 "unset",
-                            ].includes((value as IdentToken).val)
+                            ].includes(arena.strings[arena.stringValue[value]])
                         ) {
-                            if (!((value as IdentToken).val in mapping)) {
+                            if (!(arena.strings[arena.stringValue[value]] in mapping)) {
                                 const result =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                        ? (value as IdentToken).val
+                                        ? arena.strings[arena.stringValue[value]]
                                         : moduleSettings.generateScopedName!(
-                                              (value as IdentToken).val,
+                                              arena.strings[arena.stringValue[value]],
                                               moduleSettings.filePath as string,
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
                                           );
                                 // @ts-expect-error
-                                mapping[(value as IdentToken).val] = result instanceof Promise ? await result : result;
-                                revMapping[mapping[(value as IdentToken).val]] = (value as IdentToken).val;
+                                mapping[arena.strings[arena.stringValue[value]]] = result instanceof Promise ? await result : result;
+                                revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
 
-                            (value as IdentToken).val = mapping[(value as IdentToken).val];
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
                 }
 
-                for (const { value, parent } of walkValues((node as AstDeclaration).val, node)) {
-                    if (value.typ == EnumToken.DashedIdenTokenType) {
-                        (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                // inlined: arena.walkValues(node as AstNode)
+                for (const value of new ValueWalker(arena, node as AstNode)) {
+                    if (arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
+                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                     } else if (
-                        (value.typ == EnumToken.IdenTokenType || isIdentColor(value)) &&
-                        (value as IdentToken).val in importedCssVariables
+                        (arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
+                        arena.strings[arena.stringValue[value]] in importedCssVariables
                     ) {
-                        replaceNodeOrValue(
-                            // @ts-ignore
-                            parent as AstRule,
+                        arena.replaceToken(
                             value,
-                            importedCssVariables[(value as IdentToken).val].val,
+                            ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map(
+                                (token: Token) => arena.clone(token, true),
+                            ),
                         );
                     }
                 }
-            } else if (node.typ == EnumToken.RuleNodeType) {
+            } else if (nodeType == EnumToken.RuleNodeType) {
                 // if (node[TOKENS] == null) {
-                const tokens = parseString((node as AstRule).sel);
-                matchSelectorSyntax(tokens, [] as ErrorDescription[], options);
+                const tokens = parseString(arena, arena.strings[arena.name[node as AstNode]]);
+                matchSelectorSyntax(arena, tokens, [] as ErrorDescription[], options);
 
-                node[TOKENS] = trimArray(tokens);
-                // }
+                arena.setTokenList(node as AstNode, trimArray(arena, tokens));
 
                 let hasIdOrClass: boolean = false;
 
-                for (const { value } of walkValues(
-                    (node as AstRule)[TOKENS] as Token[],
-                    node,
-                    // @ts-ignore
-                    (value: Token, parent: AstRule) => {
+                // inlined: arena.walkValues(node as AstNode, filter)
+                for (const value of new ValueWalker(arena, node as AstNode,
+                    (arena: AstArena, value: Token): Token[] | null => {
                         if (
-                            value.typ == EnumToken.PseudoClassTokenType ||
-                            value.typ == EnumToken.PseudoElementTokenType
+                            arena.dataTypes[value] == EnumToken.PseudoClassTokenType ||
+                            arena.dataTypes[value] == EnumToken.PseudoElementTokenType
                         ) {
-                            const val: string = (value as PseudoClassToken).val.toLowerCase();
+                            const val: string = arena.strings[arena.stringValue[value]].toLowerCase();
                             switch (val) {
                                 case ":local":
                                 case ":global":
                                     {
-                                        let index: number = (parent as AstRule)[TOKENS]!.indexOf(value);
+                                        // remove the pseudo class and the following whitespace
+                                        const next: Token = arena.nextSibling[value];
 
-                                        (parent as AstRule)[TOKENS]!.splice(index, 1);
+                                        arena.detach(value);
 
                                         if (
-                                            (parent as AstRule)[TOKENS]![index]?.typ == EnumToken.WhitespaceTokenType ||
-                                            (parent as AstRule)[TOKENS]![index]?.typ ==
-                                                EnumToken.DescendantCombinatorTokenType
+                                            next != 0 &&
+                                            (arena.dataTypes[next] == EnumToken.WhitespaceTokenType ||
+                                                arena.dataTypes[next] == EnumToken.DescendantCombinatorTokenType)
                                         ) {
-                                            (parent as AstRule)[TOKENS]!.splice(index, 1);
+                                            arena.detach(next);
                                         }
                                     }
 
                                     break;
                             }
-                        } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
-                            switch ((value as FunctionToken).val.toLowerCase()) {
+                        } else if (arena.dataTypes[value] == EnumToken.PseudoClassFuncTokenType) {
+                            switch (arena.strings[arena.stringValue[value]].toLowerCase()) {
                                 case ":global":
-                                    for (const token of (value as FunctionToken).chi) {
+                                    for (const token of arena.tokens(value)) {
                                         global.add(token);
                                     }
 
-                                case ":local":
-                                    (parent as AstRule)[TOKENS]!.splice(
-                                        (parent as AstRule)[TOKENS]!.indexOf(value),
-                                        1,
-                                        ...(value as FunctionToken).chi,
-                                    );
+                                case ":local": {
+                                    // replace the function by its arguments. the arguments are visited
+                                    const children: Token[] = arena.tokens(value);
 
-                                    break;
+                                    arena.replaceToken(value, ...children);
+                                    return children;
+                                }
                             }
                         }
+
+                        return null;
                     },
                 )) {
-                    if (value.typ == EnumToken.HashTokenType || value.typ == EnumToken.ClassSelectorTokenType) {
+                    if (arena.dataTypes[value] == EnumToken.HashTokenType || arena.dataTypes[value] == EnumToken.ClassSelectorTokenType) {
                         hasIdOrClass = true;
                     }
 
@@ -3469,15 +3173,15 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                     processed.add(value);
 
-                    if (value.typ == EnumToken.PseudoClassTokenType || value.typ == EnumToken.PseudoElementTokenType) {
-                    } else if (value.typ == EnumToken.PseudoClassFuncTokenType) {
+                    if (arena.dataTypes[value] == EnumToken.PseudoClassTokenType || arena.dataTypes[value] == EnumToken.PseudoElementTokenType) {
+                    } else if (arena.dataTypes[value] == EnumToken.PseudoClassFuncTokenType) {
                     } else {
                         if (global.has(value)) {
                             continue;
                         }
 
-                        if (value.typ == EnumToken.ClassSelectorTokenType) {
-                            const val: string = (value as ClassSelectorToken).val.slice(1);
+                        if (arena.dataTypes[value] == EnumToken.ClassSelectorTokenType) {
+                            const val: string = arena.strings[arena.stringValue[value]].slice(1);
 
                             if (!(val in mapping)) {
                                 const result =
@@ -3500,7 +3204,8 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 revMapping[mapping[val]] = val;
                             }
 
-                            (value as ClassSelectorToken).val = "." + mapping[val];
+                            // inlined: arena.setStr(value, "." + mapping[val])
+                            arena.stringValue[value] = arena.internString(("." + mapping[val]));
                         }
                     }
                 }
@@ -3508,37 +3213,36 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 if (moduleSettings.scoped! & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
                         throw new Error(
-                            `pure module: No id or class found in selector '${(node as AstRule).sel}' at '${(options.source?.getOffsets?.(node[LOCSTA] as number) ?? []).join(":")}'`,
+                            // inlined: options.source?.getOffsets?.(arena.getSpanStart(node as AstNode))
+                            `pure module: No id or class found in selector '${arena.strings[arena.name[node as AstNode]]}' at '${(options.source?.lineStarts.getOffsets(arena.getSpanStart(node as AstNode)) ?? []).join(":")}'`,
                         );
                     }
                 }
 
-                (node as AstRule).sel = "";
+                // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
+                arena.name[(node as AstNode)] = arena.internString(arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""));
+            } else if (nodeType == EnumToken.AtRuleNodeType || nodeType == EnumToken.KeyframesAtRuleNodeType) {
+                const val: string = arena.strings[arena.name[node as AstNode]].toLowerCase();
 
-                for (const token of node[TOKENS]! as Token[]) {
-                    (node as AstRule).sel += renderValue(token);
-                }
-            } else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-                const val: string = (node as AstAtRule).nam.toLowerCase();
-
-                if (node[TOKENS] == null) {
-                    node[TOKENS] = parseString((node as AstAtRule).val);
+                if (arena.firstToken[node as AstNode] == 0) {
+                    // inlined: arena.setTokens(node as AstNode, ...parseString(arena, arena.strings[arena.stringValue[node as AstNode]]))
+                    arena.setTokenList((node as AstNode), parseString(arena, arena.strings[arena.stringValue[node as AstNode]]));
                 }
 
                 if (val == "property" || val == "keyframes") {
                     const prefix: string = val == "property" ? "--" : "";
 
-                    for (const value of node[TOKENS] as Token[]) {
+                    for (const value of arena.tokens(node as AstNode)) {
                         if (
-                            (prefix == "--" && value.typ == EnumToken.DashedIdenTokenType) ||
-                            (prefix == "" && value.typ == EnumToken.IdenTokenType)
+                            (prefix == "--" && arena.dataTypes[value] == EnumToken.DashedIdenTokenType) ||
+                            (prefix == "" && arena.dataTypes[value] == EnumToken.IdenTokenType)
                         ) {
-                            if (!((value as DashedIdentToken | IdentToken).val in mapping)) {
+                            if (!(arena.strings[arena.stringValue[value]] in mapping)) {
                                 const result =
                                     moduleSettings.scoped! & ModuleScopeEnumOptions.Global
-                                        ? (value as DashedIdentToken | IdentToken).val
+                                        ? arena.strings[arena.stringValue[value]]
                                         : moduleSettings.generateScopedName!(
-                                              (value as DashedIdentToken).val,
+                                              arena.strings[arena.stringValue[value]],
                                               moduleSettings.filePath as string,
                                               moduleSettings.pattern as string,
                                               moduleSettings.hashLength,
@@ -3546,20 +3250,22 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                                 // @ts-expect-error
                                 let val: string = result instanceof Promise ? await result : result;
 
-                                mapping[(value as DashedIdentToken | IdentToken).val] =
+                                mapping[arena.strings[arena.stringValue[value]]] =
                                     prefix +
                                     (moduleSettings.naming! & ModuleCaseTransformEnum.DashCaseOnly ||
                                     moduleSettings.naming! & ModuleCaseTransformEnum.CamelCaseOnly
                                         ? getKeyName(val, moduleSettings.naming as ModuleCaseTransformEnum)
                                         : val);
-                                revMapping[mapping[(value as DashedIdentToken).val]] = (value as DashedIdentToken).val;
+                                revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
 
-                            (value as DashedIdentToken).val = mapping[(value as DashedIdentToken).val];
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
 
-                    (node as AstAtRule).val = renderTokens(node[TOKENS]!);
+                    // inlined: arena.setValueString(node as AstNode, renderTokens(arena, arena.tokens(node as AstNode)))
+                    arena.stringValue[(node as AstNode)] = arena.internString(renderTokens(arena, arena.tokens(node as AstNode)));
                 }
             }
         }
@@ -3599,72 +3305,71 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 }
 
 function parseNode(
+    arena: AstArena,
     tokens: Token[],
-    context: AstRuleList,
+    context: AstNode,
     options: ParserOptions,
     errors: ErrorDescription[],
     stats: ParseResultStats,
     invalidNodes: AstNode[],
-): AstRule | AstAtRule | AstKeyframesRule | AstKeyframesAtRule | AstDeclaration | AstComment | null {
+    parensMatch: number,
+): AstNode | null {
     let i: number = 0;
+    const contextType: EnumToken = arena.dataTypes[context];
+    const dataTypes: Uint8Array = arena.dataTypes;
 
-    if (tokens.at(-1)?.typ === EnumToken.EOFTokenType) {
+    const lastToken: Token | undefined = tokens[tokens.length - 1];
+
+    if (lastToken != null && dataTypes[lastToken] === EnumToken.EOFTokenType) {
         tokens.pop();
 
         // check parenthesis are balanced
-        let matchCount: number = 0;
-
-        for (let i = 0; i < tokens.length; i++) {
-            const token: Token = tokens[i];
-
-            if (token.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(token.typ)) {
-                matchCount++;
-            } else if (token.typ === EnumToken.EndParensTokenType) {
-                matchCount--;
-            }
-        }
+        let matchCount: number = parensMatch;
 
         if (matchCount > 0) {
             let k: number = tokens.length;
 
             while (
                 k-- > 0 &&
-                (tokens[k].typ === EnumToken.WhitespaceTokenType || tokens[k].typ === EnumToken.CommentTokenType)
+                (dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType || dataTypes[tokens[k]] === EnumToken.CommentTokenType)
             );
 
-            if (tokens[k]?.typ == EnumToken.SemiColonTokenType) {
+                if (dataTypes[tokens[k]] == EnumToken.SemiColonTokenType) {
                 matchCount = 0;
             }
 
             while (matchCount > 0) {
-                tokens.push({
-                    typ: EnumToken.EndParensTokenType,
-                    [LOCSRCID]: tokens[k]?.[LOCSRCID],
-                    [LOCSTA]: tokens[k]?.[LOCSTA],
-                    [LOCEND]: tokens[k]?.[LOCEND],
-                });
+                const closing: Token = arena.createToken(EnumToken.EndParensTokenType);
+
+                if (k >= 0) {
+                    arena.copyLocation(closing, tokens[k]);
+                }
+
+                tokens.push(closing);
                 matchCount--;
             }
         }
     }
 
     for (; i < tokens.length; i++) {
-        if (tokens[i].typ === EnumToken.CDOCOMMTokenType && context.typ !== EnumToken.StyleSheetNodeType) {
+        if (arena.dataTypes[tokens[i]] === EnumToken.CDOCOMMTokenType && contextType !== EnumToken.StyleSheetNodeType) {
             errors.push({
                 action: "drop",
                 message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                 node: tokens[i],
-                location: options.source!.getSourceLocation(tokens[i][LOCSTA]!),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
+                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
             });
 
-            tokens[i].typ = EnumToken.InvalidCommentTokenType;
+            // the misplaced CDO / CDC comment is rendered as an empty string
+            arena.dataTypes[tokens[i]] = EnumToken.BadCdoTokenType;
             continue;
         }
 
         if (
-            tokens[i].typ === EnumToken.CommentTokenType ||
-            tokens[i].typ === EnumToken.CDOCOMMTokenType ||
-            tokens[i].typ === EnumToken.WhitespaceTokenType
+            arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType ||
+            arena.dataTypes[tokens[i]] === EnumToken.CDOCOMMTokenType ||
+            arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType
         ) {
             continue;
         }
@@ -3673,30 +3378,39 @@ function parseNode(
     }
 
     if (i > 0) {
-        context.chi!.push(
-            ...(tokens.splice(0, i) as AstNode[]).filter((n: AstNode) => n.typ !== EnumToken.WhitespaceTokenType),
-        );
+        // the leading comments are appended to the context, then removed with the whitespace (no array is created)
+        for (let k = 0; k < i; k++) {
+            if (arena.dataTypes[tokens[k]] !== EnumToken.WhitespaceTokenType) {
+                // inlined: arena.appendChildren(context, createCommentNode(arena, tokens[k]))
+                arena.appendChildList(context, [createCommentNode(arena, tokens[k])]);
+            }
+        }
+
+        tokens.copyWithin(0, i);
+        tokens.length -= i;
         i = 0;
     }
 
     for (; i < tokens.length; i++) {
-        if (tokens[i].typ == EnumToken.CommentTokenType || tokens[i].typ == EnumToken.CDOCOMMTokenType) {
-            if (tokens[i].typ == EnumToken.CDOCOMMTokenType && context.typ != EnumToken.StyleSheetNodeType) {
+        if (arena.dataTypes[tokens[i]] == EnumToken.CommentTokenType || arena.dataTypes[tokens[i]] == EnumToken.CDOCOMMTokenType) {
+            if (arena.dataTypes[tokens[i]] == EnumToken.CDOCOMMTokenType && contextType != EnumToken.StyleSheetNodeType) {
                 errors.push({
                     action: "drop",
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
-                    location: options.source!.getSourceLocation(tokens[i][LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
                 });
 
-                tokens[i].typ = EnumToken.InvalidCommentTokenType;
+                // the misplaced CDO / CDC comment is rendered as an empty string
+                arena.dataTypes[tokens[i]] = EnumToken.BadCdoTokenType;
                 continue;
             }
 
-            tokens[i][ROOT] = context[ROOT];
-            context.chi!.push(tokens[i] as AstNode);
+            // inlined: arena.appendChildren(context, createCommentNode(arena, tokens[i]))
+            arena.appendChildList(context, [createCommentNode(arena, tokens[i])]);
             stats.nodesCount++;
-        } else if (tokens[i].typ != EnumToken.WhitespaceTokenType) {
+        } else if (arena.dataTypes[tokens[i]] != EnumToken.WhitespaceTokenType) {
             break;
         }
     }
@@ -3705,12 +3419,12 @@ function parseNode(
         return null;
     }
 
-    let delim: Token = tokens.at(-1) as Token;
+    let delim: Token = tokens[tokens.length - 1] as Token;
 
     if (
-        delim.typ == EnumToken.SemiColonTokenType ||
-        delim.typ == EnumToken.BlockStartTokenType ||
-        delim.typ == EnumToken.BlockEndTokenType
+        arena.dataTypes[delim] == EnumToken.SemiColonTokenType ||
+        arena.dataTypes[delim] == EnumToken.BlockStartTokenType ||
+        arena.dataTypes[delim] == EnumToken.BlockEndTokenType
     ) {
         tokens.pop();
     }
@@ -3719,27 +3433,28 @@ function parseNode(
         return null;
     }
 
-    if (tokens[0]?.typ == EnumToken.AtRuleTokenType) {
+    if (arena.dataTypes[tokens[0]] == EnumToken.AtRuleTokenType) {
         let nestedRule: boolean = false;
 
         let parent: AstNode = context;
-        let node;
+        let node: AstNode | null;
 
-        while (parent != null) {
-            if (parent.typ == EnumToken.RuleNodeType) {
+        while (parent != 0) {
+            if (arena.dataTypes[parent] == EnumToken.RuleNodeType) {
                 nestedRule = true;
                 break;
             }
 
-            parent = parent[PARENT] as AstNode;
+            parent = arena.parents[parent];
         }
 
         node = parseAtRule(
+            arena,
             tokens,
-            context as AstStyleSheet | AstAtRule | AstRule,
+            context,
             { ...options, nestedRule },
             errors,
-            delim.typ == EnumToken.BlockStartTokenType,
+            arena.dataTypes[delim] == EnumToken.BlockStartTokenType,
         );
 
         if (node == null) {
@@ -3747,7 +3462,7 @@ function parseNode(
         }
 
         if (
-            node[STATE] &
+            arena.flags[node] &
             (EnumAstNodeStatus.Invalid |
                 EnumAstNodeStatus.Disallowed |
                 EnumAstNodeStatus.Unknown |
@@ -3758,41 +3473,40 @@ function parseNode(
         }
 
         stats.nodesCount++;
-        context.chi!.push(node);
+        // inlined: arena.appendChildren(context, node)
+        arena.appendChildList(context, [node]);
 
-        node[ROOT] = context[ROOT];
-        node[PARENT] = context;
-        // @ts-ignore
         return node;
     } else {
         stats.nodesCount++;
 
         // rule
-        if (delim.typ == EnumToken.BlockStartTokenType) {
-            const node = parseSelector(tokens, context as AstRule | AstAtRule, options, errors);
+        if (arena.dataTypes[delim] == EnumToken.BlockStartTokenType) {
+            const node: AstNode = parseSelector(arena, tokens, context, options, errors);
 
-            context.chi!.push(node);
-            node[PARENT] = context;
-            node[ROOT] = context[ROOT];
+            // inlined: arena.appendChildren(context, node)
+            arena.appendChildList(context, [node]);
 
             if (
-                node[STATE] & EnumAstNodeStatus.Invalid ||
-                node[STATE] & EnumAstNodeStatus.Disallowed ||
-                node[STATE] & EnumAstNodeStatus.Unknown ||
-                node[STATE] & EnumAstNodeStatus.Unparsed ||
-                node[STATE] & EnumAstNodeStatus.Malformed
+                arena.flags[node] &
+                (EnumAstNodeStatus.Invalid |
+                    EnumAstNodeStatus.Disallowed |
+                    EnumAstNodeStatus.Unknown |
+                    EnumAstNodeStatus.Unparsed |
+                    EnumAstNodeStatus.Malformed)
             ) {
                 invalidNodes.push(node);
             }
 
             return node;
         } else {
-            const node = parseDeclaration(tokens, context as AstRule | AstAtRule, options, errors) as AstDeclaration;
-            node[PARENT] = context;
-            node[ROOT] = context[ROOT];
+            const node: AstNode = parseDeclaration(arena, tokens, context, options, errors) as AstNode;
 
-            if (context.typ === EnumToken.StyleSheetNodeType && node.typ === EnumToken.DeclarationNodeType) {
-                node[STATE] |=
+            if (
+                contextType === EnumToken.StyleSheetNodeType &&
+                arena.dataTypes[node] === EnumToken.DeclarationNodeType
+            ) {
+                arena.flags[node] |=
                     EnumAstNodeStatus.Invalid &
                     ~(EnumAstNodeStatus.Validated | EnumAstNodeStatus.Unvalidated | EnumAstNodeStatus.Unparsed);
 
@@ -3800,21 +3514,23 @@ function parseNode(
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
                     node,
-                    location: options.source!.getSourceLocation(node[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
-            } else if (options.lenient || node.typ === EnumToken.DeclarationNodeType) {
-                context.chi!.push(node);
+            } else if (options.lenient || arena.dataTypes[node] === EnumToken.DeclarationNodeType) {
+                // inlined: arena.appendChildren(context, node)
+                arena.appendChildList(context, [node]);
             }
 
             if (
-                node[STATE] &
+                arena.flags[node] &
                 (EnumAstNodeStatus.Invalid |
                     EnumAstNodeStatus.Disallowed |
                     EnumAstNodeStatus.Unknown |
                     EnumAstNodeStatus.Unparsed |
                     EnumAstNodeStatus.Malformed)
             ) {
-                invalidNodes.push(node as AstDeclaration);
+                invalidNodes.push(node);
             }
         }
     }
@@ -3831,21 +3547,33 @@ function parseNode(
  */
 
 export function parseAtRule(
+    arena: AstArena,
     stream: Token[],
-    context: AstRule | AstAtRule | AstStyleSheet,
+    context: AstNode,
     options: ParserOptions,
     errors: ErrorDescription[],
     parseAsBlock: boolean | null = null,
-): AstAtRule | CssVariableImportTokenType | CssVariableToken | null {
+): AstNode | null {
     let success: boolean = true;
-    let atRuleName = (stream[0] as AtRuleToken).nam;
+    const contextType: EnumToken = arena.dataTypes[context];
+    const contextName: string | null =
+        contextType === EnumToken.AtRuleNodeType ? arena.strings[arena.name[context]] : null;
+    const atRule: Token = stream.shift() as Token;
+    // at-rule name
+    const nam: string = arena.strings[arena.name[atRule]];
+    let atRuleName: string = nam;
+
+    // prelude tokens, state, errors and last token of the at-rule node
+    let atRuleTokens: Token[] | null = null;
+    let atRuleState: EnumAstNodeStatus = 0 as EnumAstNodeStatus;
+    let atRuleErrors: ErrorDescription[] = [];
+    let atRuleEnd: Token = atRule;
 
     if (atRuleName.startsWith("-")) {
         atRuleName = atRuleName.replace(/^-[a-z]+-/, "").toLowerCase();
     }
 
-    const atRule = stream.shift() as AtRuleToken;
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRule.nam);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + nam);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
     const blockAllowed: boolean = syntaxRules?.getBlockRules() != null;
 
@@ -3853,67 +3581,57 @@ export function parseAtRule(
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
             message: "unknown at-rule",
         });
 
-        const result = matchGenericSyntax(stream, options);
+        const result = matchGenericSyntax(arena, stream, options);
 
-        atRule[TOKENS] = parseTokens(stream);
-        atRule[STATE] = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;
-        atRule[ERRORS] = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];
+        atRuleTokens = parseTokens(arena, stream);
+        atRuleState = result.success ? EnumAstNodeStatus.Unknown : EnumAstNodeStatus.Invalid;
+        atRuleErrors = result.success ? [errors[errors.length - 1]] : [errors[errors.length - 1], ...result.errors];
 
-        // @ts-expect-error
-        return Object.assign(atRule, {
-            typ: EnumToken.AtRuleNodeType,
-            val: renderTokens(trimArray(stream), options),
-            ...(parseAsBlock ? { chi: [] } : {}),
-        }) as AstAtRule;
-    } else if (
-        context.typ === EnumToken.AtRuleNodeType &&
-        "page" === (context as AstAtRule).nam &&
-        pageMarginBoxType.has(atRuleName.toLowerCase())
-    ) {
+        return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+            !!parseAsBlock,
+        );
+    } else if (contextName === "page" && pageMarginBoxType.has(atRuleName.toLowerCase())) {
         if (parseAsBlock === false && syntaxRules.optionalBody === false) {
             errors.push({
                 action: "drop",
                 node: atRule,
-                location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                 message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
             });
 
-            atRule[TOKENS] = parseTokens(stream);
-            atRule[STATE] = EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = [errors[errors.length - 1]];
+            atRuleTokens = parseTokens(arena, stream);
+            atRuleState = EnumAstNodeStatus.Invalid;
+            atRuleErrors = [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+                !!parseAsBlock,
+            );
         }
 
         const token =
-            stream.find((t) => t.typ != EnumToken.WhitespaceTokenType && t.typ === EnumToken.CommentTokenType) ?? null;
+            stream.find((t) => arena.dataTypes[t] != EnumToken.WhitespaceTokenType && arena.dataTypes[t] === EnumToken.CommentTokenType) ?? null;
         if (token != null) {
             errors.push({
                 action: "drop",
                 node: token,
-                location: options.source!.getSourceLocation(token[LOCSTA]!),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
                 message: `unexpected token`,
             });
 
-            atRule[TOKENS] = parseTokens(stream);
-            atRule[STATE] = EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = [errors[errors.length - 1]];
+            atRuleTokens = parseTokens(arena, stream);
+            atRuleState = EnumAstNodeStatus.Invalid;
+            atRuleErrors = [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+                !!parseAsBlock,
+            );
         }
     }
 
@@ -3921,93 +3639,94 @@ export function parseAtRule(
         parseAsBlock = blockAllowed;
     }
 
-    if (syntax != null && atRule.nam !== "layer" && parseAsBlock !== blockAllowed && !syntaxRules.optionalBody) {
+    if (syntax != null && nam !== "layer" && parseAsBlock !== blockAllowed && !syntaxRules.optionalBody) {
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
             message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
         });
 
-        atRule[TOKENS] = parseTokens(stream);
-        atRule[STATE] = EnumAstNodeStatus.Invalid;
-        atRule[ERRORS] = [errors[errors.length - 1]];
+        atRuleTokens = parseTokens(arena, stream);
+        atRuleState = EnumAstNodeStatus.Invalid;
+        atRuleErrors = [errors[errors.length - 1]];
 
-        // @ts-expect-error
-        return Object.assign(atRule, {
-            typ: EnumToken.AtRuleNodeType,
-            val: renderTokens(trimArray(stream), options),
-            ...(parseAsBlock ? { chi: [] } : {}),
-        }) as AstAtRule;
+        return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+            !!parseAsBlock,
+        );
     }
 
     switch (atRuleName) {
         case "charset": {
             let success: boolean = true;
 
+            // exactly one space is expected. the whitespace text is not stored: check the source
             if (
                 stream.length === 0 ||
-                stream[0].typ !== EnumToken.WhitespaceTokenType ||
-                (stream[0] as WhitespaceToken).val !== " "
+                arena.dataTypes[stream[0]] !== EnumToken.WhitespaceTokenType ||
+                arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
+                // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
+                options.sourcesMap?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)?.content.charCodeAt(arena.getSpanStart(stream[0])) !==
+                    0x20
             ) {
                 success = false;
                 errors.push({
                     action: "drop",
                     node: stream[0] ?? atRule,
-                    location: options.source!.getSourceLocation((stream[0] ?? atRule)[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[0] ?? atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[0] ?? atRule))],
                     message: "expecting <space>",
                 });
-            } else if (stream[1].typ !== EnumToken.StringTokenType) {
+            } else if (arena.dataTypes[stream[1]] !== EnumToken.StringTokenType) {
                 success = false;
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: options.source!.getSourceLocation((stream[1] ?? atRule)[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
                     message: "expecting <string>",
                 });
             }
 
-            if (success && (stream[1] as StringToken).val.charCodeAt(0) !== 0x22) {
+            if (success && arena.strings[arena.stringValue[stream[1]]].charCodeAt(0) !== 0x22) {
                 success = false;
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: options.source!.getSourceLocation((stream[1] ?? atRule)[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
                     message: "expecting double-quoted string",
                 });
             }
 
             if (!success) {
-                atRule[TOKENS] = stream;
-                atRule[STATE] = EnumAstNodeStatus.Invalid;
-                atRule[ERRORS] = [errors[errors.length - 1]];
-                atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
+                atRuleTokens = stream;
+                atRuleState = EnumAstNodeStatus.Invalid;
+                atRuleErrors = [errors[errors.length - 1]];
+                atRuleEnd = stream.at(-1) ?? atRule;
 
-                // @ts-expect-error
-                return Object.assign(atRule, {
-                    typ: EnumToken.AtRuleNodeType,
-                    val: renderTokens(trimArray(stream), options),
-                }) as AstAtRule;
+                return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+                    false,
+                );
             }
 
             if (options.removeCharset) {
                 return null;
             }
 
-            atRule[TOKENS] = stream;
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = [];
-            atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
+            atRuleTokens = stream;
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = [];
+            atRuleEnd = stream.at(-1) ?? atRule;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimArray(stream), options),
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options),
+                false,
+            );
         }
 
         case "font-feature-values": {
-            const result = parseAtRuleFontFeatureValues(stream, atRule, options);
+            const result = parseAtRuleFontFeatureValues(arena, stream, atRule, options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4015,17 +3734,14 @@ export function parseAtRule(
                 }
             }
 
-            atRule[TOKENS] = stream;
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : result.errors;
-            atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
+            atRuleTokens = stream;
+            atRuleState = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.success ? [] : result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                chi: [] as Token[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimWhiteSpaceTokens(arena, stream), options),
+                true,
+            );
         }
 
         case "stylistic":
@@ -4034,47 +3750,45 @@ export function parseAtRule(
         case "swash":
         case "ornaments":
         case "annotation": {
-            let success: boolean =
-                context.typ === EnumToken.AtRuleNodeType && "font-feature-values" === (context as AstAtRule).nam;
+            let success: boolean = contextName === "font-feature-values";
 
             if (!success) {
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source!.getSourceLocation(atRule[LOCSTA]!),
-                    message: `unexpected at-rule ${atRule.nam}`,
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                    message: `unexpected at-rule ${nam}`,
                 });
             }
 
             if (success) {
                 for (const token of stream) {
-                    if (token.typ !== EnumToken.CommentTokenType && token.typ !== EnumToken.WhitespaceTokenType) {
+                    if (arena.dataTypes[token] !== EnumToken.CommentTokenType && arena.dataTypes[token] !== EnumToken.WhitespaceTokenType) {
                         success = false;
                         errors.push({
                             action: "drop",
                             node: token,
-                            location: options.source!.getSourceLocation(token[LOCSTA]!),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
                             message: `unexpected token`,
                         });
                     }
                 }
             }
 
-            atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
-            atRule[TOKENS] = stream;
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = [errors[errors.length - 1]];
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream;
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                chi: [] as Token[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimWhiteSpaceTokens(arena, stream), options),
+                true,
+            );
         }
 
         case "container": {
-            const result = parseAtRuleContainerQueryList(stream, atRule, options);
+            const result = parseAtRuleContainerQueryList(arena, stream, atRule, options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4082,21 +3796,18 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = (stream.at(-1)! ?? atRule)[LOCEND];
-            atRule[TOKENS] = stream;
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream;
+            atRuleState = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.success ? [] : result.errors;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                chi: [] as Token[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimWhiteSpaceTokens(arena, stream), options),
+                true,
+            );
         }
         case "custom-media": {
-            const tokens = trimArray(stream.slice(1));
-            const result = matchAllSyntaxes(syntax, createValidationContext(tokens), options);
+            const tokens = trimArray(arena, stream.slice(1));
+            const result = matchAllSyntaxes(arena, syntax, createValidationContext(arena, tokens), options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4107,33 +3818,32 @@ export function parseAtRule(
             // @ts-expect-error
             options = { ...options, convertColor: false };
 
-            atRule[LOCEND] = (tokens.at(-1)! ?? atRule)[LOCEND];
-            atRule[TOKENS] = tokens;
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed;
-            atRule[ERRORS] = result.success ? [] : result.errors;
+            atRuleEnd = tokens.at(-1) ?? atRule;
+            atRuleTokens = tokens;
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.ValidationFailed;
+            atRuleErrors = result.success ? [] : result.errors;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(tokens), options),
-            }) as AstKeyframesAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimWhiteSpaceTokens(arena, tokens), options),
+                false,
+            );
         }
         case "keyframes": {
-            const tokens = trimArray(stream.slice(1));
+            const tokens = trimArray(arena, stream.slice(1));
             const filtered: Token[] = stream.filter(
-                (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
+                (t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType && arena.dataTypes[t] !== EnumToken.CommentTokenType,
             );
 
             if (
                 filtered.length != 1 ||
-                (filtered[0].typ !== EnumToken.IdenTokenType &&
-                    filtered[0].typ !== EnumToken.StringTokenType &&
-                    filtered[0].typ !== EnumToken.DashedIdenTokenType)
+                (arena.dataTypes[filtered[0]] !== EnumToken.IdenTokenType &&
+                    arena.dataTypes[filtered[0]] !== EnumToken.StringTokenType &&
+                    arena.dataTypes[filtered[0]] !== EnumToken.DashedIdenTokenType)
             ) {
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                     message: `expected <keyframe-name>`,
                 });
                 success = false;
@@ -4142,23 +3852,21 @@ export function parseAtRule(
             // @ts-expect-error
             options = { ...options, convertColor: false };
 
-            atRule[LOCEND] = (tokens.at(-1)! ?? atRule)[LOCEND];
-            atRule[TOKENS] = tokens;
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
+            atRuleEnd = tokens.at(-1) ?? atRule;
+            atRuleTokens = tokens;
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = success ? [] : [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.KeyframesAtRuleNodeType,
-                val: renderTokens(tokens, options),
-                chi: [] as Array<AstKeyframesRule | AstComment>,
-            }) as AstKeyframesAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.KeyframesAtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, tokens, options),
+                true,
+            );
         }
 
         case "namespace": {
             const result: ValidationMatch = matchAllSyntaxes(
+                arena,
                 syntax as ValidationToken[],
-                createValidationContext(stream),
+                createValidationContext(arena, stream),
                 options,
             );
 
@@ -4179,14 +3887,14 @@ export function parseAtRule(
                 let hasString: boolean = false;
 
                 for (start = 0; start < stream.length; start++) {
-                    if (stream[start].typ == EnumToken.UrlFunctionTokenDefType) {
+                    if (arena.dataTypes[stream[start]] == EnumToken.UrlFunctionTokenDefType) {
                         start++;
                         for (end = start; end < stream.length; end++) {
-                            if (stream[end].typ == EnumToken.EndParensTokenType) {
+                            if (arena.dataTypes[stream[end]] == EnumToken.EndParensTokenType) {
                                 break;
                             }
 
-                            if (stream[end].typ === EnumToken.StringTokenType) {
+                            if (arena.dataTypes[stream[end]] === EnumToken.StringTokenType) {
                                 hasString = true;
                             }
                         }
@@ -4200,31 +3908,28 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = valid ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = valid ? [] : result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = valid ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = valid ? [] : result.errors;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: trimArray(stream).reduce(
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, trimArray(arena, stream).reduce(
                     (acc, t, index) =>
                         acc +
-                        (t.typ === EnumToken.CommentTokenType ||
-                        (t.typ === EnumToken.WhitespaceTokenType &&
-                            stream[index + 1]?.typ === EnumToken.CommentTokenType &&
-                            (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
+                        (arena.dataTypes[t] === EnumToken.CommentTokenType ||
+                        (arena.dataTypes[t] === EnumToken.WhitespaceTokenType &&
+                            arena.dataTypes[stream[index + 1]] === EnumToken.CommentTokenType &&
+                            (stream.length < index + 3 || arena.dataTypes[stream[index + 2]] === EnumToken.WhitespaceTokenType))
                             ? ""
-                            : renderValue(t, options)),
+                            : renderValue(arena, t, options)),
                     "",
                 ),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            }) as AstAtRule;
+                !!parseAsBlock,
+            );
         }
 
         case "import": {
-            const result = matchAtRuleImportSyntax(atRule, stream, context, options);
+            const result = matchAtRuleImportSyntax(arena, atRule, stream, options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4232,46 +3937,44 @@ export function parseAtRule(
                 }
             } else {
                 if (
-                    stream[0]?.typ == EnumToken.UrlFunctionTokenType &&
-                    (stream[0] as FunctionToken).chi.some(
-                        (t) => t.typ == EnumToken.StringTokenType || t.typ == EnumToken.UrlTokenTokenType,
+                    arena.dataTypes[stream[0]] == EnumToken.UrlFunctionTokenType &&
+                    arena.tokens(stream[0]).some(
+                        (t) => arena.dataTypes[t] == EnumToken.StringTokenType || arena.dataTypes[t] == EnumToken.UrlTokenTokenType,
                     )
                 ) {
-                    stream.splice(0, 1, ...(stream[0] as FunctionToken).chi);
+                    stream.splice(0, 1, ...arena.tokens(stream[0]));
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.success ? [] : result.errors;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: stream.reduce(
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, stream.reduce(
                     (acc, t, index) =>
                         acc +
-                        (t.typ === EnumToken.CommentTokenType ||
-                        (t.typ === EnumToken.WhitespaceTokenType &&
-                            stream[index + 1]?.typ === EnumToken.CommentTokenType &&
-                            (stream.length < index + 3 || stream[index + 2]?.typ === EnumToken.WhitespaceTokenType))
+                        (arena.dataTypes[t] === EnumToken.CommentTokenType ||
+                        (arena.dataTypes[t] === EnumToken.WhitespaceTokenType &&
+                            arena.dataTypes[stream[index + 1]] === EnumToken.CommentTokenType &&
+                            (stream.length < index + 3 || arena.dataTypes[stream[index + 2]] === EnumToken.WhitespaceTokenType))
                             ? ""
-                            : renderValue(t, options)),
+                            : renderValue(arena, t, options)),
                     "",
                 ),
-            }) as AstAtRule;
+                false,
+            );
         }
 
         case "supports":
         case "when":
         case "else": {
-            trimWhiteSpaceTokens(stream);
+            trimWhiteSpaceTokens(arena, stream);
 
             const result =
                 atRuleName === "supports"
-                    ? parseAtRuleSupportSyntax(stream, atRule, options)
-                    : matchAtRuleWhenElseSyntax(stream, atRule, options);
+                    ? parseAtRuleSupportSyntax(arena, stream, atRule, options)
+                    : matchAtRuleWhenElseSyntax(arena, stream, atRule, options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4281,36 +3984,31 @@ export function parseAtRule(
 
             let success: boolean = result.success;
 
-            if (atRule.nam === "else") {
-                const siblings = (context as AstAtRule | AstStyleSheet).chi as AstNode[] | Token[];
-                let sibling: AstNode | Token | null = null;
-                let l: number = siblings.length;
+            if (nam === "else") {
+                let sibling: AstNode = arena.lastChild[context];
 
-                while (l--) {
+                while (sibling != 0) {
                     if (
-                        siblings[l].typ === EnumToken.WhitespaceTokenType ||
-                        siblings[l].typ === EnumToken.CommentTokenType ||
-                        siblings[l].typ === EnumToken.CDOCOMMTokenType
+                        arena.dataTypes[sibling] === EnumToken.WhitespaceTokenType ||
+                        arena.dataTypes[sibling] === EnumToken.CommentTokenType ||
+                        arena.dataTypes[sibling] === EnumToken.CDOCOMMTokenType
                     ) {
+                        sibling = arena.previousSibling[sibling];
                         continue;
                     }
 
-                    sibling = siblings[l];
                     break;
                 }
 
                 let missingWhen: boolean = false;
                 let definedAfterLastElse: boolean = false;
 
-                if (sibling == null || sibling.typ !== EnumToken.AtRuleNodeType) {
+                if (sibling == 0 || arena.dataTypes[sibling] !== EnumToken.AtRuleNodeType) {
                     missingWhen = true;
-                    // @ts-expect-error
-                } else if (sibling.nam !== "when") {
-                    // @ts-expect-error
-                    if (sibling.nam !== "else") {
+                } else if (arena.strings[arena.name[sibling]] !== "when") {
+                    if (arena.strings[arena.name[sibling]] !== "else") {
                         missingWhen = true;
-                        // @ts-expect-error
-                    } else if (sibling.val === "") {
+                    } else if (arena.stringValue[sibling] === 0) {
                         definedAfterLastElse = true;
                     }
                 }
@@ -4320,7 +4018,8 @@ export function parseAtRule(
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         message: "at-rule @when is required before @else block",
                     });
                 } else if (definedAfterLastElse) {
@@ -4328,7 +4027,8 @@ export function parseAtRule(
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         message: "at-rule @else block is defined after last @else block",
                     });
                 }
@@ -4337,22 +4037,17 @@ export function parseAtRule(
             // @ts-expect-error
             options = { ...options, minify: false, convertColor: false };
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : [errors[errors.length - 1]].concat(result.errors);
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.success ? [] : [errors[errors.length - 1]].concat(result.errors);
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(stream, options),
-                chi: [],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), true);
         }
         case "media": {
             options = { ...options, parseColor: false };
 
-            const result = parseMediaqueryList(stream, options);
+            const result = parseMediaqueryList(arena, stream, options);
 
             if (result.errors.length > 0) {
                 for (const error of result.errors) {
@@ -4360,49 +4055,47 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.success ? [] : result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.success ? [] : result.errors;
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(stream, options),
-                chi: [] as AstNode[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), true);
         }
         case "scope": {
-            let context = createValidationContext(trimArray(stream));
+            let context = createValidationContext(arena, trimArray(arena, stream));
 
             let success: boolean = true;
             // @ts-ignore
-            let range: Token[] = context.peekRange((t) => t.typ === EnumToken.EndParensTokenType);
+            let range: Token[] = context.peekRange((t) => arena.dataTypes[t] === EnumToken.EndParensTokenType);
 
-            if (range[0]?.typ !== EnumToken.StartParensTokenType) {
+            if (arena.dataTypes[range[0]] !== EnumToken.StartParensTokenType) {
                 errors.push({
                     action: "drop",
                     node: range[0] ?? atRule,
-                    location: options.source!.getSourceLocation((range[0] ?? atRule)[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range[0] ?? atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(range[0] ?? atRule))],
                     message: "expected '(' at start of @scope block",
                 });
                 success = false;
-            } else if (range.at(-1)?.typ !== EnumToken.EndParensTokenType) {
+            // inlined: arena.typeOf(range.at(-1))
+            } else if (arena.dataTypes[range.at(-1) as number] !== EnumToken.EndParensTokenType) {
                 errors.push({
                     action: "drop",
                     node: range.at(-1) ?? atRule,
-                    location: options.source!.getSourceLocation((range.at(-1) ?? atRule)[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
                     message: "expected ')' at end of @scope block",
                 });
                 success = false;
             } else {
                 const srange = range.slice(1, -1);
-                const result = matchSelectorSyntax(srange, errors, options, true);
+                const result = matchSelectorSyntax(arena, srange, errors, options, true);
 
                 if (!result.success) {
                     success = false;
                 } else {
-                    stream.splice(stream.indexOf(range[0]) + 1, range.length - 2, ...trimWhiteSpaceTokens(srange));
+                    stream.splice(stream.indexOf(range[0]) + 1, range.length - 2, ...trimWhiteSpaceTokens(arena, srange));
                 }
             }
 
@@ -4410,51 +4103,55 @@ export function parseAtRule(
 
             if (stream.length > index + 1) {
                 while (
-                    stream[++index]?.typ === EnumToken.WhitespaceTokenType ||
-                    stream[index]?.typ === EnumToken.CommentTokenType
+                    arena.dataTypes[stream[++index]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[index]] === EnumToken.CommentTokenType
                 );
 
                 if (index < stream.length) {
                     if (
-                        stream[index].typ !== EnumToken.IdenTokenType ||
-                        "to" !== (stream[index] as IdentToken).val.toLowerCase()
+                        arena.dataTypes[stream[index]] !== EnumToken.IdenTokenType ||
+                        "to" !== arena.strings[arena.stringValue[stream[index]]].toLowerCase()
                     ) {
                         errors.push({
                             action: "drop",
                             node: stream[index],
-                            location: options.source!.getSourceLocation(stream[index]?.[LOCSTA]!),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                             message: "expected 'to' at end of @scope block",
                         });
                         success = false;
                     } else {
                         while (
-                            stream[++index]?.typ === EnumToken.WhitespaceTokenType ||
-                            stream[index]?.typ === EnumToken.CommentTokenType
+                            arena.dataTypes[stream[++index]] === EnumToken.WhitespaceTokenType ||
+                            arena.dataTypes[stream[index]] === EnumToken.CommentTokenType
                         );
 
-                        if (stream[index].typ !== EnumToken.StartParensTokenType) {
+                        if (arena.dataTypes[stream[index]] !== EnumToken.StartParensTokenType) {
                             errors.push({
                                 action: "drop",
                                 node: stream[index],
-                                location: options.source!.getSourceLocation(stream[index]?.[LOCSTA]!),
+                                // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                                 message: "expected 'to' at end of @scope block",
                             });
                             success = false;
                         } else {
-                            context = createValidationContext(stream.slice(index));
+                            context = createValidationContext(arena, stream.slice(index));
                             // @ts-ignore
-                            range = context.peekRange((t: Token) => t.typ === EnumToken.EndParensTokenType);
-                            if (range.at(-1)?.typ !== EnumToken.EndParensTokenType) {
+                            range = context.peekRange((t: Token) => arena.dataTypes[t] === EnumToken.EndParensTokenType);
+                            // inlined: arena.typeOf(range.at(-1))
+                            if (arena.dataTypes[range.at(-1) as number] !== EnumToken.EndParensTokenType) {
                                 errors.push({
                                     action: "drop",
                                     node: range.at(-1) ?? atRule,
-                                    location: options.source!.getSourceLocation((range.at(-1) ?? atRule)[LOCSTA]!),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
                                     message: "expected ')' at end of @scope block",
                                 });
                                 success = false;
                             } else {
                                 const srange = range.slice(1, -1);
-                                const result = matchSelectorSyntax(srange, errors, options, true);
+                                const result = matchSelectorSyntax(arena, srange, errors, options, true);
 
                                 if (!result.success) {
                                     success = false;
@@ -4462,7 +4159,7 @@ export function parseAtRule(
                                     stream.splice(
                                         stream.indexOf(range[0]) + 1,
                                         range.length - 2,
-                                        ...trimWhiteSpaceTokens(srange),
+                                        ...trimWhiteSpaceTokens(arena, srange),
                                     );
                                 }
                             }
@@ -4471,32 +4168,22 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = success ? [] : [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(stream, options),
-                chi: [],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), true);
         }
         case "page": {
-            trimArray(stream);
+            trimArray(arena, stream);
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = success ? [] : [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(stream, options),
-                chi: [] as AstNode[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), true);
         }
         case "top-left-corner":
         case "top-left":
@@ -4513,27 +4200,29 @@ export function parseAtRule(
         case "right-top":
         case "right-middle":
         case "right-bottom": {
-            if (context.typ !== EnumToken.AtRuleNodeType || (context as AstAtRule).nam !== "page") {
+            if (contextName !== "page") {
                 success = false;
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source!.getSourceLocation(atRule[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                     message: "node is allowed only in @page rule",
                 });
             } else {
-                trimArray(stream);
+                trimArray(arena, stream);
 
                 for (let i = 0; i < stream.length; i++) {
                     if (
-                        stream[i].typ !== EnumToken.WhitespaceTokenType &&
-                        stream[i].typ !== EnumToken.CommentTokenType
+                        arena.dataTypes[stream[i]] !== EnumToken.WhitespaceTokenType &&
+                        arena.dataTypes[stream[i]] !== EnumToken.CommentTokenType
                     ) {
                         success = false;
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                             message: "expected whitespace or comment",
                         });
                         break;
@@ -4541,17 +4230,12 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = success ? [] : [errors[errors.length - 1]];
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(stream, options),
-                chi: [] as AstNode[],
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), true);
         }
 
         case "value": {
@@ -4559,27 +4243,24 @@ export function parseAtRule(
             let isVarDeclaration: boolean = false;
 
             for (; index < stream.length; index++) {
-                if (stream[index].typ == EnumToken.PseudoClassTokenType) {
-                    Object.assign(stream[index], {
-                        typ: EnumToken.IdenTokenType,
-                        val: (stream[index] as IdentToken).val.slice(1),
-                    });
+                if (arena.dataTypes[stream[index]] == EnumToken.PseudoClassTokenType) {
+                    const colon: Token = arena.createToken(EnumToken.ColonTokenType);
 
-                    stream.splice(index, 0, {
-                        typ: EnumToken.ColonTokenType,
-                        [LOCSRCID]: stream[index][LOCSRCID],
-                        [LOCSTA]: stream[index][LOCSTA],
-                        [LOCEND]: stream[index][LOCEND],
-                    });
+                    arena.copyLocation(colon, stream[index]);
+                    // inlined: arena.setStr(stream[index], arena.strings[arena.stringValue[stream[index]]].slice(1))
+                    arena.stringValue[stream[index]] = arena.internString(arena.strings[arena.stringValue[stream[index]]].slice(1));
+                    arena.dataTypes[stream[index]] = EnumToken.IdenTokenType;
+
+                    stream.splice(index, 0, colon);
 
                     isVarDeclaration = true;
                     break;
-                } else if (stream[index].typ == EnumToken.ColonTokenType) {
+                } else if (arena.dataTypes[stream[index]] == EnumToken.ColonTokenType) {
                     isVarDeclaration = true;
                     break;
                 } else if (
-                    stream[index].typ == EnumToken.IdenTokenType &&
-                    equalsIgnoreCase("from", (stream[index] as IdentToken).val)
+                    arena.dataTypes[stream[index]] == EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("from", arena.strings[arena.stringValue[stream[index]]])
                 ) {
                     break;
                 }
@@ -4590,76 +4271,69 @@ export function parseAtRule(
             // @value id : <declaration-value>; // variable declaration
             // @value <ident># from <ident>; // import variables from alias
             let result = matchAllSyntaxes(
+                arena,
                 syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[],
-                createValidationContext(stream),
+                createValidationContext(arena, stream),
                 options,
             );
-            atRule[STATE] = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = success ? [] : [errors[errors.length - 1]];
+            atRuleState = success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = success ? [] : [errors[errors.length - 1]];
+
+            atRuleEnd = stream.at(-1) ?? atRule;
 
             if (!result.success) {
                 for (const error of result.errors) {
                     errors.push(error);
                 }
 
-                return {
-                    typ: EnumToken.AtRuleNodeType,
-                    val: renderTokens(stream, options),
-                    [LOCSRCID]: atRule[LOCSRCID],
-                    [LOCSTA]: atRule[LOCSTA],
-                    [LOCEND]: stream.at(-1)?.[LOCEND] ?? atRule[LOCEND],
-                    [TOKENS]: stream,
-                    [STATE]: EnumAstNodeStatus.Invalid,
-                    [ERRORS]: result.errors,
-                } as AstAtRule;
+                atRuleTokens = stream;
+                atRuleState = EnumAstNodeStatus.Invalid;
+                atRuleErrors = result.errors;
+
+                return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, stream, options), false);
             }
 
             if (isVarDeclaration) {
-                const nam: Token = stream.find((t) => t.typ == EnumToken.IdenTokenType) as Token;
+                const nam: Token = stream.find((t) => arena.dataTypes[t] == EnumToken.IdenTokenType) as Token;
                 const value: Token[] = trimArray(
-                    stream.slice(index + 1).filter((t) => t.typ != EnumToken.CommentTokenType),
+                    arena,
+                    stream.slice(index + 1).filter((t) => arena.dataTypes[t] != EnumToken.CommentTokenType),
                 );
 
-                if (value.length == 1 && value[0].typ == EnumToken.StringTokenType) {
-                    // import from file as alias
-                    return {
-                        typ: EnumToken.CssVariableImportTokenType,
-                        nam: (nam as IdentToken).val,
-                        val: value,
-                        [LOCSRCID]: atRule[LOCSRCID],
-                        [LOCSTA]: atRule[LOCSTA],
-                        [LOCEND]: stream.at(-1)?.[LOCEND] ?? atRule[LOCEND],
-                        [TOKENS]: stream,
-                        [STATE]: EnumAstNodeStatus.Validated,
-                        [ERRORS]: [],
-                    } as CssVariableImportTokenType;
-                }
+                // import from file as alias: @value <ident>: <string>;
+                // variable declaration: @value <ident>: <declaration-value>;
+                // the variable value is stored as the node values
+                const node: AstNode = arena.createDeclaration(
+                    value.length == 1 && arena.dataTypes[value[0]] == EnumToken.StringTokenType
+                        ? EnumToken.CssVariableImportTokenType
+                        : EnumToken.CssVariableTokenType,
+                    arena.strings[arena.stringValue[nam]],
+                    value,
+                    EnumAstNodeStatus.Validated,
+                    [],
+                );
 
-                // import variables from alias
-                return {
-                    typ: EnumToken.CssVariableTokenType,
-                    nam: (nam as IdentToken).val,
-                    val: value,
-                    [LOCSRCID]: atRule[LOCSRCID],
-                    [LOCSTA]: atRule[LOCSTA],
-                    [LOCEND]: stream.at(-1)?.[LOCEND] ?? atRule[LOCEND],
-                    [TOKENS]: stream,
-                    [STATE]: EnumAstNodeStatus.Validated,
-                    [ERRORS]: [],
-                } as CssVariableToken;
+                arena.spanLocation(node, atRule, atRuleEnd);
+                return node;
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
+            atRuleState = EnumAstNodeStatus.Validated;
+            atRuleErrors = [];
 
-            atRule[STATE] = EnumAstNodeStatus.Validated;
-            atRule[ERRORS] = [];
+            // import variables from alias: @value <ident># from <ident>;
+            // the imported variable names are stored as the node values, the alias tokens as the `l` field
+            const node: AstNode = arena.createDeclaration(
+                EnumToken.CssVariableDeclarationMapTokenType,
+                nam,
+                trimArray(arena, stream.slice(0, index)),
+                EnumAstNodeStatus.Validated,
+                [],
+            );
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.CssVariableDeclarationMapTokenType,
-                vars: trimArray(stream.slice(0, index)),
-                from: stream.slice(index + 1),
-            }) as CssVariableMapTokenType;
+            // inlined: arena.setField(node, TokenField.L, ...stream.slice(index + 1))
+            arena.setTokenList(arena.fieldList(node, TokenField.L), stream.slice(index + 1));
+            arena.spanLocation(node, atRule, atRuleEnd);
+            return node;
         }
 
         default: {
@@ -4672,7 +4346,7 @@ export function parseAtRule(
                 // check commas ',' or ',,'
                 // check colon ':'
                 // check 'or' and 'and'
-                result = matchGenericSyntax(stream, options);
+                result = matchGenericSyntax(arena, stream, options);
 
                 if (result.errors.length > 0) {
                     for (const error of result.errors) {
@@ -4680,7 +4354,7 @@ export function parseAtRule(
                     }
                 }
             } else {
-                result = matchAtRuleSyntax(atRule, stream, options);
+                result = matchAtRuleSyntax(arena, atRule, stream, options);
 
                 if (result.errors.length > 0) {
                     for (const error of result.errors) {
@@ -4693,19 +4367,19 @@ export function parseAtRule(
                     const stack: Token[] = [];
 
                     for (; i < stream.length; i++) {
-                        if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+                        if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
                             stack.push(stream[i]);
                             continue;
                         }
 
-                        if (stream[i].typ === EnumToken.EndParensTokenType && stack.length > 0) {
+                        if (arena.dataTypes[stream[i]] === EnumToken.EndParensTokenType && stack.length > 0) {
                             const index = stream.indexOf(stack[stack.length - 1]);
 
-                            stream[index][LOCEND] = stream[i][LOCEND];
-                            Object.assign(stream[index], {
-                                typ: tokensfuncDefMap.get(stream[index].typ)!,
-                                chi: trimWhiteSpaceTokens(stream.splice(index + 1, i - index - 1)),
-                            });
+                            // inlined: arena.setSpanEnd(stream[index], arena.getSpanEnd(stream[i]))
+                            arena.setSpan(stream[index], arena.getSourceId(stream[index]), arena.getSpanStart(stream[index]), arena.getSpanEnd(stream[i]));
+                            arena.dataTypes[stream[index]] = tokensfuncDefMap.get(arena.dataTypes[stream[index]])!;
+                            // inlined: arena.setTokens(stream[index], ...trimWhiteSpaceTokens(arena, stream.splice(index + 1, i - index - 1)))
+                            arena.setTokenList(stream[index], trimWhiteSpaceTokens(arena, stream.splice(index + 1, i - index - 1)));
                             i = index;
                             stream.splice(index + 1, 1);
                             stack.pop();
@@ -4714,100 +4388,136 @@ export function parseAtRule(
                 }
             }
 
-            atRule[LOCEND] = stream.at(-1)?.[LOCEND] ?? atRule[LOCEND];
-            atRule[TOKENS] = stream.slice();
-            atRule[STATE] = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
-            atRule[ERRORS] = result.errors;
+            atRuleEnd = stream.at(-1) ?? atRule;
+            atRuleTokens = stream.slice();
+            atRuleState = result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid;
+            atRuleErrors = result.errors;
 
-            switch (atRule.nam) {
+            switch (nam) {
                 case "mixin":
-                    if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
-                        atRule[STATE] |= EnumAstNodeStatus.Disallowed;
-                        atRule[ERRORS].push({
+                    if (contextType != EnumToken.StyleSheetNodeType) {
+                        atRuleState |= EnumAstNodeStatus.Disallowed;
+                        atRuleErrors.push({
+                            action: "drop",
                             message: "mixin rule cannot be a nested group rule or rule style body",
-                            location: atRule[LOCSTA],
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         });
                     }
                     break;
 
                 case "contents":
-                    let parent = context as AstNode;
-                    let valid = parent == null;
-                    while (parent != null) {
-                        if (parent.typ == EnumToken.AtRuleNodeType && "mixin" == parent.nam) {
+                    let parent: AstNode = context;
+                    let valid = false;
+                    while (parent != 0) {
+                        if (
+                            arena.dataTypes[parent] == EnumToken.AtRuleNodeType &&
+                            "mixin" == arena.strings[arena.name[parent]]
+                        ) {
                             valid = true;
                             break;
                         }
 
-                        parent = parent[PARENT] as AstNode;
+                        parent = arena.parents[parent];
                     }
 
                     if (!valid) {
-                        atRule[STATE] |= EnumAstNodeStatus.Disallowed;
-                        atRule[ERRORS].push({
+                        atRuleState |= EnumAstNodeStatus.Disallowed;
+                        atRuleErrors.push({
+                            action: "drop",
                             message: "contents rule cannot be used outside mixin rule",
-                            location: atRule[LOCSTA],
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         });
                     }
                     break;
 
                 case "layer":
-                    if (context != null && context.typ != EnumToken.StyleSheetNodeType) {
-                        let parent = context as AstNode;
+                    if (contextType != EnumToken.StyleSheetNodeType) {
+                        let parent: AstNode = context;
 
-                        while (parent != null) {
-                            if (parent.typ == EnumToken.AtRuleNodeType && parent.nam == "mixin") {
-                                atRule[STATE] |= EnumAstNodeStatus.Disallowed;
-                                atRule[ERRORS].push({
+                        while (parent != 0) {
+                            if (
+                                arena.dataTypes[parent] == EnumToken.AtRuleNodeType &&
+                                arena.strings[arena.name[parent]] == "mixin"
+                            ) {
+                                atRuleState |= EnumAstNodeStatus.Disallowed;
+                                atRuleErrors.push({
+                                    action: "drop",
                                     message: "at-rule layeris not allowed inside mixin rule",
-                                    location: atRule[LOCSTA],
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                                 });
                                 break;
                             }
 
-                            parent = parent[PARENT] as AstNode;
+                            parent = arena.parents[parent];
                         }
                     }
             }
 
-            // @ts-expect-error
-            return Object.assign(atRule, {
-                typ: EnumToken.AtRuleNodeType,
-                val: renderTokens(trimWhiteSpaceTokens(stream), options),
-                ...(parseAsBlock ? { chi: [] } : {}),
-            }) as AstAtRule;
+            return createAtRuleNode(arena, atRule, EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimWhiteSpaceTokens(arena, stream), options),
+                !!parseAsBlock,
+            );
         }
     }
 }
 
 /**
- * Parse a string as an array of declaration nodes
+ * Parse a string as an array of declaration nodes.
+ * The nodes are allocated in the given arena, or in a new arena when none is provided
  * @param declaration
+ * @param arena
  *
  * Example:
  * ````ts
  *
- * const declarations = await parseDeclarations('color: red; background: blue');
- * console.log(declarations);
+ * const {arena, nodes} = parseDeclarations('color: red; background: blue');
+ * console.log(nodes.map((node) => arena.toObject(node)));
  * ```
  */
-export function parseDeclarations(declaration: string): Array<AstDeclaration | AstComment> {
+export function parseDeclarations(
+    declaration: string,
+    arena?: AstArena,
+): { arena: AstArena; nodes: Array<AstDeclaration | AstComment> } {
     const stream: string = `.x{${declaration}}`;
+    const source: SourceFile = new SourceFile(stream, [], "");
     const result = doParseSync(
         new Tokenizer({
             stream,
             offset: 0,
             position: 0,
-            source: new SourceFile(stream, [], ""),
+            source,
             currentPosition: 0,
         } as ParseInfo),
-        { setParent: false, minify: false, validation: false },
+        {
+            setParent: false,
+            minify: false,
+            validation: false,
+            arena,
+            source,
+            sourcesMap: new Map([[source.id, source]]),
+        },
     );
-    // .then((result) => {
-    return (result.ast.chi[0] as AstRule).chi.filter(
-        (t) => t.typ == EnumToken.DeclarationNodeType || t.typ == EnumToken.CommentNodeType,
-    ) as Array<AstDeclaration | AstComment>;
-    // });
+
+    const rule: AstNode = result.arena.firstChild[result.ast];
+    const nodes: Array<AstDeclaration | AstComment> = [];
+
+    for (let node: AstNode = rule == 0 ? 0 : result.arena.firstChild[rule]; node != 0; ) {
+        const next: AstNode = result.arena.nextSibling[node];
+
+        if (
+            result.arena.dataTypes[node] == EnumToken.DeclarationNodeType ||
+            result.arena.dataTypes[node] == EnumToken.CommentNodeType
+        ) {
+            result.arena.detach(node);
+            nodes.push(node);
+        }
+
+        node = next;
+    }
+
+    return { arena: result.arena, nodes };
 }
 
 /**
@@ -4825,14 +4535,16 @@ export function parseDeclarations(declaration: string): Array<AstDeclaration | A
  *
  * import {parseString} from '@tbela99/css-parser';
  *
- * let tokens = parseString('body { color: red; }');
- * console.log(tokens);
+ * const arena = new AstArena();
+ * let tokens = parseString(arena, 'body { color: red; }');
+ * console.log(tokens.map((token) => arena.toObject(token)));
  *
- * tokens = parseString('#c322c980');
- * console.log(tokens);
+ * tokens = parseString(arena, '#c322c980');
+ * console.log(tokens.map((token) => arena.toObject(token)));
  * ```
  */
 export function parseString(
+    arena: AstArena,
     src: string,
     options: { src?: string; parseColor?: boolean } | null = { parseColor: true },
     errors?: ErrorDescription[],
@@ -4848,45 +4560,29 @@ export function parseString(
         currentPosition: 0,
     } as ParseInfo);
     const mapped: Token[] = [];
-    let token: Token;
 
-    while (!tokenizer.done()) {
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
-        if (tokenizer.unit != null) {
-            token = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                unit: tokenizer.unit,
-            } as DimensionToken;
-        } else if (tokenizer.val === null) {
-            token = {
-                typ: tokenizer.typ as EnumToken,
-            } as Token;
-        } else if (tokenizer.kin != null) {
-            token = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-                kin: tokenizer.kin,
-            } as ColorToken;
-        } else {
-            token = {
-                typ: tokenizer.typ as EnumToken,
-                val: tokenizer.val,
-            } as Token;
-        }
-
-        token[LOCSRCID] = tokenizer!.source!.id;
-        token[LOCEND] = tokenizer.end as number;
-        token[LOCSTA] = tokenizer.sta as number;
-
-        mapped.push(token);
+        // tokens parsed from a string have no location
+        mapped.push(allocateToken(arena, tokenizer, -1));
     }
 
-    const result: Token[] = parseTokens(mapped, options, errors);
+    const result: Token[] = parseTokens(arena, mapped, options, errors);
 
-    // remove EOF token
-    result.splice(result.length - (result[result.length - 2]?.typ === EnumToken.WhitespaceTokenType ? 2 : 1), 2);
+    // remove the EOF token and the whitespace before it: their ids are recycled
+    const removed: Token[] = result.splice(
+        result.length - (arena.dataTypes[result[result.length - 2]] === EnumToken.WhitespaceTokenType ? 2 : 1),
+        2,
+    );
+
+    for (let i = 0; i < removed.length; i++) {
+        if (arena.parents[removed[i]] == 0 && arena.firstToken[removed[i]] == 0 && arena.firstChild[removed[i]] == 0) {
+            arena.recycle(removed[i]);
+        }
+    }
+
     return result;
 }
 
@@ -4904,16 +4600,17 @@ export function parseString(
  *
  * import {parseString, parseTokens} from '@tbela99/css-parser';
  *
- * let tokens = parseString('body { color: red; }');
- * console.log(parseTokens(tokens));
+ * let tokens = parseString(arena, 'body { color: red; }');
+ * console.log(parseTokens(arena, tokens));
  *
- *  tokens = parseString('#c322c980');
- * console.log(parseTokens(tokens));
+ *  tokens = parseString(arena, '#c322c980');
+ * console.log(parseTokens(arena, tokens));
  * ```
  *
  * @private
  */
 export function parseTokens(
+    arena: AstArena,
     tokens: Token[],
     options?: { parseColor?: boolean; source?: SourceFile } | null,
     errors?: ErrorDescription[],
@@ -4923,49 +4620,58 @@ export function parseTokens(
     let i: number = 0;
     let index: number;
     let t: Token;
+    let typ: EnumToken;
 
     options ??= { parseColor: true };
 
     for (; i < tokens.length; i++) {
         t = tokens[i];
+        typ = arena.dataTypes[t];
 
-        if (t.typ === EnumToken.FunctionTokenDefType) {
+        if (typ === EnumToken.FunctionTokenDefType) {
             if (
-                tokens[i - 1]?.typ === EnumToken.ColonTokenType ||
-                tokens[i - 1]?.typ === EnumToken.DoubleColonTokenType
+                i > 0 &&
+                (arena.dataTypes[tokens[i - 1]] === EnumToken.ColonTokenType ||
+                    arena.dataTypes[tokens[i - 1]] === EnumToken.DoubleColonTokenType)
             ) {
-                t = Object.assign(tokens[i - 1], {
-                    typ: EnumToken.PseudoClassFunctionTokenDefType,
-                    val:
-                        (tokens[i - 1].typ === EnumToken.ColonTokenType ? ":" : "::") +
-                        (tokens[i] as FunctionToken).val,
-                });
-                t[LOCEND] = tokens[i][LOCEND];
+                // merge the colon and the function name into a pseudo class function
+                const previous: Token = tokens[i - 1];
+
+                // inlined: arena.setStr(previous, (arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") + arena.strings[arena.stringValue[t]])
+                arena.stringValue[previous] = arena.internString(((arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") +
+                        arena.strings[arena.stringValue[t]]));
+                arena.dataTypes[previous] = EnumToken.PseudoClassFunctionTokenDefType;
+                // inlined: arena.setSpanEnd(previous, arena.getSpanEnd(t))
+                arena.setSpan(previous, arena.getSourceId(previous), arena.getSpanStart(previous), arena.getSpanEnd(t));
                 tokens.splice(i--, 1);
+                t = previous;
+                typ = EnumToken.PseudoClassFunctionTokenDefType;
             }
         }
 
         if (
-            t.typ === EnumToken.AttrStartTokenType ||
-            t.typ === EnumToken.StartParensTokenType ||
-            tokensfuncDefMap.has(t.typ)
+            typ === EnumToken.AttrStartTokenType ||
+            typ === EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(typ)
         ) {
             stack.push(t);
             continue;
         }
 
-        if (t.typ === EnumToken.EndParensTokenType) {
+        if (typ === EnumToken.EndParensTokenType) {
             if (
                 stack.length === 0 ||
-                (stack.at(-1)?.typ !== EnumToken.StartParensTokenType && !tokensfuncDefMap.has(stack.at(-1)?.typ))
+                (arena.dataTypes[stack[stack.length - 1]] !== EnumToken.StartParensTokenType &&
+                    !tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]]))
             ) {
                 // unbalanced parens
-                const node: Token = stack.at(-1) as Token;
+                const node: Token = stack[stack.length - 1];
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ')'`,
                     node,
-                    location: options.source!.getSourceLocation(node[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
 
                 // return [];
@@ -4973,58 +4679,59 @@ export function parseTokens(
             }
 
             tokens.splice(i, 1);
-            index = tokens.indexOf(stack.at(-1)!);
+            index = tokens.indexOf(stack[stack.length - 1]);
 
-            Object.assign(tokens[index], {
-                typ:
-                    tokens[index].typ === EnumToken.StartParensTokenType
-                        ? EnumToken.ParensTokenType
-                        : (tokensfuncDefMap.get(tokens[index].typ) as EnumToken),
-                chi: trimArray(tokens.splice(index + 1, i - index - 1)),
-            });
+            const func: Token = tokens[index];
+
+            arena.dataTypes[func] =
+                arena.dataTypes[func] === EnumToken.StartParensTokenType
+                    ? EnumToken.ParensTokenType
+                    : (tokensfuncDefMap.get(arena.dataTypes[func]) as EnumToken);
+            arena.setTokenList(func, trimArray(arena, tokens.splice(index + 1, i - index - 1)));
+            // inlined: arena.setSpanEnd(func, arena.getSpanEnd(t))
+            arena.setSpan(func, arena.getSourceId(func), arena.getSpanStart(func), arena.getSpanEnd(t));
             i = index;
 
-            if (tokens[index].typ === EnumToken.ColorTokenType && options?.parseColor) {
-                parseColor(tokens[index]);
+            if (arena.dataTypes[func] === EnumToken.ColorTokenType && options?.parseColor) {
+                parseColor(arena, func);
             }
 
             stack.pop();
             continue;
         }
 
-        if (t.typ === EnumToken.AttrEndTokenType) {
-            if (stack.at(-1)?.typ !== EnumToken.AttrStartTokenType) {
+        if (typ === EnumToken.AttrEndTokenType) {
+            if (stack.length === 0 || arena.dataTypes[stack[stack.length - 1]] !== EnumToken.AttrStartTokenType) {
                 // unbalanced
-                const node: Token = stack.at(-1) as Token;
+                const node: Token = stack[stack.length - 1];
 
                 errors?.push?.({
                     action: "drop",
                     message: `Unbalanced token ']'`,
                     node,
-                    location: options.source!.getSourceLocation(node[LOCSTA]!),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
                 continue;
             }
 
-            index = tokens.indexOf(stack.at(-1)!);
-            const attr = stack.at(-1) as AttrStartToken;
+            const attr: Token = stack[stack.length - 1];
 
-            attr[LOCEND] = t[LOCEND];
+            index = tokens.indexOf(attr);
+            // inlined: arena.setSpanEnd(attr, arena.getSpanEnd(t))
+            arena.setSpan(attr, arena.getSourceId(attr), arena.getSpanStart(attr), arena.getSpanEnd(t));
 
             tokens.splice(i, 1);
-            Object.assign(attr, {
-                typ: EnumToken.AttrTokenType,
-                chi: tokens.splice(index + 1, i - index - 1),
-            });
+            arena.dataTypes[attr] = EnumToken.AttrTokenType;
+            arena.setTokenList(attr, tokens.splice(index + 1, i - index - 1));
 
-            tokens[index] = attr;
             i = index;
             stack.pop();
             continue;
         }
 
-        if (t.typ == EnumToken.IdenTokenType) {
-            if ((t as IdentToken).val == "from" && i > 0) {
+        if (typ == EnumToken.IdenTokenType) {
+            if (arena.strings[arena.stringValue[t]] == "from" && i > 0) {
                 const left: Token[] = [];
                 const right: Token[] = [];
 
@@ -5035,16 +4742,16 @@ export function parseTokens(
 
                 while (k > 0) {
                     if (
-                        tokens[k - 1].typ == EnumToken.CommentTokenType ||
-                        tokens[k - 1].typ == EnumToken.WhitespaceTokenType
+                        arena.dataTypes[tokens[k - 1]] == EnumToken.CommentTokenType ||
+                        arena.dataTypes[tokens[k - 1]] == EnumToken.WhitespaceTokenType
                     ) {
                         left.push(tokens[--k]);
                         continue;
                     }
 
                     if (
-                        tokens[k - 1].typ == EnumToken.IdenTokenType ||
-                        tokens[k - 1].typ == EnumToken.DashedIdenTokenType
+                        arena.dataTypes[tokens[k - 1]] == EnumToken.IdenTokenType ||
+                        arena.dataTypes[tokens[k - 1]] == EnumToken.DashedIdenTokenType
                     ) {
                         foundLeft++;
                         left.push(tokens[--k]);
@@ -5055,12 +4762,18 @@ export function parseTokens(
                 }
 
                 while (++l < tokens.length) {
-                    if (tokens[l].typ == EnumToken.CommentTokenType || tokens[l].typ == EnumToken.WhitespaceTokenType) {
+                    if (
+                        arena.dataTypes[tokens[l]] == EnumToken.CommentTokenType ||
+                        arena.dataTypes[tokens[l]] == EnumToken.WhitespaceTokenType
+                    ) {
                         right.push(tokens[l]);
                         continue;
                     }
 
-                    if (tokens[l].typ == EnumToken.IdenTokenType || tokens[l].typ == EnumToken.StringTokenType) {
+                    if (
+                        arena.dataTypes[tokens[l]] == EnumToken.IdenTokenType ||
+                        arena.dataTypes[tokens[l]] == EnumToken.StringTokenType
+                    ) {
                         foundRight++;
                         right.push(tokens[l]);
                         continue;
@@ -5070,36 +4783,48 @@ export function parseTokens(
                 }
 
                 if (foundLeft > 0 && foundRight == 1) {
-                    while (left?.[0].typ == EnumToken.WhitespaceTokenType) {
+                    while (left.length > 0 && arena.dataTypes[left[0]] == EnumToken.WhitespaceTokenType) {
                         left.shift();
                     }
 
-                    while (left.at(-1)?.typ == EnumToken.WhitespaceTokenType) {
+                    while (left.length > 0 && arena.dataTypes[left[left.length - 1]] == EnumToken.WhitespaceTokenType) {
                         left.pop();
                     }
 
-                    tokens.splice(k, l - k + 1, {
-                        typ: EnumToken.ComposesSelectorNodeType,
-                        l: left,
-                        r: right.reduce((a: Token | null, b: Token) => {
-                            return a == null
-                                ? b
-                                : b.typ == EnumToken.IdenTokenType || b.typ == EnumToken.StringTokenType
-                                  ? b
-                                  : a;
-                        }, null),
-                    });
+                    // composes selector: l = <ident>+, r = <ident> | <string> | null
+                    const composes: Token = arena.createToken(EnumToken.ComposesSelectorNodeType);
+                    let from: Token = 0;
+
+                    for (const b of right) {
+                        if (
+                            from == 0 ||
+                            arena.dataTypes[b] == EnumToken.IdenTokenType ||
+                            arena.dataTypes[b] == EnumToken.StringTokenType
+                        ) {
+                            from = b;
+                        }
+                    }
+
+                    // inlined: arena.setField(composes, TokenField.L, ...left)
+                    arena.setTokenList(arena.fieldList(composes, TokenField.L), left);
+
+                    if (from != 0) {
+                        // inlined: arena.setField(composes, TokenField.R, from)
+                        arena.setTokenList(arena.fieldList(composes, TokenField.R), [from]);
+                    }
+
+                    tokens.splice(k, l - k + 1, composes);
 
                     i = k;
                     continue;
                 }
-            } else if (options?.parseColor && isColor(t)) {
-                parseColor(t);
+            } else if (options?.parseColor && isColor(arena, t)) {
+                parseColor(arena, t);
             }
         }
 
         if (
-            t.typ == EnumToken.WhitespaceTokenType &&
+            typ == EnumToken.WhitespaceTokenType &&
             (i == 0 ||
                 i + 1 == tokens.length ||
                 [
@@ -5107,37 +4832,38 @@ export function parseTokens(
                     EnumToken.GteTokenType,
                     EnumToken.LteTokenType,
                     EnumToken.ColumnCombinatorTokenType,
-                ].includes(tokens[i + 1].typ) ||
-                (i > 0 && trimWhiteSpace.includes(tokens[i - 1].typ)))
+                ].includes(arena.dataTypes[tokens[i + 1]]) ||
+                (i > 0 && trimWhiteSpace.includes(arena.dataTypes[tokens[i - 1]])))
         ) {
             tokens.splice(i--, 1);
             continue;
         }
 
-        if (t.typ == EnumToken.ColonTokenType) {
-            const typ: EnumToken = tokens[i + 1]?.typ;
+        if (typ == EnumToken.ColonTokenType) {
+            const next: EnumToken | undefined = i + 1 < tokens.length ? arena.dataTypes[tokens[i + 1]] : undefined;
 
-            if (typ != null) {
-                if (typ == EnumToken.FunctionTokenType) {
-                    tokens[i + 1].typ = EnumToken.PseudoClassFuncTokenType;
-                } else if (typ == EnumToken.IdenTokenType) {
-                    (tokens[i + 1] as PseudoClassToken).val = ":" + (tokens[i + 1] as PseudoClassToken).val;
-                    tokens[i + 1].typ = EnumToken.PseudoClassTokenType;
+            if (next != null) {
+                if (next == EnumToken.FunctionTokenType) {
+                    arena.dataTypes[tokens[i + 1]] = EnumToken.PseudoClassFuncTokenType;
+                } else if (next == EnumToken.IdenTokenType) {
+                    // inlined: arena.setStr(tokens[i + 1], ":" + arena.strings[arena.stringValue[tokens[i + 1]]])
+                    arena.stringValue[tokens[i + 1]] = arena.internString((":" + arena.strings[arena.stringValue[tokens[i + 1]]]));
+                    arena.dataTypes[tokens[i + 1]] = EnumToken.PseudoClassTokenType;
                 }
 
-                if (typ == EnumToken.FunctionTokenType || typ == EnumToken.IdenTokenType) {
+                if (next == EnumToken.FunctionTokenType || next == EnumToken.IdenTokenType) {
                     tokens.splice(i, 1);
                     i--;
                 }
             }
         }
 
-        if (t.typ === EnumToken.CommaTokenType) {
-            if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+        if (typ === EnumToken.CommaTokenType) {
+            if (i + 1 < tokens.length && arena.dataTypes[tokens[i + 1]] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i + 1, 1);
             }
 
-            if (tokens[i - 1]?.typ === EnumToken.WhitespaceTokenType) {
+            if (i > 0 && arena.dataTypes[tokens[i - 1]] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i - 1, 1);
                 i--;
             }
@@ -5145,13 +4871,14 @@ export function parseTokens(
     }
 
     if (stack.length > 0) {
-        const node: Token = stack.at(-1) as Token;
+        const node: Token = stack[stack.length - 1];
 
         errors?.push?.({
             action: "drop",
-            message: `Unbalanced token. Expecting ${node.typ === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
+            message: `Unbalanced token. Expecting ${arena.dataTypes[node] === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
             node,
-            location: options.source!.getSourceLocation(node[LOCSTA]!),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(node))],
         });
     }
 

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { ColorType, EnumToken } from '../../ast/types.js';
@@ -26,7 +26,7 @@ import { parseRelativeColorComponents } from './relative-color.js';
 import { isIdentColor } from '../syntax.js';
 import { color2cmykToken, lch2cmykToken, lab2cmykToken, oklch2cmykToken, oklab2cmyk, hwb2cmykToken, hsl2cmykToken, rgb2cmykToken } from './cmyk.js';
 import { a98rgb2srgbvalues, srgb2a98values } from './a98rgb.js';
-import { LOCSRCID, LOCSTA, LOCEND, colorFuncColorSpace } from '../constants.js';
+import { colorFuncColorSpace } from '../constants.js';
 import { trimArray } from '../../validation/match.js';
 import { alpha } from './alpha.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
@@ -38,415 +38,417 @@ import { equalsIgnoreCase } from '../../parser/utils/text.js';
  *
  * ```ts
  *
- *     const token = {typ: EnumToken.ColorTokenType, kin: ColorType.HEX, val: '#F00'}
- *     const result = convertColor(token, ColorType.LCH);
+ *     const token = arena.createColor('#F00', ColorType.HEX)
+ *     const result = convertColor(arena, token, ColorType.LCH);
  *
  * ```
  */
-function convertColor(token, to) {
-    if (token.kin == ColorType.SYS ||
-        token.kin == ColorType.DPSYS ||
-        (isIdentColor(token) && "currentcolor" == token.val)) {
+function convertColor(arena, token, to) {
+    if (arena.colorType[token] == ColorType.SYS ||
+        arena.colorType[token] == ColorType.DPSYS ||
+        (isIdentColor(arena, token) && "currentcolor" == arena.strings[arena.stringValue[token]])) {
         return token;
     }
-    if (token.kin == ColorType.ALPHA) {
-        const args = token.chi.filter((token) => token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);
-        if (args.at(-2)?.typ === EnumToken.LiteralTokenType && "/" === args.at(-2)?.val) {
+    if (arena.colorType[token] == ColorType.ALPHA) {
+        const args = arena.tokens(token).filter((token) => arena.dataTypes[token] !== EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== EnumToken.CommentTokenType);
+        if (args.length > 1 &&
+            arena.dataTypes[args[args.length - 2]] === EnumToken.LiteralTokenType &&
+            "/" === arena.strings[arena.stringValue[args[args.length - 2]]]) {
             args.splice(args.length - 2, 1);
         }
-        let values = trimArray(args.slice(1));
-        token = alpha(values[0], values[1]);
-        if (token == null) {
+        let values = trimArray(arena, args.slice(1));
+        const result = alpha(arena, values[0], values[1]);
+        if (result == null) {
             return null;
         }
+        token = result;
     }
-    if (token.kin == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
-        const children = token.chi.reduce((acc, t) => {
-            if (t.typ === EnumToken.CommaTokenType) {
+    if (arena.colorType[token] == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
+        const children = arena.tokens(token).reduce((acc, t) => {
+            if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
                 acc.push([]);
             }
-            else if (t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType) {
+            else if (arena.dataTypes[t] !== EnumToken.WhitespaceTokenType && arena.dataTypes[t] !== EnumToken.CommentTokenType) {
                 acc[acc.length - 1].push(t);
             }
             return acc;
         }, [[]]);
-        token = colorMix(...children.flat(2));
-        if (token == null) {
+        const result = colorMix(arena, ...children.flat(2));
+        if (result == null) {
             return null;
         }
+        token = result;
     }
-    if (token.cal == "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, token.val))) {
-        const chi = getColorComponents(token);
-        const offset = token.val == "color" ? 2 : 1;
+    if (arena.strings[arena.unit[token]] == "rel" &&
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))) {
+        const chi = getColorComponents(arena, token);
+        const offset = arena.strings[arena.stringValue[token]] == "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
-            const components = parseRelativeColorComponents(equalsIgnoreCase(token.val, "color")
-                ? chi[offset].val
-                : token.val, color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+            const components = parseRelativeColorComponents(arena, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "color")
+                ? arena.strings[arena.stringValue[chi[offset]]]
+                : arena.strings[arena.stringValue[token]], color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
             if (components == null) {
                 return null;
             }
-            let { cal, ...tk } = {
-                ...token,
-                chi: token.val == "color" ? [chi[offset]] : [],
-                kin: ColorType[token.val.toUpperCase().replaceAll("-", "_")],
-            };
+            const name = arena.strings[arena.stringValue[token]];
+            const tk = arena.createColor(name, ColorType[name.toUpperCase().replaceAll("-", "_")], name == "color" ? [arena.clone(chi[offset])] : []);
+            const seen = new Set();
             for (const t of Object.values(components)) {
-                tk.chi.push(t);
+                // a component token may be used more than once: rgb(from #ff0 r g r)
+                // inlined: arena.take(t)
+                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : (arena.parents[t] == 0 ? t : arena.clone(t, true)));
+                seen.add(t);
             }
-            tk[LOCSRCID] = token[LOCSRCID];
-            tk[LOCSTA] = token[LOCSTA];
-            tk[LOCEND] = token[LOCEND];
+            arena.copyLocation(tk, token);
             token = tk;
         }
     }
-    if (token.kin == to) {
-        if (token.kin == ColorType.HEX || token.kin == ColorType.LIT) {
-            token.val = reduceHexValue(token.val);
-            token.kin = token.val[0] == "#" ? ColorType.HEX : ColorType.LIT;
+    if (arena.colorType[token] == to) {
+        if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+            const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
+            // inlined: arena.setStr(token, val)
+            arena.stringValue[token] = arena.internString(val);
+            arena.colorType[token] = val[0] == "#" ? ColorType.HEX : ColorType.LIT;
         }
         return token;
     }
-    if (token.kin == ColorType.COLOR) {
-        const colorSpace = token.chi.find((t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ));
-        if (colorSpace.val == ColorType[to].toLowerCase().replaceAll("_", "-")) {
-            for (const chi of token.chi) {
-                if (chi.typ == EnumToken.NumberTokenType && typeof chi.val == "number") {
-                    chi.val = getNumber(chi);
+    if (arena.colorType[token] == ColorType.COLOR) {
+        const colorSpace = arena.findToken(token, (arena, t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
+        if (colorSpace != null &&
+            arena.strings[arena.stringValue[colorSpace]] == ColorType[to].toLowerCase().replaceAll("_", "-")) {
+            for (const chi of arena.tokens(token)) {
+                if (arena.dataTypes[chi] == EnumToken.NumberTokenType && !arena.hasFraction(chi)) {
+                    arena.numericValue[chi] = getNumber(arena, chi);
                 }
             }
             return token;
         }
     }
     if (to == ColorType.HSL) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2HslToken(token);
+                return rgb2HslToken(arena, token);
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2HslToken(token);
+                return hex2HslToken(arena, token);
             case ColorType.HWB:
-                return hwb2HslToken(token);
+                return hwb2HslToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2HslToken(token);
+                return cmyk2HslToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2HslToken(token);
+                return oklab2HslToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2HslToken(token);
+                return oklch2HslToken(arena, token);
             case ColorType.LAB:
-                return lab2HslToken(token);
+                return lab2HslToken(arena, token);
             case ColorType.LCH:
-                return lch2HslToken(token);
+                return lch2HslToken(arena, token);
             case ColorType.COLOR:
-                return color2HslToken(token);
+                return color2HslToken(arena, token);
         }
     }
     else if (to == ColorType.HWB) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2hwbToken(token);
+                return rgb2hwbToken(arena, token);
             case ColorType.HEX:
             case ColorType.LIT:
-                return rgb2hwbToken(token);
+                return rgb2hwbToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2hwbToken(token);
+                return hsl2hwbToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2hwbToken(token);
+                return oklab2hwbToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2hwbToken(token);
+                return oklch2hwbToken(arena, token);
             case ColorType.LAB:
-                return lab2hwbToken(token);
+                return lab2hwbToken(arena, token);
             case ColorType.LCH:
-                return lch2hwbToken(token);
+                return lch2hwbToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2hwbToken(token);
+                return cmyk2hwbToken(arena, token);
             case ColorType.COLOR:
-                return color2hwbToken(token);
+                return color2hwbToken(arena, token);
         }
     }
     else if (to == ColorType.DEVICE_CMYK) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2cmykToken(token);
+                return rgb2cmykToken(arena, token);
             case ColorType.HEX:
             case ColorType.LIT:
-                return rgb2cmykToken(token);
+                return rgb2cmykToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2cmykToken(token);
+                return hsl2cmykToken(arena, token);
             case ColorType.HWB:
-                return hwb2cmykToken(token);
+                return hwb2cmykToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2cmyk(token);
+                return oklab2cmyk(arena, token);
             case ColorType.OKLCH:
-                return oklch2cmykToken(token);
+                return oklch2cmykToken(arena, token);
             case ColorType.LAB:
-                return lab2cmykToken(token);
+                return lab2cmykToken(arena, token);
             case ColorType.LCH:
-                return lch2cmykToken(token);
+                return lch2cmykToken(arena, token);
             case ColorType.COLOR:
-                return color2cmykToken(token);
+                return color2cmykToken(arena, token);
         }
     }
     else if (to == ColorType.HEX || to == ColorType.LIT) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT: {
-                const val = reduceHexValue(token.val);
-                return {
-                    typ: EnumToken.ColorTokenType,
-                    val: val,
-                    kin: val[0] == "#" ? ColorType.HEX : ColorType.LIT,
-                };
+                const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
+                return arena.createColor(val, val[0] == "#" ? ColorType.HEX : ColorType.LIT);
             }
             case ColorType.HSL:
-                return hsl2HexToken(token);
+                return hsl2HexToken(arena, token);
             case ColorType.HWB:
-                return hwb2HexToken(token);
+                return hwb2HexToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2HexToken(token);
+                return cmyk2HexToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2HexToken(token);
+                return oklab2HexToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2HexToken(token);
+                return oklch2HexToken(arena, token);
             case ColorType.LAB:
-                return lab2HexToken(token);
+                return lab2HexToken(arena, token);
             case ColorType.LCH:
-                return lch2HexToken(token);
+                return lch2HexToken(arena, token);
             case ColorType.COLOR:
-                return color2HexToken(token);
+                return color2HexToken(arena, token);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2HexToken(token);
+                return rgb2HexToken(arena, token);
         }
     }
     else if (to == ColorType.RGB) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2RgbToken(token);
+                return hex2RgbToken(arena, token);
             case ColorType.HSL:
-                return hsl2RgbToken(token);
+                return hsl2RgbToken(arena, token);
             case ColorType.HWB:
-                return hwb2RgbToken(token);
+                return hwb2RgbToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2RgbToken(token);
+                return cmyk2RgbToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2RgbToken(token);
+                return oklab2RgbToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2RgbToken(token);
+                return oklch2RgbToken(arena, token);
             case ColorType.LAB:
-                return lab2RgbToken(token);
+                return lab2RgbToken(arena, token);
             case ColorType.LCH:
-                return lch2RgbToken(token);
+                return lch2RgbToken(arena, token);
             case ColorType.COLOR:
-                return color2RgbToken(token);
+                return color2RgbToken(arena, token);
         }
     }
     else if (to == ColorType.LAB) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2labToken(token);
+                return hex2labToken(arena, token);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2labToken(token);
+                return rgb2labToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2labToken(token);
+                return hsl2labToken(arena, token);
             case ColorType.HWB:
-                return hwb2labToken(token);
+                return hwb2labToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2labToken(token);
+                return cmyk2labToken(arena, token);
             case ColorType.LCH:
-                return lch2labToken(token);
+                return lch2labToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2labToken(token);
+                return oklab2labToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2labToken(token);
+                return oklch2labToken(arena, token);
             case ColorType.COLOR:
-                return color2labToken(token);
+                return color2labToken(arena, token);
         }
     }
     else if (to == ColorType.LCH) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2lchToken(token);
+                return hex2lchToken(arena, token);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2lchToken(token);
+                return rgb2lchToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2lchToken(token);
+                return hsl2lchToken(arena, token);
             case ColorType.HWB:
-                return hwb2lchToken(token);
+                return hwb2lchToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2lchToken(token);
+                return cmyk2lchToken(arena, token);
             case ColorType.LAB:
-                return lab2lchToken(token);
+                return lab2lchToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2lchToken(token);
+                return oklab2lchToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2lchToken(token);
+                return oklch2lchToken(arena, token);
             case ColorType.COLOR:
-                return color2lchToken(token);
+                return color2lchToken(arena, token);
         }
     }
     else if (to == ColorType.OKLAB) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2oklabToken(token);
+                return hex2oklabToken(arena, token);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2oklabToken(token);
+                return rgb2oklabToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2oklabToken(token);
+                return hsl2oklabToken(arena, token);
             case ColorType.HWB:
-                return hwb2oklabToken(token);
+                return hwb2oklabToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2oklabToken(token);
+                return cmyk2oklabToken(arena, token);
             case ColorType.LAB:
-                return lab2oklabToken(token);
+                return lab2oklabToken(arena, token);
             case ColorType.LCH:
-                return lch2oklabToken(token);
+                return lch2oklabToken(arena, token);
             case ColorType.OKLCH:
-                return oklch2oklabToken(token);
+                return oklch2oklabToken(arena, token);
             case ColorType.COLOR:
-                return color2oklabToken(token);
+                return color2oklabToken(arena, token);
         }
     }
     else if (to == ColorType.OKLCH) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2oklchToken(token);
+                return hex2oklchToken(arena, token);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2oklchToken(token);
+                return rgb2oklchToken(arena, token);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2oklchToken(token);
+                return hsl2oklchToken(arena, token);
             case ColorType.HWB:
-                return hwb2oklchToken(token);
+                return hwb2oklchToken(arena, token);
             case ColorType.DEVICE_CMYK:
-                return cmyk2oklchToken(token);
+                return cmyk2oklchToken(arena, token);
             case ColorType.LAB:
-                return lab2oklchToken(token);
+                return lab2oklchToken(arena, token);
             case ColorType.OKLAB:
-                return oklab2oklchToken(token);
+                return oklab2oklchToken(arena, token);
             case ColorType.LCH:
-                return lch2oklchToken(token);
+                return lch2oklchToken(arena, token);
             case ColorType.COLOR:
-                return color2oklchToken(token);
+                return color2oklchToken(arena, token);
         }
     }
     else if (colorFuncColorSpace.includes(ColorType[to].toLowerCase().replaceAll("_", "-").toLowerCase().replaceAll("_", "-"))) {
-        switch (token.kin) {
+        switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
-                return hex2colorToken(token, to);
+                return hex2colorToken(arena, token, to);
             case ColorType.RGB:
             case ColorType.RGBA:
-                return rgb2colorToken(token, to);
+                return rgb2colorToken(arena, token, to);
             case ColorType.HSL:
             case ColorType.HSLA:
-                return hsl2colorToken(token, to);
+                return hsl2colorToken(arena, token, to);
             case ColorType.HWB:
-                return hwb2colorToken(token, to);
+                return hwb2colorToken(arena, token, to);
             case ColorType.DEVICE_CMYK:
-                return cmyk2colorToken(token, to);
+                return cmyk2colorToken(arena, token, to);
             case ColorType.LAB:
-                return lab2colorToken(token, to);
+                return lab2colorToken(arena, token, to);
             case ColorType.OKLAB:
-                return oklab2colorToken(token, to);
+                return oklab2colorToken(arena, token, to);
             case ColorType.LCH:
-                return lch2colorToken(token, to);
+                return lch2colorToken(arena, token, to);
             case ColorType.OKLCH:
-                return oklch2colorToken(token, to);
+                return oklch2colorToken(arena, token, to);
             case ColorType.COLOR:
-                return color2colorToken(token, to);
+                return color2colorToken(arena, token, to);
         }
     }
     return null;
 }
-function hex2colorToken(token, to) {
-    const values = hex2srgbvalues(token);
+function hex2colorToken(arena, token, to) {
+    const values = hex2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function rgb2colorToken(token, to) {
-    const values = rgb2srgb(token);
+function rgb2colorToken(arena, token, to) {
+    const values = rgb2srgb(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function hsl2colorToken(token, to) {
-    const values = hsl2srgb(token);
+function hsl2colorToken(arena, token, to) {
+    const values = hsl2srgb(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function hwb2colorToken(token, to) {
-    const values = hwb2srgbvalues(token);
+function hwb2colorToken(arena, token, to) {
+    const values = hwb2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function cmyk2colorToken(token, to) {
-    const values = cmyk2srgbvalues(token);
+function cmyk2colorToken(arena, token, to) {
+    const values = cmyk2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function lab2colorToken(token, to) {
-    const values = lab2srgbvalues(token);
+function lab2colorToken(arena, token, to) {
+    const values = lab2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function oklab2colorToken(token, to) {
-    const values = oklab2srgbvalues(token);
+function oklab2colorToken(arena, token, to) {
+    const values = oklab2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function lch2colorToken(token, to) {
-    const values = lch2srgbvalues(token);
+function lch2colorToken(arena, token, to) {
+    const values = lch2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function oklch2colorToken(token, to) {
-    const values = oklch2srgbvalues(token);
+function oklch2colorToken(arena, token, to) {
+    const values = oklch2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
-function color2colorToken(token, to) {
-    const values = color2srgbvalues(token);
+function color2colorToken(arena, token, to) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) {
         return null;
     }
-    return values2colortoken(values, to);
+    return values2colortoken(arena, values, to);
 }
 function srgb2srgbcolorspace(val, to) {
     switch (to) {
@@ -475,14 +477,14 @@ function srgb2srgbcolorspace(val, to) {
 function minmax(value, min, max) {
     return value < min ? min : value > max ? max : value;
 }
-function color2srgbvalues(token) {
-    const components = getColorComponents(token);
+function color2srgbvalues(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) {
         return null;
     }
     const colorSpace = components.shift();
-    let values = components.map((val) => getNumber(val));
-    switch (colorSpace.val) {
+    let values = components.map((val) => getNumber(arena, val));
+    switch (arena.strings[arena.stringValue[colorSpace]]) {
         case "display-p3":
             values = p32srgbvalues(values[0], values[1], values[2], values[3]);
             break;
@@ -514,82 +516,71 @@ function color2srgbvalues(token) {
     }
     return values;
 }
-function values2colortoken(values, to) {
+function values2colortoken(arena, values, to) {
     // @ts-expect-error
     values = srgb2srgbcolorspace(values, to);
     if (values == null) {
         return null;
     }
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll("_", "-");
     return colorFuncColorSpace.includes(colorSpace)
-        ? {
-            typ: EnumToken.ColorTokenType,
-            val: "color",
-            chi: [{ typ: EnumToken.IdenTokenType, val: colorSpace }].concat(chi),
-            kin: ColorType.COLOR,
-        }
-        : {
-            typ: EnumToken.ColorTokenType,
-            val: colorSpace,
-            chi,
-            kin: to,
-        };
+        ? arena.createColor("color", ColorType.COLOR, [arena.createToken(EnumToken.IdenTokenType, colorSpace)].concat(chi))
+        : arena.createColor(colorSpace, to, chi);
 }
-function getNumber(token) {
-    if (token.typ == EnumToken.IdenTokenType && token.val == "none") {
+/**
+ * numeric value of a number, percentage, fraction or `none` token. percentages are divided by 100
+ * @param arena
+ * @param token
+ */
+function getNumber(arena, token) {
+    const typ = arena.dataTypes[token];
+    if (typ == EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] == "none") {
         return 0;
     }
     let val;
-    // @ts-ignore
-    if (typeof token.val != "number" && token.val?.typ == EnumToken.FractionTokenType) {
-        val = (token.val.l.val /
-            // @ts-expect-error
-            token.val.r.val);
+    const fraction = arena.getFraction(token);
+    if (fraction != 0) {
+        val = arena.numericValue[arena.firstChild[fraction]] / arena.numericValue[arena.lastChild[fraction]];
     }
     else {
-        val = token.val;
+        val = arena.numericValue[token];
     }
-    // @ts-ignore
-    return token.typ == EnumToken.PercentageTokenType ? val / 100 : val;
+    return typ == EnumToken.PercentageTokenType ? val / 100 : val;
 }
 /**
  * convert angle to turn
+ * @param arena
  * @param token
  */
-function getAngle(token) {
-    if (token.typ == EnumToken.IdenTokenType) {
-        if (token.val == "none") {
+function getAngle(arena, token) {
+    const typ = arena.dataTypes[token];
+    if (typ == EnumToken.IdenTokenType) {
+        if (arena.strings[arena.stringValue[token]] == "none") {
             return 0;
         }
     }
-    if (token.typ == EnumToken.AngleTokenType) {
-        switch (token.unit) {
+    const val = getNumber(arena, token);
+    if (typ == EnumToken.AngleTokenType) {
+        switch (arena.strings[arena.unit[token]]) {
             case "deg":
-                // @ts-ignore
-                return token.val / 360;
+                return val / 360;
             case "rad":
-                // @ts-ignore
-                return token.val / (2 * Math.PI);
+                return val / (2 * Math.PI);
             case "grad":
-                // @ts-ignore
-                return token.val / 400;
+                return val / 400;
             case "turn":
-                // @ts-ignore
-                return +token.val;
+                return val;
         }
     }
-    return token.val / 360;
+    return val / 360;
 }
 
 export { cmyk2colorToken, color2colorToken, color2srgbvalues, convertColor, getAngle, getNumber, hex2colorToken, hsl2colorToken, hwb2colorToken, lab2colorToken, lch2colorToken, minmax, oklab2colorToken, oklch2colorToken, rgb2colorToken };

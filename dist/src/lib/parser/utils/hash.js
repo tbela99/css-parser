@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 // Alphabet: a-z, A-Z, 0-9, _, -
@@ -40,39 +40,6 @@ function hashId(input, length = 6) {
         chars.push(FULL_ALPHABET[n]);
     }
     return chars.join("");
-}
-/**
- * Object to string
- * @param input
- * @returns
- */
-function toSortedString(input) {
-    if (input == null) {
-        return "null";
-    }
-    if (typeof input !== "object") {
-        return String(input);
-    }
-    if (Array.isArray(input)) {
-        const result = new Array(input.length);
-        for (const value of input) {
-            result.push(toSortedString(value));
-        }
-        return JSON.stringify(result);
-    }
-    const keys = Object.keys(input).sort();
-    for (let i = 0; i < keys.length; i++) {
-        keys[i] = `${keys[i]}:${toSortedString(input[keys[i]])}`;
-    }
-    return `{${keys.join(",")}}`;
-}
-/**
- * Object hash
- * @param object
- * @returns
- */
-function objectHash(object) {
-    return hashCode(toSortedString(object)).toString(16);
 }
 /**
  * convert input to hex
@@ -149,4 +116,4 @@ function syncHash(input, length = 6, algo) {
     return hashId(input, length);
 }
 
-export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, objectHash, syncHash, toSortedString };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, syncHash };

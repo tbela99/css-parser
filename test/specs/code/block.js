@@ -264,7 +264,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
             return transform(file, {
                 minify: true,
             }).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`@media (width<=767px) {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`@media (width<=767px) {
  .main-heading {
   font-size: 32px;
   font-weight: 300
@@ -308,7 +308,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -336,7 +336,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -366,7 +366,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: false,
                         preserveLicense: true,
@@ -397,7 +397,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: false,
                         preserveLicense: true,
@@ -428,7 +428,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -459,7 +459,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -492,7 +492,7 @@ abbr[title], abbr[data-original-title], abbr>[data-original-title] {
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -522,7 +522,7 @@ transition: all 0s ease 0s; flex: 0 1 auto; position: relative; align-self: stre
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -555,7 +555,7 @@ overflow-y: hidden;
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeEmpty: true,
                         removeComments: true,
@@ -583,7 +583,7 @@ content: '\\21 now\\21';
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -611,7 +611,7 @@ content: '\\21 now\\21';
                 nestingRules: true,
             }).then((result) =>
                 expect(
-                    render(result.ast, {
+                    render(result.arena, result.ast, {
                         minify: false,
                         removeComments: true,
                         preserveLicense: true,
@@ -709,11 +709,14 @@ content: '\\21 now\\21';
     }
 }
 `;
-        return parse(file).then((result) =>
-            expect(render(result.ast.chi[0].chi[1].chi[1], { withParents: true }).code).equals(
+        return parse(file).then((result) => {
+            const arena = result.arena;
+            const node = arena.getChildAt(arena.getChildAt(arena.getChildAt(result.ast, 0), 1), 1);
+
+            expect(render(arena, node, { withParents: true }).code).equals(
                 `@media screen and (width>=40em){.a{width:3px}}`,
-            ),
-        );
+            );
+        });
     });
 
     it("render without parents #29", function () {
@@ -729,9 +732,12 @@ content: '\\21 now\\21';
     }
 }
 `;
-        return parse(file).then((result) =>
-            expect(render(result.ast.chi[0].chi[1].chi[1], { withParents: false }).code).equals(`width:3px`),
-        );
+        return parse(file).then((result) => {
+            const arena = result.arena;
+            const node = arena.getChildAt(arena.getChildAt(arena.getChildAt(result.ast, 0), 1), 1);
+
+            expect(render(arena, node, { withParents: false }).code).equals(`width:3px`);
+        });
     });
 
     it("do not merge pseudo class selectors #30", function () {
@@ -803,7 +809,7 @@ content: '\\21 now\\21';
 
 `;
         return parse(file, { nestingRules: true }).then((result) =>
-            expect(render(result.ast).code).equals(
+            expect(render(result.arena, result.ast).code).equals(
                 `.invisible-scrollbar{&::-webkit-scrollbar{display:none}&::-moz-range-thumb,&:has(::-moz-range-thumb){display:none}}`,
             ),
         );
@@ -826,7 +832,7 @@ content: '\\21 now\\21';
     height: calc(100% / 4);}
 `;
         return parse(file, { inlineCssVariables: true }).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`:root {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`:root {
  /* --color: green */
 }
 ._19_u :focus {
@@ -850,7 +856,7 @@ content: '\\21 now\\21';
 }
 `;
         return parse(file, { inlineCssVariables: true }).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`::selection {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`::selection {
  color: red
 }`),
         );
@@ -1545,7 +1551,7 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
     `,
             beautify: true,
             removeDuplicateDeclarations: false,
-            convertColor: ColorType.SRGB
+            convertColor: ColorType.SRGB,
         };
 
         return transform(options).then((result) =>

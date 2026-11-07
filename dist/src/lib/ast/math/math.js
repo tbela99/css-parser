@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { minifyNumber } from '../../syntax/syntax.js';
@@ -25,6 +25,12 @@ function gcd(x, y) {
     }
     return x;
 }
+/**
+ * compute an arithmetic operation. fractions are returned when shorter than the decimal value
+ * @param a
+ * @param b
+ * @param op
+ */
 function compute(a, b, op) {
     if (typeof a == "number" && typeof b == "number") {
         switch (op) {
@@ -41,53 +47,29 @@ function compute(a, b, op) {
                 }
                 const result = a / b;
                 const r2 = minifyNumber(r[0]) + "/" + minifyNumber(r[1]);
-                return minifyNumber(result).length < r2.length
-                    ? result
-                    : {
-                        typ: EnumToken.FractionTokenType,
-                        l: { typ: EnumToken.NumberTokenType, val: r[0] },
-                        r: { typ: EnumToken.NumberTokenType, val: r[1] },
-                    };
+                return minifyNumber(result).length < r2.length ? result : [r[0], r[1]];
         }
     }
-    let l1 = typeof a == "number"
-        ? {
-            l: { val: a },
-            r: { val: 1 },
-        }
-        : a;
-    let r1 = typeof b == "number"
-        ? {
-            l: { val: b },
-            r: { val: 1 },
-        }
-        : b;
+    const l1 = typeof a == "number" ? [a, 1] : a;
+    const r1 = typeof b == "number" ? [b, 1] : b;
     let l2;
     let r2;
     switch (op) {
         case EnumToken.Add:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val + l1.r.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[1] + l1[1] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
         case EnumToken.Sub:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val - l1.r.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[1] - l1[1] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
         case EnumToken.Mul:
-            // @ts-ignore
-            l2 = l1.l.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
         case EnumToken.Div:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.l.val;
+            l2 = l1[0] * r1[1];
+            r2 = l1[1] * r1[0];
             break;
     }
     // @ts-ignore
@@ -98,11 +80,7 @@ function compute(a, b, op) {
     const result = a2[0] / a2[1];
     return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length
         ? result
-        : {
-            typ: EnumToken.FractionTokenType,
-            l: { typ: EnumToken.NumberTokenType, val: a2[0] },
-            r: { typ: EnumToken.NumberTokenType, val: a2[1] },
-        };
+        : [a2[0], a2[1]];
 }
 function rem(...a) {
     if (a.some((i) => !Number.isInteger(i))) {

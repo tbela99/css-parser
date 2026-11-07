@@ -2,61 +2,61 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
-import { EnumToken } from '../types.js';
-import { walkValues } from '../walk.js';
+import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { renderValue } from '../../printer/render.js';
 import { splitRule } from '../minify.js';
 import { FeatureWalkMode } from './type.js';
-import { RAW, mathFuncs } from '../../syntax/constants.js';
+import { mathFuncs } from '../../syntax/constants.js';
+import { TokenField } from '../arena.js';
+import { ValueWalker } from '../walk.js';
 
-function inlineExpression(token) {
+/**
+ * inline a binary expression into a parens token: (l op r)
+ * @param arena
+ * @param token
+ */
+function inlineExpression(arena, token) {
     const result = [];
-    if (token.typ == EnumToken.BinaryExpressionTokenType) {
-        const chi = inlineExpression(token.l);
-        chi.push({ typ: token.op });
-        for (const child of inlineExpression(token.r)) {
+    if (arena.dataTypes[token] == EnumToken.BinaryExpressionTokenType) {
+        const chi = inlineExpression(arena, arena.field(token, TokenField.L));
+        chi.push(arena.createToken(arena.numericValue[token]));
+        for (const child of inlineExpression(arena, arena.field(token, TokenField.R))) {
             chi.push(child);
         }
-        result.push({
-            typ: EnumToken.ParensTokenType,
-            chi,
-        });
+        result.push(arena.createList(EnumToken.ParensTokenType, chi));
     }
     else {
         result.push(token);
     }
     return result;
 }
-function replace(node, variableScope) {
-    for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.BinaryExpressionTokenType && parentValue != null && "chi" in parentValue) {
-            // @ts-ignore
-            parentValue.chi.splice(parentValue.chi.indexOf(value), 1, ...inlineExpression(value));
+function replace(arena, node, variableScope) {
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
+        // the parent of a detached token is the declaration
+        const parentValue = arena.getValueParent(value) || node;
+        if (arena.dataTypes[value] == EnumToken.BinaryExpressionTokenType &&
+            parentValue != null &&
+            parentValue != node &&
+            // the token belongs to the parent token list (function arguments)
+            arena.parents[value] == parentValue) {
+            arena.replaceToken(value, ...inlineExpression(arena, value));
         }
     }
-    for (const { value, parent: parentValue } of walkValues(node.val)) {
-        if (value.typ == EnumToken.MathFunctionTokenType ||
-            (value.typ == EnumToken.WildCardFunctionTokenType && value.val == "var")) {
-            if (value.chi.length == 1 &&
-                value.chi[0].typ == EnumToken.DashedIdenTokenType) {
-                const info = (variableScope.get(value.chi[0].val));
-                if (info?.replaceable) {
-                    if (parentValue != null) {
-                        let i = 0;
-                        const source = parentValue.typ == EnumToken.DeclarationNodeType ? parentValue.val : parentValue.chi;
-                        for (; i < source.length; i++) {
-                            if (source[i] == value) {
-                                source.splice(i, 1, ...info.node.val);
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        node.val = info.node.val.slice();
-                    }
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
+        const typ = arena.dataTypes[value];
+        if (typ == EnumToken.MathFunctionTokenType ||
+            (typ == EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")) {
+            const first = arena.firstToken[value];
+            if (first != 0 && arena.nextSibling[first] == 0 && arena.dataTypes[first] == EnumToken.DashedIdenTokenType) {
+                const info = (variableScope.get(arena.strings[arena.stringValue[first]]));
+                // the variable declaration may have been released
+                if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
+                    arena.replaceToken(value, ...arena.tokens(info.node).map((t) => arena.clone(t, true)));
                 }
             }
         }
@@ -76,78 +76,71 @@ class InlineCssVariablesFeature {
             options.features.push(new InlineCssVariablesFeature());
         }
     }
-    run(ast, options = {}, parent, context) {
-        if (!("chi" in ast)) {
+    run(arena, ast, _options = {}, parent, context) {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
         if (!("variableScope" in context)) {
             context.variableScope = new Map();
         }
         // [':root', 'html']
-        const isRoot = parent.typ == EnumToken.StyleSheetNodeType &&
-            ast.typ == EnumToken.RuleNodeType &&
-            (ast[RAW] ?? splitRule(ast.sel)).some((segment) => segment.some((s) => s == ":root" || s == "html"));
+        const isRoot = arena.dataTypes[parent] == EnumToken.StyleSheetNodeType &&
+            arena.dataTypes[ast] == EnumToken.RuleNodeType &&
+            (arena.raw[ast] ?? splitRule(arena.strings[arena.name[ast]])).some((segment) => segment.some((s) => s == ":root" || s == "html"));
         const variableScope = context.variableScope;
-        // @ts-ignore
-        for (const node of ast.chi) {
-            if (node.typ !== EnumToken.DeclarationNodeType) {
+        for (let node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+            if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType) {
                 continue;
             }
+            const name = arena.strings[arena.name[node]];
             // css variable
-            if (node.nam.startsWith("--")) {
-                if (!variableScope.has(node.val)) {
-                    const info = {
-                        globalScope: isRoot,
-                        // @ts-ignore
-                        parent: new Set(),
-                        declarationCount: 1,
-                        replaceable: isRoot,
-                        node: node,
-                        values: structuredClone(node.val),
-                    };
-                    info.parent.add(ast);
-                    variableScope.set(node.nam, info);
-                    let recursive = false;
-                    for (const { value } of walkValues(node.val)) {
-                        if (value?.typ == EnumToken.MathFunctionTokenDefType ||
-                            (value?.typ == EnumToken.WildCardFunctionTokenType &&
-                                (mathFuncs.includes(value.val) ||
-                                    value.val === "var"))) {
-                            recursive = true;
-                            break;
-                        }
+            if (name.startsWith("--")) {
+                // the last declaration wins
+                const info = {
+                    globalScope: isRoot,
+                    // @ts-ignore
+                    parent: new Set(),
+                    declarationCount: 1,
+                    replaceable: isRoot,
+                    node: node,
+                    values: arena.tokens(node).map((t) => arena.clone(t, true)),
+                };
+                info.parent.add(ast);
+                variableScope.set(name, info);
+                let recursive = false;
+                // inlined: arena.walkValues(node)
+                for (const value of new ValueWalker(arena, node)) {
+                    if (arena.dataTypes[value] == EnumToken.MathFunctionTokenDefType ||
+                        (arena.dataTypes[value] == EnumToken.WildCardFunctionTokenType &&
+                            (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||
+                                arena.strings[arena.stringValue[value]] === "var"))) {
+                        recursive = true;
+                        break;
                     }
-                    if (recursive) {
-                        replace(node, variableScope);
-                    }
+                }
+                if (recursive) {
+                    replace(arena, node, variableScope);
                 }
             }
             else {
-                replace(node, variableScope);
+                replace(arena, node, variableScope);
             }
         }
         return null;
     }
-    cleanup(ast, options = {}, context) {
+    cleanup(arena, _ast, _options = {}, context) {
         const variableScope = context.variableScope;
         if (variableScope == null) {
             return;
         }
         for (const info of variableScope.values()) {
             if (info.replaceable) {
-                let i;
                 // drop declarations from :root{}
                 for (const parent of info.parent) {
-                    i = parent.chi?.length ?? 0;
-                    while (i--) {
-                        if (parent.chi[i] == info.node) {
-                            // @ts-ignore
-                            parent.chi.splice(i, 1, {
-                                typ: EnumToken.CommentTokenType,
-                                val: `/* ${info.node.nam}: ${info.values.reduce((acc, curr) => acc + renderValue(curr, { convertColor: false }), "")} */`,
-                            });
-                            break;
-                        }
+                    if (arena.parents[info.node] == parent) {
+                        const comment = arena.createComment(EnumToken.CommentTokenType, `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc, curr) => acc + renderValue(arena, curr, { convertColor: false }), "")} */`);
+                        arena.replaceChild(info.node, comment);
+                        arena.detach(info.node);
                     }
                 }
             }

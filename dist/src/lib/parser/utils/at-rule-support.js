@@ -2,17 +2,18 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
-import { pseudoElements, LOCEND, tokensfuncDefMap, LOCSTA, LOCSRCID } from '../../syntax/constants.js';
+import { pseudoElements, tokensfuncDefMap } from '../../syntax/constants.js';
 import { getSyntaxConfig, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { parseDeclaration } from './declaration.js';
+import { TokenField } from '../../ast/arena.js';
 
-function parseAtRuleSupportSyntax(stream, context, options = {}) {
+function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
     const tokens = [];
     const stack = [];
     let i = 0;
@@ -32,38 +33,40 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
     ]);
     for (; i < stream.length; i++) {
         tokens.push(stream[i]);
-        if (stream[i].typ == EnumToken.ColonTokenType) {
-            if (stream[i + 1]?.typ == EnumToken.IdenTokenType) {
-                const val = stream[i + 1].val;
-                Object.assign(stream[i], {
-                    typ: pseudoElements.includes(val)
-                        ? EnumToken.PseudoElementTokenType
-                        : EnumToken.PseudoClassTokenType,
-                    val: ":" + val,
-                });
-                stream[i][LOCEND] = stream[i + 1][LOCEND];
+        if (arena.dataTypes[stream[i]] == EnumToken.ColonTokenType) {
+            if (arena.dataTypes[stream[i + 1]] == EnumToken.IdenTokenType) {
+                const val = arena.strings[arena.stringValue[stream[i + 1]]];
+                arena.dataTypes[stream[i]] = pseudoElements.includes(val)
+                    ? EnumToken.PseudoElementTokenType
+                    : EnumToken.PseudoClassTokenType;
+                // inlined: arena.setStr(stream[i], ":" + val)
+                arena.stringValue[stream[i]] = arena.internString((":" + val));
+                // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
+                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
                 stream.splice(i + 1, 1);
                 continue;
             }
-            if (stream[i + 1]?.typ == EnumToken.FunctionTokenDefType) {
-                val = ":" + stream[i + 1].val;
-                Object.assign(stream[i], {
-                    typ: val + "()" in getSyntaxConfig().selectors
+            if (arena.dataTypes[stream[i + 1]] == EnumToken.FunctionTokenDefType) {
+                val = ":" + arena.strings[arena.stringValue[stream[i + 1]]];
+                arena.dataTypes[stream[i]] =
+                    val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
-                        : stream[i + 1].typ,
-                    val,
-                });
+                        : arena.dataTypes[stream[i + 1]];
+                // inlined: arena.setStr(stream[i], val)
+                arena.stringValue[stream[i]] = arena.internString(val);
                 stack.push(stream[i]);
-                stream[i][LOCEND] = stream[i + 1][LOCEND];
+                // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
+                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
                 stream.splice(i + 1, 1);
                 continue;
             }
         }
-        if (trimWhiteSpace.has(stream[i].typ)) {
-            if (tokens.at(-2)?.typ === EnumToken.WhitespaceTokenType) {
+        if (trimWhiteSpace.has(arena.dataTypes[stream[i]])) {
+            // inlined: arena.typeOf(tokens.at(-2))
+            if (arena.dataTypes[tokens.at(-2)] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(tokens.length - 2, 1);
             }
-            if (stream[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+            if (arena.dataTypes[stream[i + 1]] === EnumToken.WhitespaceTokenType) {
                 i++;
                 continue;
             }
@@ -71,62 +74,53 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         if (expectAndOr) {
             let k = i;
             while (k < stream.length &&
-                (stream[k]?.typ === EnumToken.WhitespaceTokenType || stream[k]?.typ === EnumToken.CommentTokenType)) {
+                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)) {
                 tokens.push(stream[k]);
                 k++;
             }
             expectAndOr = false;
         }
-        if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+        if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
             scopes.push((scope = new Set()));
             stack.push(stream[i]);
             continue;
         }
-        switch (stream[i].typ) {
+        switch (arena.dataTypes[stream[i]]) {
             case EnumToken.EndParensTokenType:
                 {
-                    if (stack[stack.length - 1].typ === EnumToken.ColonTokenType) {
+                    if (arena.dataTypes[stack[stack.length - 1]] === EnumToken.ColonTokenType) {
                         // match declaration
                         const index = tokens.indexOf(stack[stack.length - 2]);
-                        const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
-                        const declaration = parseDeclaration(slice, context, { ...options, validation: false }, errors);
+                        const slice = trimArray(arena, tokens.splice(index + 1, tokens.length - index - 2));
+                        const declaration = parseDeclaration(arena, slice, context, { ...options, validation: false }, errors);
                         tokens.splice(index + 1, 0, declaration);
                         stack.pop();
                     }
                     // match <support-condition-name>
                     // @supports (--condition-name) {}
-                    if (stack.at(-1)?.typ === EnumToken.StartParensTokenType) {
-                        const index = tokens.indexOf(stack.at(-1));
-                        const slice = trimArray(tokens.splice(index + 1, tokens.length - index - 2));
-                        slice.filter((token) => {
-                            return (token.typ !== EnumToken.WhitespaceTokenType && token.typ !== EnumToken.CommentTokenType);
-                        });
-                        tokens[index] = {
-                            typ: EnumToken.ParensTokenType,
-                            chi: slice,
-                            [LOCSRCID]: stack.at(-1)[LOCSRCID],
-                            [LOCSTA]: stack.at(-1)[LOCSTA],
-                            [LOCEND]: stream[i]?.[LOCEND],
-                        };
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.StartParensTokenType) {
+                        const parens = stack[stack.length - 1];
+                        const index = tokens.indexOf(parens);
+                        const slice = trimArray(arena, tokens.splice(index + 1, tokens.length - index - 2));
+                        arena.dataTypes[parens] = EnumToken.ParensTokenType;
+                        arena.setTokenList(parens, slice);
+                        arena.spanLocation(parens, parens, stream[i]);
                         stack.pop();
                         tokens.pop();
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
                         expectAndOr = true;
                     }
-                    else if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
-                        const index = tokens.indexOf(stack.at(-1));
-                        tokens[index] = {
-                            typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                            val: stack.at(-1).val,
-                            chi: trimArray(tokens.splice(index + 1, tokens.length - index - 2)),
-                            [LOCSRCID]: stack.at(-1)[LOCSRCID],
-                            [LOCSTA]: stack.at(-1)[LOCSTA],
-                            [LOCEND]: stream[i]?.[LOCEND],
-                        };
-                        if (tokens[index].typ === EnumToken.PseudoClassFuncTokenType) {
+                    else if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                        const func = stack[stack.length - 1];
+                        const index = tokens.indexOf(func);
+                        arena.dataTypes[func] = tokensfuncDefMap.get(arena.dataTypes[func]);
+                        arena.setTokenList(func, trimArray(arena, tokens.splice(index + 1, tokens.length - index - 2)));
+                        arena.spanLocation(func, func, stream[i]);
+                        if (arena.dataTypes[tokens[index]] === EnumToken.PseudoClassFuncTokenType) {
                             // not a declaration
-                            const result = matchAllSyntaxes(getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, tokens[index].val + "()")?.[0]?.chi, createValidationContext(tokens[index].chi), options);
+                            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.strings[arena.stringValue[tokens[index]]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(tokens[index])), options);
                             if (!result.success) {
                                 return {
                                     success: false,
@@ -139,7 +133,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         }
                         //
                         let k = stack.length - 1;
-                        while (tokensfuncDefMap.has(stack[k]?.typ)) {
+                        while (tokensfuncDefMap.has(arena.dataTypes[stack[k]])) {
                             k--;
                         }
                         stack.pop();
@@ -147,33 +141,34 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                         scopes.pop();
                         scope = scopes[scopes.length - 1];
                     }
-                    if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
-                        const index = tokens.indexOf(stack.at(-1));
-                        tokens[index] = {
-                            typ: EnumToken.SupportsQueryUnaryConditionTokenType,
-                            l: stack.at(-1),
-                            r: trimArray(tokens.splice(index + 1, i - index - 1)),
-                            [LOCSRCID]: stack.at(-1)[LOCSRCID],
-                            [LOCSTA]: stack.at(-1)[LOCSTA],
-                            [LOCEND]: stream[i]?.[LOCEND],
-                        };
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.NotTokenType) {
+                        const not = stack[stack.length - 1];
+                        const index = tokens.indexOf(not);
+                        const unary = arena.createToken(EnumToken.SupportsQueryUnaryConditionTokenType);
+                        // inlined: arena.setField(unary, TokenField.R, ...trimArray(arena, tokens.splice(index + 1, i - index - 1)))
+                        arena.setTokenList(arena.fieldList(unary, TokenField.R), trimArray(arena, tokens.splice(index + 1, i - index - 1)));
+                        // inlined: arena.setField(unary, TokenField.L, not)
+                        arena.setTokenList(arena.fieldList(unary, TokenField.L), [not]);
+                        arena.spanLocation(unary, not, stream[i]);
+                        tokens[index] = unary;
                         stack.pop();
                     }
-                    if (stack.at(-1)?.typ === EnumToken.AndTokenType || stack.at(-1)?.typ === EnumToken.OrTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.AndTokenType || arena.dataTypes[stack.at(-1)] === EnumToken.OrTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
                         const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
-                        const left = trimArray(tokens.slice(index2, index));
-                        left.find((t) => t.typ === EnumToken.SupportsQueryUnaryConditionTokenType &&
-                            t.l.typ === EnumToken.NotTokenType);
-                        tokens[index2] = {
-                            typ: EnumToken.SupportsQueryConditionTokenType,
-                            op: stack.at(-1),
-                            l: left,
-                            r: trimArray(tokens.slice(index + 1)),
-                            [LOCSRCID]: stack.at(-1)[LOCSRCID],
-                            [LOCSTA]: stack.at(-1)[LOCSTA],
-                            [LOCEND]: stream[i]?.[LOCEND],
-                        };
+                        const op = stack[stack.length - 1];
+                        const left = trimArray(arena, tokens.slice(index2, index));
+                        const condition = arena.createToken(EnumToken.SupportsQueryConditionTokenType);
+                        // inlined: arena.setField(condition, TokenField.L, ...left)
+                        arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
+                        // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)))
+                        arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, tokens.slice(index + 1)));
+                        // inlined: arena.setField(condition, TokenField.Op, op)
+                        arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
+                        arena.spanLocation(condition, op, stream[i]);
+                        tokens[index2] = condition;
                         tokens.length = index2 + 1;
                         stack.pop();
                     }
@@ -184,16 +179,18 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                 break;
             case EnumToken.IdenTokenType:
                 {
-                    const val = stream[i].val.toLowerCase();
+                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
                     if ("not" === val) {
                         stack.push(stream[i]);
-                        Object.assign(stream[i], { typ: EnumToken.NotTokenType });
+                        arena.dataTypes[stream[i]] = EnumToken.NotTokenType;
                         break;
                     }
                     if ("and" === val || "or" === val) {
                         if ("or" === val && scopes.length === 1 && scopes[0].size > 0) {
-                            const fileName = options.source.getFileName() ?? "";
-                            const [line, column] = options.source.getOffsets(stream[i]?.[LOCSTA]);
+                            // inlined: options.source!.getFileName()
+                            const fileName = options.source.file ?? "";
+                            // inlined: options.source!.getOffsets(arena.getSpanStart(stream[i]))
+                            const [line, column] = options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]));
                             return {
                                 success: false,
                                 errors: [
@@ -205,10 +202,8 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
                                 ],
                             };
                         }
-                        Object.assign(stream[i], {
-                            typ: "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType,
-                        });
-                        scope.add(stream[i].typ);
+                        arena.dataTypes[stream[i]] = "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType;
+                        scope.add(arena.dataTypes[stream[i]]);
                         stack.push(stream[i]);
                         break;
                     }
@@ -217,7 +212,7 @@ function parseAtRuleSupportSyntax(stream, context, options = {}) {
         }
     }
     stream.length = 0;
-    for (const token of trimArray(tokens)) {
+    for (const token of trimArray(arena, tokens)) {
         stream.push(token);
     }
     return { success, errors };

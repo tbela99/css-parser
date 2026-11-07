@@ -1,6 +1,4 @@
-import { EnumToken } from "../../../dist/src/lib/ast/types.js";
-import { walk } from "../../../dist/src/lib//ast/walk.js";
-import { find, findByValue, findAll, findLast } from "../../../dist/src/lib/ast/find.js";
+import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../../../dist/src/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("node walker", function () {
@@ -24,8 +22,8 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             ];
 
             return parse(css).then((result) => {
-                for (const s of walk(result.ast)) {
-                    expect(s.node.typ).equals(values.shift());
+                for (const node of result.arena.walk(result.ast)) {
+                    expect(result.arena.dataTypes[node]).equals(values.shift());
                 }
 
                 expect(values.length).equals(0);
@@ -48,10 +46,9 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
             ];
 
             return parse(css, { minify: false }).then((r) => {
-
                 let i = 0;
-                for (const s of walk(r.ast)) {
-                    expect(s.node.typ).equals(values[i++]);
+                for (const node of r.arena.walk(r.ast)) {
+                    expect(r.arena.dataTypes[node]).equals(values[i++]);
                 }
 
                 expect(values.length).equals(i);
@@ -67,12 +64,14 @@ button {
 }`;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (arena, node) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const node = find(result.ast, nodeMatcher);
+                const arena = result.arena;
+                const node = arena.find(result.ast, nodeMatcher);
 
-                expect(node).equals(result.ast.chi[0].chi[0]);
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 0), 0));
             });
         });
 
@@ -90,14 +89,20 @@ button {
 
 `;
 
-            // find declaration which contain a '30px'
-            const nodeMatcher = (value) =>
-                value.typ == EnumToken.LengthTokenType && value.val == 30 && value.unit == "px";
-
             return transform(css).then((result) => {
-                const { node } = findByValue(result.ast, nodeMatcher) ?? {};
+                const arena = result.arena;
 
-                expect(node).equals(result.ast.chi[0].chi[1]);
+                // find declaration which contain a '30px'
+                const nodeMatcher = (arena, value) =>
+                    arena.dataTypes[value] == EnumToken.LengthTokenType &&
+                    arena.numericValue[value] == 30 &&
+                    arena.getUnit(value) == "px";
+
+                const { node, value } = arena.findByValue(result.ast, nodeMatcher) ?? {};
+
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 0), 1));
+                expect(arena.getValueOwner(value)).equals(node);
+                expect(arena.findValue(node, nodeMatcher)).equals(value);
             });
         });
 
@@ -116,10 +121,11 @@ button {
 `;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (arena, node) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const nodes = findAll(result.ast, nodeMatcher) ?? {};
+                const nodes = result.arena.findAll(result.ast, nodeMatcher);
 
                 expect(nodes.length).equals(2);
             });
@@ -140,13 +146,125 @@ button {
 `;
 
             // find declaration which contain a '30px'
-            const nodeMatcher = (node) => node.typ == EnumToken.DeclarationNodeType && node.nam == "aspect-ratio";
+            const nodeMatcher = (arena, node) =>
+                arena.dataTypes[node] == EnumToken.DeclarationNodeType && arena.getName(node) == "aspect-ratio";
 
             return transform(css).then((result) => {
-                const node = findLast(result.ast, nodeMatcher);
+                const arena = result.arena;
+                const node = arena.findLast(result.ast, nodeMatcher);
 
-                expect(node).equals(result.ast.chi[1].chi[0]);
+                expect(node).equals(arena.getChildAt(arena.getChildAt(result.ast, 1), 0));
             });
+        });
+        it("walk filter #7", async function () {
+            const result = await parse(`@media all { .a { color: red } } .b { color: blue } .c { width: 0 }`, { minify: false });
+            const arena = result.arena;
+            const types = (filter) => [...arena.walk(result.ast, filter)].map((node) => EnumToken[arena.getType(node)]);
+
+            // the filter is called with the arena and the node id
+            expect(
+                types((a, node) => {
+                    expect(a).equals(arena);
+                    return a.getType(node) == EnumToken.AtRuleNodeType ? WalkerOptionEnum.IgnoreChildren : null;
+                }),
+            ).deep.equals(["StyleSheetNodeType", "AtRuleNodeType", "RuleNodeType", "DeclarationNodeType", "RuleNodeType", "DeclarationNodeType"]);
+
+            expect(
+                types((a, node) => (a.getType(node) == EnumToken.AtRuleNodeType ? WalkerOptionEnum.Children : null)),
+            ).deep.equals(["StyleSheetNodeType", "RuleNodeType", "DeclarationNodeType", "RuleNodeType", "DeclarationNodeType", "RuleNodeType", "DeclarationNodeType"]);
+
+            expect(
+                types((a, node) => (a.getType(node) == EnumToken.RuleNodeType && a.getSelector(node) == ".b" ? WalkerOptionEnum.Stop : null)),
+            ).deep.equals(["StyleSheetNodeType", "AtRuleNodeType", "RuleNodeType", "DeclarationNodeType"]);
+
+            expect(types({ reverse: true, filter: (a, node) => (a.getType(node) == EnumToken.DeclarationNodeType ? WalkerOptionEnum.Ignore : null) })).deep.equals([
+                "StyleSheetNodeType",
+                "RuleNodeType",
+                "RuleNodeType",
+                "AtRuleNodeType",
+                "RuleNodeType",
+            ]);
+
+            // value tokens are walked with attributes
+            const values = [...arena.walk(arena.getLastChild(result.ast), { attributes: true })].filter((id) => !(arena.getFlags(id) & 0x30000));
+
+            expect(values.some((token) => arena.getType(token) == EnumToken.NumberTokenType && arena.getNumericValue(token) == 0)).equals(true);
+            expect(values.some((token) => arena.getType(token) == EnumToken.ClassSelectorTokenType)).equals(true);
+
+            // the children are read after the node is returned: the node can be detached
+            for (const node of arena.walk(result.ast)) {
+                if (arena.getType(node) == EnumToken.RuleNodeType && arena.getSelector(node) == ".b") {
+                    arena.detach(node);
+                }
+            }
+
+            expect(render(arena, result.ast).code).equals("@media all{.a{color:red}}.c{width:0}");
+        });
+
+        it("walkValues #8", async function () {
+            const result = await parse(`.a { width: calc(1px + max(2px, 3px)) }`, { minify: false });
+            const arena = result.arena;
+            const declaration = arena.getFirstChild(arena.getFirstChild(result.ast));
+            const names = (iterable) => [...iterable].map((token) => EnumToken[arena.getType(token)]);
+
+            // the value tokens of a node or an array of token ids
+            expect(names(arena.walkValues(declaration))).deep.equals(names(arena.walkValues(arena.tokens(declaration))));
+            // the aliases of EnumToken (Length, Comma, ...) are the names of their values
+            expect(names(arena.walkValues(declaration))).deep.equals([
+                "MathFunctionTokenType",
+                "BinaryExpressionTokenType",
+                "Length",
+                "MathFunctionTokenType",
+                "Length",
+                "Comma",
+                "Length",
+            ]);
+
+            // the parent of a value token
+            for (const token of arena.walkValues(declaration)) {
+                const parent = arena.getValueParent(token);
+
+                expect(parent).to.be.above(0);
+                expect(arena.getValueOwner(token)).equals(declaration);
+
+                if (arena.getType(parent) == EnumToken.BinaryExpressionTokenType) {
+                    // the field list token is skipped
+                    expect(arena.getType(arena.getParent(token))).equals(EnumToken.ListTokenType);
+                }
+            }
+
+            // filter: the arena, the token id and the event
+            const events = [];
+
+            for (const token of arena.walkValues(declaration, {
+                event: WalkerEvent.Enter | WalkerEvent.Leave,
+                type: (a, token) => a.getType(token) == EnumToken.MathFunctionTokenType && a.str(token) == "max",
+                fn: (a, token, event) => {
+                    expect(a).equals(arena);
+                    events.push([arena.str(token), event]);
+                    return event == WalkerEvent.Enter ? WalkerOptionEnum.IgnoreChildren : null;
+                },
+            })) {
+                expect(token).to.be.above(0);
+            }
+
+            expect(events).deep.equals([
+                ["max", WalkerEvent.Enter],
+                ["max", WalkerEvent.Leave],
+            ]);
+
+            expect(
+                names(arena.walkValues(declaration, (a, token) => (a.getType(token) == EnumToken.BinaryExpressionTokenType ? WalkerOptionEnum.Ignore : null))),
+            ).deep.equals(["MathFunctionTokenType"]);
+
+            // reverse
+            expect(names(arena.walkValues(declaration, null, true))[0]).equals("MathFunctionTokenType");
+
+            // break releases the iterator
+            for (const token of arena.walkValues(declaration)) {
+                expect(arena.getType(token)).equals(EnumToken.MathFunctionTokenType);
+                break;
+            }
         });
     });
 }

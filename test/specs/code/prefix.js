@@ -29,7 +29,7 @@ export function run(
 `,
                 { removePrefix: true },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`@media screen {
  .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
@@ -51,7 +51,7 @@ export function run(
 `,
                 { removePrefix: true, nestingRules: false },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`@media screen {
  .foo:is(:autofill:not(:hover),a,b) {
   display: none
  }
@@ -72,7 +72,7 @@ export function run(
 `,
                 { removePrefix: true },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`@media screen {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`@media screen {
  .foo:autofill:not(:hover) {
   height: calc(40px/3)
  }
@@ -302,7 +302,6 @@ a {
  animation: bar 1s infinite;
  transition: all .5s;
  user-select: none;
- background: linear-gradient(#fff,#000);
  background: linear-gradient(#fff,#000);
  background: linear-gradient(#fff,#000)
 }

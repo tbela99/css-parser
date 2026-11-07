@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>36/36</span>
+                <span class='fraction'>34/34</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>36/36</span>
+                <span class='fraction'>34/34</span>
             </div>
         
             
@@ -97,74 +97,68 @@
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
-<a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">1129x</span>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">270x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1129x</span>
+<span class="cline-any cline-yes">270x</span>
 <span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-yes">1129x</span>
+<span class="cline-any cline-yes">270x</span>
 <span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">1096x</span>
-<span class="cline-any cline-yes">1129x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">237x</span>
+<span class="cline-any cline-yes">270x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 2.0.0
 	License: MIT
  */
 /**
- * convert angle to degrees
+ * convert angle to degrees (in place)
+ * @param arena
  * @param angle
  * @returns
  */
-function toDegrees(angle) {
-    switch (angle.unit) {
+function toDegrees(arena, angle) {
+    switch (arena.strings[arena.unit[angle]]) {
         // case "deg":
         //     return angle;
         case "rad":
-            // @ts-expect-error
-            angle.val *= 180 / Math.PI;
-            angle.unit = "deg";
+            arena.numericValue[angle] *= 180 / Math.PI;
+            arena.unit[angle] = arena.internString("deg");
             return angle;
         case "grad":
-            // @ts-expect-error
-            angle.val *= 0.9;
-            angle.unit = "deg";
+            arena.numericValue[angle] *= 0.9;
+            arena.unit[angle] = arena.internString("deg");
             return angle;
         case "turn":
-            // @ts-expect-error
-            angle.val *= 360;
-            angle.unit = "deg";
+            arena.numericValue[angle] *= 360;
+            arena.unit[angle] = arena.internString("deg");
             return angle;
     }
     return angle;
@@ -178,7 +172,7 @@ export { toDegrees };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-01T15:49:10.465Z
+                at 2026-11-07T22:03:47.899Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

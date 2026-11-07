@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 import { EnumToken, ColorType } from '../../ast/types.js';
@@ -44,118 +44,108 @@ function expandHexValue(value) {
     }
     return value;
 }
-function rgb2HexToken(token) {
-    let value = rgb2hexvalues(token);
+function rgb2HexToken(arena, token) {
+    let value = rgb2hexvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value);
+    return hexToken(arena, value);
 }
-function hsl2HexToken(token) {
-    let value = hsl2hexvalues(token);
+function hsl2HexToken(arena, token) {
+    let value = hsl2hexvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value);
+    return hexToken(arena, value);
 }
-function cmyk2HexToken(token) {
-    let value = cmyk2hexvalues(token);
+function cmyk2HexToken(arena, token) {
+    let value = cmyk2hexvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value);
+    return hexToken(arena, value);
 }
-function hwb2HexToken(token) {
-    let value = hwb2hexvalues(token);
+function hwb2HexToken(arena, token) {
+    let value = hwb2hexvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value);
+    return hexToken(arena, value);
 }
-function color2HexToken(token) {
-    let value = color2srgbvalues(token);
+function color2HexToken(arena, token) {
+    let value = color2srgbvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc +
+    return hexToken(arena, value.reduce((acc, curr) => acc +
         srgb2rgb(curr + Number.EPSILON)
             .toString(16)
             .padStart(2, "0"), "#"));
 }
-function oklab2HexToken(token) {
-    let value = oklab2srgbvalues(token);
+function oklab2HexToken(arena, token) {
+    let value = oklab2srgbvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
-function oklch2HexToken(token) {
-    let value = oklch2srgbvalues(token);
+function oklch2HexToken(arena, token) {
+    let value = oklch2srgbvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
-function lab2HexToken(token) {
-    let value = lab2srgbvalues(token);
+function lab2HexToken(arena, token) {
+    let value = lab2srgbvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
-function lch2HexToken(token) {
-    let value = lch2srgbvalues(token);
+function lch2HexToken(arena, token) {
+    let value = lch2srgbvalues(arena, token);
     if (value == null) {
         return null;
     }
-    return hexToken(value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
+    return hexToken(arena, value.reduce((acc, curr) => acc + srgb2rgb(curr).toString(16).padStart(2, "0"), "#"));
 }
-function hexToken(value) {
+function hexToken(arena, value) {
     value = reduceHexValue(value);
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: value,
-        kin: value[0] == "#" ? ColorType.HEX : ColorType.LIT,
-    };
+    return arena.createColor(value, value[0] == "#" ? ColorType.HEX : ColorType.LIT);
 }
-function rgb2hexvalues(token) {
+function rgb2hexvalues(arena, token) {
     let value = "#";
     let t;
-    // @ts-ignore
-    const components = getColorComponents(token);
+    const components = getColorComponents(arena, token);
     if (components == null || components.length < 3) {
         return null;
     }
-    // @ts-ignore
     for (let i = 0; i < 3; i++) {
-        // @ts-ignore
         t = components[i];
-        value +=
-            ( // @ts-expect-error
-            t.typ == EnumToken.Iden && t.val == "none"
-                ? "0"
-                : Math.round(getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 255 : 1)))
-                .toString(16)
-                .padStart(2, "0");
+        value += (arena.dataTypes[t] == EnumToken.Iden && arena.strings[arena.stringValue[t]] == "none"
+            ? "0"
+            : Math.round(getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1)))
+            .toString(16)
+            .padStart(2, "0");
     }
-    // @ts-ignore
     if (components.length == 4) {
         // @ts-ignore
         t = components[3];
         // @ts-ignore
-        const v = getNumber(t);
+        const v = getNumber(arena, t);
         // @ts-ignore
         if (v < 1) {
             // @ts-ignore
-            value += Math.round(255 * getNumber(t))
+            value += Math.round(255 * getNumber(arena, t))
                 .toString(16)
                 .padStart(2, "0");
         }
     }
     return value;
 }
-function hsl2hexvalues(token) {
-    const t = hsl2rgbvalues(token);
+function hsl2hexvalues(arena, token) {
+    const t = hsl2rgbvalues(arena, token);
     if (t == null) {
         return null;
     }
@@ -164,8 +154,8 @@ function hsl2hexvalues(token) {
     }
     return `${t.reduce(toHexString, "#")}`;
 }
-function hwb2hexvalues(token) {
-    const t = hwb2rgbvalues(token);
+function hwb2hexvalues(arena, token) {
+    const t = hwb2rgbvalues(arena, token);
     if (t == null) {
         return null;
     }
@@ -174,8 +164,8 @@ function hwb2hexvalues(token) {
     }
     return `${t.reduce(toHexString, "#")}`;
 }
-function cmyk2hexvalues(token) {
-    const t = cmyk2rgbvalues(token);
+function cmyk2hexvalues(arena, token) {
+    const t = cmyk2rgbvalues(arena, token);
     if (t == null) {
         return null;
     }

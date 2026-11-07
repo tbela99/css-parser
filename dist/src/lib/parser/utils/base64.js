@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 /**
@@ -11,7 +11,7 @@
  * @returns
  */
 function toBase64(value) {
-    let result = '';
+    let result = "";
     for (const c of new TextEncoder().encode(value)) {
         result += String.fromCharCode(c);
     }

@@ -1,16 +1,19 @@
 import { EnumToken } from "../../ast/types.ts";
 import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 
-export function stripCommaToken(tokenList: Token[]): Token[] | null {
+/**
+ * remove comma and comment tokens
+ * @param arena
+ * @param tokenList
+ */
+export function stripCommaToken(arena: AstArena, tokenList: Token[]): Token[] | null {
     let result: Token[] = [];
-    let last: Token | null = null;
 
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ != EnumToken.WhitespaceTokenType) {
-            last = tokenList[i];
-        }
+        const typ: EnumToken = arena.dataTypes[tokenList[i]];
 
-        if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
+        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
             continue;
         }
 
@@ -20,23 +23,34 @@ export function stripCommaToken(tokenList: Token[]): Token[] | null {
     return result;
 }
 
-export function splitTokenList(tokenList: Token[], split: EnumToken[] = [EnumToken.CommaTokenType], includeSplitToken: boolean = false): Token[][] {
-    return tokenList.reduce(
-        (acc: Token[][], curr: Token): Token[][] => {
-            if (split.includes(curr.typ)) {
+/**
+ * split a token list
+ * @param arena
+ * @param tokenList
+ * @param split
+ * @param includeSplitToken
+ */
+export function splitTokenList(
+    arena: AstArena,
+    tokenList: Token[],
+    split: EnumToken[] = [EnumToken.CommaTokenType],
+    includeSplitToken: boolean = false,
+): Token[][] {
+    const result: Token[][] = [[]];
 
-                if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
+    for (let i = 0; i < tokenList.length; i++) {
+        const curr: Token = tokenList[i];
 
-                    acc[acc.length - 1].push(curr);
-                }
-
-                acc.push([]);
-            } else {
-                acc[acc.length - 1].push(curr);
+        if (split.includes(arena.dataTypes[curr])) {
+            if (includeSplitToken) {
+                result[result.length - 1].push(curr);
             }
 
-            return acc;
-        },
-        [[]] as Token[][],
-    );
+            result.push([]);
+        } else {
+            result[result.length - 1].push(curr);
+        }
+    }
+
+    return result;
 }

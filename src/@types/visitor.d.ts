@@ -1,28 +1,46 @@
-import type { AstAtRule, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstRule } from "./ast.d.ts";
-import { WalkerEvent } from "../lib/ast/walk.ts";
+import type { PlainToken, Token } from "./token.d.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
+import type { AstArenaNode } from "../lib/ast/arena-node.ts";
+import type {
+    AstAtRule,
+    AstDeclaration,
+    AstKeyframesAtRule,
+    AstKeyframesRule,
+    AstNode,
+    AstRule,
+    PlainAstNode,
+} from "./ast.d.ts";
+import { WalkerEvent } from "../lib/ast/types.ts";
 import { EnumToken } from "../lib/ast/types.ts";
 
 /**
- * Generic visitor result
+ * Generic visitor result: a node id, an object or an array of node ids and objects. the object views of the arena
+ * (`arena.toObject()`) are not copied, the other objects are imported into the arena with `arena.fromObject()`.
+ * null (or nothing) keeps the node
  */
-export declare type GenericVisitorSyncResult<T> = T | T[] | null;
+export declare type GenericVisitorSyncResult<T> =
+    | T
+    | T[]
+    | AstArenaNode
+    | PlainAstNode
+    | PlainToken
+    | Array<T | AstArenaNode | PlainAstNode | PlainToken>
+    | null
+    | void;
 /**
  * Generic visitor result
  */
-export declare type GenericVisitorAsyncResult<T> = Promise<T> | Promise<T[]> | Promise<null>;
+export declare type GenericVisitorAsyncResult<T> = Promise<GenericVisitorSyncResult<T>>;
 /**
  * Generic visitor result
  */
 export declare type GenericVisitorResult<T> = GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
 
 /**
- * Generic visitor handler
+ * Generic visitor handler. it is called with the arena and the node id. the other properties of the node are read
+ * from the arena: `arena.getParent(node)`, `arena.toObject(node)`, ...
  */
-export declare type GenericVisitorSyncHandler<T> = (
-    node: T,
-    parent?: AstNode | Token,
-    root?: AstNode | Token,
-) => GenericVisitorSyncResult<T>;
+export declare type GenericVisitorSyncHandler<T> = (arena: AstArena, node: T) => GenericVisitorSyncResult<T>;
 
 /**
  * Generic visitor handler
@@ -65,7 +83,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -73,9 +91,9 @@ export declare interface VisitorSyncNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (arena: AstArena, node: AstAtRule): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -108,7 +126,7 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -118,23 +136,19 @@ export declare interface VisitorSyncNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (arena: AstArena, node: AstDeclaration): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -159,15 +173,17 @@ export declare interface VisitorSyncNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (arena: AstArena, id: AstDeclaration): null => {
      *
+     *             // object view of the declaration: the properties read and write the arena
+     *             const node = arena.toObject(id);
      *
      *             if (node.nam == 'height') {
      *
@@ -176,7 +192,7 @@ export declare interface VisitorSyncNodeMap {
      *
      *             else if (node.nam == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 node.nam = 'padding';
      *             }
      *
      *             return null;
@@ -211,18 +227,19 @@ export declare interface VisitorSyncNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (arena: AstArena, node: AstRule): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -275,25 +292,26 @@ export declare interface VisitorSyncNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (arena, node) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.getFirstChild(result.ast)));
      *         },
-     *         ColorTokenType:  (node) => {
+     *         ColorTokenType:  (arena, node) => {
      *
      *             // dump all color tokens
-     *             // console.debug(node);
+     *             // console.debug(arena.toObject(node));
      *          },
-     *          FunctionTokenType:  (node) => {
+     *          FunctionTokenType:  (arena, node) => {
      *
      *              // dump all function tokens
-     *              // console.debug(node);
+     *              // console.debug(arena.toObject(node));
      *          },
-     *          DeclarationNodeType:  (node) => {
+     *          DeclarationNodeType:  (arena, node) => {
      *
      *              // dump all declaration nodes
-     *              // console.debug(node);
+     *              // console.debug(arena.toObject(node));
      *          }
      *     }
      * };
@@ -317,9 +335,8 @@ export declare interface VisitorSyncNodeMap {
  * Generic visitor handler
  */
 export declare type GenericVisitorHandler<T> = (
+    arena: AstArena,
     node: T,
-    parent?: AstNode | Token,
-    root?: AstNode | Token,
 ) => GenericVisitorSyncResult<T> | GenericVisitorAsyncResult<T>;
 
 /**
@@ -362,7 +379,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, AstAtRule, ParserOptions} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstAtRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -370,9 +387,9 @@ export declare interface VisitorNodeMap {
      *
      *         AtRule: {
      *
-     *             media: (node: AstAtRule): AstAtRule => {
+     *             media: (arena: AstArena, node: AstAtRule): AstAtRule => {
      *
-     *                 node.val = 'tv,screen';
+     *                 arena.setValueString(node, 'tv,screen');
      *                 return node
      *             }
      *         }
@@ -405,7 +422,7 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, AstArena, AstDeclaration, EnumToken, LengthToken, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
@@ -415,23 +432,19 @@ export declare interface VisitorNodeMap {
      *         Declaration: {
      *
      *             // called only for height declaration
-     *             height: (node: AstDeclaration): AstDeclaration[] => {
+     *             height: (arena: AstArena, node: AstDeclaration): AstDeclaration[] => {
      *
      *
      *                 return [
      *                     node,
-     *                     {
-     *
-     *                         typ: EnumToken.DeclarationNodeType,
-     *                         nam: 'width',
-     *                         val: [
-     *                             <LengthToken>{
-     *                                 typ: EnumToken.LengthTokenType,
-     *                                 val: 3,
-     *                                 unit: 'px'
-     *                             }
-     *                         ]
-     *                     }
+     *                     // new nodes are allocated in the arena
+     *                     arena.createDeclaration(EnumToken.DeclarationNodeType, 'width', [
+     *                         <LengthToken>{
+     *                             typ: EnumToken.LengthTokenType,
+     *                             val: 3,
+     *                             unit: 'px'
+     *                         }
+     *                     ], null, null)
      *                 ];
      *             }
      *            }
@@ -456,15 +469,17 @@ export declare interface VisitorNodeMap {
      * Example: rename 'margin' to 'padding' and 'height' to 'width'
      *
      * ```ts
-     * import {AstDeclaration, ParserOptions, transform} from "../src/node.ts";
+     * import {AstArena, AstDeclaration, ParserOptions, transform} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     visitor: {
      *
      *         // called for every declaration
-     *         Declaration: (node: AstDeclaration): null => {
+     *         Declaration: (arena: AstArena, id: AstDeclaration): null => {
      *
+     *             // object view of the declaration: the properties read and write the arena
+     *             const node = arena.toObject(id);
      *
      *             if (node.nam == 'height') {
      *
@@ -473,7 +488,7 @@ export declare interface VisitorNodeMap {
      *
      *             else if (node.nam == 'margin') {
      *
-     *                 node.nam = 'padding'
+     *                 node.nam = 'padding';
      *             }
      *
      *             return null;
@@ -508,18 +523,19 @@ export declare interface VisitorNodeMap {
      *
      * ```ts
      *
-     * import {transform, parseDeclarations} from "@tbela99/css-parser";
+     * import {transform, parseDeclarations, AstArena, AstRule, ParserOptions} from "@tbela99/css-parser";
      *
      * const options: ParserOptions = {
      *
      *     removeEmpty: false,
      *     visitor: {
      *
-     *         Rule: async (node: AstRule): Promise<AstRule | null> => {
+     *         Rule: (arena: AstArena, node: AstRule): AstRule | null => {
      *
-     *             if (node.sel == '.foo') {
+     *             if (arena.getSelector(node) == '.foo') {
      *
-     *                 node.chi.push(...await parseDeclarations('width: 3px'));
+     *                 // the declarations are parsed in the same arena
+     *                 arena.appendChildren(node, ...parseDeclarations('width: 3px', arena).nodes);
      *                 return node;
      *             }
      *
@@ -572,25 +588,26 @@ export declare interface VisitorNodeMap {
      *     visitor: {
      *
      *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (node) => {
+     *         StyleSheetNodeType: async (arena, node) => {
      *
-     *             // insert a new rule
-     *             node.chi.unshift(await parse('html {--base-color: pink}').then(result => result.ast.chi[0]))
+     *             // insert a new rule. nodes of another arena are imported
+     *             const result = await parse('html {--base-color: pink}');
+     *             arena.prependChildren(node, arena.import(result.arena, result.arena.getFirstChild(result.ast)));
      *         },
-     *         ColorTokenType:  (node) => {
+     *         ColorTokenType:  (arena, node) => {
      *
      *             // dump all color tokens
-     *             // console.debug(node);
+     *             // console.debug(arena.toObject(node));
      *          },
-     *          FunctionTokenType:  (node) => {
+     *          FunctionTokenType:  (arena, node) => {
      *
      *              // dump all function tokens
-     *              // console.debug(node);
+     *              // console.debug(arena.toObject(node));
      *          },
-     *          DeclarationNodeType:  (node) => {
+     *          DeclarationNodeType:  (arena, node) => {
      *
      *              // dump all declaration nodes
-     *              // console.debug(node);
+     *              // console.debug(arena.toObject(node));
      *          }
      *     }
      * };

@@ -524,7 +524,7 @@ table.colortable {
 `;
             return parse(file, {
                 minify: true, nestingRules: true, validation: true
-            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`table.colortable :is(td,th) {
+            }).then(result => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`table.colortable :is(td,th) {
  border: 1px solid #d9dadd;
  padding: 5px
 }`));
@@ -554,7 +554,7 @@ table.colortable {
 `;
             return parse(file, {
                 minify: true, nestingRules: true, validation: true
-            }).then(result => expect(render(result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo-bar b,.foo-bar:is(>a,+a,~a b) {
+            }).then(result => expect(render(result.arena, result.ast, {minify: false, expandNestingRules: true}).code).equals(`.foo-bar b,.foo-bar:is(>a,+a,~a b) {
  color: #fff
 }`));
         });

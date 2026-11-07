@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0
 	License: MIT
  */
 // from https://www.w3.org/TR/css-color-4/multiply-matrices.js
@@ -32,7 +32,7 @@ function multiplyMatrices(A, B) {
         return row.reduce((a, c, i) => a + c * (col[i] || 0), 0);
     }));
     // if (m === 1) {
-    //     product = <number[]>product[0]; // Avoid [[a, b, c, ...]]
+    //     product = <Token[]>product[0]; // Avoid [[a, b, c, ...]]
     // }
     if (p === 1) {
         // @ts-expect-error

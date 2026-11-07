@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.06% </span>
+                <span class="strong">86.52% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>175/201</span>
+                <span class='fraction'>167/193</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.06% </span>
+                <span class="strong">86.52% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>175/201</span>
+                <span class='fraction'>167/193</span>
             </div>
         
             
@@ -256,27 +256,19 @@
 <a name='L191'></a><a href='#L191'>191</a>
 <a name='L192'></a><a href='#L192'>192</a>
 <a name='L193'></a><a href='#L193'>193</a>
-<a name='L194'></a><a href='#L194'>194</a>
-<a name='L195'></a><a href='#L195'>195</a>
-<a name='L196'></a><a href='#L196'>196</a>
-<a name='L197'></a><a href='#L197'>197</a>
-<a name='L198'></a><a href='#L198'>198</a>
-<a name='L199'></a><a href='#L199'>199</a>
-<a name='L200'></a><a href='#L200'>200</a>
-<a name='L201'></a><a href='#L201'>201</a>
-<a name='L202'></a><a href='#L202'>202</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<a name='L194'></a><a href='#L194'>194</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
@@ -349,14 +341,6 @@
 <span class="cline-any cline-yes">31x</span>
 <span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
 <span class="cline-any cline-yes">31x</span>
 <span class="cline-any cline-yes">31x</span>
 <span class="cline-any cline-yes">8x</span>
@@ -463,13 +447,13 @@
 <span class="cline-any cline-yes">83x</span>
 <span class="cline-any cline-yes">83x</span>
 <span class="cline-any cline-yes">83x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 1.7.0
+	Version: 2.0.0
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -478,110 +462,102 @@ import { EnumToken, ColorType } from '../../ast/types.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
 import { cmyk2srgbvalues } from './srgb.js';
 &nbsp;
-function hex2lchToken(token) {
-    const values = hex2lchvalues(token);
+function hex2lchToken(arena, token) {
+    const values = hex2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function rgb2lchToken(token) {
-    const values = rgb2lchvalues(token);
+function rgb2lchToken(arena, token) {
+    const values = rgb2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function hsl2lchToken(token) {
-    const values = hsl2lchvalues(token);
+function hsl2lchToken(arena, token) {
+    const values = hsl2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function hwb2lchToken(token) {
-    const values = hwb2lchvalues(token);
+function hwb2lchToken(arena, token) {
+    const values = hwb2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function cmyk2lchToken(token) {
-    const values = cmyk2lchvalues(token);
+function cmyk2lchToken(arena, token) {
+    const values = cmyk2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function lab2lchToken(token) {
-    const values = lab2lchvalues(token);
+function lab2lchToken(arena, token) {
+    const values = lab2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function oklab2lchToken(token) {
-    const values = oklab2lchvalues(token);
+function oklab2lchToken(arena, token) {
+    const values = oklab2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function oklch2lchToken(token) {
-    const values = oklch2lchvalues(token);
+function oklch2lchToken(arena, token) {
+    const values = oklch2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function color2lchToken(token) {
-    const values = color2lchvalues(token);
+function color2lchToken(arena, token) {
+    const values = color2lchvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return lchToken(values);
+    return lchToken(arena, values);
 }
-function lchToken(values) {
+function lchToken(arena, values) {
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
     if (values.length == 4) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "lch",
-        chi,
-        kin: ColorType.LCH,
-    };
+    return arena.createColor("lch", ColorType.LCH, chi);
 }
-function hex2lchvalues(token) {
-    const values = hex2labvalues(token);
+function hex2lchvalues(arena, token) {
+    const values = hex2labvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function rgb2lchvalues(token) {
-    const values = rgb2labvalues(token);
+function rgb2lchvalues(arena, token) {
+    const values = rgb2labvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function hsl2lchvalues(token) {
-    const values = hsl2labvalues(token);
+function hsl2lchvalues(arena, token) {
+    const values = hsl2labvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function hwb2lchvalues(token) {
-    const values = hwb2labvalues(token);
+function hwb2lchvalues(arena, token) {
+    const values = hwb2labvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function lab2lchvalues(token) {
-    const values = getLABComponents(token);
+function lab2lchvalues(arena, token) {
+    const values = getLABComponents(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
@@ -589,26 +565,26 @@ function srgb2lch(r, g, blue, alpha) {
     let values = srgb2labvalues(r, g, blue, alpha);
     return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function oklab2lchvalues(token) {
-    const values = oklab2labvalues(token);
+function oklab2lchvalues(arena, token) {
+    const values = oklab2labvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function cmyk2lchvalues(token) {
-    const values = cmyk2srgbvalues(token);
+function cmyk2lchvalues(arena, token) {
+    const values = cmyk2srgbvalues(arena, token);
     // @ts-ignore
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: srgb2lch(values[0], values[1], values[2], values[3]);
 }
-function oklch2lchvalues(token) {
-    const values = oklch2labvalues(token);
+function oklch2lchvalues(arena, token) {
+    const values = oklch2labvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     // @ts-ignore
     return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
-function color2lchvalues(token) {
-    const values = color2srgbvalues(token);
+function color2lchvalues(arena, token) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -631,8 +607,8 @@ function xyz2lchvalues(x, y, z, alpha) {
     const lch = labvalues2lchvalues(values[0], values[1], values[2]);
     return alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >|| alpha == 1 </span>? lch <span class="branch-0 cbranch-no" title="branch not covered" >: lch.concat(alpha);</span>
 }
-function getLCHComponents(token) {
-    const components = getColorComponents(token);
+function getLCHComponents(arena, token) {
+    const components = getColorComponents(arena, token);
     if (components == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -642,26 +618,26 @@ function getLCHComponents(token) {
             EnumToken.PercentageTokenType,
             EnumToken.AngleTokenType,
             EnumToken.IdenTokenType,
-        ].includes(components[i].typ)) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+        ].includes(arena.dataTypes[components[i]])) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >            return null;</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
     }
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const l = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
+    const l = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(t) * (t.typ == EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 150 </span>: 1);
+    const c = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 150 </span>: 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const h = getAngle(t) * 360;
+    const h = getAngle(arena, t) * 360;
     // @ts-ignore
     t = components[3];
     // @ts-ignore
-    const alpha = t == null ? 1 : getNumber(t);
+    const alpha = t == null ? 1 : getNumber(arena, t);
     return alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >? [l, c, h] </span>: [l, c, h, alpha];
 }
 &nbsp;
@@ -673,7 +649,7 @@ export { cmyk2lchToken, cmyk2lchvalues, color2lchToken, color2lchvalues, getLCHC
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-01T15:49:10.465Z
+                at 2026-11-07T22:03:47.899Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

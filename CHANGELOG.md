@@ -1,5 +1,67 @@
 # Changelog
 
+# 2.0.0 (unreleased)
+
+breaking changes
+
+see the [migration guide](./files/migration.md)
+
+- [x] removed the deprecated commonjs build (`dist/index.cjs`, export `@tbela99/css-parser/cjs`): the package is an ES module
+- [x] `EnumToken.CommentTokenType` is 1: the value 0 is reserved for the null node, the `EnumToken` values are renumbered
+- [x] the arena is never compacted nor trimmed by the library: detached nodes and the tokens allocated while rendering stay allocated. call `arena.compact()` to reclaim the memory
+- [x] the initial arena capacity is computed from the input length: the arena seldom grows
+- [x] `render()` renders copies (`withParents`, `expandNestingRules`) in the same arena, under a temporary stylesheet node
+- [x] memory is reclaimed on demand only: `arena.mark(...nodes)` marks nodes, `arena.release()` releases the marked nodes, `arena.trim()` releases them and compacts the arena. `arena.rewind()` is removed
+- [x] removed the deprecated `ValidationLevel` enum: the `validation` option is a boolean
+- [x] removed the deprecated `parseFile()` and `transformFile()` functions: use `parse({file})` and `transform({file})`
+- [x] removed the deprecated node types `EnumToken.InvalidRuleNodeType`, `EnumToken.InvalidAtRuleNodeType` and `EnumToken.InvalidDeclarationNodeType` (they were no longer produced: invalid nodes keep their type and get the `EnumAstNodeStatus.Invalid` state) and the deprecated `AstInvalidRule`, `AstInvalidAtRule` and `AstInvalidDeclaration` types. the `EnumToken` values that followed them are renumbered: use the `EnumToken` names, not their values
+- [x] removed `EnumToken.InvalidClassSelectorTokenType`, `EnumToken.InvalidAttrTokenType` and `EnumToken.InvalidMediaQueryTokenType` (not produced by the parser) and `EnumToken.InvalidCommentTokenType`: a CDO / CDC comment outside of the stylesheet is a `EnumToken.BadCdoTokenType` token, reported and rendered as an empty string as before. the `InvalidClassSelectorToken`, `InvalidAttrToken` and `InvalidMediaQueryToken` types are removed. `EnumToken` starts at 1
+- [x] the arrays returned by the object views (`chi`, `val`, `tokens`, fields), their locations (`loc`) and their error lists (`errors`) are frozen: assign the property to modify the arena
+- [x] the traversal and search functions are methods of the arena: `walk()`, `walkValues()`, `find()`, `findAll()`, `findLast()`, `findByValue()` and `findValue()` are removed, use `arena.walk(node, filter?, reverse?)`, `arena.walkValues(tokens, filter?, reverse?)`, `arena.find(node, matcher)`, `arena.findAll(node, matcher)`, `arena.findLast(node, matcher)`, `arena.findByValue(node, matcher)` and `arena.findValue(node, matcher)`
+- [x] `arena.walk()` and `arena.walkValues()` return node ids instead of result objects (`{node, parent, root, arena, parents}`, `{value, parent, previousValue, nextValue, root, parents}`): the parent is `arena.getParent(node)`, the parent of a value token `arena.getValueParent(token)` (the field list token of a structured token is skipped) and the node that owns it `arena.getValueOwner(token)`. `walkValues()` has no `root` argument, it accepts an array of token ids or a node id (its value tokens are walked). `findByValue()` returns `{node, value}` (ids), `findValue()` returns the token id. the `WalkResult`, `WalkAttributesResult` and `TokenSearchResult` types are removed
+- [x] the callbacks are called with the arena and the node id, the arguments that can be read from the arena are removed: walk filters `(arena, node)`, walkValues filters `(arena, token, event)` and type filters `(arena, token)`, matchers `(arena, node)` / `(arena, token)`, `arena.findToken()`, `arena.tokens()`, `arena.children()` and `arena.siblings()` filters `(arena, id)`
+- [x] visitors are called with the arena and the node id: `handler(arena, id)` instead of `handler(node, arena, parent, root)`. they return nothing to keep the node, or an object (an object view or a plain object) or a node id, or an array of objects and node ids, to replace it
+- [x] `arena.toObject(id)` returns an object view of the node (`AstArenaNode`) instead of a plain copy: its properties (`typ`, `nam`, `sel`, `val`, `chi`, `tokens`, `unit`, `kin`, `l`, `r`, `op`, `loc`, `state`, `errors`, `parent`, ...) are getters and setters that read and write the arena, the view only holds the arena (`ARENA`) and the node id (`ARENAID`, keyed symbols). `arena.toPlainObject(id)` (and `view.toJSON()`, `JSON.stringify(view)`) returns the plain copy. `arena.fromObject()` imports views: importing a view of the same arena is a noop, the views of another arena are copied
+- [x] the css module variables (`result.cssModuleVariables`) are object views of the variable nodes
+- [x] removed `replaceNodeOrValue()`; use `arena.replaceToken(id, ...tokens)` for value token replacement
+- [x] removed `replaceNode()`; use `arena.replaceChild(id, ...nodes)` to replace AST nodes
+- [x] removed `cloneNode()` and `cloneValue()`: use `arena.clone(id, deep?, cloneMap?)`
+- [x] removed `expand()`: use `arena.expand(node)`
+- [x] removed `getNodeProperty()` and `setNodeProperty()`: use the arena methods (`arena.getState()`, `arena.setState()`, `arena.getErrors()`, ...) or the object view properties (`arena.toObject(id).state = ...`)
+- [x] `WalkerEvent` and `WalkerOptionEnum` are declared with the other enums (they are still exported by the package)
+
+performance
+
+- [x] the parser recycles the tokens that are not attached to the tree (whitespace, `:`, `;`, `{`, `}`, ...): the arena allocates about half the nodes. `arena.recycle(id)` reuses the id of a detached leaf node
+- [x] the initial arena capacity is one node for every 4 bytes of css
+- [x] the validations of declaration values are cached per arena: a value is validated once per property syntax. the failed validations are cached too: their errors are rebuilt with the node and the location of each declaration. the cache is keyed by the string table of the arena: compacting the arena does not reuse stale results
+- [x] validation allocates less: the validation context is a class, the options are not copied, `matchAllSyntaxes()` passes its result object to the matching functions
+- [x] the syntax definitions are tokenized by character code (no per character strings, regular expressions or position copies)
+- [x] tokenizer: symbols, units and function names are looked up in hash tables by source range (no string per lookup), the characters are read by code (no single character strings), numbers are parsed without a string when the result is exact, the whitespace text is not kept
+- [x] `arena.walk()` and `arena.walkValues()` return iterator objects instead of generators: one small object per walk, the iteration result object is reused, no closure, no result object or array per visited node. the children are read when the next node is requested. the iteration protocol (`next()`, `return()`, `for ... of`) is unchanged
+- [x] parser: the declaration colors are parsed without an iterator, the selector string is built without intermediate arrays, maps or closures, `toLowerCase()` is not called on lowercase strings
+- [x] renderer: `renderValue()` creates no options / cache object and no closure per call, token lists are rendered from the linked lists, `render()` copies the options with a fast clone and does not flatten the rendered children to remove the last semicolon
+- [x] renderer: identical declarations (same name and value tokens) are rendered once per render: `.s{width:10px} .g{width:10px}` renders `width:10px` once. colors and constructs (functions, parentheses, binary expressions, ...) are memoized too, the individual tokens are not (`convertColor()` is called once per distinct color, fewer tokens are allocated while rendering). the source map locations are still computed for every node
+- [x] renderer: numbers are minified once, the last semicolon of a block is known from the type of the last child (the rendered child is not read)
+- [x] renderer: the memo keys are serialized compactly (most tokens take 1 or 2 values) directly in the key pool, the memos are reused by the next renders
+- [x] minifier: the rule / at-rule preludes are not parsed again after the selectors are rewritten (at-rules used to get their name parsed as prelude tokens), the default values of the shorthand properties are parsed once
+- [x] minifier: the rule sizes are compared with a renderer that resolves the options once and shares the rendered values, tokens are compared and deduplicated by structure instead of signature strings
+- [x] parser: small inputs of known length do not allocate 4096 nodes
+- [x] the single line methods (arena accessors and setters, tokenizer, line map and source file accessors, validation context, memo lookups) are inlined at their call sites inside the library. each inlined line is preceded by a `// inlined: <call>` comment. the public methods are unchanged
+
+features
+
+- [x] `AstArenaNode`: lightweight object view of an arena node, see `arena.toObject()`
+- [x] `arena.getValueParent(token)`, `arena.getValueOwner(token)`, `arena.toPlainObject(id)`
+- [x] arena accessors: `arena.getNextSibling(id)`, `arena.getPreviousSibling(id)`, `arena.getFirstToken(id)`, `arena.getLastToken(id)`, `arena.getCapacity()`, `arena.getLastId()` and `arena.getStringCount()`
+
+documentation
+
+- [x] [Arena Memory](./files/arena.md): memory used by the arena, capacity and growth, what allocates nodes, reclaiming memory with `mark()`, `release()`, `compact()`, `trim()`
+- [x] the traversal, the visitors and the object views are documented with the new signatures ([Ast Manipulation](./files/ast.md), [Custom Transform](./files/transform.md), [Validation](./files/validation.md), [Plugins](./files/plugins.md), [Utility Functions](./files/utilities.md))
+- [x] [Migration](./files/migration.md): the breaking changes of 2.0 and how to update the code
+- [x] the documentation, the README and the examples read and write the arena with its methods (`arena.getType(n)`, `arena.getName(n)`, `arena.getFirstChild(n)`, `arena.setType(n, type)`, ...) instead of accessing the columns
+
 # 1.8.2
 
 remove left over console debug

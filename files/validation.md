@@ -18,7 +18,7 @@ CSS rules and at-rules are always validated, regardless of the `validation` sett
 ```ts
 
 
-import {transform, TransformOptions, ValidationLevel} from "@tbela99/css-parser";
+import {transform, TransformOptions} from "@tbela99/css-parser";
 
 const options: TransformOptions = {
 
@@ -64,31 +64,34 @@ console.debug(result.errors);
 
 ## Ast nodes validation state
 
-Validation results are available through the node's `state` property, while detailed validation errors can be accessed from the node's `errors` property.
+Validation results are available through the node's `state` property (`arena.getState(id)`), while detailed validation errors can be accessed from the node's `errors` property (`arena.getErrors(id)`).
 
 The following example prints the validation state of each node, along with any validation error details.
 
 ```ts
 
-import {EnumToken, EnumAstNodeStatus, transformSync, getNodeProperty} from "@tbela99/css-parser";
-import type {TransformOptions, VisitorNodeMap, AstAtRule, AstRule, AstDeclaration} from "@tbela99/css-parser";
+import {EnumToken, EnumAstNodeStatus, transformSync} from "@tbela99/css-parser";
+import type {AstArena, TransformSyncOptions, VisitorNodeMap, AstAtRule, AstRule, AstDeclaration} from "@tbela99/css-parser";
 
 const options: TransformSyncOptions = {
 
     beautify: true,
     validation: true,
     visitor: {
-        AtRule: (node: AstAtRule) => {
-            
-            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
+        AtRule: (arena: AstArena, id: AstAtRule) => {
+
+            const node = arena.toObject(id);
+            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[node.state], '\n errors:', node.errors)
         },
-        Rule: (node: AstRule) => {
-            
-            console.debug('>>> ' + node.sel, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
+        Rule: (arena: AstArena, id: AstRule) => {
+
+            const node = arena.toObject(id);
+            console.debug('>>> ' + node.sel, '\n state: ' + EnumAstNodeStatus[node.state], '\n errors:', node.errors)
         },
-        Declaration: (node: AstDeclaration) => {
-            
-            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[getNodeProperty(node, 'state')], '\n errors:', getNodeProperty(node, 'errors'))
+        Declaration: (arena: AstArena, id: AstDeclaration) => {
+
+            const node = arena.toObject(id);
+            console.debug('>>> ' + node.nam, '\n state: ' + EnumAstNodeStatus[node.state], '\n errors:', node.errors)
         }
     } as VisitorNodeMap
 };
@@ -176,8 +179,8 @@ In the example below, the node's validation state is changed from `EnumAstNodeSt
 
 ```ts
 
-import {EnumToken, EnumAstNodeStatus, transformSync, getNodeProperty, setNodeProperty} from "@tbela99/css-parser";
-import type {TransformSyncOptions, VisitorNodeMap, AstDeclaration} from "@tbela99/css-parser";
+import {EnumAstNodeStatus, transformSync} from "@tbela99/css-parser";
+import type {AstArena, AstAtRule, TransformSyncOptions, VisitorNodeMap} from "@tbela99/css-parser";
 
 
 const options: TransformSyncOptions = {
@@ -185,11 +188,14 @@ const options: TransformSyncOptions = {
     beautify: true,
     validation: true,
     visitor: {
-        AtRule: (node: AstAtRule) => {
-            
-            if (getNodeProperty(node, "state") == EnumAstNodeStatus.Invalid) {
+        AtRule: (arena: AstArena, id: AstAtRule) => {
 
-                setNodeProperty(node, "state", EnumAstNodeStatus.ValidationFailed);
+            // the object view reads and writes the arena
+            const node = arena.toObject(id);
+
+            if (node.state == EnumAstNodeStatus.Invalid) {
+
+                node.state = EnumAstNodeStatus.ValidationFailed;
             }
         },
     } as VisitorNodeMap

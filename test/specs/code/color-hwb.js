@@ -1,5 +1,13 @@
 import {ColorType, EnumToken} from "../../../dist/src/lib/ast/types.js";
-import {isOkLabClose} from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { isOkLabClose as okLabClose } from "../../../dist/src/lib/syntax/color/utils/distance.js";
+import { AstArena } from "../../../dist/src/lib/ast/arena.js";
+
+/**
+ * compare a color token id with another token id or a plain color object
+ */
+function isOkLabClose(arena, color1, color2, threshold) {
+    return okLabClose(arena, color1, typeof color2 == "number" ? color2 : arena.fromObject(color2), threshold);
+}
 
 export function run(describe, expect, it, transform, parse, render) {
 
@@ -10,7 +18,7 @@ export function run(describe, expect, it, transform, parse, render) {
                 beautify: true,
                 convertColor: ColorType.HWB
             }).then(result =>
-                expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+                expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                     typ: EnumToken.ColorTokenType,
                     val: 'hwb',
                     chi: [
@@ -30,7 +38,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: hsl(0 68.07511737089203% 41.764705882352935%/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -48,7 +56,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: device-cmyk(0 81% 81% 30%/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -66,7 +74,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: rgb(179 34 34/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -85,7 +93,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(srgb .7019607843137254 .13333333333333333 .13333333333333333/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -104,7 +112,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(srgb-linear .45078578283822346 .01599629336550963 .01599629336550963/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -123,7 +131,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(display-p3 0.644980276448 0.191199800941 0.165770885403 / 0.501960784314); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -142,7 +150,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(a98-rgb 0.6015 0.1525 0.1525 / 0.50); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -161,7 +169,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(prophoto-rgb 0.458932310318 0.207098041055 0.12397162868 / 0.501960784314); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -180,7 +188,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(prophoto-rgb 0.458932310318 0.207098041055 0.12397162868 / 0.501960784314); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -199,7 +207,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(xyz .1945069569161969 .108449498170369 .025825724073578846/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -218,7 +226,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(xyz-d50 .2050219599912612 .11273398825257439 .019252589983419124/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -237,7 +245,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: color(xyz-d65 .1945069569161969 .108449498170369 .025825724073578846/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -256,7 +264,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: oklab(.49863253097209403 .16117650019451524 .08155524287358212/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -275,7 +283,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color:  oklch(.49863253097209403 .1806353283694016 26.8394/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -294,7 +302,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: lab(40.03718216996103 56.88417629340889 39.4648992397212/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [
@@ -313,7 +321,7 @@ export function run(describe, expect, it, transform, parse, render) {
             return transform(`.hsl { color: lch(40.03718101914915 69.23357317984528 34.752/50%); }`, {
                 beautify: true,
                 convertColor: ColorType.HWB
-            }).then(result => expect(isOkLabClose(result.ast.chi[0].chi[0].val[0], {
+            }).then(result => expect(isOkLabClose(result.arena, result.arena.firstToken[result.arena.firstChild[result.arena.firstChild[result.ast]]], {
                 typ: EnumToken.ColorTokenType,
                 val: 'hwb',
                 chi: [

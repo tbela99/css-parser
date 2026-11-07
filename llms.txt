@@ -4,7 +4,7 @@
 - This repository contains css-parser, a dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 - The library follows the CSS Syntax Module Level 3 specification and uses MDN syntax data for validation.
 - It is designed for fault-tolerant parsing, full AST and typed-token analysis, AST manipulation, CSS Modules, minification, color processing, and syntax lowering.
-- CSS is always fully parsed into a structured AST, and token values are typed so plugins and transforms can work against semantic data instead of raw strings.
+- CSS is fully parsed into an arena-backed AST. Nodes and value tokens are integer IDs; their data is accessed through the arena rather than node objects.
 
 ## Installation
 - npm: npm install @tbela99/css-parser
@@ -14,20 +14,47 @@
   - @tbela99/css-parser/web
 
 ## Core APIs
-- parse(css, options): async api to parse CSS and returns an AST, errors, and stats.
-- parseSync(css, options): sync api to parse CSS and returns an AST, errors, and stats.
-- render(ast, options): renders an AST back to CSS text.
-- transform(css, options): async api to parse CSS and generate output in one step.
-- transformSync(css, options): sync api to parse CSS and generate output in one step.
-- walk(ast, filter): traverses the AST for custom transformations.
+- parse(css, options): async API; returns {arena, ast, errors, stats}. ast is a stylesheet node ID.
+- parseSync(css, options): synchronous equivalent of parse().
+- render(arena, ast, options): renders an arena-backed AST and returns a result containing code.
+- transform(css, options): async API that parses and renders; returns code with the parse result.
+- transformSync(css, options): synchronous equivalent of transform().
+- arena.walk(ast, filter): traverses node IDs; filters receive (arena, id).
+- parseString(arena, css): parses tokens into the supplied arena.
+- parseDeclarations(css, arena?): parses declarations in the supplied arena or a new one; returns {arena, nodes}.
+- parse() and transform() also accept input objects for files and readable streams.
+- The package is ES module only. Entry points are @tbela99/css-parser, @tbela99/css-parser/node, and @tbela99/css-parser/web.
+
+## Arena-based AST
+- Node aliases such as AstRule, AstDeclaration, and Token are numbers, not objects.
+- Parse results expose both arena and ast. Use arena methods such as getType(id), getName(id), getSelector(id), getFirstChild(id), and getNextSibling(id) to inspect data.
+- Use arena.createRule(), arena.createDeclaration(), arena.createToken(), and related methods to create nodes and tokens.
+- arena.toObject(id) returns a live getter/setter view; arena.toPlainObject(id) returns a plain copy.
+- AST operations take the arena explicitly: render(arena, ast); use arena.replaceToken(id, ...tokens) to replace a value token.
+- Visitors and traversal callbacks receive (arena, id); parent and value data are retrieved through arena methods.
+- Detached nodes remain allocated until released or the arena is compacted.
+- Transfer an arena between the main thread and a worker with AstArena.toTransferableArenaObject() and AstArena.fromTransferableArenaObjects(). The arena columns are typed-array buffers; this is a zero-copy transfer of node data.
+
+```ts
+import {AstArena, parse} from '@tbela99/css-parser';
+
+const {arena, ast} = await parse(css);
+const [properties, transferables] = AstArena.toTransferableArenaObject(arena);
+worker.postMessage({ast, properties, transferables}, transferables);
+
+// In the worker: reconstruct the arena over the received buffers.
+const workerArena = AstArena.fromTransferableArenaObjects(properties, transferables);
+```
+
+- Properties such as strings and errors are structured-cloned. Zero-copy transfer of the column buffers detaches the source arena; omit the transfer list to copy the buffers instead.
 
 ## Common capabilities
 - Parse CSS into an AST and inspect or modify it.
 - Validate declarations against CSS syntax definitions.
 - Support CSS Modules with scoped class generation.
 - Minify CSS safely with options such as inlineCssVariables, computeCalcExpression, removeDuplicateDeclarations, and beautify.
-- Transform ASTs through visitors and custom traversal logic.
-- Support plugin-style extensions through the visitor API, where custom handlers can observe and mutate AST nodes during enter/visit/leave phases.
+- Transform ASTs through arena methods, visitors, and custom traversal logic.
+- Support plugin-style extensions through visitors; handlers receive (arena, id) and inspect or mutate nodes through the arena or an object view.
 - Lower modern CSS syntax such as nested CSS and if() to broadly compatible output.
 - Generate source maps and handle advanced color functions and conversions.
 
@@ -38,28 +65,30 @@
 
 ## Typical usage
 ```ts
-import {transform, ColorType} from '@tbela99/css-parser';
+import {parse, render} from '@tbela99/css-parser';
 
 const css = `.foo { color: red; }`;
-const result = await transform(css, {
-  beautify: true,
-  convertColor: ColorType.SRGB,
-});
+const {arena, ast, errors, stats} = await parse(css);
+const rule = arena.getFirstChild(ast);
 
-console.log(result.code);
+console.log(arena.getSelector(rule));
+console.log(render(arena, ast).code);
+console.log(errors, stats);
 ```
+
+For one-step parsing and output generation, use `transform()` or `transformSync()` and read `result.code`.
 
 ## Important behavior notes
 - parse(), parseSync(), transform() and transformSync() are lenient by default and preserve unknown constructs unless configured otherwise.
 - Comments are removed by default; preserve them with removeComments: false or preserveLicense: true.
-- Validation errors are available through the parse/transform result and through node.state and node.errors.
+- Validation errors are available through the parse/transform result and through arena.getState(id) and arena.getErrors(id).
 - The library prioritizes compact output while preserving semantics.
 
 ## Useful concepts
-- parse(), parseSync() return AST, errors, and stats.
-- render() turns an AST into CSS text.
-- transform(), transformSync() perform parsing and rendering together.
-- AST node types include StyleSheet, Rule, AtRule, Declaration, Comment, and Keyframes variants.
+- parse(), parseSync() return {arena, ast, errors, stats}; ast is an ID in the returned arena.
+- render(arena, ast) turns an arena-backed AST into CSS text.
+- transform(), transformSync() perform parsing and rendering together and return code.
+- AST node IDs can represent StyleSheet, Rule, AtRule, Declaration, Comment, and Keyframes nodes.
 
 ## Documentation files
 - files/getting-started.md
@@ -70,6 +99,8 @@ console.log(result.code);
 - files/transform.md
 - files/syntax-lowering.md
 - files/ast.md
+- files/arena.md
+- files/migration.md
 - files/utilities.md
 
 ## Repository layout

@@ -5,7 +5,7 @@ category: Guides
 ---
 
 ## Main function differences
-The library provides **synchronous** and **asynchronous** functions for parsing, analyzing, and transforming CSS.
+The library offers two variants—synchronous and asynchronous functions—for parsing, analyzing, and transforming CSS.
 
 The **synchronous API** is marginally faster than the asynchronous API, but it comes with some limitations. See the [details below](#difference-between-sync-and-async-apis).
 
@@ -29,13 +29,17 @@ import {parse, render} from '@tbela99/css-parser';
 const css = `...`;
 
 const result = await parse(css); // or parse({input: css});
-console.debug(result.ast);
+console.debug(result.ast); // the id of the stylesheet node in result.arena
+console.debug(result.arena.toObject(result.ast)); // object view of the ast, printed as a plain object
+console.debug(JSON.stringify(result.arena.toObject(result.ast))); // the ast as json
 console.debug(result.stats);
 
-const rendered = render(result.ast);
+const rendered = render(result.arena, result.ast);
 console.debug(rendered.code);
 console.debug(result.stats);
 ````
+
+The ast nodes are allocated in an arena (`result.arena`) and referenced by their node id. See [Ast Manipulation](./ast.md).
 
 or
 
@@ -45,7 +49,7 @@ import {transform} from '@tbela99/css-parser';
 const css = `...`;
 
 const result = await transform(css); // or transform({input: css});
-console.debug(result.ast);
+console.debug(result.ast); // the id of the stylesheet node in result.arena
 console.debug(result.code);
 console.debug(result.stats);
 ````
@@ -107,7 +111,7 @@ import {Readable} from "node:stream";
 const readableStream = Readable.toWeb(process.stdin);
 const result = await parse(readableStream, {beautify: true}); // or  parse({input: readableStream, beautify: true})
 
-console.log(result.ast);
+console.log(result.arena.toObject(result.ast));
 ```
 
 A response body object can also be passed to parse() or transform() functions. 
@@ -129,7 +133,7 @@ For more information about the available transform options, see the TypeScript d
 ### Usage
 
 ```javascript
-render(ast, RenderOptions = {});
+render(arena, ast, RenderOptions = {});
 ```
 
 ### Examples
@@ -152,13 +156,17 @@ const css = `
 `;
 
 const result = await parse(css, options);
+const arena = result.arena;
+
+// @media -> .a -> width
+const declaration = arena.getChildAt(arena.getChildAt(arena.getChildAt(result.ast, 0), 1), 1);
 
 // print declaration without parents
-console.error(render(result.ast.chi[0].chi[1].chi[1], {withParents: false}));
+console.error(render(arena, declaration, {withParents: false}));
 // -> width:3px
 
 // print declaration with parents
-console.debug(render(result.ast.chi[0].chi[1].chi[1], {withParents: true}));
+console.debug(render(arena, declaration, {withParents: true}));
 // -> @media screen and (min-width:40em){.a{width:3px}}
 
 ```
@@ -169,7 +177,7 @@ By default, CSS output is minified. That behavior can be changed by passing the 
 ```ts
 
 const result = await transform(css, {beautify: true}); 
-// or render(ast, {beautify: true})
+// or render(arena, ast, {beautify: true})
 
 console.log(result.code);
 
@@ -440,7 +448,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,728 bytes    | 1,633,188 bytes           |
-| Time                  | 205.91 ms          | 471.89 ms                 |
+| Time                  | 128.67 ms          | 268.86 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 

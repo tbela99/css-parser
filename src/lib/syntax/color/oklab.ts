@@ -1,4 +1,5 @@
 import { getColorComponents } from "./utils/components.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { multiplyMatrices } from "./utils/matrix.ts";
 import {
     cmyk2srgbvalues,
@@ -11,129 +12,121 @@ import {
     rgb2srgb,
     srgb2lsrgbvalues,
 } from "./srgb.ts";
-import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { getOKLCHComponents } from "./oklch.ts";
 import { lchvalues2labvalues } from "./lab.ts";
 
-export function hex2oklabToken(token: ColorToken): ColorToken | null {
-    const values = hex2oklabvalues(token);
+export function hex2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = hex2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function rgb2oklabToken(token: ColorToken): ColorToken | null {
-    const values = rgb2oklabvalues(token);
+export function rgb2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = rgb2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function hsl2oklabToken(token: ColorToken): ColorToken | null {
-    const values = hsl2oklabvalues(token);
+export function hsl2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = hsl2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function hwb2oklabToken(token: ColorToken): ColorToken | null {
-    const values = hwb2oklabvalues(token);
+export function hwb2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = hwb2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function cmyk2oklabToken(token: ColorToken): ColorToken | null {
-    const values = cmyk2oklabvalues(token);
+export function cmyk2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = cmyk2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function lab2oklabToken(token: ColorToken): ColorToken | null {
-    const values = lab2oklabvalues(token);
+export function lab2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = lab2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function lch2oklabToken(token: ColorToken): ColorToken | null {
-    const values = lch2oklabvalues(token);
+export function lch2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = lch2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function oklch2oklabToken(token: ColorToken): ColorToken | null {
-    const values = oklch2oklabvalues(token);
+export function oklch2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values = oklch2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-export function color2oklabToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = color2oklabvalues(token);
+export function color2oklabToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = color2oklabvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return oklabToken(values);
+    return oklabToken(arena, values);
 }
 
-function oklabToken(values: number[]): ColorToken | null {
+function oklabToken(arena: AstArena, values: number[]): Token | null {
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
     if (values.length == 4 && values[3] != 1) {
         chi.push(
-            { typ: EnumToken.LiteralTokenType, val: "/" },
-            {
-                typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
-            },
+            arena.createToken(EnumToken.LiteralTokenType, "/"),
+            arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
         );
     }
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "oklab",
-        chi,
-        kin: ColorType.OKLAB,
-    };
+    return arena.createColor("oklab", ColorType.OKLAB, chi);
 }
 
-export function hex2oklabvalues(token: ColorToken): number[] | null {
-    const values = hex2srgbvalues(token);
+export function hex2oklabvalues(arena: AstArena, token: Token): number[] | null {
+    const values = hex2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -143,8 +136,8 @@ export function hex2oklabvalues(token: ColorToken): number[] | null {
     return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function rgb2oklabvalues(token: ColorToken) {
-    const values = rgb2srgb(token);
+export function rgb2oklabvalues(arena: AstArena, token: Token) {
+    const values = rgb2srgb(arena, token);
 
     if (values == null) {
         return null;
@@ -153,8 +146,8 @@ export function rgb2oklabvalues(token: ColorToken) {
     return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function hsl2oklabvalues(token: ColorToken) {
-    const values = hsl2srgb(token);
+export function hsl2oklabvalues(arena: AstArena, token: Token) {
+    const values = hsl2srgb(arena, token);
 
     if (values == null) {
         return null;
@@ -163,19 +156,19 @@ export function hsl2oklabvalues(token: ColorToken) {
     return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2oklabvalues(token: ColorToken): number[] | null {
-    const values = hwb2srgbvalues(token);
+export function hwb2oklabvalues(arena: AstArena, token: Token): number[] | null {
+    const values = hwb2srgbvalues(arena, token);
     return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function cmyk2oklabvalues(token: ColorToken) {
-    const values = cmyk2srgbvalues(token);
+export function cmyk2oklabvalues(arena: AstArena, token: Token) {
+    const values = cmyk2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function lab2oklabvalues(token: ColorToken) {
-    const values: number[] | null = lab2srgbvalues(token);
+export function lab2oklabvalues(arena: AstArena, token: Token) {
+    const values: number[] | null = lab2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -185,20 +178,20 @@ export function lab2oklabvalues(token: ColorToken) {
     return srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function lch2oklabvalues(token: ColorToken): number[] | null {
-    const values = lch2srgbvalues(token);
+export function lch2oklabvalues(arena: AstArena, token: Token): number[] | null {
+    const values = lch2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
 }
 
-export function oklch2oklabvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = getOKLCHComponents(token);
+export function oklch2oklabvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = getOKLCHComponents(arena, token);
     // @ts-ignore
     return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-function color2oklabvalues(token: ColorToken): number[] | null {
-    const values = color2srgbvalues(token);
+function color2oklabvalues(arena: AstArena, token: Token): number[] | null {
+    const values = color2srgbvalues(arena, token);
 
     // @ts-ignore
     return values == null ? null : srgb2oklab(values[0], values[1], values[2], values[3]);
@@ -220,36 +213,36 @@ export function srgb2oklab(r: number, g: number, blue: number, alpha: number | n
     return alpha == null || alpha == 1 ? [l, a, b] : [l, a, b, alpha];
 }
 
-export function getOKLABComponents(token: ColorToken): number[] | null {
-    const components: Token[] | null = getColorComponents(token);
+export function getOKLABComponents(arena: AstArena, token: Token): number[] | null {
+    const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
     // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
+    let t: Token = components[0];
 
     // @ts-ignore
-    const l: number = getNumber(t);
+    const l: number = getNumber(arena, t);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
+    t = components[1];
 
     // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const a: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
+    t = components[2];
 
     // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const b: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
 
     // @ts-ignore
     let alpha: number | null = null;
 
     if (components.length > 3) {
-        alpha = getNumber(components[3] as NumberToken);
+        alpha = getNumber(arena, components[3]);
     }
 
     const rgb: number[] = [l, a, b];
