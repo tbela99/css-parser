@@ -20,7 +20,7 @@ import { LineMap as LinesMap } from "../parser/linesmap.ts";
 import { dirname } from "../fs/resolve.ts";
 import { SourceFile } from "../parser/source.ts";
 import { AstArena, TokenField } from "../ast/arena.ts";
-import { StructuralMemo } from "../ast/fingerprint.ts";
+import { StructuralMemo } from "../ast/cache.ts";
 
 /**
  * Rendered strings shared by the renderer.

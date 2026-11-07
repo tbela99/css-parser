@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0-alpha.1
+	Version: 2.0.1
 	License: MIT
  */
 // Alphabet: a-z, A-Z, 0-9, _, -
