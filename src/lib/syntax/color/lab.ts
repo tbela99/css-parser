@@ -1,7 +1,8 @@
 import { D50, e, k } from "../constants.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { srgb2xyz_d65, XYZ_D50_to_D65 } from "./xyz.ts";
-import type { ColorToken, NumberToken, PercentageToken, Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../../@types/index.d.ts";
 import {
     cmyk2srgbvalues,
     hex2srgbvalues,
@@ -17,142 +18,134 @@ import { color2srgbvalues, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { XYZ_D65_to_D50 } from "./xyzd50.ts";
 
-export function hex2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hex2labvalues(token);
+export function hex2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hex2labvalues(arena, token);
 
-    return values == null ? null : labToken(values);
+    return values == null ? null : labToken(arena, values);
 }
 
-export function rgb2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = rgb2labvalues(token);
+export function rgb2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = rgb2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function hsl2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hsl2labvalues(token);
+export function hsl2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hsl2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function hwb2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hwb2labvalues(token);
+export function hwb2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hwb2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function cmyk2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = cmyk2labvalues(token);
+export function cmyk2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = cmyk2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function lch2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = lch2labvalues(token);
+export function lch2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = lch2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function oklab2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklab2labvalues(token);
+export function oklab2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklab2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function oklch2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklch2labvalues(token);
+export function oklch2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklch2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-export function color2labToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = color2labvalues(token);
+export function color2labToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = color2labvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return labToken(values);
+    return labToken(arena, values);
 }
 
-function labToken(values: number[]): ColorToken | null {
+function labToken(arena: AstArena, values: number[]): Token | null {
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.NumberTokenType, val: values[1] },
-        { typ: EnumToken.NumberTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.NumberTokenType, values[1]),
+        arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
     if (values.length == 4) {
         chi.push(
-            { typ: EnumToken.LiteralTokenType, val: "/" },
-            {
-                typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
-            },
+            arena.createToken(EnumToken.LiteralTokenType, "/"),
+            arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
         );
     }
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "lab",
-        chi,
-        kin: ColorType.LAB,
-    };
+    return arena.createColor("lab", ColorType.LAB, chi);
 }
 
 // L: 0% = 0.0, 100% = 100.0
 // for a and b: -100% = -125, 100% = 125
 
-export function hex2labvalues(token: ColorToken): number[] | null {
-    let values: number[] | null = hex2srgbvalues(token);
+export function hex2labvalues(arena: AstArena, token: Token): number[] | null {
+    let values: number[] | null = hex2srgbvalues(arena, token);
 
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function rgb2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = rgb2srgb(token);
+export function rgb2labvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = rgb2srgb(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function cmyk2labvalues(token: ColorToken) {
-    const values: number[] | null = cmyk2srgbvalues(token);
+export function cmyk2labvalues(arena: AstArena, token: Token) {
+    const values: number[] | null = cmyk2srgbvalues(arena, token);
 
     // @ts-ignore
     return values == null ? null : srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hsl2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = hsl2srgb(token);
+export function hsl2labvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = hsl2srgb(arena, token);
 
     if (values == null) {
         return null;
@@ -162,8 +155,8 @@ export function hsl2labvalues(token: ColorToken): number[] | null {
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = hwb2srgbvalues(token);
+export function hwb2labvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = hwb2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -173,15 +166,15 @@ export function hwb2labvalues(token: ColorToken): number[] | null {
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function lch2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = getLCHComponents(token);
+export function lch2labvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = getLCHComponents(arena, token);
 
     // @ts-ignore
     return values == null ? null : lchvalues2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function oklab2labvalues(token: ColorToken): number[] | null {
-    let values: number[] | null = getOKLABComponents(token);
+export function oklab2labvalues(arena: AstArena, token: Token): number[] | null {
+    let values: number[] | null = getOKLABComponents(arena, token);
 
     if (values == null) {
         return null;
@@ -193,8 +186,8 @@ export function oklab2labvalues(token: ColorToken): number[] | null {
     return xyz2lab(values[0], values[1], values[2], values[3]);
 }
 
-export function oklch2labvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = oklch2srgbvalues(token);
+export function oklch2labvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = oklch2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -204,8 +197,8 @@ export function oklch2labvalues(token: ColorToken): number[] | null {
     return srgb2labvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function color2labvalues(token: ColorToken): number[] | null {
-    const val: number[] | null = color2srgbvalues(token);
+export function color2labvalues(arena: AstArena, token: Token): number[] | null {
+    const val: number[] | null = color2srgbvalues(arena, token);
 
     if (val == null) {
         return null;
@@ -269,8 +262,8 @@ export function lchvalues2labvalues(l: number, c: number, h: number, a: number |
     return result;
 }
 
-export function getLABComponents(token: ColorToken): number[] | null {
-    const components: Token[] | null = getColorComponents(token);
+export function getLABComponents(arena: AstArena, token: Token): number[] | null {
+    const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null) {
         return null;
@@ -283,35 +276,35 @@ export function getLABComponents(token: ColorToken): number[] | null {
                 EnumToken.PercentageTokenType,
                 EnumToken.AngleTokenType,
                 EnumToken.IdenTokenType,
-            ].includes(components[i].typ)
+            ].includes(arena.dataTypes[components[i]])
         ) {
             return null;
         }
     }
 
     // @ts-ignore
-    let t: NumberToken | PercentageToken = <NumberToken | PercentageToken>components[0];
+    let t: Token = components[0];
 
     // @ts-ignore
-    const l: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 100 : 1);
+    const l: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>components[1];
+    t = components[1];
 
     // @ts-ignore
-    const a: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
+    const a: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>components[2];
+    t = components[2];
 
     // @ts-ignore
-    const b: number = getNumber(t) * (t.typ == EnumToken.PercentageTokenType ? 125 : 1);
+    const b: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
 
     // @ts-ignore
-    t = <NumberToken | PercentageToken>components[3];
+    t = components[3];
 
     // @ts-ignore
-    const alpha: number = t == null ? 1 : getNumber(t);
+    const alpha: number = t == null ? 1 : getNumber(arena, t);
 
     const result: number[] = [l, a, b];
 

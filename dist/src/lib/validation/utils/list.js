@@ -2,34 +2,49 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
 
-function stripCommaToken(tokenList) {
+/**
+ * remove comma and comment tokens
+ * @param arena
+ * @param tokenList
+ */
+function stripCommaToken(arena, tokenList) {
     let result = [];
     for (let i = 0; i < tokenList.length; i++) {
-        if (tokenList[i].typ == EnumToken.CommentTokenType || tokenList[i].typ == EnumToken.CommaTokenType) {
+        const typ = arena.dataTypes[tokenList[i]];
+        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
             continue;
         }
         result.push(tokenList[i]);
     }
     return result;
 }
-function splitTokenList(tokenList, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
-    return tokenList.reduce((acc, curr) => {
-        if (split.includes(curr.typ)) {
-            if (includeSplitToken && Array.isArray(acc[acc.length - 1])) {
-                acc[acc.length - 1].push(curr);
+/**
+ * split a token list
+ * @param arena
+ * @param tokenList
+ * @param split
+ * @param includeSplitToken
+ */
+function splitTokenList(arena, tokenList, split = [EnumToken.CommaTokenType], includeSplitToken = false) {
+    const result = [[]];
+    for (let i = 0; i < tokenList.length; i++) {
+        const curr = tokenList[i];
+        if (split.includes(arena.dataTypes[curr])) {
+            if (includeSplitToken) {
+                result[result.length - 1].push(curr);
             }
-            acc.push([]);
+            result.push([]);
         }
         else {
-            acc[acc.length - 1].push(curr);
+            result[result.length - 1].push(curr);
         }
-        return acc;
-    }, [[]]);
+    }
+    return result;
 }
 
 export { splitTokenList, stripCommaToken };

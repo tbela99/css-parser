@@ -1,10 +1,15 @@
 import type {ErrorDescription, Token} from "../../@types/index.d.ts";
+import type {AstArena} from "../ast/arena.ts";
 import type {ValidationToken} from "./parser/types.d.ts";
 
 /**
  * validation context
  */
 export interface ValidationContext {
+    /**
+     * arena the tokens are allocated in
+     */
+    arena: AstArena;
     /**
      * the tokens
      */
@@ -22,15 +27,14 @@ export interface ValidationContext {
 
     /**
      * return a range of tokens.
-     * @param open
-     * @param close 
+     * @param close
      * @param counter
      */
-    peekRange(open?: EnumToken, close?: EnumToken, counter?: number): Token[];
+    peekRange(close?: EnumToken, counter?: number): Token[];
 
     /**
-     * 
-     * @param split 
+     *
+     * @param split
      */
     split(split?: EnumToken): Token[][];
 
@@ -62,7 +66,7 @@ export interface ValidationContext {
      * consume all tokens up to the specified token
      * @param token
      */
-    update(token: Token): ValidationContext;
+    update(token: Token | null | undefined): ValidationContext;
 
     /**
      * returns true if all tokens are consumed. returns false otherwise

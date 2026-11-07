@@ -1,26 +1,10 @@
-import type {
-    AngleToken,
-    BinaryExpressionToken,
-    ColorToken,
-    DimensionToken,
-    ErrorDescription,
-    FlexToken,
-    FrequencyToken,
-    FunctionToken,
-    IdentToken,
-    LengthToken,
-    NumberToken,
-    PercentageToken,
-    ResolutionToken,
-    TimeToken,
-    Token,
-} from "../../@types/index.d.ts";
+import type { ErrorDescription, Token } from "../../@types/index.d.ts";
+import { type AstArena, TokenField } from "../ast/arena.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";
-import { ColorType, EnumToken } from "../ast/types.ts";
-import { WalkerOptionEnum, walkValues } from "../ast/walk.ts";
+import { ColorType, EnumAstNodeStatus, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { memoize } from "../parser/utils/cache.ts";
-import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
 import { trimArray } from "../validation/match.ts";
 import { splitTokenList } from "../validation/utils/list.ts";
 import { getColorSpace } from "./color/utils/colorspace.ts";
@@ -37,6 +21,7 @@ import {
     systemColors,
 } from "./constants.ts";
 import { getSyntaxConfig } from "../validation/config.ts";
+import { ValueWalker } from "../ast/walk.ts";
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -527,62 +512,82 @@ export const pseudoAliasMap: Record<string, string> = {
 // renamed standard properties
 export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
 
-export function isLength(dimension: DimensionToken): boolean {
-    return "unit" in dimension && dimensionUnits.includes(dimension.unit.toLowerCase());
-}
-
-export function isResolution(dimension: DimensionToken): boolean {
-    return "unit" in dimension && resolutionUnits.includes(dimension.unit.toLowerCase());
-}
-
-export function isAngle(dimension: DimensionToken): boolean {
-    return "unit" in dimension && angleUnits.includes(dimension.unit.toLowerCase());
-}
-
-export function isTime(dimension: DimensionToken): boolean {
-    return "unit" in dimension && timeUnits.includes(dimension.unit.toLowerCase());
-}
-
-export function isFrequency(dimension: DimensionToken): boolean {
-    return "unit" in dimension && frequencyUnits.includes(dimension.unit.toLowerCase());
+/**
+ * true if the unit is a length unit
+ * @param unit
+ */
+export function isLengthUnit(unit: string): boolean {
+    return dimensionUnits.includes(unit.toLowerCase());
 }
 
 /**
- * Is color space
- * @param token
- * @returns
+ * true if the unit is a resolution unit
+ * @param unit
  */
-// export function isColorspace(token: Token): boolean {
-//     return (
-//         token.typ === EnumToken.IdenTokenType &&
-//         [
-//             "srgb",
-//             "srgb-linear",
-//             "lab",
-//             "oklab",
-//             "lch",
-//             "oklch",
-//             "xyz",
-//             "xyz-d50",
-//             "xyz-d65",
-//             "display-p3",
-//             "a98-rgb",
-//             "prophoto-rgb",
-//             "rec2020",
-//             "rgb",
-//             "hsl",
-//             "hwb",
-//         ].includes((token as IdentToken).val.toLowerCase())
-//     );
-// }
+export function isResolutionUnit(unit: string): boolean {
+    return resolutionUnits.includes(unit.toLowerCase());
+}
+
+/**
+ * true if the unit is an angle unit
+ * @param unit
+ */
+export function isAngleUnit(unit: string): boolean {
+    return angleUnits.includes(unit.toLowerCase());
+}
+
+/**
+ * true if the unit is a time unit
+ * @param unit
+ */
+export function isTimeUnit(unit: string): boolean {
+    return timeUnits.includes(unit.toLowerCase());
+}
+
+/**
+ * true if the unit is a frequency unit
+ * @param unit
+ */
+export function isFrequencyUnit(unit: string): boolean {
+    return frequencyUnits.includes(unit.toLowerCase());
+}
+
+/**
+ * true if the unit is a flex unit
+ * @param unit
+ */
+export function isFlexUnit(unit: string): boolean {
+    return "fr" == unit.toLowerCase();
+}
+
+export function isLength(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
+}
+
+export function isResolution(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+}
+
+export function isAngle(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+}
+
+export function isTime(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+}
+
+export function isFrequency(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+}
 
 /**
  * Reduce color stops
+ * @param arena
  * @param stops
  * @returns
  */
-export function reduceColorStops(stops: Token[]) {
-    const parts = splitTokenList(stops);
+export function reduceColorStops(arena: AstArena, stops: Token[]) {
+    const parts = splitTokenList(arena, stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
 
     let j: number;
@@ -597,11 +602,11 @@ export function reduceColorStops(stops: Token[]) {
             continue;
         }
 
-        if (i > 0 && isOkLabClose(parts[i - 1][0] as ColorToken, parts[i][0] as ColorToken)) {
+        if (i > 0 && isOkLabClose(arena, parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
                 parts[i - 1].push(
-                    { typ: EnumToken.WhitespaceTokenType },
-                    { typ: EnumToken.PercentageTokenType, val: ((k - 1) * 100) / n },
+                    arena.createToken(EnumToken.WhitespaceTokenType),
+                    arena.createToken(EnumToken.PercentageTokenType, ((k - 1) * 100) / n),
                 );
             }
 
@@ -615,14 +620,16 @@ export function reduceColorStops(stops: Token[]) {
         }
 
         for (j = 0; j < parts[i].length; j++) {
+            const typ: EnumToken = arena.dataTypes[parts[i][j]];
+
             if (
-                (parts[i][j].typ == EnumToken.LengthTokenType && 0 == (parts[i][j] as LengthToken).val) ||
-                parts[i][j].typ == EnumToken.NumberTokenType ||
-                parts[i][j].typ == EnumToken.PercentageTokenType
+                (typ == EnumToken.LengthTokenType && 0 == arena.numericValue[parts[i][j]]) ||
+                typ == EnumToken.NumberTokenType ||
+                typ == EnumToken.PercentageTokenType
             ) {
-                if ((parts[i][j] as NumberToken | PercentageToken | LengthToken).val === (k * 100) / n) {
+                if (arena.numericValue[parts[i][j]] === (k * 100) / n) {
                     parts[i].length = j;
-                    trimArray(parts[i]);
+                    trimArray(arena, parts[i]);
                     updated = true;
                     break;
                 }
@@ -635,7 +642,7 @@ export function reduceColorStops(stops: Token[]) {
 
         for (j = 0; j < parts.length; j++) {
             if (stops.length > 0) {
-                stops.push({ typ: EnumToken.CommaTokenType });
+                stops.push(arena.createToken(EnumToken.CommaTokenType));
             }
 
             for (let m = 0; m < parts[j].length; m++) {
@@ -649,10 +656,11 @@ export function reduceColorStops(stops: Token[]) {
 
 /**
  * Reduce background-position values.
+ * @param arena
  * @param positions
  * @param position
  */
-export function reducegradientBackgroundPosition(positions: Token[], position: string): void {
+export function reducegradientBackgroundPosition(arena: AstArena, positions: Token[], position: string): void {
     switch (position) {
         case "50%":
         case "50% 50%":
@@ -666,71 +674,63 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
         case "left center":
         case "center left":
             positions.length = 0;
-            positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
+            positions.push(arena.createToken(EnumToken.PercentageTokenType, 0));
             break;
         case "50% 0%":
         case "50% 0":
         case "top center":
         case "center top":
             positions.length = 0;
-            positions.push({ typ: EnumToken.IdenTokenType, val: "top" });
+            positions.push(arena.createToken(EnumToken.IdenTokenType, "top"));
             break;
         case "bottom center":
         case "center bottom":
         case "bottom":
         case "50% 100%":
             positions.length = 0;
-            positions.push({ typ: EnumToken.IdenTokenType, val: "bottom" });
+            positions.push(arena.createToken(EnumToken.IdenTokenType, "bottom"));
             break;
-        // case "left":
-        // case "0 50%":
-        // case "0% 50%":
-        // case "left center":
-        // case "center left":
-        //     positions.length = 0;
-        //     positions.push({ typ: EnumToken.PercentageTokenType, val: 0 });
-        //     break;
         case "right center":
         case "center right":
         case "100% 50%":
         case "right":
             positions.length = 0;
-            positions.push({ typ: EnumToken.PercentageTokenType, val: 100 });
+            positions.push(arena.createToken(EnumToken.PercentageTokenType, 100));
             break;
         case "bottom left":
         case "left bottom":
             positions.length = 0;
             positions.push(
-                { typ: EnumToken.PercentageTokenType, val: 0 },
-                { typ: EnumToken.WhitespaceTokenType },
-                { typ: EnumToken.PercentageTokenType, val: 100 },
+                arena.createToken(EnumToken.PercentageTokenType, 0),
+                arena.createToken(EnumToken.WhitespaceTokenType),
+                arena.createToken(EnumToken.PercentageTokenType, 100),
             );
             break;
         case "bottom right":
         case "right bottom":
             positions.length = 0;
             positions.push(
-                { typ: EnumToken.PercentageTokenType, val: 100 },
-                { typ: EnumToken.WhitespaceTokenType },
-                { typ: EnumToken.PercentageTokenType, val: 100 },
+                arena.createToken(EnumToken.PercentageTokenType, 100),
+                arena.createToken(EnumToken.WhitespaceTokenType),
+                arena.createToken(EnumToken.PercentageTokenType, 100),
             );
             break;
         case "top left":
         case "left top":
             positions.length = 0;
             positions.push(
-                { typ: EnumToken.PercentageTokenType, val: 0 },
-                { typ: EnumToken.WhitespaceTokenType },
-                { typ: EnumToken.PercentageTokenType, val: 0 },
+                arena.createToken(EnumToken.PercentageTokenType, 0),
+                arena.createToken(EnumToken.WhitespaceTokenType),
+                arena.createToken(EnumToken.PercentageTokenType, 0),
             );
             break;
         case "top right":
         case "right top":
             positions.length = 0;
             positions.push(
-                { typ: EnumToken.PercentageTokenType, val: 100 },
-                { typ: EnumToken.WhitespaceTokenType },
-                { typ: EnumToken.PercentageTokenType, val: 0 },
+                arena.createToken(EnumToken.PercentageTokenType, 100),
+                arena.createToken(EnumToken.WhitespaceTokenType),
+                arena.createToken(EnumToken.PercentageTokenType, 0),
             );
             break;
     }
@@ -738,11 +738,12 @@ export function reducegradientBackgroundPosition(positions: Token[], position: s
 
 /**
  * Reduce conic-gradient color stops
+ * @param arena
  * @param stops
  * @returns
  */
-export function reduceConicColorStops(stops: Token[]): Token[] {
-    const parts = splitTokenList(stops);
+export function reduceConicColorStops(arena: AstArena, stops: Token[]): Token[] {
+    const parts = splitTokenList(arena, stops);
     const n = parts.length == 1 ? 1 : parts.length - 1;
 
     let j: number;
@@ -757,11 +758,11 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
             continue;
         }
 
-        if (i > 0 && isOkLabClose(parts[i - 1][0] as ColorToken, parts[i][0] as ColorToken)) {
+        if (i > 0 && isOkLabClose(arena, parts[i - 1][0], parts[i][0])) {
             if (parts[i - 1].length == 1) {
                 parts[i - 1].push(
-                    { typ: EnumToken.WhitespaceTokenType },
-                    { typ: EnumToken.AngleTokenType, val: ((k - 1) * 100) / n, unit: "deg" },
+                    arena.createToken(EnumToken.WhitespaceTokenType),
+                    arena.createToken(EnumToken.AngleTokenType, ((k - 1) * 100) / n, "deg"),
                 );
             }
 
@@ -775,13 +776,15 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
         }
 
         for (j = 0; j < parts[i].length; j++) {
+            const typ: EnumToken = arena.dataTypes[parts[i][j]];
+
             if (
-                (parts[i][j].typ == EnumToken.NumberTokenType && 0 == (parts[i][j] as NumberToken).val) ||
-                parts[i][j].typ == EnumToken.AngleTokenType
+                (typ == EnumToken.NumberTokenType && 0 == arena.numericValue[parts[i][j]]) ||
+                typ == EnumToken.AngleTokenType
             ) {
-                if (toDegrees(parts[i][j] as AngleToken).val === (k * 360) / n) {
+                if (arena.numericValue[toDegrees(arena, parts[i][j])] === (k * 360) / n) {
                     parts[i].length = j;
-                    trimArray(parts[i]);
+                    trimArray(arena, parts[i]);
                     updated = true;
                     break;
                 }
@@ -794,7 +797,7 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
 
         for (j = 0; j < parts.length; j++) {
             if (stops.length > 0) {
-                stops.push({ typ: EnumToken.CommaTokenType });
+                stops.push(arena.createToken(EnumToken.CommaTokenType));
             }
 
             for (const token of parts[j]) {
@@ -808,82 +811,90 @@ export function reduceConicColorStops(stops: Token[]): Token[] {
 
 /**
  * is rectangular orthogonal colorspace
+ * @param arena
  * @param token
  * @returns
  */
-export function isRectangularOrthogonalColorspace(token: Token): boolean {
+export function isRectangularOrthogonalColorspace(arena: AstArena, token: Token): boolean {
     return (
-        token.typ === EnumToken.IdenTokenType &&
-        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, (token as IdentToken).val))
+        arena.dataTypes[token] === EnumToken.IdenTokenType &&
+        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))
     );
 }
 
 /**
  * Is polar colorspace
+ * @param arena
  * @param token
  * @returns
  */
-export function isPolarColorspace(token: Token): boolean {
+export function isPolarColorspace(arena: AstArena, token: Token): boolean {
     return (
-        token.typ === EnumToken.IdenTokenType &&
-        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, (token as IdentToken).val))
+        arena.dataTypes[token] === EnumToken.IdenTokenType &&
+        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))
     );
 }
-
-/**
- * Is hue interpolation method
- * @param token
- * @returns
- */
-// export function isHueInterpolationMethod(token: Token | Token[]): boolean {
-//     if (!Array.isArray(token)) {
-//         return token.typ == EnumToken.IdenTokenType && "hue" === (token as IdentToken).val?.toLowerCase?.();
-//     }
-//
-//     if (token.length != 2 || token[0].typ != EnumToken.IdenTokenType || token[1].typ != EnumToken.IdenTokenType) {
-//         return false;
-//     }
-//
-//     return (
-//         ["shorter", "longer", "increasing", "decreasing"].some((t) =>
-//             equalsIgnoreCase(t, (token[0] as IdentToken).val ?? ""),
-//         ) && "hue" === (token[1] as IdentToken).val?.toLowerCase?.()
-//     );
-// }
 
 /**
  * Is ident color
+ * @param arena
  * @param token
  * @returns
  */
-export function isIdentColor(token: Token): boolean {
+export function isIdentColor(arena: AstArena, token: Token): boolean {
     return (
-        token.typ == EnumToken.ColorTokenType &&
-        [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes((token as ColorToken).kin) &&
-        isIdent((token as ColorToken).val)
+        arena.dataTypes[token] == EnumToken.ColorTokenType &&
+        arena.colorType[token] != ColorType.NONE &&
+        [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(arena.colorType[token]) &&
+        isIdent(arena.strings[arena.stringValue[token]])
     );
 }
 
-// export function isPercentageToken(token: Token): boolean {
-//     return (
-//         token.typ == EnumToken.PercentageTokenType ||
-//         (token.typ == EnumToken.NumberTokenType && (token as NumberToken).val == 0)
-//     );
-// }
+/**
+ * color function arguments without whitespace and comments
+ * @param arena
+ * @param token
+ * @param types accepted token types
+ */
+function filterChildren(arena: AstArena, token: Token, types: EnumToken[]): Token[] {
+    const children: Token[] = [];
 
-export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
-    if (token.typ == EnumToken.WildCardFunctionTokenType) {
+    for (let t = arena.firstToken[token]; t != 0; t = arena.nextSibling[t]) {
+        if (types.includes(arena.dataTypes[t])) {
+            children.push(t);
+        }
+    }
+
+    return children;
+}
+
+const colorKeywords: string[] = [
+    "in",
+    "hue",
+    "from",
+    "alpha",
+    "none",
+    "shorter",
+    "longer",
+    "increasing",
+    "decreasing",
+];
+
+export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription[]): boolean {
+    const typ: EnumToken = arena.dataTypes[token];
+
+    if (typ == EnumToken.WildCardFunctionTokenType) {
         return true;
     }
 
-    if (token.typ == EnumToken.ColorTokenType) {
-        if ("kin" in token && !("chi" in token)) {
+    if (typ == EnumToken.ColorTokenType) {
+        if (arena.colorType[token] != ColorType.NONE && arena.firstToken[token] == 0) {
             return true;
         }
     }
 
-    if (token.typ == EnumToken.IdenTokenType) {
-        const val = (token as IdentToken).val.toLowerCase();
+    if (typ == EnumToken.IdenTokenType) {
+        const val = lowercase(arena.strings[arena.stringValue[token]]);
 
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
             return true;
@@ -893,28 +904,20 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
         return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
     }
 
-    let isLegacySyntax: boolean = false;
+    if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
+        if (arena.firstToken[token] != 0) {
+            const name: string = arena.strings[arena.stringValue[token]];
 
-    if (token.typ === EnumToken.FunctionTokenType || token.typ === EnumToken.ColorTokenType) {
-        // if (!colorsFunc.includes((token as FunctionToken).val.toLowerCase())) {
-        //     return false;
-        // }
-
-        if ((token as FunctionToken).chi.length > 0) {
-            // @ts-ignore
-            if ((token as ColorToken).val === "light-dark") {
-                // @ts-ignore
-                const children: Token[] = ((token as ColorToken).chi as Token[]).filter((t: Token) =>
-                    [
-                        EnumToken.IdenTokenType,
-                        EnumToken.NumberTokenType,
-                        EnumToken.LiteralTokenType,
-                        EnumToken.ColorTokenType,
-                        EnumToken.FunctionTokenType,
-                        EnumToken.PercentageTokenType,
-                        EnumToken.WildCardFunctionTokenType,
-                    ].includes(t.typ),
-                );
+            if (name === "light-dark") {
+                const children: Token[] = filterChildren(arena, token, [
+                    EnumToken.IdenTokenType,
+                    EnumToken.NumberTokenType,
+                    EnumToken.LiteralTokenType,
+                    EnumToken.ColorTokenType,
+                    EnumToken.FunctionTokenType,
+                    EnumToken.PercentageTokenType,
+                    EnumToken.WildCardFunctionTokenType,
+                ]);
 
                 if (children.length != 2) {
                     errors?.push({
@@ -925,7 +928,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     return false;
                 }
 
-                if (isColor(children[0]) && isColor(children[1])) {
+                if (isColor(arena, children[0]) && isColor(arena, children[1])) {
                     return true;
                 }
             }
@@ -933,28 +936,20 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
             // adding numbers and percentages is disallowed
             // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/color_value/lch#defining_relative_color_output_channel_components:~:text=Adding%20a%20%3Cpercentage%3E%20to%20a%20%3Cnumber%3E%2C%20for%20example%2C%20doesn%27t%20work
 
-            const components = getColorComponents(token as ColorToken);
+            const components = getColorComponents(arena, token);
 
             if (components !== null) {
-                const colorSpace = getColorSpace(token as ColorToken)?.split?.("") as string[] | null;
+                const colorSpace = getColorSpace(arena, token)?.split?.("") as string[] | null;
 
                 if (colorSpace != null) {
                     for (const value of components) {
-                        if (value.typ === EnumToken.IdenTokenType) {
-                            const val = (value as IdentToken).val.toLowerCase();
+                        if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
+                            const val = arena.strings[arena.stringValue[value]].toLowerCase();
 
                             if (
                                 // @ts-expect-error
                                 typeof Math[val.toUpperCase()] !== "number" &&
-                                val != "in" &&
-                                val != "hue" &&
-                                val != "from" &&
-                                val != "alpha" &&
-                                val != "none" &&
-                                val != "shorter" &&
-                                val != "longer" &&
-                                val != "increasing" &&
-                                val != "decreasing" &&
+                                !colorKeywords.includes(val) &&
                                 !colorsFunc.includes(val) &&
                                 !colorSpace.includes(val) &&
                                 !colorFuncColorSpace.includes(val)
@@ -963,32 +958,24 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     action: "drop",
                                     message: `Unexpected constant '${val}'`,
                                     node: value,
-                                    // location: options.source!.getSourLocation(value[LOC]!.sta),
                                 });
 
                                 return false;
                             }
                         } else if (
-                            value.typ === EnumToken.MathFunctionTokenType &&
-                            equalsIgnoreCase("calc", (value as FunctionToken).val)
+                            arena.dataTypes[value] === EnumToken.MathFunctionTokenType &&
+                            equalsIgnoreCase("calc", arena.strings[arena.stringValue[value]])
                         ) {
                             let val: string;
-                            for (const v of walkValues((value as FunctionToken).chi)) {
-                                if (v.value.typ === EnumToken.IdenTokenType) {
-                                    val = (v.value as IdentToken).val.toLowerCase();
+                            // inlined: arena.walkValues(arena.tokens(value))
+                            for (const v of new ValueWalker(arena, arena.tokens(value))) {
+                                if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
+                                    val = arena.strings[arena.stringValue[v]].toLowerCase();
 
                                     if (
                                         // @ts-expect-error
                                         typeof Math[val.toUpperCase()] !== "number" &&
-                                        val != "in" &&
-                                        val != "hue" &&
-                                        val != "from" &&
-                                        val != "alpha" &&
-                                        val != "none" &&
-                                        val != "shorter" &&
-                                        val != "longer" &&
-                                        val != "increasing" &&
-                                        val != "decreasing" &&
+                                        !colorKeywords.includes(val) &&
                                         !colorsFunc.includes(val) &&
                                         !colorSpace.includes(val) &&
                                         !colorFuncColorSpace.includes(val)
@@ -996,8 +983,7 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
-                                            node: v.value,
-                                            // location: options.source!.getSourLocation(v.value[LOC]!.sta),
+                                            node: v,
                                         });
 
                                         return false;
@@ -1009,36 +995,42 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
             }
 
-            // @ts-ignore
-            for (const { value, parent } of walkValues(token.chi, token, (value) =>
-                value.typ === EnumToken.WildCardFunctionTokenType
+            // inlined: arena.walkValues(arena.tokens(token), filter)
+            for (const value of new ValueWalker(arena, arena.tokens(token), (arena: AstArena, value: Token) =>
+                arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType
                     ? WalkerOptionEnum.Ignore | WalkerOptionEnum.IgnoreChildren
                     : null,
             )) {
+                // the parent of a detached token is the root token
+                const parent: Token = arena.getValueParent(value) || token;
                 let k: number = 0;
                 let l: number;
 
-                let tk: Token | null = null;
-                let tl: Token | null = null;
+                let tk: Token = 0;
+                let tl: Token = 0;
 
-                if (value.typ === EnumToken.BinaryExpressionTokenType) {
-                    tk = (value as BinaryExpressionToken).l;
-                    tl = (value as BinaryExpressionToken).r;
+                if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
+                    tk = arena.field(value, TokenField.L);
+                    tl = arena.field(value, TokenField.R);
                 } else if (
-                    parent?.typ === EnumToken.MathFunctionTokenType &&
-                    (parent as FunctionToken).val === "calc"
+                    parent != null &&
+                    parent != token &&
+                    arena.dataTypes[parent] === EnumToken.MathFunctionTokenType &&
+                    arena.strings[arena.stringValue[parent]] === "calc"
                 ) {
+                    const children: Token[] = arena.tokens(parent);
+
                     l = k + 1;
 
-                    while (l + 1 < (parent as FunctionToken).chi.length) {
-                        const tk = (parent as FunctionToken).chi[l];
+                    while (l + 1 < children.length) {
+                        const tk = arena.dataTypes[children[l]];
                         if (
-                            tk.typ === EnumToken.WhitespaceTokenType ||
-                            tk.typ === EnumToken.CommentTokenType ||
-                            tk.typ === EnumToken.Add ||
-                            tk.typ === EnumToken.Sub ||
-                            tk.typ === EnumToken.Div ||
-                            tk.typ === EnumToken.Mul
+                            tk === EnumToken.WhitespaceTokenType ||
+                            tk === EnumToken.CommentTokenType ||
+                            tk === EnumToken.Add ||
+                            tk === EnumToken.Sub ||
+                            tk === EnumToken.Div ||
+                            tk === EnumToken.Mul
                         ) {
                             l++;
                             continue;
@@ -1047,20 +1039,20 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                         break;
                     }
 
-                    tk = (parent as FunctionToken).chi[k];
-                    tl = (parent as FunctionToken).chi[l];
+                    tk = children[k];
+                    tl = children[l];
                 }
 
-                if (tk != null && tl != null) {
+                if (tk != 0 && tl != 0 && tk != null && tl != null) {
                     if (
-                        (tk.typ === EnumToken.PercentageTokenType || tl.typ === EnumToken.PercentageTokenType) &&
-                        tk.typ !== tl.typ
+                        (arena.dataTypes[tk] === EnumToken.PercentageTokenType ||
+                            arena.dataTypes[tl] === EnumToken.PercentageTokenType) &&
+                        arena.dataTypes[tk] !== arena.dataTypes[tl]
                     ) {
                         errors?.push({
                             action: "drop",
                             message: "adding percentage and number is not allowed",
                             node: token,
-                            // location: options.source!.getSourLocation(token[LOC]!.sta),
                         });
 
                         return false;
@@ -1068,30 +1060,27 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
             }
 
-            // @ts-ignore
-            if ((token as ColorToken).val == "color") {
-                // @ts-ignore
-                const children: Token[] = ((token as ColorToken).chi as Token[]).filter((t: Token) =>
-                    [
-                        EnumToken.DashedIdenTokenType,
-                        EnumToken.IdenTokenType,
-                        EnumToken.NumberTokenType,
-                        EnumToken.LiteralTokenType,
-                        EnumToken.ColorTokenType,
-                        EnumToken.FunctionTokenType,
-                        EnumToken.MathFunctionTokenType,
-                        EnumToken.PercentageTokenType,
-                    ].includes(t.typ),
-                );
+            if (name == "color") {
+                const children: Token[] = filterChildren(arena, token, [
+                    EnumToken.DashedIdenTokenType,
+                    EnumToken.IdenTokenType,
+                    EnumToken.NumberTokenType,
+                    EnumToken.LiteralTokenType,
+                    EnumToken.ColorTokenType,
+                    EnumToken.FunctionTokenType,
+                    EnumToken.MathFunctionTokenType,
+                    EnumToken.PercentageTokenType,
+                ]);
                 const isRelative: boolean =
-                    children[0].typ == EnumToken.IdenTokenType && (children[0] as IdentToken).val == "from";
+                    arena.dataTypes[children[0]] == EnumToken.IdenTokenType &&
+                    arena.strings[arena.stringValue[children[0]]] == "from";
 
                 let offset = 0;
                 if (isRelative) {
                     offset = 2;
                 }
 
-                if (children[offset]?.typ == EnumToken.DashedIdenTokenType) {
+                if (offset < children.length && arena.dataTypes[children[offset]] == EnumToken.DashedIdenTokenType) {
                     if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
@@ -1102,16 +1091,18 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                     }
 
                     for (let i = offset + 1; i < children.length; i++) {
+                        const childType: EnumToken = arena.dataTypes[children[i]];
+
                         if (
-                            children[i].typ == EnumToken.NumberTokenType ||
-                            children[i].typ == EnumToken.LiteralTokenType ||
-                            children[i].typ == EnumToken.ColorTokenType ||
-                            children[i].typ == EnumToken.FunctionTokenType ||
-                            children[i].typ == EnumToken.MathFunctionTokenType ||
-                            children[i].typ == EnumToken.PercentageTokenType ||
-                            isColor(children[i]) ||
-                            (children[i].typ == EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("none", (children[i] as IdentToken).val))
+                            childType == EnumToken.NumberTokenType ||
+                            childType == EnumToken.LiteralTokenType ||
+                            childType == EnumToken.ColorTokenType ||
+                            childType == EnumToken.FunctionTokenType ||
+                            childType == EnumToken.MathFunctionTokenType ||
+                            childType == EnumToken.PercentageTokenType ||
+                            isColor(arena, children[i]) ||
+                            (childType == EnumToken.IdenTokenType &&
+                                equalsIgnoreCase("none", arena.strings[arena.stringValue[children[i]]]))
                         ) {
                             continue;
                         }
@@ -1127,44 +1118,39 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 return true;
-            }
-            // @ts-ignore
-            else if ((token as ColorToken).val == "color-mix") {
-                // @ts-ignore
-                const children: Token[][] = ((token as ColorToken).chi as Token[]).reduce(
-                    (acc: Token[][], t: Token) => {
-                        if (t.typ == EnumToken.CommaTokenType) {
-                            acc.push([]);
-                        } else {
-                            if (![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(t.typ)) {
-                                acc[acc.length - 1].push(t);
-                            }
-                        }
+            } else if (name == "color-mix") {
+                const children: Token[][] = [[]];
 
-                        return acc;
-                    },
-                    [[]] as Token[][],
-                );
+                for (let t = arena.firstToken[token]; t != 0; t = arena.nextSibling[t]) {
+                    if (arena.dataTypes[t] == EnumToken.CommaTokenType) {
+                        children.push([]);
+                    } else if (
+                        ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t])
+                    ) {
+                        children[children.length - 1].push(t);
+                    }
+                }
 
                 let j: number = 0;
                 let k: number = 0;
 
                 if (
-                    children[j][0].typ === EnumToken.IdenTokenType &&
-                    equalsIgnoreCase("in", (children[j][k] as IdentToken).val)
+                    children[j].length > 0 &&
+                    arena.dataTypes[children[j][0]] === EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("in", arena.strings[arena.stringValue[children[j][k]]])
                 ) {
                     k++;
 
-                    if (children[j][k]?.typ === EnumToken.IdenTokenType) {
-                        if (!isRectangularOrthogonalColorspace(children[j][k])) {
-                            if (isPolarColorspace(children[j][k++])) {
+                    if (k < children[j].length && arena.dataTypes[children[j][k]] === EnumToken.IdenTokenType) {
+                        if (!isRectangularOrthogonalColorspace(arena, children[j][k])) {
+                            if (isPolarColorspace(arena, children[j][k++])) {
                                 if (k == children[j].length) {
-                                } else if (children[j][k].typ !== EnumToken.IdenTokenType) {
+                                } else if (arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType) {
                                     return false;
-                                } else if (equalsIgnoreCase("hue", (children[j][k] as IdentToken).val)) {
+                                } else if (equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])) {
                                     k++;
                                 } else {
-                                    switch ((children[j][k] as IdentToken).val) {
+                                    switch (arena.strings[arena.stringValue[children[j][k]]]) {
                                         case "increasing":
                                         case "decreasing":
                                         case "longer":
@@ -1176,8 +1162,9 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                                     }
 
                                     if (
-                                        children[j][k]?.typ !== EnumToken.IdenTokenType ||
-                                        !equalsIgnoreCase("hue", (children[j][k] as IdentToken).val)
+                                        k >= children[j].length ||
+                                        arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType ||
+                                        !equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])
                                     ) {
                                         return false;
                                     }
@@ -1193,41 +1180,6 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
                 }
 
                 return true;
-            } else {
-                // const keywords: string[] = ["from", "none"];
-                //
-                // // @ts-ignore
-                // if (
-                //     ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"].some((t) =>
-                //         equalsIgnoreCase(t, (token as ColorToken).val),
-                //     )
-                // ) {
-                //     // @ts-ignore
-                //     keywords.push("alpha");
-                //
-                //     for (const keyword of (token as ColorToken).val.slice(-3).split("")) {
-                //         keywords.push(keyword);
-                //     }
-                // }
-
-                // @ts-ignore
-                for (const v of token.chi) {
-                    if (v.typ == EnumToken.CommaTokenType) {
-                        isLegacySyntax = true;
-                    }
-
-                    // if (v.typ == EnumToken.IdenTokenType) {
-                    //     continue;
-                    // }
-
-                    // if (
-                    //     v.typ === EnumToken.MathFunctionTokenType ||
-                    //     v.typ === EnumToken.WildCardFunctionTokenType ||
-                    //     colorsFunc.includes(v.val)
-                    // ) {
-                    //     continue;
-                    // }
-                }
             }
 
             return true;
@@ -1237,66 +1189,81 @@ export function isColor(token: Token, errors?: ErrorDescription[]): boolean {
     return false;
 }
 
-export function parseColor(token: Token) {
-    if (token.typ === EnumToken.IdenTokenType) {
-        const val: string = (token as IdentToken).val.toLowerCase();
+/**
+ * parse a color token: set the color type of identifiers and color functions
+ * @param arena
+ * @param token
+ */
+export function parseColor(arena: AstArena, token: Token): Token {
+    const typ: EnumToken = arena.dataTypes[token];
+
+    if (typ === EnumToken.IdenTokenType) {
+        const val: string = arena.strings[arena.stringValue[token]].toLowerCase();
 
         if (nonStandardColors.has(val)) {
-            Object.assign(token, {
-                typ: EnumToken.ColorTokenType,
-                kin: ColorType.NON_STD,
-            });
+            arena.dataTypes[token] = EnumToken.ColorTokenType;
+            // inlined: arena.setColorType(token, ColorType.NON_STD)
+            arena.colorType[token] = ColorType.NON_STD;
             return token;
         }
 
         if (systemColors.has(val)) {
-            Object.assign(token, {
-                typ: EnumToken.ColorTokenType,
-                kin: ColorType.SYS,
-            });
+            arena.dataTypes[token] = EnumToken.ColorTokenType;
+            // inlined: arena.setColorType(token, ColorType.SYS)
+            arena.colorType[token] = ColorType.SYS;
             return token;
         }
 
         if (deprecatedSystemColors.has(val)) {
-            Object.assign(token, {
-                typ: EnumToken.ColorTokenType,
-                kin: ColorType.DPSYS,
-            });
+            arena.dataTypes[token] = EnumToken.ColorTokenType;
+            // inlined: arena.setColorType(token, ColorType.DPSYS)
+            arena.colorType[token] = ColorType.DPSYS;
             return token;
         }
 
         if (val in COLORS_NAMES || val === "currentcolor") {
-            Object.assign(token, {
-                typ: EnumToken.ColorTokenType,
-                val,
-                kin: ColorType.LIT,
-            });
+            arena.dataTypes[token] = EnumToken.ColorTokenType;
+            // inlined: arena.setStr(token, val)
+            arena.stringValue[token] = arena.internString(val);
+            // inlined: arena.setColorType(token, ColorType.LIT)
+            arena.colorType[token] = ColorType.LIT;
             return token;
         }
     }
 
-    if (token.typ === EnumToken.ColorTokenType) {
-        if (!("kin" in token) && "val" in token) {
+    if (typ === EnumToken.ColorTokenType) {
+        const val: string = arena.strings[arena.stringValue[token]];
+
+        if (arena.colorType[token] == ColorType.NONE && arena.stringValue[token] != 0) {
+            // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
-            (token as ColorToken).kin = ColorType[(token as ColorToken).val.replaceAll("-", "_").toUpperCase()];
+            arena.colorType[token] = (ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
         }
 
-        if ("chi" in token) {
-            const tk = (token as ColorToken).chi?.find(
-                (t) => t.typ !== EnumToken.WhitespaceTokenType && t.typ !== EnumToken.CommentTokenType,
-            ) as Token;
+        if (arena.firstToken[token] != 0) {
+            const tk: Token | null = arena.findToken(
+                token,
+                (arena: AstArena, t: Token) =>
+                    arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
+                    arena.dataTypes[t] !== EnumToken.CommentTokenType,
+            );
 
-            if (tk?.typ === EnumToken.IdenTokenType && (tk as IdentToken).val === "from") {
-                (token as ColorToken).cal = "rel";
-            } else if ((token as ColorToken).val == "color-mix" && (tk as IdentToken).val == "in") {
-                (token as ColorToken).cal = "mix";
+            if (
+                tk != null &&
+                arena.dataTypes[tk] === EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[tk]] === "from"
+            ) {
+                // inlined: arena.setUnitString(token, "rel")
+                arena.unit[token] = "rel" == null ? 0 : arena.internString("rel");
+            } else if (val == "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] == "in") {
+                // inlined: arena.setUnitString(token, "mix")
+                arena.unit[token] = "mix" == null ? 0 : arena.internString("mix");
             }
 
-            if ((token as ColorToken).val == "color") {
-                let index: number = (token as ColorToken).chi!.indexOf(tk) as number;
-
-                if (EnumToken.DashedIdenTokenType == (token as ColorToken)?.chi?.[index]?.typ) {
-                    (token as ColorToken).kin = ColorType.CUSTOM_COLOR;
+            if (val == "color") {
+                if (tk != null && EnumToken.DashedIdenTokenType == arena.dataTypes[tk]) {
+                    // inlined: arena.setColorType(token, ColorType.CUSTOM_COLOR)
+                    arena.colorType[token] = ColorType.CUSTOM_COLOR;
                 }
             }
         }
@@ -1556,13 +1523,13 @@ export function isHash(name: string): boolean {
 //     return name.endsWith("%") && isNumber(name.slice(0, -1));
 // }
 
-export function isFlex(dimension: DimensionToken): boolean {
-    return "unit" in dimension && "fr" == dimension.unit.toLowerCase();
+export function isFlex(arena: AstArena, dimension: Token): boolean {
+    return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function parseDimension(
     name: string,
-): DimensionToken | LengthToken | AngleToken | FlexToken | TimeToken | ResolutionToken | FrequencyToken | null {
+): { typ: EnumToken; val: number; unit: string } | null {
     let index: number = name.length;
 
     while (index--) {
@@ -1585,33 +1552,23 @@ export function parseDimension(
         val: +name.slice(0, index),
         // @ts-ignore
         unit: getSyntaxConfig().units.find((u) => equalsIgnoreCase(u, unit)) || unit.toLowerCase(),
-    } as DimensionToken;
+    };
 
     if (Number.isNaN(dimension.val)) {
         return null;
     }
 
-    if (isAngle(dimension)) {
-        // @ts-ignore
+    if (isAngleUnit(dimension.unit)) {
         dimension.typ = EnumToken.AngleTokenType;
-    } else if (isLength(dimension)) {
-        // @ts-ignore
+    } else if (isLengthUnit(dimension.unit)) {
         dimension.typ = EnumToken.LengthTokenType;
-    } else if (isTime(dimension)) {
-        // @ts-ignore
+    } else if (isTimeUnit(dimension.unit)) {
         dimension.typ = EnumToken.TimeTokenType;
-    } else if (isResolution(dimension)) {
-        // @ts-ignore
+    } else if (isResolutionUnit(dimension.unit)) {
         dimension.typ = EnumToken.ResolutionTokenType;
-
-        // if (dimension.unit == "dppx") {
-        //     dimension.unit = "x";
-        // }
-    } else if (isFrequency(dimension)) {
-        // @ts-ignore
+    } else if (isFrequencyUnit(dimension.unit)) {
         dimension.typ = EnumToken.FrequencyTokenType;
-    } else if (isFlex(dimension)) {
-        // @ts-ignore
+    } else if (isFlexUnit(dimension.unit)) {
         dimension.typ = EnumToken.FlexTokenType;
     }
 
@@ -1707,38 +1664,34 @@ export function isWhiteSpace(codepoint: number): boolean {
  * @param value
  * @returns
  */
-export function length2Px(value: LengthToken | NumberToken): number | null {
+export function length2Px(arena: AstArena, value: Token): number | null {
     let result: number | null = null;
-    if (value.typ == EnumToken.NumberTokenType) {
-        result = +value.val;
+    const val: number = arena.numericValue[value];
+
+    if (arena.dataTypes[value] == EnumToken.NumberTokenType) {
+        result = val;
     } else {
-        switch ((value as LengthToken).unit) {
+        switch (arena.strings[arena.unit[value]]) {
             case "cm":
-                // @ts-ignore
-                result = (value as LengthToken).val * 37.8;
+                result = val * 37.8;
                 break;
             case "mm":
-                // @ts-ignore
-                result = (value as LengthToken).val * 3.78;
+                result = val * 3.78;
                 break;
             case "Q":
-                // @ts-ignore
-                result = ((value as LengthToken).val * 37.8) / 40;
+                result = (val * 37.8) / 40;
                 break;
             case "in":
-                // @ts-ignore
-                result = (value as LengthToken).val / 96;
+                result = val / 96;
                 break;
             case "pc":
-                // @ts-ignore
-                result = (value as LengthToken).val / 16;
+                result = val / 16;
                 break;
             case "pt":
-                // @ts-ignore
-                result = ((value as LengthToken).val * 4) / 3;
+                result = (val * 4) / 3;
                 break;
             case "px":
-                result = +(value as LengthToken).val;
+                result = val;
                 break;
         }
     }
@@ -1752,6 +1705,47 @@ export function length2Px(value: LengthToken | NumberToken): number | null {
  */
 
 export function minifyNumber(val: string | number): string {
+    if (typeof val != "number") {
+        return minifyNumberValue(val);
+    }
+
+    // the same numbers are rendered many times (0, 1, .5, 100, ...): the result only depends on the number
+    let result: string | undefined = minifiedNumbers.get(val);
+
+    if (result === undefined) {
+        result = minifyNumberValue(val);
+
+        if (minifiedNumbers.size >= minifiedNumbersSize) {
+            minifiedNumbers.clear();
+        }
+
+        // 0 and -0 share the same key: both are minified to "0"
+        minifiedNumbers.set(val, result);
+    }
+
+    return result;
+}
+
+/**
+ * minified numbers, see {@link minifyNumber}
+ */
+const minifiedNumbers: Map<number, string> = new Map();
+
+/**
+ * maximum number of minified numbers kept
+ */
+const minifiedNumbersSize: number = 4096;
+
+/**
+ * 10 ** colorPrecision, see {@link toPrecisionValue}
+ */
+const colorPrecisionFactor: number = Math.pow(10, colorPrecision);
+
+/**
+ * minify a number, see {@link minifyNumber}
+ * @param val
+ */
+function minifyNumberValue(val: string | number): string {
     val = String(toPrecisionValue(val));
 
     if (val === "0") {
@@ -1776,7 +1770,7 @@ export function minifyNumber(val: string | number): string {
 }
 
 export function toPrecisionValue(value: number | string, precision: number = colorPrecision): number {
-    const div: number = Math.pow(10, precision);
+    const div: number = precision === colorPrecision ? colorPrecisionFactor : Math.pow(10, precision);
     // @ts-ignore
     value = Math.round(value * div) / div;
 

@@ -15,7 +15,9 @@ children:
     - ./syntax-lowering.md
     - ./prefix-removal.md
     - ./ast.md
+    - ./arena.md
     - ./utilities.md
+    - ./migration.md
 ---
 
 ## Contents
@@ -32,7 +34,9 @@ children:
 - [Syntax Lowering](./syntax-lowering.md)
 - [Prefix Removal](./prefix-removal.md)
 - [Ast Manipulation](./ast.md)
+- [Arena Memory](./arena.md)
 - [Utility Functions](./utilities.md)
+- [Migration to 2.0](./migration.md)
 
 ## Modules
 

@@ -44,7 +44,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 /* secret
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: true,
                 preserveLicense: true
@@ -61,7 +61,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 <!-- secret
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: true,
                 preserveLicense: true
@@ -82,7 +82,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 /* secret
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: true,
                 preserveLicense: true
@@ -106,7 +106,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 /* secret
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: true,
                 preserveLicense: true
@@ -132,7 +132,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 /* secret
 `;
 
-            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: transform, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true
@@ -153,7 +153,7 @@ color:
 ;
 `;
 
-            return transform(css, {minify: true}).then(result => expect(render(result.ast, {
+            return transform(css, {minify: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeEmpty: true
             }).code).equals(``));
@@ -170,7 +170,7 @@ color:
 `;
 
             return transform(css, {minify: transform,
-                computeTransform: true, resolveImport: true}).then(result => expect(render(result.ast, {
+                computeTransform: true, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true
@@ -191,7 +191,7 @@ color:
 `;
 
             return transform(css, {minify: transform,
-                computeTransform: true, resolveImport: true}).then(result => expect(render(result.ast, {
+                computeTransform: true, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true
@@ -209,7 +209,7 @@ color:
 `;
 
             return transform(css, {minify: transform,
-                computeTransform: true, resolveImport: true}).then(result => expect(render(result.ast, {
+                computeTransform: true, resolveImport: true}).then(result => expect(render(result.arena, result.ast, {
                 minify: false,
                 removeComments: false,
                 preserveLicense: true

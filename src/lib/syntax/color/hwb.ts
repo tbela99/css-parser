@@ -1,12 +1,6 @@
 import { hsl2hsv } from "./hsv.ts";
-import type {
-    AngleToken,
-    ColorToken,
-    IdentToken,
-    NumberToken,
-    PercentageToken,
-    Token,
-} from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
+import type { Token } from "../../../@types/index.d.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber } from "./color.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
@@ -19,132 +13,124 @@ import {
     oklch2srgbvalues,
 } from "./srgb.ts";
 
-export function rgb2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = rgb2hwbvalues(token);
+export function rgb2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = rgb2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function hsl2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hsl2hwbvalues(token);
+export function hsl2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hsl2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
     // console.error(new Error("hsl2hwbToken"));
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function cmyk2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = cmyk2hwbvalues(token);
+export function cmyk2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = cmyk2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function oklab2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklab2hwbvalues(token);
+export function oklab2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklab2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function oklch2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = oklch2hwbvalues(token);
+export function oklch2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = oklch2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function lab2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = lab2hwbvalues(token);
+export function lab2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = lab2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function lch2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = lch2hwbvalues(token);
+export function lch2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = lch2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function color2hwbToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = color2hwbvalues(token);
+export function color2hwbToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = color2hwbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return hwbToken(values);
+    return hwbToken(arena, values);
 }
 
-export function hwbToken(values: number[]): ColorToken {
+export function hwbToken(arena: AstArena, values: number[]): Token {
     const chi: Token[] = <Token[]>[
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] },
-        { typ: EnumToken.PercentageTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.PercentageTokenType, values[1]),
+        arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
 
     if (values.length == 4) {
         chi.push(
-            { typ: EnumToken.LiteralTokenType, val: "/" },
-            {
-                typ: EnumToken.PercentageTokenType,
-                val: values[3] * 100,
-            },
+            arena.createToken(EnumToken.LiteralTokenType, "/"),
+            arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
         );
     }
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "hwb",
-        chi,
-        kin: ColorType.HWB,
-    };
+    return arena.createColor("hwb", ColorType.HWB, chi);
 }
 
-export function rgb2hwbvalues(token: ColorToken): number[] {
-    const values = getColorComponents(token)!.map((t: Token, index: number): number => {
+export function rgb2hwbvalues(arena: AstArena, token: Token): number[] {
+    const values = getColorComponents(arena, token)!.map((t: Token, index: number): number => {
         if (index == 3) {
-            return getNumber(<IdentToken | NumberToken | PercentageToken>t);
+            return getNumber(arena, t);
         }
 
-        return getNumber(<IdentToken | NumberToken | PercentageToken>t) / 255;
+        return getNumber(arena, t) / 255;
     }) as [number, number, number, number];
 
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function cmyk2hwbvalues(token: ColorToken): number[] | null {
-    const values = cmyk2srgbvalues(token);
+export function cmyk2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values = cmyk2srgbvalues(arena, token);
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function hsl2hwbvalues(token: ColorToken): number[] | null {
-    const values = hslvalues(token);
+export function hsl2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values = hslvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -154,8 +140,8 @@ export function hsl2hwbvalues(token: ColorToken): number[] | null {
     return hslvalues2hwbvalues(values.h, values.s, values.l, values.a);
 }
 
-export function lab2hwbvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = lab2srgbvalues(token);
+export function lab2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = lab2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -163,8 +149,8 @@ export function lab2hwbvalues(token: ColorToken): number[] | null {
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function lch2hwbvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = lch2srgbvalues(token);
+export function lch2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = lch2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -173,8 +159,8 @@ export function lch2hwbvalues(token: ColorToken): number[] | null {
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function oklab2hwbvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = oklab2srgbvalues(token);
+export function oklab2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = oklab2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -184,14 +170,14 @@ export function oklab2hwbvalues(token: ColorToken): number[] | null {
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function oklch2hwbvalues(token: ColorToken): number[] {
-    const values: number[] | null = oklch2srgbvalues(token);
+export function oklch2hwbvalues(arena: AstArena, token: Token): number[] {
+    const values: number[] | null = oklch2srgbvalues(arena, token);
     // @ts-ignore
     return values == null ? null : srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function color2hwbvalues(token: ColorToken): number[] | null {
-    const values: number[] | null = color2srgbvalues(token);
+export function color2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = color2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
@@ -201,32 +187,32 @@ export function color2hwbvalues(token: ColorToken): number[] | null {
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function hwbvalues(token: ColorToken): { h: number; w: number; b: number; a?: number | null } | null {
-    const components: Token[] | null = getColorComponents(token);
+export function hwbvalues(arena: AstArena, token: Token): { h: number; w: number; b: number; a?: number | null } | null {
+    const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null) {
         return null;
     }
 
-    let t: PercentageToken | NumberToken;
+    let t: Token;
 
     // @ts-ignore
-    let h: number = getAngle(<NumberToken | DimensionToken>components[0]) * 360;
+    let h: number = getAngle(arena, components[0]) * 360;
 
     // @ts-ignore
-    t = <NumberToken | DimensionToken>components[1];
+    t = components[1];
     // @ts-ignore
-    let w: number = getNumber(t);
+    let w: number = getNumber(arena, t);
     // @ts-ignore
-    t = <NumberToken | DimensionToken>components[2];
+    t = components[2];
     // @ts-ignore
-    let b: number = getNumber(t);
+    let b: number = getNumber(arena, t);
 
-    // if (components[1].typ == EnumToken.NumberTokenType) {
+    // if (arena.dataTypes[components[1]] == EnumToken.NumberTokenType) {
     w *= 100;
     // }
 
-    // if (components[2].typ == EnumToken.NumberTokenType) {
+    // if (arena.dataTypes[components[2]] == EnumToken.NumberTokenType) {
     b *= 100;
     // }
 
@@ -237,13 +223,13 @@ export function hwbvalues(token: ColorToken): { h: number; w: number; b: number;
         t = components[3];
 
         // @ts-ignore
-        a = getNumber(t);
+        a = getNumber(arena, t);
     }
 
     return a == null ? { h, w, b } : { h, w, b, a };
 }
 
-export function srgb2hwb(r: number, g: number, b: number, a: number | null = null, fallback: number = 0): number[] {
+export function srgb2hwb(r: number, g: number, b: number, a: number | null = null): number[] {
     // 1. Clamp inputs to the standard web-safe sRGB gamut [0.0, 1.0]
     const rClamp = Math.min(1, Math.max(0, r));
     const gClamp = Math.min(1, Math.max(0, g));

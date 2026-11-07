@@ -4,7 +4,6 @@
  * @private
  */
 export enum FeatureWalkMode {
-
     /**
      * pre process
      */
@@ -12,5 +11,5 @@ export enum FeatureWalkMode {
     /**
      * post process
      */
-    Post = 0x2
+    Post = 0x2,
 }

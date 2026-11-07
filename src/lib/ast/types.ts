@@ -56,45 +56,34 @@ export enum EnumAstNodeStatus {
      * Color component without unit
      */
     PowerlessColorComponent = 1 << 9,
-}
 
-export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
-
-/**
- * Enum of validation levels
- * @deprecated
- */
-export enum ValidationLevel {
-    /**
-     * disable validation
-     */
-    None,
-    /**
-     * validate selectors
-     */
-    Selector = 0x1,
-    /**
-     * validate at-rules
-     */
-    AtRule = 0x2,
+    /* node flags stored in the arena `flags` column next to the validation state */
 
     /**
-     * validate declarations
+     * mask of the validation state bits
      */
-    Declaration = 0x4,
+    StateMask = 0xffff,
     /**
-     * validate selectors and at-rules
+     * the node has a children list (stylesheet, rule, at-rule with a block)
      */
-    Default = Selector | AtRule, // selectors + at-rules
+    HasChildren = 1 << 16,
     /**
-     * validate selectors, at-rules and declarations
+     * the node has value tokens (declaration)
      */
-    All = Selector | AtRule | Declaration, // selectors + at-rules + declarations
-
+    HasValues = 1 << 17,
     /**
-     * Report only. Apply validation and report nodes that are marked as invalid
+     * the node has a source location
      */
-    ReportOnly = 0x8,
+    HasLocation = 1 << 18,
+    /**
+     * the node is marked to be released or trimmed. see `arena.mark()`, `arena.release()` and `arena.trim()`
+     */
+    Marked = 1 << 19,
+    /**
+     * transient flag used while comparing the declarations of two rules
+     * @private
+     */
+    Matched = 1 << 20,
 }
 
 /**
@@ -102,9 +91,10 @@ export enum ValidationLevel {
  */
 export enum EnumToken {
     /**
-     * comment token
+     * comment token. the value 0 is reserved: it is the type of the null node (id 0) and of unset nodes,
+     * so that reading the type of a missing node never matches a real token type
      */
-    CommentTokenType,
+    CommentTokenType = 1,
     /**
      * cdata section token
      */
@@ -428,24 +418,6 @@ export enum EnumToken {
      */
     NestingSelectorTokenType, // &
     /**
-     * Invalid rule token type
-     * @deprecated
-     */
-    InvalidRuleNodeType,
-    /**
-     * invalid class selector token type
-     */
-    InvalidClassSelectorTokenType,
-    /**
-     * invalid attribute token type
-     */
-    InvalidAttrTokenType,
-    /**
-     * Invalid at rule token type
-     * @deprecated
-     */
-    InvalidAtRuleNodeType,
-    /**
      * media query condition token type
      */
     MediaQueryConditionTokenType,
@@ -482,11 +454,6 @@ export enum EnumToken {
      * keyframe at rule node type
      */
     KeyframesAtRuleNodeType,
-    /**
-     * invalid declaration node type.
-     * @deprecated
-     */
-    InvalidDeclarationNodeType,
 
     /* css module nodes */
 
@@ -514,11 +481,6 @@ export enum EnumToken {
      * media range query token type
      */
     MediaRangeQueryTokenType,
-
-    /**
-     * invalid media query token type
-     */
-    InvalidMediaQueryTokenType,
 
     /**
      * supports query condition token type
@@ -672,11 +634,6 @@ export enum EnumToken {
     SupportsFunctionTokenDefType,
 
     /**
-     *  CDOCOMMTokenType not allowed in this context
-     */
-    InvalidCommentTokenType,
-
-    /**
      * custom function token type '--function-name('
      */
     CustomFunctionTokenDefType,
@@ -710,6 +667,11 @@ export enum EnumToken {
      * wrapped values token type like {Arial, sans-serif}
      */
     WrappedValuesTokenType,
+
+    /**
+     * list of arena tokens (binary expression operands)
+     */
+    ListTokenType,
 
     /**
      * infinity token
@@ -851,7 +813,11 @@ export enum EnumToken {
  */
 export enum ColorType {
     /**
-     * deprecated system colors
+     * the color type is not known yet (the color function has not been parsed)
+     */
+    NONE = 0,
+    /**
+     * system colors
      */
     SYS,
     /**
@@ -1053,4 +1019,40 @@ export enum ModuleScopeEnumOptions {
      * ```
      */
     Shortest = 0x200,
+}
+
+/**
+ * Options returned by the filters of {@link AstArena.walk} and {@link AstArena.walkValues}
+ */
+export enum WalkerOptionEnum {
+    /**
+     * ignore the current node and its children
+     */
+    Ignore = 1 << 0,
+    /**
+     * stop walking the tree
+     */
+    Stop = 1 << 1,
+    /**
+     * ignore the current node and process its children
+     */
+    Children = 1 << 2,
+    /**
+     * ignore the current node children
+     */
+    IgnoreChildren = 1 << 3,
+}
+
+/**
+ * Event types of the {@link AstArena.walkValues} filter
+ */
+export enum WalkerEvent {
+    /**
+     * enter node
+     */
+    Enter = 0x1,
+    /**
+     * leave node
+     */
+    Leave = 0x2,
 }

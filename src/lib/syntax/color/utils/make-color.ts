@@ -1,16 +1,17 @@
-import type { ColorToken, IdentToken, NumberToken, PercentageToken, Token } from "../../../../@types/index.d.ts";
+import type { Token } from "../../../../@types/index.d.ts";
+import type { AstArena } from "../../../ast/arena.ts";
 import { ColorType, EnumToken } from "../../../ast/types.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 import { getNumber, minmax } from "../color.ts";
 
 /**
  * Create a color token
- * @param kind 
- * @param components 
- * @param alpha 
- * @returns 
+ * @param kind
+ * @param components
+ * @param alpha
+ * @returns
  */
-export function makeColor(kind: ColorType, components: Token[], alpha?: Token): ColorToken | null {
+export function makeColor(arena: AstArena, kind: ColorType, components: Token[], alpha?: Token): Token | null {
     if (components.length < 3) {
         return null;
     }
@@ -18,21 +19,27 @@ export function makeColor(kind: ColorType, components: Token[], alpha?: Token): 
     const alphaValue =
         alpha == null
             ? 1
-            : alpha.typ === EnumToken.IdenTokenType && equalsIgnoreCase((alpha as IdentToken).val, "none")
+            : arena.dataTypes[alpha] === EnumToken.IdenTokenType && equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
               ? 0
-              : minmax(getNumber(alpha as NumberToken | PercentageToken | IdentToken), 0, 1);
+              : minmax(getNumber(arena, alpha), 0, 1);
 
     components.length = 3;
 
+    // the components may belong to another color token: a token belongs to one token list
+    for (let i = 0; i < components.length; i++) {
+        // inlined: arena.take(components[i])
+        components[i] = arena.parents[components[i]] == 0 ? components[i] : arena.clone(components[i], true);
+    }
+
     if (alphaValue !== 1) {
-        components.push({ typ: EnumToken.NumberTokenType, val: alphaValue });
+        components.push(arena.createToken(EnumToken.NumberTokenType, alphaValue));
     }
 
     if (kind === ColorType.LIT || kind === ColorType.HEX) {
         const val =
             "#" +
             components.reduce((acc, token, index) => {
-                let value = getNumber(token as NumberToken | PercentageToken | IdentToken);
+                let value = getNumber(arena, token);
 
                 if (index === 3) {
                     value *= 255;
@@ -40,11 +47,7 @@ export function makeColor(kind: ColorType, components: Token[], alpha?: Token): 
                 return acc + Math.round(value).toString(16).padStart(2, "0");
             }, "");
 
-        return {
-            typ: EnumToken.ColorTokenType,
-            val,
-            kin: ColorType.HEX,
-        } as ColorToken;
+        return arena.createColor(val, ColorType.HEX);
     }
 
     const hasAlpha = components.length === 4;
@@ -52,17 +55,12 @@ export function makeColor(kind: ColorType, components: Token[], alpha?: Token): 
     let i: number = components.length;
 
     while (--i > 0) {
-        components.splice(i, 0, { typ: EnumToken.WhitespaceTokenType });
+        components.splice(i, 0, arena.createToken(EnumToken.WhitespaceTokenType));
     }
 
     if (hasAlpha) {
-        components[components.length - 2] = { typ: EnumToken.LiteralTokenType, val: "/" };
+        components[components.length - 2] = arena.createToken(EnumToken.LiteralTokenType, "/");
     }
 
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: ColorType[kind].toLowerCase(),
-        chi: components,
-        kin: kind,
-    };
+    return arena.createColor(ColorType[kind].toLowerCase(), kind, components);
 }

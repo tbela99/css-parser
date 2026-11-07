@@ -1,927 +1,358 @@
+/**
+ * iterators of {@link AstArena.walk} and {@link AstArena.walkValues}: plain iterator objects, no generator. the
+ * iteration result object is reused: the value must be read before the next call of `next()` (as `for ... of` does)
+ *
+ * @module
+ * @internal
+ */
 import type {
-    AstDeclaration,
     AstNode,
-    AstRuleList,
-    ComposesSelectorToken,
-    ContainerStyleRangeToken,
-    FunctionToken,
-    IfConditionToken,
-    MatchExpressionToken,
-    SupportsQueryConditionToken,
     Token,
-    WalkAttributesResult,
     WalkerFilter,
     WalkerOption,
     WalkerOptions,
     WalkerValueFilter,
-    WalkResult,
-    WhenElseUnaryConditionToken,
+    WalkerValueOptions,
 } from "../../@types/index.d.ts";
-import type { BinaryExpressionToken, IfElseConditionToken, MediaRangeQueryToken } from "../../@types/token.d.ts";
-import { PARENT, TOKENS } from "../syntax/constants.ts";
-import { EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken, WalkerEvent, WalkerOptionEnum } from "./types.ts";
+import type { AstArena } from "./arena.ts";
 
 /**
- * Options for the walk function
- */
-export enum WalkerOptionEnum {
-    /**
-     * ignore the current node and its children
-     */
-    Ignore = 1 << 0,
-    /**
-     * stop walking the tree
-     */
-    Stop = 1 << 1,
-    /**
-     * ignore the current node and process its children
-     */
-    Children = 1 << 2,
-    /**
-     * ignore the current node children
-     */
-    IgnoreChildren = 1 << 3,
-}
-
-/**
- * Event types for the walkValues function
- */
-export enum WalkerEvent {
-    /**
-     * enter node
-     */
-    Enter = 0x1,
-    /**
-     * leave node
-     */
-    Leave = 0x2,
-}
-
-/**
- * Walk ast nodes
- * @param node initial node
- * @param filter control the walk process
- * @param reverse walk in reverse order
- *
- * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * for (const {node, parent, root} of walk(ast)) {
- *
- *     // do something with node
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * function filter(node) {
- *
- *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * const result = await transform(css);
- * for (const {node} of walk(result.ast, filter, false)) {
- *
- *     console.error([EnumToken[node.typ]]);
- * }
- *
- * // [ "StyleSheetNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * ```
- */
-export function walk(node: AstNode, filter?: WalkerFilter | null, reverse?: boolean): Generator<WalkResult>;
-
-/**
- * Walk ast nodes
- * @param node initial node
- * @param filter control the walk process
- *
- * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * for (const {node, parent, root} of walk(ast)) {
- *
- *     // do something with node
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * function filter(node) {
- *
- *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * const result = await transform(css);
- * for (const {node} of walk(result.ast, {filter, reverse: false})) {
- *
- *     console.error([EnumToken[node.typ]]);
- * }
- *
- * // [ "StyleSheetNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * ```
- */
-export function walk(node: AstNode, filter?: WalkerOptions | null): Generator<WalkResult>;
-
-/**
- * Walk ast nodes
- * @param node initial node
- * @param filter control the walk process
- * @param reverse walk in reverse order
- *
- * @private
- *
- * ```ts
- *
- * import {walk} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * for (const {node, parent, root} of walk(ast)) {
- *
- *     // do something with node
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- *
- * html,
- * body {
- *     line-height: 1.474;
- * }
- *
- * .ruler {
- *
- *     height: 10px;
- * }
- * `;
- *
- * function filter(node) {
- *
- *     if (node.typ == EnumToken.AstRule && node.sel.includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * const result = await transform(css);
- * for (const {node} of walk(result.ast, filter)) {
- *
- *     console.error([EnumToken[node.typ]]);
- * }
- *
- * // [ "StyleSheetNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * // [ "RuleNodeType" ]
- * // [ "DeclarationNodeType" ]
- * ```
- */
-export function* walk(
-    node: AstNode | Token,
-    filter?: WalkerFilter | WalkerOptions | null,
-    reverse?: boolean,
-): Generator<WalkResult> {
-    const parents: Array<AstNode | Token> = [node];
-    const root: AstRuleList = <AstRuleList>node;
-
-    let options: WalkerOptions | null = filter as WalkerOptions | null;
-    let isNumeric: boolean = false;
-    let children: boolean = true;
-    let attributes: boolean = false;
-
-    if (options != null && typeof options == "object") {
-        filter = options.filter as WalkerFilter;
-        reverse = options.reverse;
-        attributes = options.attributes as boolean;
-        children = (options.children as boolean) ?? true;
-    }
-
-    // @ts-expect-error
-    const result = {
-        node: null,
-        parent: null,
-        root,
-        parents: function* () {
-            let parent = node[PARENT];
-
-            while (parent != null) {
-                yield parent;
-                parent = parent[PARENT];
-            }
-        },
-    } as WalkResult;
-
-    let option: WalkerOption = null;
-    let source: Token[] = [];
-
-    while (parents.length > 0) {
-        node = parents.pop() as AstNode | Token;
-
-        // enter node
-        if (filter != null) {
-            // @ts-expect-error
-            option = filter(node);
-            isNumeric = typeof option == "number";
-
-            if (isNumeric) {
-                if ((option as number) & WalkerOptionEnum.Ignore) {
-                    continue;
-                }
-
-                if ((option as number) & WalkerOptionEnum.Stop) {
-                    break;
-                }
-            }
-        }
-
-        if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
-            result.node = node;
-            // @ts-expect-error
-            result.parent = node[PARENT];
-
-            yield result;
-        }
-
-        if (attributes) {
-            source.length = 0;
-
-            if (Array.isArray(node[TOKENS])) {
-
-                if (reverse) {
-                    for (const token of node[TOKENS] as Token[]) {
-                        parents.push(token);
-                        token[PARENT] = node;
-                    }
-                } else {
-                    for (let i = (node[TOKENS] as Token[]).length - 1; i >= 0; i--) {
-                        parents.push((node[TOKENS] as Token[])[i]);
-                        (node[TOKENS] as Token[])[i][PARENT] = node;
-                    }
-                }
-            } else if (node.typ == EnumToken.DeclarationNodeType) {
-
-                if (reverse) {
-                    for (const token of (node as AstDeclaration).val as Token[]) {
-                        parents.push(token);
-                        token[PARENT] = node;
-                    }
-                } else {
-                    for (let i = ((node as AstDeclaration).val as Token[]).length - 1; i >= 0; i--) {
-                        parents.push(((node as AstDeclaration).val as Token[])[i]);
-                        ((node as AstDeclaration).val as Token[])[i][PARENT] = node;
-                    }
-                }
-            } else {
-                source.length = 0;
-
-                switch (node.typ) {
-                    case EnumToken.BinaryExpressionTokenType:
-                    case EnumToken.IfElseConditionTokenType:
-                        source.push((node as BinaryExpressionToken | IfElseConditionToken).l);
-                        (node as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = node;
-
-                        source.push((node as BinaryExpressionToken | IfElseConditionToken).r);
-                        (node as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = node;
-
-                        break;
-
-                    case EnumToken.MatchExpressionTokenType:
-                        source.push((node as MatchExpressionToken).l);
-                        (node as MatchExpressionToken).l[PARENT] = node;
-
-                        source.push((node as MatchExpressionToken).op);
-                        (node as MatchExpressionToken).op[PARENT] = node;
-
-                        source.push((node as MatchExpressionToken).r);
-                        (node as MatchExpressionToken).r[PARENT] = node;
-
-                        break;
-
-                    case EnumToken.SupportsQueryConditionTokenType:
-                    case EnumToken.MediaQueryConditionTokenType:
-                        for (let i = 0; i < (node as SupportsQueryConditionToken).l.length; i++) {
-                            const element = (node as SupportsQueryConditionToken).l[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        source.push((node as SupportsQueryConditionToken).op);
-                        (node as SupportsQueryConditionToken).op[PARENT] = node;
-
-                        for (let i = 0; i < (node as SupportsQueryConditionToken).r.length; i++) {
-                            const element = (node as SupportsQueryConditionToken).r[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        break;
-
-                    case EnumToken.WhenElseQueryConditionTokenType:
-                        source.push((node as WhenElseUnaryConditionToken).l);
-                        (node as WhenElseUnaryConditionToken).l[PARENT] = node;
-
-                        for (let i = 0; i < (node as WhenElseUnaryConditionToken).r.length; i++) {
-                            const element = (node as WhenElseUnaryConditionToken).r[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        break;
-
-                    case EnumToken.ComposesSelectorNodeType:
-                        for (let i = 0; i < (node as ComposesSelectorToken).l.length; i++) {
-                            const element = (node as ComposesSelectorToken).l[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        if ((node as ComposesSelectorToken).r != null) {
-                            source.push((node as ComposesSelectorToken).r as Token);
-                            ((node as ComposesSelectorToken).r as Token)[PARENT] = node;
-                        }
-
-                        break;
-
-                    case EnumToken.IfConditionTokenType:
-                        for (let i = 0; i < (node as IfConditionToken).l.length; i++) {
-                            const element = (node as IfConditionToken).l[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        for (let i = 0; i < (node as IfConditionToken).r.length; i++) {
-                            const element = (node as IfConditionToken).r[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        break;
-
-                    case EnumToken.ContainerStyleRangeTokenType:
-                        for (let i = 0; i < (node as ContainerStyleRangeToken).l.length; i++) {
-                            const element = (node as ContainerStyleRangeToken).l[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        for (let i = 0; i < (node as ContainerStyleRangeToken).op.length; i++) {
-                            const element = (node as ContainerStyleRangeToken).op[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        for (let i = 0; i < (node as ContainerStyleRangeToken).r.length; i++) {
-                            const element = (node as ContainerStyleRangeToken).r[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-                        break;
-
-                    case EnumToken.MediaRangeQueryTokenType:
-                        for (let i = 0; i < (node as MediaRangeQueryToken).l.length; i++) {
-                            const element = (node as MediaRangeQueryToken).l[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        source.push((node as MediaRangeQueryToken).op1);
-                        (node as MediaRangeQueryToken).op1[PARENT] = node;
-
-                        for (let i = 0; i < (node as MediaRangeQueryToken).val.length; i++) {
-                            const element = (node as MediaRangeQueryToken).val[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-
-                        source.push((node as MediaRangeQueryToken).op2);
-                        (node as MediaRangeQueryToken).op2[PARENT] = node;
-
-                        for (let i = 0; i < (node as MediaRangeQueryToken).r.length; i++) {
-                            const element = (node as MediaRangeQueryToken).r[i];
-                            source.push(element);
-                            element[PARENT] = node;
-                        }
-                        break;
-                }
-
-                if (source.length > 0) {
-                    if (reverse) {
-                        for (let i = 0; i < source.length; i++) {
-                            parents.push(source[i]);
-                            source[i][PARENT] = node;
-                        }
-                    } else {
-                        for (let i = source.length - 1; i >= 0; i--) {
-                            parents.push(source[i]);
-                            source[i][PARENT] = node;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (
-            children &&
-            // @ts-expect-error
-            node["chi"] != null &&
-            (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)
-        ) {
-
-            if (reverse) {
-                // @ts-expect-error
-                for (let i = 0; i < (node.chi as AstNode[])!.length; i++) {
-                    // @ts-expect-error
-                    parents.push((node.chi as AstNode[])![i]);
-                    // @ts-expect-error
-                    (node.chi as AstNode[])![i][PARENT] = node;
-                }
-            } else {
-                // @ts-expect-error
-                for (let i = (node.chi as AstNode[])!.length - 1; i >= 0; i--) {
-                    // @ts-expect-error
-                    parents.push((node.chi as AstNode[])![i]);
-                    // @ts-expect-error
-                    (node.chi as AstNode[])![i][PARENT] = node;
-                }
-            }
-        }
-    }
-}
-
-/**
- * Walk ast node value tokens
- * @param values
- * @param root
- * @param filter
+ * push the direct value tokens of a token onto a stack, from the linked lists: the token list, then the fields (the
+ * tokens of the list fields) of a structured token. they are pushed in order, then reversed in place (unless reverse
+ * is true) so that they are popped in order: no array is created
+ * @param arena
+ * @param stack
+ * @param value
  * @param reverse
- *
- * Example:
- *
- * ```ts
- *
- * import {AstDeclaration, EnumToken, transform, walkValues} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- * `;
- *
- * const result = await transform(css);
- * const declaration = result.ast.chi[0].chi[0] as AstDeclaration;
- *
- * // walk the node attribute's tokens in reverse order
- * for (const {value} of walkValues(declaration.val, null, null,true)) {
- *
- *     console.error([EnumToken[value.typ], value.val]);
- * }
- *
- * // [ "Color", "color" ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.15 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "b" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.24 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "g" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "r" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "display-p3" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "var" ]
- * // [ "DashedIden", "--base-color" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "from" ]
- * ```
  */
-export function* walkValues(
-    tokens: Token[],
-    root: AstNode | Token | null = null,
-    filter?:
-        | WalkerValueFilter
-        | null
-        | {
-              event?: WalkerEvent;
-              fn?: WalkerValueFilter;
-              type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
-          },
-    reverse?: boolean,
-): Generator<WalkAttributesResult> {
-    const nodes: Token[] = [];
-    let previous: Token | null = null;
+function pushValues(arena: AstArena, stack: number[], value: number, reverse: boolean): void {
+    const first: number = stack.length;
+    let token: number = arena.firstToken[value];
 
-    if (reverse) {
-        for (let i = 0; i < tokens.length; i++) {
-            nodes.push(tokens[i]);
-        }
-    } else {
-        for (let i = tokens.length - 1; i >= 0; i--) {
-            nodes.push(tokens[i]);
-        }
+    while (token != 0) {
+        stack.push(token);
+        token = arena.nextSibling[token];
     }
 
-    if (filter != null && typeof filter == "function") {
-        filter = {
-            event: WalkerEvent.Enter,
-            fn: filter,
-        };
-    } else if (filter == null) {
-        filter = {
-            event: WalkerEvent.Enter,
-        };
-    }
+    if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+        let child: number = arena.firstChild[value];
 
-    let isNumeric: boolean = false;
-    let value: Token;
-    let option: WalkerOption;
-    let node: Token | null;
+        while (child != 0) {
+            if (arena.dataTypes[child] == EnumToken.ListTokenType) {
+                token = arena.firstToken[child];
 
-    const values: Token[] = [];
-    const eventType = filter.event ?? WalkerEvent.Enter;
-    // @ts-ignore
-    const result = {
-        value: null,
-        parent: null,
-        previousValue: null,
-        nextValue: null,
-        //
-        root: root ?? null,
-        parents: function* () {
-            // @ts-ignore
-            let result = node?.[PARENT] ?? root;
-            while (result != null) {
-                yield result;
-                result = result[PARENT] ?? null;
-            }
-        },
-    } as WalkAttributesResult;
-
-    while (nodes.length > 0) {
-        value = nodes.pop() as Token;
-        option = null;
-
-        if (filter.fn != null && eventType & WalkerEvent.Enter) {
-            const isValid: boolean =
-                filter.type == null ||
-                value.typ == filter.type ||
-                (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
-                (typeof filter.type == "function" && filter.type(value));
-
-            if (isValid) {
-                // @ts-expect-error
-                option = filter.fn(
-                    value,
-                    value[PARENT] ?? root,
-                    WalkerEvent.Enter,
-                    // @ts-expect-error
-                    function* () {
-                        // @ts-expect-error
-                        let parent = node[PARENT];
-
-                        while (parent != null) {
-                            yield parent;
-                            parent = parent[PARENT] ?? null;
-                        }
-                    },
-                );
-
-                isNumeric = typeof option == "number";
-
-                if (isNumeric && (option as number) & WalkerOptionEnum.Stop) {
-                    return;
-                }
-
-                if (isNumeric && (option as number) & WalkerOptionEnum.Ignore) {
-                    continue;
-                }
-
-                //
-                if (option != null && typeof option == "object" && ("typ" in option || Array.isArray(option))) {
-                    const op = Array.isArray(option) ? option : [option];
-
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
-                    } else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
-                    }
-                }
-            }
-        }
-
-        result.value = value;
-        result.parent = value[PARENT] ?? root;
-        result.previousValue = previous;
-        result.nextValue = <Token>nodes[nodes.length - 1] ?? null;
-
-        yield result;
-
-        if (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0) {
-            //
-            if ((value as FunctionToken).chi != null) {
-                const source = (value as FunctionToken).chi as Token[];
-
-                if (reverse) {
-                    for (let i = 0; i < source.length; i++) {
-                        nodes.push(source[i]);
-                        source[i][PARENT] = value;
-                    }
-                } else {
-                    for (let i = source.length - 1; i >= 0; i--) {
-                        nodes.push(source[i]);
-                        source[i][PARENT] = value;
-                    }
+                while (token != 0) {
+                    stack.push(token);
+                    token = arena.nextSibling[token];
                 }
             } else {
-                values.length = 0;
+                stack.push(child);
+            }
 
-                switch (value.typ) {
-                    case EnumToken.BinaryExpressionTokenType:
-                    case EnumToken.IfElseConditionTokenType:
-                        values.push((value as BinaryExpressionToken | IfElseConditionToken).l);
-                        (value as BinaryExpressionToken | IfElseConditionToken).l[PARENT] = value;
+            child = arena.nextSibling[child];
+        }
+    }
 
-                        values.push((value as BinaryExpressionToken | IfElseConditionToken).r);
-                        (value as BinaryExpressionToken | IfElseConditionToken).r[PARENT] = value;
+    if (!reverse) {
+        for (let i = first, j = stack.length - 1; i < j; i++, j--) {
+            const swap: number = stack[i];
 
-                        break;
+            stack[i] = stack[j];
+            stack[j] = swap;
+        }
+    }
+}
 
-                    case EnumToken.MatchExpressionTokenType:
-                        values.push((value as MatchExpressionToken).l);
-                        (value as MatchExpressionToken).l[PARENT] = value;
+/**
+ * iterator of {@link AstArena.walk}: node ids (and value tokens when `attributes` is set) in document order. the
+ * children of a node are read when the next node is requested: the node may be modified by the caller
+ */
+export class NodeWalker implements IterableIterator<AstNode | Token> {
+    private readonly stack: number[];
+    private readonly filter: WalkerFilter | null = null;
+    private readonly reverse: boolean = false;
+    private readonly children: boolean = true;
+    private readonly attributes: boolean = false;
+    // iteration result, reused
+    private readonly iteration: IteratorResult<number> = { done: false, value: 0 };
+    // node returned by the last call of next(): its children are pushed by the next call
+    private current: number = 0;
+    // value returned by the filter for the current node
+    private option: WalkerOption = null;
 
-                        values.push((value as MatchExpressionToken).op);
-                        (value as MatchExpressionToken).op[PARENT] = value;
+    constructor(
+        private readonly arena: AstArena,
+        node: AstNode | Token,
+        filter?: WalkerFilter | WalkerOptions | null,
+        reverse?: boolean,
+    ) {
+        this.stack = [node];
 
-                        values.push((value as MatchExpressionToken).r);
-                        (value as MatchExpressionToken).r[PARENT] = value;
+        if (filter != null && typeof filter == "object") {
+            this.filter = filter.filter ?? null;
+            this.reverse = filter.reverse === true;
+            this.attributes = filter.attributes === true;
+            this.children = filter.children ?? true;
+        } else {
+            this.filter = filter ?? null;
+            this.reverse = reverse === true;
+        }
+    }
 
-                        break;
+    [Symbol.iterator](): this {
+        return this;
+    }
 
-                    case EnumToken.SupportsQueryConditionTokenType:
-                    case EnumToken.MediaQueryConditionTokenType:
-                        for (let i = 0; i < (value as SupportsQueryConditionToken).l.length; i++) {
-                            const element = (value as SupportsQueryConditionToken).l[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
+    /**
+     * push the value tokens and the children of a node
+     * @param node
+     * @param option
+     */
+    private expand(node: number, option: WalkerOption): void {
+        if (typeof option == "number" && option & WalkerOptionEnum.IgnoreChildren) {
+            return;
+        }
 
-                        values.push((value as SupportsQueryConditionToken).op);
-                        (value as SupportsQueryConditionToken).op[PARENT] = value;
+        const arena: AstArena = this.arena;
+        const stack: number[] = this.stack;
 
-                        for (let i = 0; i < (value as SupportsQueryConditionToken).r.length; i++) {
-                            const element = (value as SupportsQueryConditionToken).r[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
+        if (this.attributes) {
+            // prelude tokens, declaration values or token children
+            pushValues(arena, stack, node, this.reverse);
+        }
 
-                        break;
-
-                    case EnumToken.ComposesSelectorNodeType:
-                        for (let i = 0; i < (value as ComposesSelectorToken).l.length; i++) {
-                            const element = (value as ComposesSelectorToken).l[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        if ((value as ComposesSelectorToken).r != null) {
-                            values.push((value as ComposesSelectorToken).r as Token);
-                            ((value as ComposesSelectorToken).r as Token)[PARENT] = value;
-                        }
-
-                        break;
-
-                    case EnumToken.WhenElseQueryConditionTokenType:
-                        values.push((value as WhenElseUnaryConditionToken).l);
-                        (value as WhenElseUnaryConditionToken).l[PARENT] = value;
-
-                        for (let i = 0; i < (value as WhenElseUnaryConditionToken).r.length; i++) {
-                            const element = (value as WhenElseUnaryConditionToken).r[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        break;
-
-                    case EnumToken.IfConditionTokenType:
-                        for (let i = 0; i < (value as IfConditionToken).l.length; i++) {
-                            const element = (value as IfConditionToken).l[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        for (let i = 0; i < (value as IfConditionToken).r.length; i++) {
-                            const element = (value as IfConditionToken).r[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        break;
-
-                    case EnumToken.ContainerStyleRangeTokenType:
-                        for (let i = 0; i < (value as ContainerStyleRangeToken).l.length; i++) {
-                            const element = (value as ContainerStyleRangeToken).l[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        for (let i = 0; i < (value as ContainerStyleRangeToken).op.length; i++) {
-                            const element = (value as ContainerStyleRangeToken).op[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        for (let i = 0; i < (value as ContainerStyleRangeToken).r.length; i++) {
-                            const element = (value as ContainerStyleRangeToken).r[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-                        break;
-
-                    case EnumToken.MediaRangeQueryTokenType:
-                        for (let i = 0; i < (value as MediaRangeQueryToken).l.length; i++) {
-                            const element = (value as MediaRangeQueryToken).l[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        values.push((value as MediaRangeQueryToken).op1);
-                        (value as MediaRangeQueryToken).op1[PARENT] = value;
-
-                        for (let i = 0; i < (value as MediaRangeQueryToken).val.length; i++) {
-                            const element = (value as MediaRangeQueryToken).val[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-
-                        values.push((value as MediaRangeQueryToken).op2);
-                        (value as MediaRangeQueryToken).op2[PARENT] = value;
-
-                        for (let i = 0; i < (value as MediaRangeQueryToken).r.length; i++) {
-                            const element = (value as MediaRangeQueryToken).r[i];
-                            values.push(element);
-                            element[PARENT] = value;
-                        }
-                        break;
+        if (this.children && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+            // children are pushed in reverse so that they are popped in document order
+            if (this.reverse) {
+                for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
+                    stack.push(child);
                 }
-
-                if (values.length > 0) {
-                    if (reverse) {
-                        for (let i = 0; i < values.length; i++) {
-                            nodes.push(values[i]);
-                            values[i][PARENT] = value;
-                        }
-                    } else {
-                        for (let i = values.length - 1; i >= 0; i--) {
-                            nodes.push(values[i]);
-                            values[i][PARENT] = value;
-                        }
-                    }
+            } else {
+                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
+                    stack.push(child);
                 }
             }
         }
+    }
 
-        if (eventType & WalkerEvent.Leave && filter.fn != null) {
-            const isValid: boolean =
-                filter.type == null ||
-                value.typ == filter.type ||
-                (Array.isArray(filter.type) && filter.type.includes(value.typ)) ||
-                (typeof filter.type == "function" && filter.type(value));
+    next(): IteratorResult<number> {
+        const stack: number[] = this.stack;
+        const filter: WalkerFilter | null = this.filter;
 
-            if (isValid) {
-                // @ts-ignore
-                option = filter.fn(value, value[PARENT], WalkerEvent.Leave);
+        if (this.current != 0) {
+            this.expand(this.current, this.option);
+            this.current = 0;
+        }
 
-                // @ts-ignore
-                if (option != null && ("typ" in option || Array.isArray(option))) {
-                    const op = Array.isArray(option) ? option : [option];
+        while (stack.length > 0) {
+            const node: number = stack.pop() as number;
+            let option: WalkerOption = null;
 
-                    if (reverse) {
-                        for (let i = 0; i < op.length; i++) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
-                    } else {
-                        for (let i = op.length - 1; i >= 0; i--) {
-                            nodes.push(op[i]);
-                            op[i][PARENT] = value;
-                        }
+            if (filter != null) {
+                option = filter(this.arena, node);
+
+                if (typeof option == "number") {
+                    if (option & WalkerOptionEnum.Ignore) {
+                        continue;
+                    }
+
+                    if (option & WalkerOptionEnum.Stop) {
+                        break;
+                    }
+
+                    if (option & WalkerOptionEnum.Children) {
+                        // the node is not returned, its children are walked
+                        this.expand(node, option);
+                        continue;
                     }
                 }
             }
+
+            this.current = node;
+            this.option = option;
+            this.iteration.value = node;
+
+            return this.iteration;
         }
 
-        previous = value;
+        return this.return();
+    }
+
+    /**
+     * stop the iteration (break of a for ... of loop)
+     */
+    return(value?: unknown): IteratorResult<number> {
+        this.stack.length = 0;
+        this.current = 0;
+
+        return { done: true, value: value as undefined };
+    }
+
+    throw(error?: unknown): IteratorResult<number> {
+        this.return();
+
+        throw error;
+    }
+}
+
+/**
+ * iterator of {@link AstArena.walkValues}: token ids in document order. the children of a token are read when the
+ * next token is requested: the token may be modified by the caller
+ */
+export class ValueWalker implements IterableIterator<Token> {
+    private readonly stack: Token[] = [];
+    private readonly fn: WalkerValueFilter | null = null;
+    private readonly type: EnumToken | EnumToken[] | ((arena: AstArena, token: Token) => boolean) | null = null;
+    private readonly eventType: WalkerEvent = WalkerEvent.Enter;
+    private readonly reverse: boolean;
+    // iteration result, reused
+    private readonly iteration: IteratorResult<Token> = { done: false, value: 0 };
+    // token returned by the last call of next(): its children are visited by the next call
+    private current: Token = 0;
+    // value returned by the filter for the current token
+    private option: WalkerOption | Token[] = null;
+
+    constructor(
+        private readonly arena: AstArena,
+        tokens: Token | Token[],
+        filter?: WalkerValueFilter | WalkerValueOptions | null,
+        reverse?: boolean,
+    ) {
+        this.reverse = reverse === true;
+
+        if (typeof tokens == "number") {
+            // the value tokens of a node or a token
+            pushValues(arena, this.stack, tokens, this.reverse);
+        } else if (this.reverse) {
+            for (let i = 0; i < tokens.length; i++) {
+                this.stack.push(tokens[i]);
+            }
+        } else {
+            for (let i = tokens.length - 1; i >= 0; i--) {
+                this.stack.push(tokens[i]);
+            }
+        }
+
+        // the filter is read once: no filter object is created
+        if (typeof filter == "function") {
+            this.fn = filter;
+        } else if (filter != null) {
+            this.fn = filter.fn ?? null;
+            this.type = filter.type ?? null;
+            this.eventType = filter.event ?? WalkerEvent.Enter;
+        }
+    }
+
+    [Symbol.iterator](): this {
+        return this;
+    }
+
+    /**
+     * the filter function is called for the token
+     * @param token
+     */
+    private isValid(token: Token): boolean {
+        const type = this.type;
+
+        return (
+            type == null ||
+            this.arena.dataTypes[token] == type ||
+            (Array.isArray(type) && type.includes(this.arena.dataTypes[token])) ||
+            (typeof type == "function" && type(this.arena, token))
+        );
+    }
+
+    /**
+     * the tokens returned by the filter are visited too
+     * @param option
+     */
+    private pushOption(option: Token[]): void {
+        if (this.reverse) {
+            for (let i = 0; i < option.length; i++) {
+                this.stack.push(option[i]);
+            }
+        } else {
+            for (let i = option.length - 1; i >= 0; i--) {
+                this.stack.push(option[i]);
+            }
+        }
+    }
+
+    /**
+     * children of the token returned by the previous call, then the leave event
+     */
+    private leave(value: Token): void {
+        const option: WalkerOption | Token[] = this.option;
+
+        // the children are read after the token is visited (it may have been modified)
+        if (typeof option != "number" || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
+            pushValues(this.arena, this.stack, value, this.reverse);
+        }
+
+        if (this.eventType & WalkerEvent.Leave && this.fn != null && this.isValid(value)) {
+            const option: WalkerOption | Token[] = this.fn(this.arena, value, WalkerEvent.Leave);
+
+            if (Array.isArray(option)) {
+                this.pushOption(option);
+            }
+        }
+    }
+
+    next(): IteratorResult<Token> {
+        const stack: Token[] = this.stack;
+
+        if (this.current != 0) {
+            this.leave(this.current);
+            this.current = 0;
+        }
+
+        while (stack.length > 0) {
+            const value: Token = stack.pop() as Token;
+
+            this.option = null;
+
+            if (this.fn != null && this.eventType & WalkerEvent.Enter && this.isValid(value)) {
+                const option: WalkerOption | Token[] = this.fn(this.arena, value, WalkerEvent.Enter);
+
+                this.option = option;
+
+                if (typeof option == "number") {
+                    if (option & WalkerOptionEnum.Stop) {
+                        break;
+                    }
+
+                    if (option & WalkerOptionEnum.Ignore) {
+                        continue;
+                    }
+                } else if (Array.isArray(option)) {
+                    this.pushOption(option);
+                }
+            }
+
+            this.current = value;
+            this.iteration.value = value;
+
+            return this.iteration;
+        }
+
+        return this.return();
+    }
+
+    /**
+     * stop the iteration (break of a for ... of loop)
+     * @param value
+     */
+    return(value?: unknown): IteratorResult<Token> {
+        this.stack.length = 0;
+        this.current = 0;
+
+        return { done: true, value: value as undefined };
+    }
+
+    throw(error?: unknown): IteratorResult<Token> {
+        this.return();
+
+        throw error;
     }
 }

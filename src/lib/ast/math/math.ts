@@ -1,6 +1,10 @@
-import type { FractionToken } from "../../../@types/index.d.ts";
 import { minifyNumber } from "../../syntax/syntax.ts";
 import { EnumToken } from "../types.ts";
+
+/**
+ * fraction: numerator and denominator
+ */
+export type Fraction = [number, number];
 
 export function gcd(x: number, y: number): number {
     x = Math.abs(x);
@@ -25,11 +29,17 @@ export function gcd(x: number, y: number): number {
     return x;
 }
 
+/**
+ * compute an arithmetic operation. fractions are returned when shorter than the decimal value
+ * @param a
+ * @param b
+ * @param op
+ */
 export function compute(
-    a: number | FractionToken,
-    b: number | FractionToken,
+    a: number | Fraction,
+    b: number | Fraction,
     op: EnumToken.Add | EnumToken.Sub | EnumToken.Mul | EnumToken.Div,
-): number | FractionToken {
+): number | Fraction {
     if (typeof a == "number" && typeof b == "number") {
         switch (op) {
             case EnumToken.Add:
@@ -51,63 +61,35 @@ export function compute(
                 const result: number = a / b;
                 const r2: string = minifyNumber(r[0]) + "/" + minifyNumber(r[1]);
 
-                return minifyNumber(result).length < r2.length
-                    ? result
-                    : {
-                          typ: EnumToken.FractionTokenType,
-                          l: { typ: EnumToken.NumberTokenType, val: r[0] },
-                          r: { typ: EnumToken.NumberTokenType, val: r[1] },
-                      };
+                return minifyNumber(result).length < r2.length ? result : [r[0], r[1]];
         }
     }
 
-    let l1: FractionToken =
-        typeof a == "number"
-            ? {
-                  typ: EnumToken.FractionTokenType,
-                  l: { typ: EnumToken.NumberTokenType, val: a },
-                  r: { typ: EnumToken.NumberTokenType, val: 1 },
-              }
-            : a;
-    let r1: FractionToken =
-        typeof b == "number"
-            ? {
-                  typ: EnumToken.FractionTokenType,
-                  l: { typ: EnumToken.NumberTokenType, val: b },
-                  r: { typ: EnumToken.NumberTokenType, val: 1 },
-              }
-            : b;
+    const l1: Fraction = typeof a == "number" ? [a, 1] : a;
+    const r1: Fraction = typeof b == "number" ? [b, 1] : b;
 
     let l2: number;
     let r2: number;
 
     switch (op) {
         case EnumToken.Add:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val + l1.r.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[1] + l1[1] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
 
         case EnumToken.Sub:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val - l1.r.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[1] - l1[1] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
 
         case EnumToken.Mul:
-            // @ts-ignore
-            l2 = l1.l.val * r1.l.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.r.val;
+            l2 = l1[0] * r1[0];
+            r2 = l1[1] * r1[1];
             break;
 
         case EnumToken.Div:
-            // @ts-ignore
-            l2 = l1.l.val * r1.r.val;
-            // @ts-ignore
-            r2 = l1.r.val * r1.l.val;
+            l2 = l1[0] * r1[1];
+            r2 = l1[1] * r1[0];
             break;
     }
 
@@ -121,11 +103,7 @@ export function compute(
     const result: number = a2[0] / a2[1];
     return minifyNumber(result).length <= minifyNumber(a2[0]).length + 1 + minifyNumber(a2[1]).length
         ? result
-        : {
-              typ: EnumToken.FractionTokenType,
-              l: { typ: EnumToken.NumberTokenType, val: a2[0] },
-              r: { typ: EnumToken.NumberTokenType, val: a2[1] },
-          };
+        : [a2[0], a2[1]];
 }
 
 export function rem(...a: number[]): number {

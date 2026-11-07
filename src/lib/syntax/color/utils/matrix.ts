@@ -36,7 +36,7 @@ export function multiplyMatrices(A: number[] | number[][], B: number[] | number[
 
     // if (m === 1) {
 
-    //     product = <number[]>product[0]; // Avoid [[a, b, c, ...]]
+    //     product = <Token[]>product[0]; // Avoid [[a, b, c, ...]]
     // }
 
     if (p === 1) {

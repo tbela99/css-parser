@@ -15,15 +15,11 @@ A plugin implemented as visitor function that inlines all images under a specifi
 ```ts
 import {
     EnumToken,
-    FunctionURLToken,
     load,
-    StringToken,
     Token,
     transform,
-    UrlToken,
     ResponseType,
-    AstDeclaration,
-    AstNode
+    AstArena,
 } from "@tbela99/css-parser";
 
 function toBase64(arraybuffer: Uint8Array) {
@@ -42,17 +38,19 @@ function toBase64(arraybuffer: Uint8Array) {
 }
 
 function inlineImagesPlugin(maxSize: number, extensions: string[]) {
-    return async function UrlFunctionTokenType(node: FunctionURLToken, parent: AstNode) {
-        if (parent.typ == EnumToken.DeclarationNodeType) {
-            const t = node.chi.find(
-                (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType,
-            ) as Token;
+    return async function UrlFunctionTokenType(arena: AstArena, node: Token) {
+        // the parent of a top level value token is the declaration node id
+        if (arena.getType(arena.getParent(node)) == EnumToken.DeclarationNodeType) {
+            const t = arena.findToken(
+                node,
+                (arena, t) => arena.getType(t) != EnumToken.WhitespaceTokenType && arena.getType(t) != EnumToken.CommaTokenType,
+            );
 
             if (t == null) {
                 return;
             }
 
-            const url = t.typ == EnumToken.StringTokenType ? (t as StringToken).val.slice(1, -1) : (t as UrlToken).val;
+            const url = arena.getType(t) == EnumToken.StringTokenType ? arena.str(t).slice(1, -1) : arena.str(t);
 
             if (url.startsWith("data:")) {
                 return;
@@ -70,10 +68,8 @@ function inlineImagesPlugin(maxSize: number, extensions: string[]) {
                 return;
             }
 
-            Object.assign(t, {
-                typ: EnumToken.StringTokenType,
-                val: `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`,
-            });
+            arena.setType(t, EnumToken.StringTokenType);
+            arena.setStr(t, `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`);
         }
     };
 }
@@ -100,15 +96,12 @@ Here is the same example, with the plugin executed when entering the node.
 
 ```ts
 import {
-    AstNode,
+    AstArena,
     EnumToken,
-    FunctionURLToken,
     load,
     ResponseType,
-    StringToken,
     Token,
     transform,
-    UrlToken,
     WalkerEvent,
 } from "@tbela99/css-parser";
 
@@ -131,17 +124,19 @@ function inlineImagesPlugin(maxSize: number, extensions: string[]) {
     return {
         UrlFunctionTokenType: {
             type: WalkerEvent.Enter,
-            handler: async function (node: FunctionURLToken, parent: AstNode) {
-                if (parent.typ == EnumToken.DeclarationNodeType) {
-                    const t = node.chi.find(
-                        (t: AstNode | Token) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.CommaTokenType,
-                    ) as Token;
+            handler: async function (arena: AstArena, node: Token) {
+                // the parent of a top level value token is the declaration node id
+                if (arena.getType(arena.getParent(node)) == EnumToken.DeclarationNodeType) {
+                    const t = arena.findToken(
+                        node,
+                        (arena: AstArena, t: Token) => arena.getType(t) != EnumToken.WhitespaceTokenType && arena.getType(t) != EnumToken.CommaTokenType,
+                    );
 
                     if (t == null) {
                         return;
                     }
 
-                    const url = t.typ == EnumToken.StringTokenType ? (t as StringToken).val.slice(1, -1) : (t as UrlToken).val;
+                    const url = arena.getType(t) == EnumToken.StringTokenType ? arena.str(t).slice(1, -1) : arena.str(t);
 
                     if (url.startsWith("data:")) {
                         return;
@@ -159,10 +154,8 @@ function inlineImagesPlugin(maxSize: number, extensions: string[]) {
                         return;
                     }
 
-                    Object.assign(t, {
-                        typ: EnumToken.StringTokenType,
-                        val: `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`,
-                    });
+                    arena.setType(t, EnumToken.StringTokenType);
+                    arena.setStr(t, `"data:image/${matches[3].toLowerCase()};base64,${toBase64(new Uint8Array(buffer))}"`);
                 }
             }
         }

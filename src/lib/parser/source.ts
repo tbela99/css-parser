@@ -91,7 +91,8 @@ export class SourceFile {
      * @returns
      */
     getSourceLocation(offset: number): [string | null, number, number] {
-        return [this.file, ...this.getOffsets(offset)];
+        // inlined: this.getOffsets(offset)
+        return [this.file, ...this.lineStarts.getOffsets(offset)];
     }
 
     /**
@@ -99,7 +100,8 @@ export class SourceFile {
      * @returns
      */
     getLineStarts(): number[] {
-        return this.lineStarts.getLineStarts();
+        // inlined: this.lineStarts.getLineStarts()
+        return this.lineStarts.lineStarts;
     }
 
     /**
@@ -107,7 +109,8 @@ export class SourceFile {
      * @param lineStart
      */
     addLineStart(lineStart: number) {
-        this.lineStarts.addLineStart(lineStart);
+        // inlined: this.lineStarts.addLineStart(lineStart)
+        this.lineStarts.lineStarts.push(lineStart);
     }
 
     /**

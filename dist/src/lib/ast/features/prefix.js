@@ -2,21 +2,22 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumAstNodeStatus, EnumToken } from '../types.js';
-import { walkValues } from '../walk.js';
 import { pseudoAliasMap } from '../../syntax/syntax.js';
 import { splitRule } from '../minify.js';
 import { renderValue } from '../../printer/render.js';
-import { STATE, TOKENS, funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
+import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from '../../syntax/constants.js';
+import { TokenField } from '../arena.js';
 import { FeatureWalkMode } from './type.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { getSyntaxConfig } from '../../validation/config.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { toDegrees } from '../../parser/utils/angle.js';
+import { ValueWalker } from '../walk.js';
 
 const config = getSyntaxConfig();
 function replacePseudo(tokens) {
@@ -34,78 +35,71 @@ function replacePseudo(tokens) {
             : r;
     }));
 }
-function replaceAstNodes(tokens, root) {
+function replaceAstNodes(arena, tokens) {
     let result = false;
-    for (const { value, parent } of walkValues(tokens, root)) {
-        if (value.typ == EnumToken.MediaQueryConditionTokenType) {
-            const token = value.l.find((t) => t.typ == EnumToken.IdenTokenType);
+    // inlined: arena.walkValues(tokens)
+    for (const value of new ValueWalker(arena, tokens)) {
+        const typ = arena.dataTypes[value];
+        if (typ == EnumToken.MediaQueryConditionTokenType) {
+            const token = arena
+                .fieldTokens(value, TokenField.L)
+                .find((t) => arena.dataTypes[t] == EnumToken.IdenTokenType);
             if (token != null) {
-                if (token.val in pseudoAliasMap) {
-                    token.val = pseudoAliasMap[token.val];
-                    if ((equalsIgnoreCase(token.val, "min-resolution") ||
-                        equalsIgnoreCase(token.val, "max-resolution")) &&
-                        value.r?.[0]?.typ == EnumToken.NumberTokenType) {
-                        Object.assign(value.r?.[0], {
-                            typ: EnumToken.ResolutionTokenType,
-                            unit: "x",
-                        });
+                let val = arena.strings[arena.stringValue[token]];
+                if (val in pseudoAliasMap) {
+                    val = pseudoAliasMap[val];
+                    // inlined: arena.setStr(token, val)
+                    arena.stringValue[token] = arena.internString(val);
+                    const r = arena.fieldTokens(value, TokenField.R);
+                    if ((equalsIgnoreCase(val, "min-resolution") || equalsIgnoreCase(val, "max-resolution")) &&
+                        r.length > 0 &&
+                        arena.dataTypes[r[0]] == EnumToken.NumberTokenType) {
+                        arena.dataTypes[r[0]] = EnumToken.ResolutionTokenType;
+                        // inlined: arena.setUnitString(r[0], "x")
+                        arena.unit[r[0]] = arena.internString("x");
                         result = true;
                     }
-                    let isMin = token.val.startsWith("min-");
-                    let isMax = token.val.startsWith("max-");
+                    let isMin = val.startsWith("min-");
+                    let isMax = val.startsWith("max-");
                     if (isMin || isMax) {
-                        token.val = token.val.slice(4);
-                        value.op.typ = isMax
+                        // inlined: arena.setStr(token, val.slice(4))
+                        arena.stringValue[token] = arena.internString(val.slice(4));
+                        arena.dataTypes[arena.field(value, TokenField.Op)] = isMax
                             ? EnumToken.LteTokenType
                             : EnumToken.GteTokenType;
                     }
                 }
             }
         }
-        else if (value.typ == EnumToken.IdenTokenType ||
-            value.typ == EnumToken.PseudoClassFuncTokenType ||
-            value.typ == EnumToken.PseudoClassTokenType ||
-            value.typ == EnumToken.PseudoElementTokenType) {
-            let key = value.val +
-                (value.typ == EnumToken.PseudoClassFuncTokenType ? "()" : "");
+        else if (typ == EnumToken.IdenTokenType ||
+            typ == EnumToken.PseudoClassFuncTokenType ||
+            typ == EnumToken.PseudoClassTokenType ||
+            typ == EnumToken.PseudoElementTokenType) {
+            let key = arena.strings[arena.stringValue[value]] + (typ == EnumToken.PseudoClassFuncTokenType ? "()" : "");
             if (key in pseudoAliasMap) {
                 const isPseudClass = pseudoAliasMap[key].startsWith("::");
-                value.val = pseudoAliasMap[key];
-                // if (
-                //     value.typ == EnumToken.IdenTokenType &&
-                //     ["min-resolution", "max-resolution"].includes((value as IdentToken).val) &&
-                //     parent?.typ == EnumToken.MediaQueryConditionTokenType &&
-                //     (parent as MediaQueryConditionToken).r?.[0]?.typ == EnumToken.NumberTokenType
-                // ) {
-                //     Object.assign((parent as MediaQueryConditionToken).r?.[0], {
-                //         typ: EnumToken.ResolutionTokenType,
-                //         unit: "x",
-                //     });
-                // }
-                // else
-                if (isPseudClass && value.typ == EnumToken.PseudoElementTokenType) {
-                    // @ts-ignore
-                    value.typ = EnumToken.PseudoClassTokenType;
+                // inlined: arena.setStr(value, pseudoAliasMap[key])
+                arena.stringValue[value] = arena.internString(pseudoAliasMap[key]);
+                if (isPseudClass && typ == EnumToken.PseudoElementTokenType) {
+                    arena.dataTypes[value] = EnumToken.PseudoClassTokenType;
                 }
                 result = true;
             }
         }
     }
     // remove duplicate tokens
-    if (tokens.find((t) => t.typ == EnumToken.CommaTokenType) != null) {
+    if (tokens.find((t) => arena.dataTypes[t] == EnumToken.CommaTokenType) != null) {
         const set = new Set();
-        const split = splitTokenList(tokens, [EnumToken.CommaTokenType]);
+        const split = splitTokenList(arena, tokens, [EnumToken.CommaTokenType]);
         tokens.length = 0;
         for (const token of split.reduce((acc, curr) => {
-            const str = curr.reduce((acc, curr) => acc + renderValue(curr), "");
+            const str = curr.reduce((acc, curr) => acc + renderValue(arena, curr), "");
             if (set.has(str)) {
                 return acc;
             }
             set.add(str);
             if (acc.length > 0) {
-                acc.push({
-                    typ: EnumToken.CommaTokenType,
-                });
+                acc.push(arena.createToken(EnumToken.CommaTokenType));
             }
             return acc.concat(curr);
         }, [])) {
@@ -127,45 +121,53 @@ class ComputePrefixFeature {
             options.features.push(new ComputePrefixFeature(options));
         }
     }
-    run(node) {
-        if (node[STATE] & (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
+    run(arena, node) {
+        if (arena.flags[node] &
+            (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
             return null;
         }
-        if (node.typ == EnumToken.RuleNodeType) {
-            node.sel = replacePseudo(splitRule(node.sel)).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), "");
-            if (node[TOKENS] != null) {
-                replaceAstNodes(node[TOKENS]);
+        const typ = arena.dataTypes[node];
+        if (typ == EnumToken.RuleNodeType) {
+            // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
+            arena.name[node] = arena.internString(replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""));
+            if (arena.firstToken[node] != 0) {
+                const tokens = arena.tokens(node);
+                replaceAstNodes(arena, tokens);
+                arena.setTokenList(node, tokens);
             }
         }
-        else if (node.typ == EnumToken.DeclarationNodeType) {
-            if (node.nam.charAt(0) == "-") {
-                const match = node.nam.match(/^-([^-]+)-(.+)$/);
+        else if (typ == EnumToken.DeclarationNodeType) {
+            const name = arena.strings[arena.name[node]];
+            if (name.charAt(0) == "-") {
+                const match = name.match(/^-([^-]+)-(.+)$/);
                 if (match != null) {
                     let nam = match[2];
                     if (!(nam in config.declarations)) {
-                        if (node.nam in pseudoAliasMap) {
-                            nam = pseudoAliasMap[node.nam];
+                        if (name in pseudoAliasMap) {
+                            nam = pseudoAliasMap[name];
                         }
                     }
                     if (nam in config.declarations) {
-                        node.nam = nam;
+                        arena.name[node] = arena.internString(nam);
                     }
                 }
             }
             let hasPrefix = false;
-            for (const { value } of walkValues(node.val)) {
-                if ((value.typ == EnumToken.IdenTokenType ||
-                    (value.typ != EnumToken.ParensTokenType && funcLike.includes(value.typ))) &&
-                    value.val.match(/^-([^-]+)-(.+)$/) != null) {
-                    if (value.val.endsWith("-gradient")) {
-                        if (regMatchLinearGradient.test(value.val)) {
-                            this.webkitLinearToLinearGradient(value);
+            // inlined: arena.walkValues(node)
+            for (const value of new ValueWalker(arena, node)) {
+                const typ = arena.dataTypes[value];
+                const val = arena.strings[arena.stringValue[value]];
+                if ((typ == EnumToken.IdenTokenType || (typ != EnumToken.ParensTokenType && funcLike.includes(typ))) &&
+                    val.match(/^-([^-]+)-(.+)$/) != null) {
+                    if (val.endsWith("-gradient")) {
+                        if (regMatchLinearGradient.test(val)) {
+                            this.webkitLinearToLinearGradient(arena, value);
                         }
-                        else if (regMatchRadialGradient.test(value.val)) {
-                            this.webkitRadialToRadialGradient(value);
+                        else if (regMatchRadialGradient.test(val)) {
+                            this.webkitRadialToRadialGradient(arena, value);
                         }
-                        else if (equalsIgnoreCase(value.val, "-webkit-gradient")) {
-                            this.webkitGradientToGradient(value);
+                        else if (equalsIgnoreCase(val, "-webkit-gradient")) {
+                            this.webkitGradientToGradient(arena, value);
                         }
                         // not supported yet
                         break;
@@ -175,28 +177,32 @@ class ComputePrefixFeature {
                 }
             }
             if (hasPrefix) {
-                const nodes = structuredClone(node.val);
-                for (const { value } of walkValues(nodes)) {
-                    if (value.typ == EnumToken.IdenTokenType || funcLike.includes(value.typ)) {
-                        const match = value.val.match(/^-([^-]+)-(.+)$/);
+                // inlined: arena.walkValues(node)
+                for (const value of new ValueWalker(arena, node)) {
+                    if (arena.dataTypes[value] == EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
+                        const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
                         if (match != null) {
-                            value.val = match[2];
+                            // inlined: arena.setStr(value, match[2])
+                            arena.stringValue[value] = arena.internString(match[2]);
                         }
                     }
                 }
-                node.val = nodes;
             }
         }
-        else if (node.typ == EnumToken.AtRuleNodeType || node.typ == EnumToken.KeyframesAtRuleNodeType) {
-            if (node.nam.startsWith("-")) {
-                const match = node.nam.match(/^-([^-]+)-(.+)$/);
+        else if (typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType) {
+            const name = arena.strings[arena.name[node]];
+            if (name.startsWith("-")) {
+                const match = name.match(/^-([^-]+)-(.+)$/);
                 if (match != null && "@" + match[2] in config.atRules) {
-                    node.nam = match[2];
+                    arena.name[node] = arena.internString(match[2]);
                 }
             }
-            if (node.typ == EnumToken.AtRuleNodeType && node.val !== "") {
-                if (replaceAstNodes(node[TOKENS])) {
-                    node.val = node[TOKENS].reduce((acc, curr) => acc + renderValue(curr), "");
+            if (typ == EnumToken.AtRuleNodeType && arena.stringValue[node] !== 0) {
+                const tokens = arena.tokens(node);
+                const result = replaceAstNodes(arena, tokens);
+                arena.setTokenList(node, tokens);
+                if (result) {
+                    arena.stringValue[node] = arena.internString(tokens.reduce((acc, curr) => acc + renderValue(arena, curr), ""));
                 }
             }
         }
@@ -207,13 +213,13 @@ class ComputePrefixFeature {
      * @param tokens
      * @returns
      */
-    webkitLinearToLinearGradient(token) {
+    webkitLinearToLinearGradient(arena, token) {
         let i;
         let k;
         let to;
         let val;
         let key;
-        const tokens = token.chi;
+        const tokens = arena.tokens(token);
         // conversion rules
         // translation:
         // - left -> to right
@@ -231,25 +237,21 @@ class ComputePrefixFeature {
         // - to bottom -> 180deg
         // - to left -> 270deg
         for (i = 0; i < tokens.length; i++) {
-            if (tokens[i].typ == EnumToken.AngleTokenType ||
-                (tokens[i].typ == EnumToken.NumberTokenType && tokens[i].val == 0)) {
-                tokens[i].val =
+            if (arena.dataTypes[tokens[i]] == EnumToken.AngleTokenType ||
+                (arena.dataTypes[tokens[i]] == EnumToken.NumberTokenType && arena.numericValue[tokens[i]] == 0)) {
+                arena.numericValue[tokens[i]] =
                     (90 -
-                        // @ts-expect-error
-                        (tokens[i].typ == EnumToken.NumberTokenType
-                            ? tokens[i]
-                            : toDegrees(tokens[i]).val)) %
+                        (arena.dataTypes[tokens[i]] == EnumToken.NumberTokenType
+                            ? arena.numericValue[tokens[i]]
+                            : arena.numericValue[toDegrees(arena, tokens[i])])) %
                         360;
             }
-            else if (tokens[i].typ == EnumToken.IdenTokenType) {
-                key = tokens[i].val.toLowerCase();
+            else if (arena.dataTypes[tokens[i]] == EnumToken.IdenTokenType) {
+                key = arena.strings[arena.stringValue[tokens[i]]].toLowerCase();
                 switch (key) {
                     case "right":
                     case "left":
-                        tokens.splice(i, 1, { typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, {
-                            typ: EnumToken.IdenTokenType,
-                            val: key == "right" ? "left" : "right",
-                        });
+                        tokens.splice(i, 1, arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, key == "right" ? "left" : "right"));
                         i += 2;
                         break;
                     case "top":
@@ -257,62 +259,64 @@ class ComputePrefixFeature {
                         k = i + 1;
                         to = key == "top" ? "bottom" : "top";
                         while (k < tokens.length &&
-                            (tokens[k].typ === EnumToken.WhitespaceTokenType ||
-                                tokens[k].typ === EnumToken.CommentTokenType)) {
+                            (arena.dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType ||
+                                arena.dataTypes[tokens[k]] === EnumToken.CommentTokenType)) {
                             k++;
                         }
-                        if (tokens[k]?.typ === EnumToken.IdenTokenType) {
+                        if (arena.dataTypes[tokens[k]] === EnumToken.IdenTokenType) {
                             val = "";
-                            if (equalsIgnoreCase(tokens[k].val, "left")) {
+                            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[k]]], "left")) {
                                 val = "right";
                             }
-                            if (equalsIgnoreCase(tokens[k].val, "right")) {
+                            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[k]]], "right")) {
                                 val = "left";
                             }
                             if (val !== "") {
-                                tokens.splice(i, k - i + 1, { typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: to }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val });
+                                tokens.splice(i, k - i + 1, arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, to), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, val));
                                 i += 4;
                                 break;
                             }
                         }
-                        tokens.splice(i, 1, { typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: to });
+                        tokens.splice(i, 1, arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, to));
                         i += 2;
                         break;
                 }
             }
         }
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-linear-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
+        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
             ? "repeating-linear-gradient"
-            : "linear-gradient";
+            : "linear-gradient"));
+        arena.setTokenList(token, tokens);
     }
     /**
      * Convert -webkit-gradient(linear) to linear-gradient or linear-gradient syntax
      * @param token
      * @returns
      */
-    webkitGradientToGradient(token) {
+    webkitGradientToGradient(arena, token) {
         let i = 0;
         let k;
         let key = "";
         let commaCount;
         let type = "";
-        let tokens = token.chi.slice();
+        let tokens = arena.tokens(token);
         // linear or radial
-        if (equalsIgnoreCase(tokens[i].val, "linear")) {
+        if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "linear")) {
             type = "linear-gradient";
             i++;
         }
         tokens.splice(0, i + 1);
         commaCount = 0;
         for (i = 0; i < tokens.length; i++) {
-            if (tokens[i].typ === EnumToken.CommaTokenType) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
                 commaCount++;
                 if (commaCount > 1) {
                     break;
                 }
             }
-            if (tokens[i].typ === EnumToken.IdenTokenType) {
-                key += (key.length > 0 ? " " : "") + tokens[i].val;
+            if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
+                key += (key.length > 0 ? " " : "") + arena.strings[arena.stringValue[tokens[i]]];
             }
         }
         // mapping keywords
@@ -326,65 +330,62 @@ class ComputePrefixFeature {
         // right bottom → left top	to top left
         const replacements = [];
         if (key === "left top left bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "bottom"));
         }
         else if (key === "left bottom left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "top"));
         }
         else if (key === "left top right top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "right"));
         }
         else if (key === "right top left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "left"));
         }
         else if (key === "left top right bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "bottom"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "right"));
         }
         else if (key === "right top left bottom") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "bottom" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "bottom"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "left"));
         }
         else if (key === "left bottom right top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "right" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "top"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "right"));
         }
         else if (key === "right bottom left top") {
-            replacements.push({ typ: EnumToken.IdenTokenType, val: "to" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "top" }, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "left" });
+            replacements.push(arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "top"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "left"));
         }
         tokens.splice(0, i, ...replacements);
         let checkStop = true;
         let checkStopIndex = replacements.length + 1;
         let colorStop = [];
         for (i = replacements.length + 1; i < tokens.length; i++) {
-            if (tokens[i].typ === EnumToken.CommaTokenType && checkStop) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType && checkStop) {
                 checkStopIndex = i;
                 continue;
             }
-            if (tokens[i].typ === EnumToken.FunctionTokenType) {
-                if (equalsIgnoreCase(tokens[i].val, "to")) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.FunctionTokenType) {
+                if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "to")) {
                     colorStop.push(tokens[checkStopIndex]);
-                    for (const token of tokens[i].chi) {
+                    for (const token of arena.tokens(tokens[i])) {
                         colorStop.push(token);
                     }
                     tokens.splice(checkStopIndex, i - checkStopIndex + 1);
                     i = checkStopIndex;
                     checkStop = false;
                 }
-                else if (equalsIgnoreCase(tokens[i].val, "from")) {
-                    k = tokens[i].chi.length + 1;
-                    tokens.splice(i, 1, ...tokens[i].chi, { typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.PercentageTokenType, val: 0 });
+                else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "from")) {
+                    k = arena.tokens(tokens[i]).length + 1;
+                    tokens.splice(i, 1, ...arena.tokens(tokens[i]), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.PercentageTokenType, 0));
                     i += k;
                 }
-                else if (equalsIgnoreCase(tokens[i].val, "color-stop")) {
-                    k = tokens[i].chi.length - 1;
-                    tokens.splice(i, 1, 
-                    // @ts-expect-error
-                    ...tokens[i].chi.reverse().map((t) => t.typ === EnumToken.CommaTokenType
-                        ? { typ: EnumToken.WhitespaceTokenType }
-                        : t.typ === EnumToken.NumberTokenType
-                            ? {
-                                typ: EnumToken.PercentageTokenType,
-                                // @ts-expect-error
-                                val: t.val * 100,
-                            }
+                else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "color-stop")) {
+                    k = arena.tokens(tokens[i]).length - 1;
+                    tokens.splice(i, 1, ...arena
+                        .tokens(tokens[i])
+                        .reverse()
+                        .map((t) => arena.dataTypes[t] === EnumToken.CommaTokenType
+                        ? arena.createToken(EnumToken.WhitespaceTokenType)
+                        : arena.dataTypes[t] === EnumToken.NumberTokenType
+                            ? arena.createToken(EnumToken.PercentageTokenType, arena.numericValue[t] * 100)
                             : t));
                     i += k;
                 }
@@ -396,11 +397,9 @@ class ComputePrefixFeature {
             }
         }
         if (type !== "") {
-            token.val = type;
-            token.chi.length = 0;
-            for (const t of tokens) {
-                token.chi.push(t);
-            }
+            // inlined: arena.setStr(token, type)
+            arena.stringValue[token] = arena.internString(type);
+            arena.setTokenList(token, tokens);
         }
     }
     /**
@@ -408,66 +407,66 @@ class ComputePrefixFeature {
      * @param tokens
      * @returns
      */
-    webkitRadialToRadialGradient(token) {
+    webkitRadialToRadialGradient(arena, token) {
         let i = 0;
-        const tokens = token.chi;
+        const tokens = arena.tokens(token);
         while (i < tokens.length &&
-            (tokens[i].typ === EnumToken.WhitespaceTokenType || tokens[i].typ === EnumToken.CommentTokenType)) {
+            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)) {
             i++;
         }
         const positions = [];
         const form = [];
         const size = [];
         const colorStops = [];
-        if (tokens[i]?.typ === EnumToken.PercentageTokenType ||
-            (tokens[i]?.typ === EnumToken.NumberTokenType && 0 === tokens[i].val) ||
-            (tokens[i]?.typ === EnumToken.IdenTokenType &&
-                (equalsIgnoreCase(tokens[i].val, "center") ||
-                    equalsIgnoreCase(tokens[i].val, "top") ||
-                    equalsIgnoreCase(tokens[i].val, "bottom") ||
-                    equalsIgnoreCase(tokens[i].val, "left") ||
-                    equalsIgnoreCase(tokens[i].val, "right")))) {
+        if (arena.dataTypes[tokens[i]] === EnumToken.PercentageTokenType ||
+            (arena.dataTypes[tokens[i]] === EnumToken.NumberTokenType && 0 === arena.numericValue[tokens[i]]) ||
+            (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType &&
+                (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "center") ||
+                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "top") ||
+                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "bottom") ||
+                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "left") ||
+                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "right")))) {
             do {
                 positions.push(tokens[i]);
                 i++;
-            } while (tokens[i]?.typ !== EnumToken.CommaTokenType);
-            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+            } while (arena.dataTypes[tokens[i]] !== EnumToken.CommaTokenType);
+            if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
                 i++;
             }
         }
-        if (tokens[i]?.typ === EnumToken.IdenTokenType) {
-            if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
-                equalsIgnoreCase(tokens[i].val, "closest-corner") ||
-                equalsIgnoreCase(tokens[i].val, "farthest-side") ||
-                equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+        if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-side") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-corner") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-side") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-corner")) {
                 size.push(tokens[i++]);
             }
-            else if (equalsIgnoreCase(tokens[i].val, "circle") ||
-                equalsIgnoreCase(tokens[i].val, "ellipse")) {
+            else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "circle") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (tokens[i]?.typ === EnumToken.WhitespaceTokenType || tokens[i]?.typ === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
-            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
                 i++;
             }
         }
-        if (tokens[i]?.typ === EnumToken.IdenTokenType) {
-            if (equalsIgnoreCase(tokens[i].val, "closest-side") ||
-                equalsIgnoreCase(tokens[i].val, "closest-corner") ||
-                equalsIgnoreCase(tokens[i].val, "farthest-side") ||
-                equalsIgnoreCase(tokens[i].val, "farthest-corner")) {
+        if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
+            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-side") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-corner") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-side") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-corner")) {
                 size.push(tokens[i++]);
             }
-            else if (equalsIgnoreCase(tokens[i].val, "circle") ||
-                equalsIgnoreCase(tokens[i].val, "ellipse")) {
+            else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "circle") ||
+                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (tokens[i]?.typ === EnumToken.WhitespaceTokenType || tokens[i]?.typ === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
-            if (tokens[i]?.typ === EnumToken.CommaTokenType) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
                 i++;
             }
         }
@@ -477,16 +476,16 @@ class ComputePrefixFeature {
         tokens.length = 0;
         if (form.length > 0 || size.length > 0) {
             if (form.length === 0) {
-                form.push({ typ: EnumToken.IdenTokenType, val: "ellipse" });
+                form.push(arena.createToken(EnumToken.IdenTokenType, "ellipse"));
             }
             if (size.length > 0) {
-                form.push({ typ: EnumToken.WhitespaceTokenType });
+                form.push(arena.createToken(EnumToken.WhitespaceTokenType));
                 for (const token of size) {
                     form.push(token);
                 }
             }
             if (positions.length > 0) {
-                form.push({ typ: EnumToken.WhitespaceTokenType }, { typ: EnumToken.IdenTokenType, val: "at" }, { typ: EnumToken.WhitespaceTokenType });
+                form.push(arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, "at"), arena.createToken(EnumToken.WhitespaceTokenType));
                 for (const position of positions) {
                     form.push(position);
                 }
@@ -494,14 +493,16 @@ class ComputePrefixFeature {
             for (const token of form) {
                 tokens.push(token);
             }
-            tokens.push({ typ: EnumToken.CommaTokenType });
+            tokens.push(arena.createToken(EnumToken.CommaTokenType));
         }
-        token.val = equalsIgnoreCase(token.val, "-webkit-repeating-radial-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
+        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
             ? "repeating-radial-gradient"
-            : "radial-gradient";
+            : "radial-gradient"));
         for (const colorStop of colorStops) {
             tokens.push(colorStop);
         }
+        arena.setTokenList(token, tokens);
         return tokens;
     }
 }

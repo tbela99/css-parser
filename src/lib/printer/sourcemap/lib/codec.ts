@@ -9,8 +9,8 @@ for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567
     integer_to_char[i++] = char;
 }
 
-/** 
- * @param {string} str 
+/**
+ * @param {string} str
  */
 export function decode(str: string) {
 	/** @type {number[]} */
@@ -52,9 +52,9 @@ export function decode(str: string) {
 }
 
 /**
- * 
- * @param value 
- * @returns 
+ *
+ * @param value
+ * @returns
  */
 export function encode(value: number[]) {
     // if (typeof value === 'number') {
@@ -70,9 +70,9 @@ export function encode(value: number[]) {
 }
 
 /**
- * 
- * @param num 
- * @returns 
+ *
+ * @param num
+ * @returns
  */
 function encode_integer(num: number): string {
     let result = '';

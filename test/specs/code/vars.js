@@ -54,7 +54,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
 `,
                 { inlineCssVariables: true, nestingRules: false },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`:root {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`:root {
  /* --animate-duration: 1s */
  /* --animate-delay: 1s */
  /* --animate-repeat: 1 */
@@ -98,7 +98,7 @@ html { --color: green; }
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`html {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`html {
  /* --color: green */
 }
 .foo {

@@ -1,4 +1,5 @@
-import type { ColorToken, Token } from "../../../@types/token.d.ts";
+import type { Token } from "../../../@types/token.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { color2srgbvalues } from "./color.ts";
 import {
@@ -11,84 +12,84 @@ import {
 } from "./srgb.ts";
 import { hsl2srgbvalues } from "./rgb.ts";
 
-export function rgb2cmykToken(token: ColorToken): ColorToken | null {
-    let components: number[] | null = rgb2srgbvalues(token);
+export function rgb2cmykToken(arena: AstArena, token: Token): Token | null {
+    let components: number[] | null = rgb2srgbvalues(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
-export function hsl2cmykToken(token: ColorToken): ColorToken | null {
-    let values: number[] | null = hsl2srgbvalues(token);
+export function hsl2cmykToken(arena: AstArena, token: Token): Token | null {
+    let values: number[] | null = hsl2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
-export function hwb2cmykToken(token: ColorToken): ColorToken | null {
-    const values: number[] | null = hwb2srgbvalues(token);
+export function hwb2cmykToken(arena: AstArena, token: Token): Token | null {
+    const values: number[] | null = hwb2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
-export function lab2cmykToken(token: ColorToken): ColorToken | null {
-    const components: number[] | null = lab2srgbvalues(token);
+export function lab2cmykToken(arena: AstArena, token: Token): Token | null {
+    const components: number[] | null = lab2srgbvalues(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
-export function lch2cmykToken(token: ColorToken): ColorToken | null {
-    const components: number[] | null = lch2srgbvalues(token);
+export function lch2cmykToken(arena: AstArena, token: Token): Token | null {
+    const components: number[] | null = lch2srgbvalues(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
-export function oklab2cmyk(token: ColorToken): ColorToken | null {
-    const components: number[] | null = oklab2srgbvalues(token);
+export function oklab2cmyk(arena: AstArena, token: Token): Token | null {
+    const components: number[] | null = oklab2srgbvalues(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
-export function oklch2cmykToken(token: ColorToken): ColorToken | null {
-    const components: number[] | null = oklch2srgbvalues(token);
+export function oklch2cmykToken(arena: AstArena, token: Token): Token | null {
+    const components: number[] | null = oklch2srgbvalues(arena, token);
 
     if (components == null || components.length < 3) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(components[0], components[1], components[2], components[3]));
+    return cmyktoken(arena, srgb2cmykvalues(components[0], components[1], components[2], components[3]));
 }
 
-export function color2cmykToken(token: ColorToken): ColorToken | null {
-    const values = color2srgbvalues(token);
+export function color2cmykToken(arena: AstArena, token: Token): Token | null {
+    const values = color2srgbvalues(arena, token);
 
     if (values == null) {
         return null;
     }
 
-    return cmyktoken(srgb2cmykvalues(values[0], values[1], values[2], values[3]));
+    return cmyktoken(arena, srgb2cmykvalues(values[0], values[1], values[2], values[3]));
 }
 
 export function srgb2cmykvalues(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -106,34 +107,16 @@ export function srgb2cmykvalues(r: number, g: number, b: number, a: number | nul
     return result;
 }
 
-function cmyktoken(values: number[]): ColorToken {
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "device-cmyk",
-        chi: values.reduce(
-            (acc: Token[], curr: number, index: number) =>
-                index < 4
-                    ? [
-                          ...acc,
-                          {
-                              typ: EnumToken.PercentageTokenType,
-                              // @ts-ignore
-                              val: curr * 100,
-                          } as Token,
-                      ]
-                    : [
-                          ...acc,
-                          {
-                              typ: EnumToken.LiteralTokenType,
-                              val: "/",
-                          } as Token,
-                          {
-                              typ: EnumToken.PercentageTokenType,
-                              val: curr * 100,
-                          } as Token,
-                      ],
-            [] as Token[],
-        ) as Token[],
-        kin: ColorType.DEVICE_CMYK,
-    };
+function cmyktoken(arena: AstArena, values: number[]): Token {
+    const chi: Token[] = [];
+
+    for (let index = 0; index < values.length; index++) {
+        if (index == 4) {
+            chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"));
+        }
+
+        chi.push(arena.createToken(EnumToken.PercentageTokenType, values[index] * 100));
+    }
+
+    return arena.createColor("device-cmyk", ColorType.DEVICE_CMYK, chi);
 }

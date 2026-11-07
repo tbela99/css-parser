@@ -17,6 +17,7 @@ import type {
 
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/printer/render.ts";
+import type { AstArena } from "./lib/ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { Tokenizer } from "./lib/parser/tokenize.ts";
 import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
@@ -41,31 +42,30 @@ export type {
 } from "./@types/index.d.ts";
 
 export { minify } from "./lib/ast/minify.ts";
-export { expand } from "./lib/ast/expand.ts";
-export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
 export { renderValue as renderToken } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
-export { find, findLast, findByValue, findAll } from "./lib/ast/find.ts";
-export { cloneNode } from "./lib/ast/clone.ts";
-export { replaceNodeOrValue } from "./lib/parser/utils/token.ts";
+export { Arena, AstArena, TokenField, arenaColumns } from "./lib/ast/arena.ts";
+export type { ArenaProperties, ArenaTransferables } from "./lib/ast/arena.ts";
+export { AstArenaNode, ARENAID, ARENA } from "./lib/ast/arena-node.ts";
+export type { AstArenaNodeInput } from "./lib/ast/arena-node.ts";
 export { PropertyList } from "./lib/parser/declaration/list.ts";
 export {
     EnumToken,
     ColorType,
-    ValidationLevel,
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
+    WalkerEvent,
+    WalkerOptionEnum,
 } from "./lib/ast/types.ts";
 export { SourceMap } from "./lib/printer/sourcemap/sourcemap.ts";
 export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
-export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
 export { parseSyntax } from "./lib/validation/parser/parse.ts";
 
 /**
@@ -141,13 +141,13 @@ export async function load(
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
  *
- * let renderResult = render(parseResult.ast);
+ * let renderResult = render(parseResult.arena, parseResult.ast);
  * console.log(result.code);
  *
  * // body{color:red}
  *
  *
- * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * renderResult = render(parseResult.arena, parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
  * console.log(renderResult.code);
  *
  * // body {
@@ -156,6 +156,7 @@ export async function load(
  * ```
  */
 export function render(
+    arena: AstArena,
     data: AstNode,
     options: RenderOptions = {},
     mapping?: {
@@ -164,6 +165,7 @@ export function render(
     } | null,
 ): RenderResult {
     return doRender(
+        arena,
         data,
         Object.assign(options, {
             resolve,
@@ -175,41 +177,6 @@ export function render(
         }),
         mapping,
     );
-}
-
-/**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser/web';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-export async function parseFile(
-    file: string,
-    options: ParserOptions = {},
-    asStream: boolean = false,
-): Promise<ParseResult> {
-    console.warn(
-        "DeprecationWarning: parseFile is deprecated, use parse instead as parse({file, asStream, ...options})",
-    );
-    return parse({ file, asStream, ...options });
 }
 
 /**
@@ -441,6 +408,7 @@ export function transformSync(
 
     // ast already expanded by parse
     const rendered: RenderResult = render(
+        parseResult.arena,
         parseResult.ast,
         {
             ...options,
@@ -660,44 +628,6 @@ export async function parse(
 }
 
 /**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * Example:
- *
- * ```ts
- *
- * import {transform} from '@tbela99/css-parser/web';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-export async function transformFile(
-    file: string,
-    options: TransformOptions = {},
-    asStream: boolean = false,
-): Promise<TransformResult> {
-    console.error(
-        "DeprecationWarning: transformFile is deprecated, use transform instead as transform({file, asStream, ...options})",
-    );
-
-    return transform({
-        file,
-        asStream,
-        ...options,
-    });
-}
-
-/**
  * Transform CSS
  * @param css
  * @param options
@@ -848,6 +778,7 @@ export async function transform(
 
         // ast already expanded by parse
         const rendered: RenderResult = render(
+            parseResult.arena,
             parseResult.ast,
             {
                 ...options,

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { convertColor } from '../color.js';
@@ -16,17 +16,18 @@ import { toPrecisionValue } from '../../syntax.js';
  *
  * @private
  * {@link https://drafts.csswg.org/css-color-4/#comparing-color-values}
+ * @param arena
  * @param color1
  * @param color2
  */
-function okLabDistance(color1, color2) {
-    color1 = convertColor(color1, ColorType.OKLAB);
-    color2 = convertColor(color2, ColorType.OKLAB);
-    if (color1 == null || color2 == null) {
+function okLabDistance(arena, color1, color2) {
+    const c1 = convertColor(arena, color1, ColorType.OKLAB);
+    const c2 = convertColor(arena, color2, ColorType.OKLAB);
+    if (c1 == null || c2 == null) {
         return null;
     }
-    const okLab1 = getOKLABComponents(color1);
-    const okLab2 = getOKLABComponents(color2);
+    const okLab1 = getOKLABComponents(arena, c1);
+    const okLab2 = getOKLABComponents(arena, c2);
     if (okLab1 == null || okLab2 == null) {
         return null;
     }
@@ -39,20 +40,21 @@ function okLabDistance(color1, color2) {
 }
 /**
  * Check if two colors are close in okLab space.
+ * @param arena
  * @param color1
  * @param color2
  * @param threshold
  *
  * @private
  */
-function isOkLabClose(color1, color2, threshold = colorDistancePrecision) {
-    color1 = convertColor(color1, ColorType.OKLAB);
-    color2 = convertColor(color2, ColorType.OKLAB);
-    if (color1 == null || color2 == null) {
+function isOkLabClose(arena, color1, color2, threshold = colorDistancePrecision) {
+    const c1 = convertColor(arena, color1, ColorType.OKLAB);
+    const c2 = convertColor(arena, color2, ColorType.OKLAB);
+    if (c1 == null || c2 == null) {
         return false;
     }
-    const okLab1 = getOKLABComponents(color1);
-    const okLab2 = getOKLABComponents(color2);
+    const okLab1 = getOKLABComponents(arena, c1);
+    const okLab2 = getOKLABComponents(arena, c2);
     if (okLab1 == null || okLab2 == null) {
         return false;
     }

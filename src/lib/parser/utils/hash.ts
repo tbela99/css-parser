@@ -1,3 +1,5 @@
+import type { AstArena } from "../../ast/arena.ts";
+
 // Alphabet: a-z, A-Z, 0-9, _, -
 export const LOWER = "abcdefghijklmnopqrstuvwxyz";
 export const DIGITS = "0123456789";
@@ -58,13 +60,12 @@ export function toSortedString(input: any): string {
         return String(input);
     }
     if (Array.isArray(input)) {
-
         const result = new Array(input.length);
 
         for (const value of input) {
             result.push(toSortedString(value));
         }
-        
+
         return JSON.stringify(result);
     }
 
@@ -84,6 +85,46 @@ export function toSortedString(input: any): string {
  */
 export function objectHash(object: any): string {
     return hashCode(toSortedString(object)).toString(16);
+}
+
+/**
+ * structural signature of a node or a token: type, name, values, tokens and children
+ * @param arena
+ * @param id
+ */
+export function nodeSignature(arena: AstArena, id: number): string {
+    let result: string = `${arena.dataTypes[id]}:${arena.name[id]}:${arena.stringValue[id]}:${arena.numericValue[id]}:${arena.unit[id]}:${arena.colorType[id]}`;
+
+    if (arena.firstToken[id] != 0) {
+        result += "(";
+
+        for (let token = arena.firstToken[id]; token != 0; token = arena.nextSibling[token]) {
+            result += nodeSignature(arena, token) + ",";
+        }
+
+        result += ")";
+    }
+
+    if (arena.firstChild[id] != 0) {
+        result += "{";
+
+        for (let child = arena.firstChild[id]; child != 0; child = arena.nextSibling[child]) {
+            result += nodeSignature(arena, child) + ",";
+        }
+
+        result += "}";
+    }
+
+    return result;
+}
+
+/**
+ * hash of a node or a token content
+ * @param arena
+ * @param id
+ */
+export function nodeHash(arena: AstArena, id: number): string {
+    return hashCode(nodeSignature(arena, id)).toString(16);
 }
 
 /**

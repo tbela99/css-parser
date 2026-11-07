@@ -275,7 +275,7 @@ line-height: calc(pi);
 transform: rotate(atan2(e, 30));
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  -moz-transform: rotate(.324turn);
  line-height: 3.141593;
  transform: rotate(.09rad)
@@ -292,7 +292,7 @@ width: calc(100px * log(8, 2));
  line-height:  tan(45deg)
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  width: 300px;
  line-height: 1
 }`),
@@ -307,7 +307,7 @@ a {
 width: calc(100px * log(625, 5));
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  width: 400px
 }`),
             );
@@ -321,7 +321,7 @@ a {
 width: calc(100px * log(625, 5));
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  width: 400px
 }`),
             );
@@ -335,7 +335,7 @@ a {
 width: calc(100px * exp(-1));}
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  width: 36.787944px
 }`),
             );
@@ -349,7 +349,7 @@ a {
 width: calc(2px *abs(-1);}
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
 }`),
             );
         });
@@ -362,7 +362,7 @@ a {
 width: calc(-2px *sign(-1);}
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
 }`),
             );
         });
@@ -533,7 +533,7 @@ a {
 width: calc(2px *abs(-1));}
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  width: 2px
 }`),
             );
@@ -547,7 +547,7 @@ a {
      transform: translate(0, -50px);
 }
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  transform: translateY(-50px)
 }`),
             );
@@ -561,7 +561,7 @@ a {
   --size-1: hypot(var(--size-0));
 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`:root {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`:root {
  --size-0: 100px;
  --size-1: hypot(var(--size-0))
 }`),
@@ -576,7 +576,7 @@ transform: rotate(360deg);
     
 
 `).then((result) =>
-                expect(render(result.ast, { beautify: true }).code).equals(`a {
+                expect(render(result.arena, result.ast, { beautify: true }).code).equals(`a {
  transform: rotate(1turn)
 }`),
             );
@@ -604,7 +604,7 @@ a {
                     removeDuplicateDeclarations: ["opacity"],
                 },
             ).then((result) =>
-                expect(render(result.ast, { beautify: true }).code).equals(`.test {
+                expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.test {
  opacity: -1;
  opacity: mod(50%,7);
  opacity: rem(50%,7);
@@ -636,7 +636,7 @@ transform: rotate(calc(2.5*pi * 1rad))  }
                     beautify: true,
                 },
             ).then((result) =>
-                expect(render(result.ast, { beautify: true }).code).equals(`a:hover {
+                expect(render(result.arena, result.ast, { beautify: true }).code).equals(`a:hover {
  transform: rotate(450deg)
 }
 .now {

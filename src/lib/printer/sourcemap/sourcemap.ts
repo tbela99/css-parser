@@ -4,18 +4,18 @@ import { decode, encode } from "./lib/codec.ts";
 
 /**
  * Generate and parse source map
- * 
+ *
  * ```ts
  * const sourcemap = new SourceMap();
- * 
+ *
  * // you can also pass an input sourcemap
  * // const sourcemap = new SourceMap(sourcemapObjectOrJSONString);
- * 
+ *
  * sourcemap.addSourceContent(0, '/css/styles.css', null);
  * sourcemap.addSourceContent(1, '/css/typography.css', null);
- * 
+ *
  * const maps = [];
- * 
+ *
  * maps.add([
      1, 1, 0, 1, 1]);
  * maps.add([

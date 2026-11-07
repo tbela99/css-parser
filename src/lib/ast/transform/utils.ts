@@ -147,7 +147,7 @@ export function round(number: number): number {
     return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
 }
 
-// translate3d(25.9808px, 0, 15px ) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
+// translate3d(25.9808px, 0, 15px) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
 // translate → rotate → skew → scale
 export function decompose(original: Matrix): DecomposedMatrix3D | null {
     const matrix: Matrix = original.slice() as Matrix;

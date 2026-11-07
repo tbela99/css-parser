@@ -65,41 +65,133 @@ const makeBinaryOp: Map<ValidationTokenEnum, ValidationTokenEnum> = new Map([
     [ValidationTokenEnum.Ampersand, ValidationTokenEnum.AmpersandToken],
 ]);
 
-function move(position: Position, chr: string): Position {
-    for (const c of chr) {
-        position.col++;
-        position.ind += c.length;
-    }
+/**
+ * single character symbols, by character code
+ */
+const symbolTypes: Map<number, ValidationTokenEnum> = new Map();
 
-    return position;
+for (const [key, type] of Object.entries(SymbolsMapTokens)) {
+    if (key.length == 1) {
+        symbolTypes.set(key.charCodeAt(0), type);
+    }
 }
 
-function getTokenType(token: string, position: Position, currentPosition: Position): ValidationToken {
-    const pos: Position = { ...position };
+/**
+ * two characters symbols (the second character code by first character code)
+ */
+const pairSymbols: Map<number, Array<[number, ValidationTokenEnum]>> = new Map();
 
-    Object.assign(position, currentPosition);
+for (const [key, type] of Object.entries(SymbolsMapTokens)) {
+    if (key.length == 2) {
+        const list = pairSymbols.get(key.charCodeAt(0)) ?? [];
 
+        list.push([key.charCodeAt(1), type]);
+        pairSymbols.set(key.charCodeAt(0), list);
+    }
+}
+
+/**
+ * symbol made of the character at index and the next one. at the end of the string, a single character symbol
+ * @param syntax
+ * @param index
+ */
+function pairSymbolType(syntax: string, index: number): ValidationTokenEnum | null {
+    if (index + 1 >= syntax.length) {
+        return symbolTypes.get(syntax.charCodeAt(index)) ?? null;
+    }
+
+    const list = pairSymbols.get(syntax.charCodeAt(index));
+
+    if (list != null) {
+        const next: number = syntax.charCodeAt(index + 1);
+
+        for (let k = 0; k < list.length; k++) {
+            if (list[k][0] == next) {
+                return list[k][1];
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * number of code points of a range of a string
+ * @param str
+ * @param start
+ * @param end
+ */
+function codePoints(str: string, start: number, end: number): number {
+    let count: number = 0;
+
+    for (let k = start; k < end; k++) {
+        const code: number = str.charCodeAt(k);
+
+        // a surrogate pair is a single code point
+        if (code >= 0xd800 && code <= 0xdbff && k + 1 < end) {
+            const low: number = str.charCodeAt(k + 1);
+
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                k++;
+            }
+        }
+
+        count++;
+    }
+
+    return count;
+}
+
+/**
+ * true if the string is made of ascii digits
+ * @param str
+ */
+function isDigits(str: string): boolean {
+    if (str.length == 0) {
+        return false;
+    }
+
+    for (let k = 0; k < str.length; k++) {
+        const code: number = str.charCodeAt(k);
+
+        if (code < 48 || code > 57) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * build a token from a buffered string
+ * @param token
+ * @param loc
+ */
+function getTokenType(token: string, loc: Position): ValidationToken {
     if (token === "<an+b>") {
         return {
             typ: ValidationTokenEnum.PropertyType,
             val: token.slice(1, -1),
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationPropertyToken;
     }
 
-    if (token.charAt(0) == '"' || token.charAt(0) == "'") {
+    const first: number = token.charCodeAt(0);
+
+    // " or '
+    if (first == 34 || first == 39) {
         return {
             typ: ValidationTokenEnum.StringToken,
             val: token,
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationStringToken;
     }
 
-    if (token.match(/^\d+$/)) {
+    if (isDigits(token)) {
         return {
             typ: ValidationTokenEnum.Number,
             val: Number(token),
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationNumberToken;
     }
 
@@ -112,7 +204,7 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
             unit: EnumToken[dimension.typ],
             val: dimension.val,
             unitText: (dimension as DimensionToken).unit,
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationDeclarationNameToken;
     }
 
@@ -120,22 +212,23 @@ function getTokenType(token: string, position: Position, currentPosition: Positi
         return {
             typ: ValidationTokenEnum.PseudoClassToken,
             val: token,
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationPseudoClassToken;
     }
 
-    if (token.startsWith("@") && isIdent(token.slice(1))) {
+    // @
+    if (first == 64 && isIdent(token.slice(1))) {
         return {
             typ: ValidationTokenEnum.AtRule,
             val: token.slice(1),
-            [LOC]: pos,
+            [LOC]: loc,
         } as ValidationAtRuleToken;
     }
 
     return {
         typ: ValidationTokenEnum.Keyword,
         val: token,
-        [LOC]: pos,
+        [LOC]: loc,
     } as ValidationKeywordToken;
 }
 
@@ -165,7 +258,15 @@ export function trimSyntaxArray(tokens: ValidationToken[]) {
     return tokens;
 }
 
-export function* tokenizeSyntax(
+/**
+ * tokenize a syntax definition. the characters are scanned by code: a string is allocated for each token only.
+ * the positions are tracked as numbers: `position` is the start of the pending token, `currentPosition` the current
+ * character (columns are counted in code points, indexes in utf-16 code units)
+ * @param syntax
+ * @param position
+ * @param currentPosition
+ */
+export function tokenizeSyntax(
     syntax: string,
     position: Position = {
         ind: 0,
@@ -177,170 +278,210 @@ export function* tokenizeSyntax(
         lin: 1,
         col: 0,
     },
-): Generator<ValidationToken> {
+): ValidationToken[] {
+    const tokens: ValidationToken[] = [];
+    const length: number = syntax.length;
+    let posInd: number = position.ind;
+    let posLin: number = position.lin;
+    let posCol: number = position.col;
+    let curInd: number = currentPosition.ind;
+    let curLin: number = currentPosition.lin;
+    let curCol: number = currentPosition.col;
+    // the buffer is `prefix` + syntax[bufferStart, bufferEnd). the prefix is only used when `<an+b>` interrupts a word
+    let prefix: string = "";
+    let bufferStart: number = 0;
+    let bufferEnd: number = 0;
     let i: number = -1;
-    let buffer: string = "";
-    let pos: Position;
+    let code: number;
+    let type: ValidationTokenEnum | null;
 
-    while (++i < syntax.length) {
-        let chr: string = syntax.charAt(i);
+    const bufferLength = (): number => prefix.length + bufferEnd - bufferStart;
+    const buffer = (): string =>
+        prefix.length == 0 ? syntax.slice(bufferStart, bufferEnd) : prefix + syntax.slice(bufferStart, bufferEnd);
+    const append = (index: number): void => {
+        if (bufferEnd == bufferStart) {
+            bufferStart = index;
+        }
 
-        move(currentPosition, chr);
+        bufferEnd = index + 1;
+    };
+    const clear = (): void => {
+        prefix = "";
+        bufferStart = bufferEnd = 0;
+    };
+    // the location of the token starts at `position`. `position` moves to the current character
+    const startToken = (): Position => {
+        const loc: Position = { ind: posInd, lin: posLin, col: posCol };
 
-        if (chr === "<" && "an+b>" === syntax.slice(i + 1, i + 6)) {
-            // if (buffer.length > 0) {
-            //     yield getTokenType(buffer, position, currentPosition);
-            //     buffer = "";
-            // }
+        posInd = curInd;
+        posLin = curLin;
+        posCol = curCol;
+        return loc;
+    };
 
-            yield getTokenType("<an+b>", position, currentPosition);
-            move(currentPosition, "an+b>");
+    while (++i < length) {
+        code = syntax.charCodeAt(i);
+        curCol++;
+        curInd++;
+
+        // <an+b>
+        if (code == 60 && syntax.startsWith("an+b>", i + 1)) {
+            if (bufferLength() > 0) {
+                prefix = buffer();
+                bufferStart = bufferEnd = 0;
+            }
+
+            tokens.push(getTokenType("<an+b>", startToken()));
+            curCol += 5;
+            curInd += 5;
             i += 5;
             continue;
         }
 
-        if (SymbolsMapTokens[chr + syntax.charAt(i + 1)] != null) {
-            chr += syntax.charAt(++i);
-            move(currentPosition, syntax.charAt(i));
+        type = pairSymbolType(syntax, i);
 
-            pos = { ...position };
-
-            Object.assign(position, currentPosition);
-
-            if (buffer.length > 0) {
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = "";
+        if (type != null) {
+            if (i + 1 < length) {
+                i++;
+                curCol++;
+                curInd++;
             }
 
-            yield {
-                typ: SymbolsMapTokens[chr] as ValidationTokenEnum,
-                [LOC]: pos,
-            } as ValidationToken;
+            const loc: Position = startToken();
+
+            if (bufferLength() > 0) {
+                tokens.push(getTokenType(buffer(), startToken()));
+                clear();
+            }
+
+            tokens.push({
+                typ: type,
+                [LOC]: loc,
+            } as ValidationToken);
             continue;
         }
 
-        if (chr === ":") {
-            if (syntax.charAt(i + 1) === ":") {
+        // :
+        if (code == 58) {
+            if (syntax.charCodeAt(i + 1) == 58) {
                 if (
                     isIdentStart(syntax.charCodeAt(i + 2)) ||
-                    (syntax.charAt(i + 2) === "-" && isIdentStart(syntax.charCodeAt(i + 3)))
+                    (syntax.charCodeAt(i + 2) == 45 && isIdentStart(syntax.charCodeAt(i + 3)))
                 ) {
-                    buffer += chr + ":";
-                    i++;
+                    append(i);
+                    append(++i);
                     continue;
                 }
             }
 
             if (
                 isIdentStart(syntax.charCodeAt(i + 1)) ||
-                (syntax.charAt(i + 1) === "-" && isIdentStart(syntax.charCodeAt(i + 2)))
+                (syntax.charCodeAt(i + 1) == 45 && isIdentStart(syntax.charCodeAt(i + 2)))
             ) {
-                buffer += chr;
+                append(i);
                 continue;
             }
         }
 
-        if (SymbolsMapTokens[chr] != null) {
-            if (SymbolsMapTokens[chr] === ValidationTokenEnum.Whitespace) {
-                let ch: string;
-                let k = i;
-                while ((ch = syntax.charAt(k + 1)) && SymbolsMapTokens[ch] === ValidationTokenEnum.Whitespace) {
+        type = symbolTypes.get(code) ?? null;
+
+        if (type != null) {
+            if (type === ValidationTokenEnum.Whitespace) {
+                let k: number = i;
+
+                while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === ValidationTokenEnum.Whitespace) {
                     k++;
                 }
 
                 if (k != i) {
-                    move(currentPosition, syntax.slice(i + 1, k + 1));
+                    curCol += k - i;
+                    curInd += k - i;
                     i = k;
                 }
             }
 
-            pos = { ...position };
+            const loc: Position = startToken();
 
-            Object.assign(position, currentPosition);
-
-            if (buffer.length > 0) {
-                yield getTokenType(buffer, position, currentPosition);
-                buffer = "";
+            if (bufferLength() > 0) {
+                tokens.push(getTokenType(buffer(), startToken()));
+                clear();
             }
 
-            yield {
-                typ: SymbolsMapTokens[chr] as ValidationTokenEnum,
-                [LOC]: pos,
-            } as ValidationToken;
+            tokens.push({
+                typ: type,
+                [LOC]: loc,
+            } as ValidationToken);
             continue;
         }
 
-        switch (chr) {
-            // case "\\":
-            //     if (buffer.length > 0) {
-            //         yield getTokenType(buffer, position, currentPosition);
-            //         buffer = "";
-            //     }
-
-            //     buffer += chr;
-            //     chr = syntax.charAt(++i);
-            //     buffer += chr;
-            //     move(currentPosition, chr);
-            //     break;
-
-            case ":":
-                if (isIdent(buffer)) {
-                    yield {
+        switch (code) {
+            // :
+            case 58:
+                if (isIdent(buffer())) {
+                    tokens.push({
                         typ: ValidationTokenEnum.DeclarationNameToken,
-                        val: buffer,
-                        [LOC]: { ...position },
-                    } as ValidationDeclarationNameToken;
+                        val: buffer(),
+                        [LOC]: { ind: posInd, lin: posLin, col: posCol },
+                    } as ValidationDeclarationNameToken);
 
-                    buffer = "";
-                    move(currentPosition, chr);
+                    clear();
+                    curCol++;
+                    curInd++;
                     break;
                 }
 
-                buffer += chr;
+                append(i);
                 break;
 
-            case '"':
-            case "'":
-                // if (buffer.length > 0) {
-                //     yield getTokenType(buffer, position, currentPosition);
-                //     buffer = "";
-                // }
+            // " and '
+            case 34:
+            case 39:
+                {
+                    const quote: number = bufferLength() > 0 ? buffer().charCodeAt(0) : code;
 
-                buffer += chr;
-                while (i + 1 < syntax.length) {
-                    chr = syntax.charAt(++i);
-                    buffer += chr;
+                    append(i);
 
-                    // if (chr == "\\") {
-                    //     chr = syntax.charAt(++i);
-                    //     buffer += chr;
-                    //     continue;
-                    // }
+                    while (i + 1 < length) {
+                        append(++i);
 
-                    if (chr == buffer.charAt(0)) {
-                        break;
+                        if (syntax.charCodeAt(i) == quote) {
+                            break;
+                        }
                     }
+
+                    const str: string = buffer();
+
+                    tokens.push(getTokenType(str, startToken()));
+                    curCol += codePoints(str, 0, str.length);
+                    curInd += str.length;
+                    clear();
                 }
 
-                yield getTokenType(buffer, position, currentPosition);
-                move(currentPosition, buffer);
-                buffer = "";
                 break;
 
             default:
-                buffer += chr;
+                append(i);
                 break;
         }
     }
 
-    if (buffer.length > 0) {
-        yield getTokenType(buffer, position, currentPosition);
+    if (bufferLength() > 0) {
+        tokens.push(getTokenType(buffer(), startToken()));
     }
 
-    yield {
+    tokens.push({
         typ: ValidationTokenEnum.EOF,
-        [LOC]: { ...position } as Position,
-    } as ValidationToken;
+        [LOC]: { ind: posInd, lin: posLin, col: posCol } as Position,
+    } as ValidationToken);
+
+    position.ind = posInd;
+    position.lin = posLin;
+    position.col = posCol;
+    currentPosition.ind = curInd;
+    currentPosition.lin = curLin;
+    currentPosition.col = curCol;
+
+    return tokens;
 }
 
 /**
@@ -795,7 +936,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                 // if (
                                 //     slice[2].typ != ValidationTokenEnum.Number &&
                                 //     slice[2].typ != ValidationTokenEnum.InfinityToken
-                                // ) {
+                                //) {
                                 //     throw new SyntaxError(
                                 //         `Expecting number or infinity at ${slice[2][LOC].lin}:${slice[2][LOC].col}`,
                                 //     );

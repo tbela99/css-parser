@@ -1,17 +1,7 @@
-import type {
-    AstAtRule,
-    AtRuleToken,
-    ErrorDescription,
-    FunctionToken,
-    IdentToken,
-    MediaQueryConditionToken,
-    MediaRangeQueryToken,
-    ParensToken,
-    ParserOptions,
-    Token,
-} from "../../../@types/index.d.ts";
+import type { Token, ErrorDescription, ParserOptions } from "../../../@types/index.d.ts";
+import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { LOCEND, LOCSRCID, LOCSTA, mFGT, mFLT, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { mFGT, mFLT, tokensfuncDefMap } from "../../syntax/constants.ts";
 
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -21,8 +11,9 @@ import { getSyntaxRule } from "../../validation/config.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function parseAtRuleContainerQueryList(
+    arena: AstArena,
     stream: Token[],
-    context: AstAtRule | AtRuleToken,
+    context: Token,
     options: ParserOptions = {},
 ): {
     success: boolean;
@@ -31,32 +22,31 @@ export function parseAtRuleContainerQueryList(
     let matchCount: number = 0;
     let hasErrors: boolean = false;
     const errors: ErrorDescription[] = [];
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + context.nam);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
-    const parts = stream.reduce(
-        (acc, t) => {
-            if (t.typ === EnumToken.CommaTokenType && matchCount === 0) {
-                acc.push([]);
-            } else {
-                acc[acc.length - 1].push(t);
+    const parts: Token[][] = [[]];
 
-                if (t.typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(t.typ)) {
-                    matchCount++;
-                } else if (t.typ === EnumToken.EndParensTokenType) {
-                    if (matchCount > 0) {
-                        matchCount--;
-                    }
-                }
-            }
+    for (const token of stream) {
+        const type: EnumToken = arena.dataTypes[token];
 
-            return acc;
-        },
-        [[]] as Token[][],
-    );
+        if (type === EnumToken.CommaTokenType && matchCount === 0) {
+            parts.push([]);
+            continue;
+        }
+
+        parts[parts.length - 1].push(token);
+
+        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+            matchCount++;
+        } else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
+            matchCount--;
+        }
+    }
 
     const result: ValidationMatch = matchAllSyntaxes(
+        arena,
         syntax as ValidationFunctionToken[],
-        createValidationContext(stream),
+        createValidationContext(arena, stream),
         options,
     );
 
@@ -85,23 +75,23 @@ export function parseAtRuleContainerQueryList(
 
             while (
                 i < stream.length &&
-                (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType)
+                (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === EnumToken.CommentTokenType)
             ) {
                 tokens.push(stream[i++]);
             }
 
-            if (stream[i].typ === EnumToken.IdenTokenType) {
+            if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
                 tokens.push(stream[i++]);
             }
 
-            while (stream[i]?.typ === EnumToken.WhitespaceTokenType || stream[i]?.typ === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === EnumToken.CommentTokenType) {
                 tokens.push(stream[i++]);
             }
 
             if (
                 i < stream.length &&
-                stream[i]?.typ !== EnumToken.StartParensTokenType &&
-                stream[i]?.typ !== EnumToken.ContainerFunctionTokenDefType
+                arena.dataTypes[stream[i]] !== EnumToken.StartParensTokenType &&
+                arena.dataTypes[stream[i]] !== EnumToken.ContainerFunctionTokenDefType
             ) {
                 return {
                     success: false,
@@ -109,7 +99,8 @@ export function parseAtRuleContainerQueryList(
                         {
                             action: "drop",
                             node: stream[i],
-                            location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                             message: `expecting <container-condition>`,
                         },
                     ],
@@ -119,18 +110,18 @@ export function parseAtRuleContainerQueryList(
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
 
-                if (stream[i].typ === EnumToken.WhitespaceTokenType || stream[i].typ === EnumToken.CommentTokenType) {
+                if (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === EnumToken.CommentTokenType) {
                     continue;
                 }
 
                 if (expectAndOr) {
                     let valid: boolean = true;
 
-                    // if (stream[i].typ === EnumToken.IdenTokenType) {
-                    //     const val: string = (stream[i] as IdentToken).val.toLowerCase();
+                    // if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
+                    //     const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
                     //     valid = val === "and" || val === "or";
                     // } else {
-                    valid = stream[i].typ !== EnumToken.CommaTokenType;
+                    valid = arena.dataTypes[stream[i]] !== EnumToken.CommaTokenType;
                     // }
 
                     if (!valid) {
@@ -139,19 +130,20 @@ export function parseAtRuleContainerQueryList(
                             action: "drop",
                             node: stream[i],
                             message: `expecting <and>, <or> or comma`,
-                            location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                         });
                         break;
                     }
                 }
 
-                if (stream[i].typ === EnumToken.StartParensTokenType || tokensfuncDefMap.has(stream[i].typ)) {
+                if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
                 }
 
-                switch (stream[i].typ) {
+                switch (arena.dataTypes[stream[i]]) {
                     case EnumToken.ColonTokenType:
                     case EnumToken.LtTokenType:
                     case EnumToken.LteTokenType:
@@ -163,32 +155,29 @@ export function parseAtRuleContainerQueryList(
 
                     case EnumToken.IdenTokenType:
                         {
-                            const val: string = (stream[i] as IdentToken).val.toLowerCase();
+                            const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
 
                             if (val === "not") {
-                                Object.assign(stream[i], {
-                                    typ: EnumToken.NotTokenType,
-                                });
+                                arena.dataTypes[stream[i]] = EnumToken.NotTokenType;
 
                                 stack.push(stream[i]);
                             } else if (val === "and" || val === "or") {
-                                Object.assign(stream[i], {
-                                    typ: val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType,
-                                });
+                                arena.dataTypes[stream[i]] = val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType;
 
                                 if (val === "or" && scopes.length <= 1) {
                                     success = false;
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        location: options.source!.getSourceLocation(stream[i][LOCSTA]!),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                         message: `<or> is not allowed outside of parentheses`,
                                     });
 
                                     break;
                                 }
 
-                                currentScope.add(stream[i].typ);
+                                currentScope.add(arena.dataTypes[stream[i]]);
                                 stack.push(stream[i]);
                             }
                         }
@@ -197,49 +186,49 @@ export function parseAtRuleContainerQueryList(
 
                     case EnumToken.EndParensTokenType:
                         if (
-                            mFGT.has(stack.at(-1)?.typ) ||
-                            mFLT.has(stack.at(-1)?.typ) ||
-                            stack.at(-1)?.typ === EnumToken.DelimTokenType ||
-                            stack.at(-1)?.typ === EnumToken.ColonTokenType
+                            stack.length > 0 &&
+                            (mFGT.has(arena.dataTypes[stack[stack.length - 1]]) ||
+                                mFLT.has(arena.dataTypes[stack[stack.length - 1]]) ||
+                                arena.dataTypes[stack[stack.length - 1]] === EnumToken.DelimTokenType ||
+                                arena.dataTypes[stack[stack.length - 1]] === EnumToken.ColonTokenType)
                         ) {
-                            (stack[stack.length - 2] as FunctionToken).val?.toLowerCase?.() as string;
-                            const index2: number = tokens.indexOf(stack.at(-1)!);
-                            const index3: number = tokens.indexOf(stack.at(-2)!);
+                            const index2: number = tokens.indexOf(stack[stack.length - 1]);
+                            const index3: number = tokens.indexOf(stack[stack.length - 2]);
 
-                            let names: Token[] = trimArray(tokens.slice(index3 + 1, index2));
-                            let values: Token[] = trimArray(tokens.slice(index2 + 1, tokens.length - 1));
+                            let names: Token[] = trimArray(arena, tokens.slice(index3 + 1, index2));
+                            let values: Token[] = trimArray(arena, tokens.slice(index2 + 1, tokens.length - 1));
+                            const op: Token = stack.pop() as Token;
+                            const token: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
-                            tokens.splice(
-                                index3 + 1,
-                                tokens.length - index3 - 2,
+                            // inlined: arena.setField(token, TokenField.L, ...names)
+                            arena.setTokenList(arena.fieldList(token, TokenField.L), names);
+                            // inlined: arena.setField(token, TokenField.Op, op)
+                            arena.setTokenList(arena.fieldList(token, TokenField.Op), [op]);
+                            // inlined: arena.setField(token, TokenField.R, ...values)
+                            arena.setTokenList(arena.fieldList(token, TokenField.R), values);
 
-                                {
-                                    typ: EnumToken.MediaQueryConditionTokenType,
-                                    l: names,
-                                    op: stack.pop() as Token,
-                                    r: values,
-                                    [LOCSRCID]: names[0][LOCSRCID],
-                                    [LOCSTA]: names[0][LOCSTA],
-                                    [LOCEND]: values.at(-1)![LOCEND],
-                                } as MediaQueryConditionToken,
-                            );
+                            if (names.length > 0 && values.length > 0) {
+                                arena.spanLocation(token, names[0], values[values.length - 1]);
+                            }
 
-                            const token = tokens[index3 + 1] as MediaQueryConditionToken;
+                            tokens.splice(index3 + 1, tokens.length - index3 - 2, token);
 
-                            if (token.op.typ === EnumToken.ColonTokenType) {
-                                let name: IdentToken = token.l.find(
-                                    (t) => t.typ === EnumToken.IdenTokenType,
-                                ) as IdentToken;
+                            if (arena.dataTypes[op] === EnumToken.ColonTokenType) {
+                                const name: Token | undefined = names.find(
+                                    (t: Token) => arena.dataTypes[t] === EnumToken.IdenTokenType,
+                                );
 
                                 if (name != null) {
-                                    if (name.val.startsWith("min-")) {
-                                        name.val = name.val.substring(4);
-                                        // @ts-ignore
-                                        token.op.typ = EnumToken.GteTokenType;
-                                    } else if (name.val.startsWith("max-")) {
-                                        name.val = name.val.substring(4);
-                                        // @ts-ignore
-                                        token.op.typ = EnumToken.LteTokenType;
+                                    const val: string = arena.strings[arena.stringValue[name]];
+
+                                    if (val.startsWith("min-")) {
+                                        // inlined: arena.setStr(name, val.substring(4))
+                                        arena.stringValue[name] = arena.internString(val.substring(4));
+                                        arena.dataTypes[op] = EnumToken.GteTokenType;
+                                    } else if (val.startsWith("max-")) {
+                                        // inlined: arena.setStr(name, val.substring(4))
+                                        arena.stringValue[name] = arena.internString(val.substring(4));
+                                        arena.dataTypes[op] = EnumToken.LteTokenType;
                                     }
                                 }
                             }
@@ -247,29 +236,26 @@ export function parseAtRuleContainerQueryList(
                             // check <style()> or <scroll-state()>
                         }
 
-                        if (tokensfuncDefMap.has(stack.at(-1)?.typ)) {
-                            const index: number = tokens.indexOf(stack.at(-1)!);
-                            Object.assign(tokens[index], {
-                                typ: tokensfuncDefMap.get(stack.at(-1)?.typ),
-                                chi: trimArray(tokens.slice(index + 1, tokens.length - 1)),
-                            });
+                        if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                            const index: number = tokens.indexOf(stack[stack.length - 1]);
 
-                            tokens[index][LOCSRCID] = tokens[index][LOCSRCID];
-                            tokens[index][LOCSTA] = tokens[index][LOCSTA];
-                            tokens[index][LOCEND] = stream[i]![LOCEND];
+                            arena.dataTypes[tokens[index]] = tokensfuncDefMap.get(arena.dataTypes[tokens[index]]) as EnumToken;
+                            arena.setTokenList(tokens[index], trimArray(arena, tokens.slice(index + 1, tokens.length - 1)));
+                            arena.spanLocation(tokens[index], tokens[index], stream[i]);
 
                             if (
-                                (tokens[index] as FunctionToken).chi.every(
+                                arena.tokens(tokens[index]).every(
                                     (t) =>
-                                        t.typ === EnumToken.WhitespaceTokenType || t.typ === EnumToken.CommentTokenType,
+                                        arena.dataTypes[t] === EnumToken.WhitespaceTokenType || arena.dataTypes[t] === EnumToken.CommentTokenType,
                                 )
                             ) {
                                 success = false;
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
-                                    message: `expecting '<${(tokens[index] as FunctionToken).val}-query>'`,
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                    message: `expecting '<${arena.strings[arena.stringValue[tokens[index]]]}-query>'`,
                                 });
                                 break;
                             }
@@ -280,26 +266,24 @@ export function parseAtRuleContainerQueryList(
                             scopes.pop();
                             currentScope = scopes.at(-1)!;
                         } else {
-                            const index: number = tokens.indexOf(stack.at(-1)!);
-                            tokens[index] = {
-                                typ: EnumToken.ParensTokenType,
-                                chi: tokens.slice(index + 1, tokens.length - 1),
-                                [LOCSRCID]: tokens[index][LOCSRCID],
-                                [LOCSTA]: tokens[index][LOCSTA],
-                                [LOCEND]: stream[i]![LOCEND],
-                            } as ParensToken;
+                            const index: number = tokens.indexOf(stack[stack.length - 1]);
+
+                            arena.dataTypes[tokens[index]] = EnumToken.ParensTokenType;
+                            arena.setTokenList(tokens[index], tokens.slice(index + 1, tokens.length - 1));
+                            arena.spanLocation(tokens[index], tokens[index], stream[i]);
 
                             if (
-                                (tokens[index] as ParensToken).chi.every(
+                                arena.tokens(tokens[index]).every(
                                     (t) =>
-                                        t.typ === EnumToken.WhitespaceTokenType || t.typ === EnumToken.CommentTokenType,
+                                        arena.dataTypes[t] === EnumToken.WhitespaceTokenType || arena.dataTypes[t] === EnumToken.CommentTokenType,
                                 )
                             ) {
                                 success = false;
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: options.source!.getSourceLocation(stream[i]?.[LOCSTA]!),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                     message: `expecting '<query-in-parens>'`,
                                 });
                                 break;
@@ -311,23 +295,25 @@ export function parseAtRuleContainerQueryList(
                             stack.pop();
                         }
 
-                        if (stack.at(-1)?.typ === EnumToken.NotTokenType) {
+                        // inlined: arena.typeOf(stack.at(-1))
+                        if (arena.dataTypes[stack.at(-1) as number] === EnumToken.NotTokenType) {
                             let j: number = tokens.indexOf(stack.at(-1)!);
                             let k: number = j;
 
                             while (
                                 j-- &&
-                                (tokens[j]?.typ === EnumToken.WhitespaceTokenType ||
-                                    tokens[j]?.typ === EnumToken.CommentTokenType)
+                                (arena.dataTypes[tokens[j]] === EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[tokens[j]] === EnumToken.CommentTokenType)
                             ) {}
 
                             if (j >= 0) {
-                                if (tokens[j]?.typ !== EnumToken.StartParensTokenType) {
+                                if (arena.dataTypes[tokens[j]] !== EnumToken.StartParensTokenType) {
                                     success = false;
                                     errors.push({
                                         action: "drop",
                                         node: tokens[k],
-                                        location: options.source!.getSourceLocation(tokens[k]?.[LOCSTA]!),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[k]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[k]))],
                                         message: `unexpected token 'not'`,
                                     });
                                     break;
@@ -336,109 +322,124 @@ export function parseAtRuleContainerQueryList(
                         }
 
                         if (
-                            stack.at(-1)?.typ === EnumToken.AndTokenType ||
-                            stack.at(-1)?.typ === EnumToken.OrTokenType
+                            // inlined: arena.typeOf(stack.at(-1))
+                            arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType ||
+                            // inlined: arena.typeOf(stack.at(-1))
+                            arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType
                         ) {
                             const index = tokens.indexOf(stack.at(-1)!);
                             let l: number = index - 1;
 
                             while (
                                 l > 0 &&
-                                (tokens[l].typ === EnumToken.WhitespaceTokenType ||
-                                    tokens[l].typ === EnumToken.CommentTokenType)
+                                (arena.dataTypes[tokens[l]] === EnumToken.WhitespaceTokenType ||
+                                    arena.dataTypes[tokens[l]] === EnumToken.CommentTokenType)
                             ) {
                                 l--;
                             }
 
-                            const left: Token[] = trimArray(tokens.slice(l, index));
-                            const right: Token[] = trimArray(tokens.slice(index + 1));
+                            const left: Token[] = trimArray(arena, tokens.slice(l, index));
+                            const right: Token[] = trimArray(arena, tokens.slice(index + 1));
 
-                            tokens[l] = {
-                                typ: EnumToken.MediaQueryConditionTokenType,
-                                op: stack.pop()!,
-                                l: left,
-                                r: right,
-                                [LOCSRCID]: left[0][LOCSRCID],
-                                [LOCSTA]: left[0][LOCSTA],
-                                [LOCEND]: right.at(-1)![LOCEND],
-                            } as MediaQueryConditionToken;
+                            const op: Token = stack.pop() as Token;
+                            const condition: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
+                            // inlined: arena.setField(condition, TokenField.Op, op)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
+                            // inlined: arena.setField(condition, TokenField.L, ...left)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
+                            // inlined: arena.setField(condition, TokenField.R, ...right)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.R), right);
+
+                            if (left.length > 0 && right.length > 0) {
+                                arena.spanLocation(condition, left[0], right[right.length - 1]);
+                            }
+
+                            tokens[l] = condition;
                             tokens.length = l + 1;
                             expectAndOr = true;
 
-                            if ((tokens[l] as MediaQueryConditionToken).op.typ === EnumToken.AndTokenType) {
-                                let left: Token = (tokens[l] as MediaQueryConditionToken).l.find(
-                                    (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
-                                ) as Token;
+                            if (arena.dataTypes[op] === EnumToken.AndTokenType) {
+                                const notNameOrSpace = (t: Token): boolean =>
+                                    arena.dataTypes[t] != EnumToken.WhitespaceTokenType &&
+                                    arena.dataTypes[t] != EnumToken.IdenTokenType;
+                                let leftCondition: Token | undefined = left.find(notNameOrSpace);
+                                let rightCondition: Token | undefined = right.find(notNameOrSpace);
 
-                                let right: Token = (tokens[l] as MediaQueryConditionToken).r.find(
-                                    (t) => t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
-                                ) as Token;
-
-                                if (left.typ == EnumToken.ParensTokenType && right.typ == EnumToken.ParensTokenType) {
-                                    left = (left as ParensToken).chi.find(
-                                        (t) =>
-                                            t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
-                                    ) as Token;
-
-                                    right = (right as ParensToken).chi.find(
-                                        (t) =>
-                                            t.typ != EnumToken.WhitespaceTokenType && t.typ != EnumToken.IdenTokenType,
-                                    ) as Token;
+                                if (
+                                    leftCondition != null &&
+                                    rightCondition != null &&
+                                    arena.dataTypes[leftCondition] == EnumToken.ParensTokenType &&
+                                    arena.dataTypes[rightCondition] == EnumToken.ParensTokenType
+                                ) {
+                                    leftCondition = arena.tokens(leftCondition).find(notNameOrSpace);
+                                    rightCondition = arena.tokens(rightCondition).find(notNameOrSpace);
 
                                     if (
-                                        left.typ == EnumToken.MediaQueryConditionTokenType &&
-                                        (mFLT.has((left as MediaQueryConditionToken).op.typ) ||
-                                            mFGT.has((left as MediaQueryConditionToken).op.typ)) &&
-                                        right.typ == EnumToken.MediaQueryConditionTokenType &&
-                                        (mFLT.has((right as MediaQueryConditionToken).op.typ) ||
-                                            mFGT.has((right as MediaQueryConditionToken).op.typ))
+                                        leftCondition != null &&
+                                        rightCondition != null &&
+                                        arena.dataTypes[leftCondition] == EnumToken.MediaQueryConditionTokenType &&
+                                        arena.dataTypes[rightCondition] == EnumToken.MediaQueryConditionTokenType
                                     ) {
-                                        const name: IdentToken = (left as MediaQueryConditionToken).l.find(
-                                            (t) => t.typ == EnumToken.IdenTokenType,
-                                        ) as IdentToken;
+                                        const leftOp: Token = arena.field(leftCondition, TokenField.Op);
+                                        const rightOp: Token = arena.field(rightCondition, TokenField.Op);
 
-                                        const name2: IdentToken = (right as MediaQueryConditionToken).l.find(
-                                            (t) => t.typ == EnumToken.IdenTokenType,
-                                        ) as IdentToken;
+                                        if (
+                                            (mFLT.has(arena.dataTypes[leftOp]) || mFGT.has(arena.dataTypes[leftOp])) &&
+                                            (mFLT.has(arena.dataTypes[rightOp]) || mFGT.has(arena.dataTypes[rightOp]))
+                                        ) {
+                                            const name: Token | undefined = arena
+                                                .fieldTokens(leftCondition, TokenField.L)
+                                                .find((t: Token) => arena.dataTypes[t] == EnumToken.IdenTokenType);
+                                            const name2: Token | undefined = arena
+                                                .fieldTokens(rightCondition, TokenField.L)
+                                                .find((t: Token) => arena.dataTypes[t] == EnumToken.IdenTokenType);
 
-                                        if (equalsIgnoreCase(name.val, name2.val)) {
-                                            switch ((left as MediaQueryConditionToken).op.typ) {
-                                                case EnumToken.LtTokenType:
-                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.GtTokenType;
-                                                    break;
-                                                case EnumToken.LteTokenType:
-                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.GteTokenType;
-                                                    break;
+                                            if (
+                                                name != null &&
+                                                name2 != null &&
+                                                equalsIgnoreCase(
+                                                    arena.strings[arena.stringValue[name]],
+                                                    arena.strings[arena.stringValue[name2]],
+                                                )
+                                            ) {
+                                                switch (arena.dataTypes[leftOp]) {
+                                                    case EnumToken.LtTokenType:
+                                                        arena.dataTypes[leftOp] = EnumToken.GtTokenType;
+                                                        break;
+                                                    case EnumToken.LteTokenType:
+                                                        arena.dataTypes[leftOp] = EnumToken.GteTokenType;
+                                                        break;
 
-                                                case EnumToken.GtTokenType:
-                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.LtTokenType;
-                                                    break;
-                                                case EnumToken.GteTokenType:
-                                                    (left as MediaQueryConditionToken).op.typ = EnumToken.LteTokenType;
-                                                    break;
+                                                    case EnumToken.GtTokenType:
+                                                        arena.dataTypes[leftOp] = EnumToken.LtTokenType;
+                                                        break;
+                                                    case EnumToken.GteTokenType:
+                                                        arena.dataTypes[leftOp] = EnumToken.LteTokenType;
+                                                        break;
+                                                }
+
+                                                const rangeQuery: Token = arena.createToken(EnumToken.MediaRangeQueryTokenType);
+
+                                                // inlined: arena.setField(rangeQuery, TokenField.L, ...arena.fieldTokens(leftCondition, TokenField.R))
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.L), arena.fieldTokens(leftCondition, TokenField.R));
+                                                // inlined: arena.setField(rangeQuery, TokenField.Val, name)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Val), [name]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.Op, leftOp)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op), [leftOp]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.Op2, rightOp)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [rightOp]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.R, ...arena.fieldTokens(rightCondition, TokenField.R))
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.R), arena.fieldTokens(rightCondition, TokenField.R));
+                                                arena.spanLocation(rangeQuery, leftCondition, rightCondition);
+
+                                                const parens: Token = arena.createToken(EnumToken.ParensTokenType);
+
+                                                // inlined: arena.setTokens(parens, rangeQuery)
+                                                arena.setTokenList(parens, [rangeQuery]);
+                                                arena.copyLocation(parens, rangeQuery);
+                                                tokens[l] = parens;
                                             }
-
-                                            tokens[l] = {
-                                                typ: EnumToken.ParensTokenType,
-                                                chi: [
-                                                    {
-                                                        typ: EnumToken.MediaRangeQueryTokenType,
-                                                        l: (left as MediaQueryConditionToken).r,
-                                                        val: [name],
-                                                        op1: (left as MediaQueryConditionToken).op,
-                                                        op2: (right as MediaQueryConditionToken).op,
-                                                        r: (right as MediaQueryConditionToken).r,
-                                                        [LOCSRCID]: name[LOCSRCID],
-                                                        [LOCSTA]: left[LOCSTA],
-                                                        [LOCEND]: (right as MediaQueryConditionToken)[LOCEND],
-                                                    } as MediaRangeQueryToken,
-                                                ],
-
-                                                [LOCSRCID]: name[LOCSRCID],
-                                                [LOCSTA]: left[LOCSTA],
-                                                [LOCEND]: (right as MediaQueryConditionToken)[LOCEND],
-                                            } as ParensToken;
                                         }
                                     }
                                 }
@@ -462,34 +463,31 @@ export function parseAtRuleContainerQueryList(
 
             stream.length = 0;
 
-            for (const token of trimArray(tokens)) {
+            for (const token of trimArray(arena, tokens)) {
                 stream.push(token);
             }
         }
     }
 
     stream.length = 0;
-    stream.push(
-        ...parts
-            .filter((p) => p.length > 0 && p[0].typ !== EnumToken.InvalidMediaQueryTokenType)
-            .reduce((acc, b) => {
-                for (const token of b) {
-                    acc.push(token);
-                }
+    for (const part of parts) {
+        if (part.length == 0) {
+            continue;
+        }
 
-                return acc;
-            }, []),
-    );
+        for (const token of part) {
+            stream.push(token);
+        }
+    }
 
     return {
         success:
             !hasErrors ||
             stream.filter(
                 (t) =>
-                    t.typ !== EnumToken.WhitespaceTokenType &&
-                    t.typ !== EnumToken.CommentTokenType &&
-                    t.typ !== EnumToken.InvalidMediaQueryTokenType &&
-                    t.typ !== EnumToken.CommaTokenType,
+                    arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
+                    arena.dataTypes[t] !== EnumToken.CommentTokenType &&
+                    arena.dataTypes[t] !== EnumToken.CommaTokenType,
             ).length !== 0,
         errors,
     };
