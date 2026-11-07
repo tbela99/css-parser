@@ -17,7 +17,7 @@ import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
 import { TokenField } from '../ast/arena.js';
-import { StructuralMemo } from '../ast/fingerprint.js';
+import { StructuralMemo } from '../ast/cache.js';
 
 /**
  * Rendered strings shared by the renderer.

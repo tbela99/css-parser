@@ -13,7 +13,7 @@ import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { isValidDeclarationValue } from '../../validation/match.js';
 import { equalsIgnoreCase, lowercase } from '../utils/text.js';
-import { StructuralMemo } from '../../ast/fingerprint.js';
+import { StructuralMemo } from '../../ast/cache.js';
 import { parseString } from '../parse.js';
 
 const config = getConfig();

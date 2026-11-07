@@ -18,7 +18,7 @@ import { isValidDeclarationValue } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { equalsIgnoreCase, lowercase } from "../utils/text.ts";
 import type { AstArena } from "../../ast/arena.ts";
-import { StructuralMemo } from "../../ast/fingerprint.ts";
+import { StructuralMemo } from "../../ast/cache.ts";
 import { parseString } from "../parse.ts";
 
 const config: PropertiesConfig = getConfig();
