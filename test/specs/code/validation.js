@@ -1,4 +1,3 @@
-import { getNodeProperty, setNodeProperty } from "../../../dist/src/lib/ast/node.js";
 import { EnumAstNodeStatus } from "../../../dist/src/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
@@ -814,9 +813,12 @@ html, body, div, span, applet, object, iframe,
                 beautify: true,
                 validation: true,
                 visitor: {
-                    AtRule: (node, arena) => {
-                        if (getNodeProperty(arena, node, "state") == EnumAstNodeStatus.Invalid) {
-                            setNodeProperty(arena, node, "state", EnumAstNodeStatus.ValidationFailed);
+                    AtRule: (arena, id) => {
+                        // the object view reads and writes the arena
+                        const node = arena.toObject(id);
+
+                        if (node.state == EnumAstNodeStatus.Invalid) {
+                            node.state = EnumAstNodeStatus.ValidationFailed;
                         }
                     },
                 },

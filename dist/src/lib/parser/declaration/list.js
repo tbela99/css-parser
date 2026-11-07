@@ -63,11 +63,13 @@ class DeclarationMemo {
      */
     key(arena, node) {
         const slot = this.keys.token(arena, node);
-        let key = this.keys.get(slot);
+        // inlined: this.keys.get(slot)
+        let key = this.keys.values[slot];
         if (key === undefined) {
             // not a property name
             key = "\0" + slot;
-            this.keys.set(slot, key);
+            // inlined: this.keys.set(slot, key)
+            this.keys.values[slot] = key;
         }
         return key;
     }

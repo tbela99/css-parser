@@ -7,11 +7,11 @@
  */
 import { convertColor, getNumber } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
-import { walkValues } from '../../ast/walk.js';
 import { evaluateFunc, evaluate } from '../../ast/math/expression.js';
 import { colorsFunc, colorFuncColorSpace, colorRange, mathFuncs } from '../constants.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { getColorComponents } from './utils/components.js';
+import { ValueWalker } from '../../ast/walk.js';
 
 /**
  * Parse relative color components
@@ -73,7 +73,8 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
         }
         if (arena.dataTypes[component] === EnumToken.MathFunctionTokenType &&
             equalsIgnoreCase("calc", arena.strings[arena.stringValue[component]])) {
-            for (const { value } of walkValues(arena, arena.tokens(component))) {
+            // inlined: arena.walkValues(arena.tokens(component))
+            for (const value of new ValueWalker(arena, arena.tokens(component))) {
                 if (arena.dataTypes[value] == EnumToken.IdenTokenType) {
                     val = arena.strings[arena.stringValue[value]].toLowerCase();
                     if (
@@ -177,9 +178,10 @@ function computeComponentValue(arena, expr, values) {
     for (const object of [values, expr]) {
         if ("h" in object) {
             // normalize hue
-            for (const k of walkValues(arena, [object.h])) {
-                if (arena.dataTypes[k.value] == EnumToken.AngleTokenType && arena.strings[arena.unit[k.value]] == "deg") {
-                    arena.dataTypes[k.value] = EnumToken.NumberTokenType;
+            // inlined: arena.walkValues([object.h as Token])
+            for (const k of new ValueWalker(arena, [object.h])) {
+                if (arena.dataTypes[k] == EnumToken.AngleTokenType && arena.strings[arena.unit[k]] == "deg") {
+                    arena.dataTypes[k] = EnumToken.NumberTokenType;
                 }
             }
         }
@@ -196,7 +198,8 @@ function computeComponentValue(arena, expr, values) {
         }
         else if (arena.dataTypes[exp] == EnumToken.MathFunctionTokenType ||
             (arena.dataTypes[exp] == EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
-            for (let { value } of walkValues(arena, arena.tokens(exp), exp)) {
+            // inlined: arena.walkValues(arena.tokens(exp))
+            for (const value of new ValueWalker(arena, arena.tokens(exp))) {
                 if (arena.dataTypes[value] == EnumToken.IdenTokenType) {
                     const name = arena.strings[arena.stringValue[value]];
                     const replacement = values[name];

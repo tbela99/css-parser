@@ -46,17 +46,15 @@ export type {
 } from "./@types/index.d.ts";
 
 export { minify } from "./lib/ast/minify.ts";
-export { expand } from "./lib/ast/expand.ts";
-export { walk, walkValues, WalkerEvent, WalkerOptionEnum } from "./lib/ast/walk.ts";
 export { parseString } from "./lib/parser/parse.ts";
 export { renderValue as renderToken } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
-export { find, findLast, findByValue, findAll, findValue } from "./lib/ast/find.ts";
-export { cloneNode, cloneValue } from "./lib/ast/clone.ts";
 export { Arena, AstArena, TokenField, arenaColumns } from "./lib/ast/arena.ts";
 export type { ArenaProperties, ArenaTransferables } from "./lib/ast/arena.ts";
+export { AstArenaNode, ARENAID, ARENA } from "./lib/ast/arena-node.ts";
+export type { AstArenaNodeInput } from "./lib/ast/arena-node.ts";
 export { replaceNodeOrValue, replaceNode } from "./lib/parser/utils/token.ts";
 export {
     EnumToken,
@@ -64,13 +62,14 @@ export {
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
+    WalkerEvent,
+    WalkerOptionEnum,
 } from "./lib/ast/types.ts";
 export { SourceMap } from "./lib/printer/sourcemap/sourcemap.ts";
 export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
-export { getNodeProperty, setNodeProperty } from "./lib/ast/node.ts";
 export { parseSyntax } from "./lib/validation/parser/parse.ts";
 
 /**

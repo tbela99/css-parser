@@ -97,7 +97,8 @@ function convertColor(arena, token, to) {
             const seen = new Set();
             for (const t of Object.values(components)) {
                 // a component token may be used more than once: rgb(from #ff0 r g r)
-                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : arena.take(t));
+                // inlined: arena.take(t)
+                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : (arena.parents[t] == 0 ? t : arena.clone(t, true)));
                 seen.add(t);
             }
             arena.copyLocation(tk, token);
@@ -107,13 +108,14 @@ function convertColor(arena, token, to) {
     if (arena.colorType[token] == to) {
         if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
             const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
-            arena.setStr(token, val);
+            // inlined: arena.setStr(token, val)
+            arena.stringValue[token] = arena.internString(val);
             arena.colorType[token] = val[0] == "#" ? ColorType.HEX : ColorType.LIT;
         }
         return token;
     }
     if (arena.colorType[token] == ColorType.COLOR) {
-        const colorSpace = arena.findToken(token, (t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
+        const colorSpace = arena.findToken(token, (arena, t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
         if (colorSpace != null &&
             arena.strings[arena.stringValue[colorSpace]] == ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of arena.tokens(token)) {

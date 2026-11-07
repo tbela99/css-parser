@@ -1,6 +1,7 @@
 import { EnumAstNodeStatus, EnumToken } from "../lib/ast/types.ts";
 import type { PlainToken, Token } from "./token.d.ts";
 import type { ErrorDescription } from "./index.d.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
 
 /**
  * token or node location
@@ -22,7 +23,7 @@ export declare interface SourceLocation {
 
 /**
  * Common plain token interface. Plain tokens are the object representation of the arena tokens
- * returned by `arena.toObject()`
+ * returned by `arena.toPlainObject()`. `arena.toObject()` returns an {@link AstArenaNode} view with the same properties
  */
 export declare interface BaseToken {
     /**
@@ -36,8 +37,8 @@ export declare interface BaseToken {
 }
 
 /**
- * plain object representation of an ast node (`arena.toObject()` / `arena.fromObject()`).
- * The library only deals with node ids internally
+ * plain object representation of an ast node (`arena.toPlainObject()` / `arena.fromObject()`). `arena.toObject()`
+ * returns an {@link AstArenaNode} view with the same properties. The library only deals with node ids internally
  */
 export declare interface PlainAstNode {
     /**
@@ -89,14 +90,14 @@ export declare interface PlainAstNode {
 /**
  * Ast nodes are integer ids of records stored in an {@link AstArena}.
  *
- * - `arena.dataTypes[node]` is the node type ({@link EnumToken}),
- * - `arena.strings[arena.name[node]]` is the name of declarations / at-rules and the selector of rules,
- * - `arena.strings[arena.stringValue[node]]` is the string value of at-rules and comments,
- * - `arena.tokens(node)` (`arena.firstToken[node]` ... `arena.lastToken[node]`) are the declaration value tokens
+ * - `arena.getType(node)` is the node type ({@link EnumToken}),
+ * - `arena.getName(node)` is the name of declarations / at-rules and the selector of rules,
+ * - `arena.getValue(node)` is the string value of at-rules and comments,
+ * - `arena.tokens(node)` (`arena.getFirstToken(node)` ... `arena.getLastToken(node)`) are the declaration value tokens
  *   or the rule selector / at-rule prelude tokens,
- * - `arena.flags[node]` holds the validation state ({@link EnumAstNodeStatus}) and the node flags,
- * - `arena.firstChild[node]`, `arena.lastChild[node]`, `arena.nextSibling[node]`, `arena.previousSibling[node]`
- *   and `arena.parents[node]` link the tree.
+ * - `arena.getFlags(node)` holds the validation state ({@link EnumAstNodeStatus}) and the node flags,
+ * - `arena.getFirstChild(node)`, `arena.getLastChild(node)`, `arena.getNextSibling(node)`,
+ *   `arena.getPreviousSibling(node)` and `arena.getParent(node)` link the tree.
  */
 export declare type AstNode = number;
 
@@ -112,21 +113,6 @@ export declare type AstDeclaration = number;
  * rule node id
  */
 export declare type AstRule = number;
-/**
- * invalid rule node id
- * @deprecated
- */
-export declare type AstInvalidRule = number;
-/**
- * invalid declaration node id
- * @deprecated
- */
-export declare type AstInvalidDeclaration = number;
-/**
- * invalid at rule node id
- * @deprecated
- */
-export declare type AstInvalidAtRule = number;
 /**
  * keyframes rule node id
  */
@@ -202,28 +188,13 @@ export declare interface OptimizedSelectorToken {
 }
 
 /**
- * token search result
+ * value token matcher of {@link AstArena.findByValue} and {@link AstArena.findValue}. the node that owns the token is
+ * `arena.getValueOwner(token)`
  */
-export interface TokenSearchResult {
-    /**
-     * node
-     */
-    node: Token | null;
-    /**
-     * parent node
-     */
-    parent: AstNode | Token | null;
-    /**
-     * root node
-     */
-    root: AstNode | Token | null;
-    /**
-     * parent tokens
-     */
-    parents: Generator<Token> | null;
-}
+export type AstValueMatcher = (arena: AstArena, token: Token) => boolean;
 
 /**
- * Ast value matcher
+ * node matcher of {@link AstArena.find}, {@link AstArena.findAll} and {@link AstArena.findLast}. the parent of the node
+ * is `arena.getParent(node)`
  */
-export type AstValueMatcher = ((value: Token) => boolean) | ((token: Token, node: AstNode) => boolean);
+export type AstNodeMatcher = (arena: AstArena, node: AstNode) => boolean;

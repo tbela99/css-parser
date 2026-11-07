@@ -85,7 +85,8 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
             arena.dataTypes[list[0]] == EnumToken.IdenTokenType &&
             equalsIgnoreCase("-n", arena.strings[arena.stringValue[list[0]]])
         ) {
-            arena.setStr(list[0], "n");
+            // inlined: arena.setStr(list[0], "n")
+            arena.stringValue[list[0]] = arena.internString("n");
         }
     }
 
@@ -98,7 +99,8 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
         ) {
             if (arena.dataTypes[list[1]] == EnumToken.NextSiblingCombinatorTokenType) {
                 if (arena.dataTypes[list[2]] == EnumToken.NumberTokenType && 0 == arena.numericValue[list[2]]) {
-                    arena.setStr(list[0], "n");
+                    // inlined: arena.setStr(list[0], "n")
+                    arena.stringValue[list[0]] = arena.internString("n");
                     chi.splice(0, index, list[0]);
                     arena.setTokenList(func, chi);
                     return;
@@ -256,7 +258,8 @@ export function parseSelector(
             result.errors,
         );
 
-        arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+        // inlined: arena.getSource(tokens[0])
+        arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
         return node;
     }
 
@@ -325,7 +328,8 @@ export function parseSelector(
 
             if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoElementTokenType;
-                arena.setStr(token, ":" + arena.strings[arena.stringValue[next]]);
+                // inlined: arena.setStr(token, ":" + arena.strings[arena.stringValue[next]])
+                arena.stringValue[token] = arena.internString((":" + arena.strings[arena.stringValue[next]]));
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -339,7 +343,8 @@ export function parseSelector(
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.dataTypes[next];
-                arena.setStr(token, val);
+                // inlined: arena.setStr(token, val)
+                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -353,7 +358,8 @@ export function parseSelector(
 
             if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoClassTokenType;
-                arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val);
+                // inlined: arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val)
+                arena.stringValue[token] = arena.internString(((pseudoElements.includes(val) ? "" : ":") + val));
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -366,7 +372,8 @@ export function parseSelector(
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : EnumToken.FunctionTokenDefType;
-                arena.setStr(token, val);
+                // inlined: arena.setStr(token, val)
+                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -395,7 +402,8 @@ export function parseSelector(
                 ],
             );
 
-            arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+            // inlined: arena.getSource(tokens[0])
+            arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
             return node;
         }
 
@@ -423,7 +431,8 @@ export function parseSelector(
                     stack.push(token);
                     break;
                 case EnumToken.AttrEndTokenType:
-                    if (arena.typeOf(stack.at(-1)) == EnumToken.AttrStartTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1) as number] == EnumToken.AttrStartTokenType) {
                         const attr: Token = stack[stack.length - 1];
 
                         index = tokens.indexOf(attr);
@@ -445,7 +454,8 @@ export function parseSelector(
                     break;
 
                 case EnumToken.EndParensTokenType:
-                    if (arena.typeOf(stack.at(-1)) == EnumToken.PseudoClassFunctionTokenDefType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1) as number] == EnumToken.PseudoClassFunctionTokenDefType) {
                         const func: Token = stack[stack.length - 1];
                         index = tokens.indexOf(func);
                         arena.spanLocation(func, func, token);
@@ -492,7 +502,8 @@ export function parseSelector(
         result.success ? [] : result.errors,
     );
 
-    arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+    // inlined: arena.getSource(tokens[0])
+    arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
     return node;
 }
 
@@ -518,8 +529,10 @@ function renderSelector(arena: AstArena, tokens: Token[]): string {
             if (
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index - 1]]) ||
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index + 1]]) ||
-                combinators.includes(arena.str(tokens[index - 1]) as string) ||
-                combinators.includes(arena.str(tokens[index + 1]) as string)
+                // inlined: arena.str(tokens[index - 1])
+                combinators.includes(arena.strings[arena.stringValue[tokens[index - 1]]] as string) ||
+                // inlined: arena.str(tokens[index + 1])
+                combinators.includes(arena.strings[arena.stringValue[tokens[index + 1]]] as string)
             ) {
                 continue;
             }

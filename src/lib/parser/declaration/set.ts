@@ -1,3 +1,4 @@
+import { numericTokenTypes } from "../../ast/arena.ts";
 import type { AstDeclaration, ShorthandPropertyType, Token } from "../../../@types/index.d.ts";
 import { eqToken } from "../utils/eq.ts";
 import { EnumToken } from "../../ast/types.ts";
@@ -13,8 +14,10 @@ function dedup(arena: AstArena, values: Token[][]): Token[][] {
             const k: Token = value[i == 1 ? 0 : i % 2];
 
             if (
-                arena.isNumeric(t) &&
-                arena.isNumeric(k) &&
+                // inlined: arena.isNumeric(t)
+                numericTokenTypes.has(arena.dataTypes[t]) &&
+                // inlined: arena.isNumeric(k)
+                numericTokenTypes.has(arena.dataTypes[k]) &&
                 arena.numericValue[t] == 0 &&
                 arena.numericValue[k] == 0 &&
                 !arena.hasFraction(t) &&
@@ -188,17 +191,15 @@ export class PropertySet {
                     return acc;
                 }, <Token[]>[]);
 
-                arena.setTokens(
-                    values[0],
-                    ...val.reduce((acc: Token[], curr: Token) => {
+                // inlined: arena.setTokens(values[0], ...val.reduce((acc: Token[], curr: Token) => { if (acc.length > 0) { acc.push(arena.createToken(EnumToken.WhitespaceTokenType)); } acc.push(curr); return acc; }, <Token[]>[]))
+                arena.setTokenList(values[0], val.reduce((acc: Token[], curr: Token) => {
                         if (acc.length > 0) {
                             acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                         }
 
                         acc.push(curr);
                         return acc;
-                    }, <Token[]>[]),
-                );
+                    }, <Token[]>[]));
             }
 
             return values[Symbol.iterator]();

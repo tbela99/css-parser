@@ -8,7 +8,8 @@ import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from 
 import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
 import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../lib/ast/types.ts";
-import type { CssVariableToken, Token } from "./token.d.ts";
+import type { Token } from "./token.d.ts";
+import type { AstArenaNode } from "../lib/ast/arena-node.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
@@ -899,7 +900,7 @@ export declare interface ParseResult {
      * CSS module variables
      * @private
      */
-    cssModuleVariables?: Record<string, CssVariableToken>;
+    cssModuleVariables?: Record<string, AstArenaNode>;
 
     /**
      * css module import mapping

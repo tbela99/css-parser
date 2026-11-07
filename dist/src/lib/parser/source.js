@@ -89,21 +89,24 @@ class SourceFile {
      * @returns
      */
     getSourceLocation(offset) {
-        return [this.file, ...this.getOffsets(offset)];
+        // inlined: this.getOffsets(offset)
+        return [this.file, ...this.lineStarts.getOffsets(offset)];
     }
     /**
      * get line starts
      * @returns
      */
     getLineStarts() {
-        return this.lineStarts.getLineStarts();
+        // inlined: this.lineStarts.getLineStarts()
+        return this.lineStarts.lineStarts;
     }
     /**
      * add line start
      * @param lineStart
      */
     addLineStart(lineStart) {
-        this.lineStarts.addLineStart(lineStart);
+        // inlined: this.lineStarts.addLineStart(lineStart)
+        this.lineStarts.lineStarts.push(lineStart);
     }
     /**
      * set input source map

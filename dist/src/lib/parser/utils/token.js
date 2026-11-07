@@ -28,27 +28,27 @@ const trimSpaceAfter = new Set([
     EnumToken.PipeTokenType,
 ]);
 /**
- * Replace a value token in its parent (token list of a node, function arguments or structured token field)
+ * Replace a value token in its parent (token list of a node, function arguments or structured token field). the
+ * parent is `arena.getValueParent(node)`
  * @param arena
- * @param parent parent token or node id. the token must be attached to this parent
  * @param node token id
  * @param replacement token id(s)
  * @throws TypeError replacement is null
- * @throws ReferenceError node not found in parent
+ * @throws ReferenceError the token is detached
  */
-function replaceNodeOrValue(arena, parent, node, replacement) {
+function replaceNodeOrValue(arena, node, replacement) {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
-    const owner = arena.parents[node];
-    if (owner == 0) {
+    if (arena.parents[node] == 0) {
         throw new ReferenceError("Node not found");
     }
-    // structured fields are stored in list tokens
-    if (parent != null && owner != parent && arena.parents[owner] != parent) {
-        throw new ReferenceError("Node not found");
+    if (Array.isArray(replacement)) {
+        arena.replaceToken(node, ...replacement);
     }
-    arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
+    else {
+        arena.replaceToken(node, replacement);
+    }
     return true;
 }
 /**

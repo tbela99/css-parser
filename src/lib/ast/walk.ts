@@ -1,302 +1,37 @@
+/**
+ * iterators of {@link AstArena.walk} and {@link AstArena.walkValues}: plain iterator objects, no generator. the
+ * iteration result object is reused: the value must be read before the next call of `next()` (as `for ... of` does)
+ *
+ * @module
+ * @internal
+ */
 import type {
     AstNode,
     Token,
-    WalkAttributesResult,
     WalkerFilter,
     WalkerOption,
     WalkerOptions,
     WalkerValueFilter,
-    WalkResult,
+    WalkerValueOptions,
 } from "../../@types/index.d.ts";
-import { EnumAstNodeStatus, EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken, WalkerEvent, WalkerOptionEnum } from "./types.ts";
 import type { AstArena } from "./arena.ts";
 
 /**
- * Options for the walk function
- */
-export enum WalkerOptionEnum {
-    /**
-     * ignore the current node and its children
-     */
-    Ignore = 1 << 0,
-    /**
-     * stop walking the tree
-     */
-    Stop = 1 << 1,
-    /**
-     * ignore the current node and process its children
-     */
-    Children = 1 << 2,
-    /**
-     * ignore the current node children
-     */
-    IgnoreChildren = 1 << 3,
-}
-
-/**
- * Event types for the walkValues function
- */
-export enum WalkerEvent {
-    /**
-     * enter node
-     */
-    Enter = 0x1,
-    /**
-     * leave node
-     */
-    Leave = 0x2,
-}
-
-/**
- * Walk ast nodes
- * @param arena the arena the nodes are stored in
- * @param node initial node id (or value token)
- * @param filter control the walk process
- * @param reverse walk in reverse order
- *
- * ```ts
- *
- * import {walk, EnumToken} from '@tbela99/css-parser';
- *
- * const result = await parse(css);
- *
- * for (const {node, parent, root, arena} of walk(result.arena, result.ast)) {
- *
- *     console.log(EnumToken[arena.dataTypes[node]]);
- * }
- * ```
- *
- * Using a {@link filter} function to control the ast traversal.  the filter function returns a value of type {@link WalkerOption}.
- *
- * ```ts
- * import {EnumToken, transform, walk, WalkerOptionEnum} from '@tbela99/css-parser';
- *
- * const result = await transform(css);
- * const arena = result.arena;
- *
- * function filter(node) {
- *
- *     if (arena.dataTypes[node] == EnumToken.RuleNodeType && arena.strings[arena.name[node]].includes('html')) {
- *
- *         // skip the children of the current node
- *         return WalkerOptionEnum.IgnoreChildren;
- *     }
- * }
- *
- * for (const {node} of walk(arena, result.ast, filter)) {
- *
- *     console.error([EnumToken[arena.dataTypes[node]]]);
- * }
- * ```
- */
-export function walk(
-    arena: AstArena,
-    node: AstNode | Token,
-    filter?: WalkerFilter | null,
-    reverse?: boolean,
-): Generator<WalkResult>;
-
-/**
- * Walk ast nodes
- * @param arena the arena the nodes are stored in
- * @param node initial node id (or value token)
- * @param filter control the walk process
- */
-export function walk(arena: AstArena, node: AstNode | Token, filter?: WalkerOptions | null): Generator<WalkResult>;
-
-/**
- * Walk ast nodes. Nodes and value tokens (walked when `attributes` is set) are ids
+ * push the direct value tokens of a token onto a stack, from the linked lists: the token list, then the fields (the
+ * tokens of the list fields) of a structured token. they are pushed in order, then reversed in place (unless reverse
+ * is true) so that they are popped in order: no array is created
  * @param arena
- * @param node initial node
- * @param filter control the walk process
- * @param reverse walk in reverse order
- *
- * @private
- */
-export function* walk(
-    arena: AstArena,
-    node: AstNode | Token,
-    filter?: WalkerFilter | WalkerOptions | null,
-    reverse?: boolean,
-): Generator<WalkResult> {
-    const stack: Array<AstNode | Token> = [node];
-    const root: AstNode | Token = node;
-
-    let options: WalkerOptions | null = filter as WalkerOptions | null;
-    let isNumeric: boolean = false;
-    let children: boolean = true;
-    let attributes: boolean = false;
-
-    if (options != null && typeof options == "object") {
-        filter = options.filter as WalkerFilter;
-        reverse = options.reverse;
-        attributes = options.attributes as boolean;
-        children = (options.children as boolean) ?? true;
-    }
-
-    const parentOf = (item: AstNode | Token): AstNode | Token => (item == root ? 0 : arena.parents[item]);
-
-    const result = {
-        node: 0,
-        parent: 0,
-        root,
-        arena,
-        parents: function* () {
-            let parent: AstNode | Token = parentOf(node);
-
-            while (parent != 0) {
-                yield parent;
-                parent = parentOf(parent);
-            }
-        },
-    } as WalkResult;
-
-    let option: WalkerOption = null;
-
-    while (stack.length > 0) {
-        node = stack.pop() as AstNode | Token;
-        isNumeric = false;
-
-        // enter node
-        if (filter != null) {
-            // @ts-expect-error
-            option = filter(node, arena);
-            isNumeric = typeof option == "number";
-
-            if (isNumeric) {
-                if ((option as number) & WalkerOptionEnum.Ignore) {
-                    continue;
-                }
-
-                if ((option as number) & WalkerOptionEnum.Stop) {
-                    break;
-                }
-            }
-        }
-
-        if (!isNumeric || ((option as number) & WalkerOptionEnum.Children) === 0) {
-            result.node = node;
-            result.parent = parentOf(node);
-
-            yield result;
-        }
-
-        if (attributes && (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)) {
-            // prelude tokens, declaration values or token children
-            const values: Token[] = arena.subTokens(node);
-
-            if (reverse) {
-                for (let i = 0; i < values.length; i++) {
-                    stack.push(values[i]);
-                }
-            } else {
-                for (let i = values.length - 1; i >= 0; i--) {
-                    stack.push(values[i]);
-                }
-            }
-        }
-
-        if (
-            children &&
-            arena.flags[node] & EnumAstNodeStatus.HasChildren &&
-            (!isNumeric || ((option as number) & WalkerOptionEnum.IgnoreChildren) === 0)
-        ) {
-            // children are pushed in reverse so that they are popped in document order
-            if (reverse) {
-                for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
-                    stack.push(child);
-                }
-            } else {
-                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
-                    stack.push(child);
-                }
-            }
-        }
-    }
-}
-
-/**
- * Walk node values
- * @param arena
- * @param tokens token ids
- * @param root root node or token
- * @param filter
- * @param reverse
- *
- * Example:
- *
- * ```ts
- *
- * import {EnumToken, transform, walkValues} from '@tbela99/css-parser';
- *
- * const css = `
- * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
- * `;
- *
- * const result = await transform(css);
- * const arena = result.arena;
- * const declaration = arena.firstChild[arena.firstChild[result.ast]];
- *
- * // walk the node attribute's tokens in reverse order
- * for (const {value} of walkValues(arena, arena.tokens(declaration), declaration, null, true)) {
- *
- *     console.error([EnumToken[arena.dataTypes[value]], arena.getValue(value)]);
- * }
- *
- * // [ "Color", "color" ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.15 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "b" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "calc" ]
- * // [ "Number", 0.24 ]
- * // [ "Add", undefined ]
- * // [ "Iden", "g" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "r" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "display-p3" ]
- * // [ "Whitespace", undefined ]
- * // [ "FunctionTokenType", "var" ]
- * // [ "DashedIden", "--base-color" ]
- * // [ "Whitespace", undefined ]
- * // [ "Iden", "from" ]
- * ```
- */
-export function walkValues(
-    arena: AstArena,
-    tokens: Token[],
-    root: AstNode | Token | null = null,
-    filter?:
-        | WalkerValueFilter
-        | null
-        | {
-              event?: WalkerEvent;
-              fn?: WalkerValueFilter;
-              type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
-          },
-    reverse?: boolean,
-): Generator<WalkAttributesResult> {
-    // an iterator object holds the state: no generator
-    return new ValueWalker(arena, tokens, root, filter, reverse) as unknown as Generator<WalkAttributesResult>;
-}
-
-/**
- * push the children of a token onto a stack, from the linked lists: the token list, then the fields (the tokens of
- * the list fields) of a structured token. they are pushed in order, then reversed in place (unless reverse is true)
- * so that they are popped in order: no array is created
- * @param arena
- * @param nodes stack
+ * @param stack
  * @param value
  * @param reverse
  */
-function pushChildren(arena: AstArena, nodes: Token[], value: Token, reverse?: boolean): void {
-    const first: number = nodes.length;
+function pushValues(arena: AstArena, stack: number[], value: number, reverse: boolean): void {
+    const first: number = stack.length;
     let token: number = arena.firstToken[value];
 
     while (token != 0) {
-        nodes.push(token);
+        stack.push(token);
         token = arena.nextSibling[token];
     }
 
@@ -308,11 +43,11 @@ function pushChildren(arena: AstArena, nodes: Token[], value: Token, reverse?: b
                 token = arena.firstToken[child];
 
                 while (token != 0) {
-                    nodes.push(token);
+                    stack.push(token);
                     token = arena.nextSibling[token];
                 }
             } else {
-                nodes.push(child);
+                stack.push(child);
             }
 
             child = arena.nextSibling[child];
@@ -320,126 +55,182 @@ function pushChildren(arena: AstArena, nodes: Token[], value: Token, reverse?: b
     }
 
     if (!reverse) {
-        for (let i = first, j = nodes.length - 1; i < j; i++, j--) {
-            const swap: Token = nodes[i];
+        for (let i = first, j = stack.length - 1; i < j; i++, j--) {
+            const swap: number = stack[i];
 
-            nodes[i] = nodes[j];
-            nodes[j] = swap;
+            stack[i] = stack[j];
+            stack[j] = swap;
         }
     }
 }
 
-// stack of visitValues(), shared by the nested calls: each call uses the entries above its base. the entries are
-// written by index and the array never shrinks (pop() and a smaller length release the memory of the array)
-const visitStack: Token[] = [];
-let visitTop: number = 0;
-
 /**
- * call the visitor for the tokens and their children, in the order of {@link walkValues} (the children of a token are
- * read after the visitor returns). no iterator, result object or stack is created: use it when the parents are not
- * needed and the visitor is not a closure
- * @param arena
- * @param tokens
- * @param visitor
+ * iterator of {@link AstArena.walk}: node ids (and value tokens when `attributes` is set) in document order. the
+ * children of a node are read when the next node is requested: the node may be modified by the caller
  */
-export function visitValues(arena: AstArena, tokens: Token[], visitor: (arena: AstArena, token: Token) => void): void {
-    const stack: Token[] = visitStack;
-    const base: number = visitTop;
-    let top: number = base;
-
-    for (let i = tokens.length - 1; i >= 0; i--) {
-        stack[top++] = tokens[i];
-    }
-
-    try {
-        while (top > base) {
-            const value: Token = stack[--top];
-
-            // nested calls use the entries above top
-            visitTop = top;
-            visitor(arena, value);
-
-            // the children, in reverse order (see pushChildren())
-            const first: number = top;
-            let token: number = arena.firstToken[value];
-
-            while (token != 0) {
-                stack[top++] = token;
-                token = arena.nextSibling[token];
-            }
-
-            if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
-                let child: number = arena.firstChild[value];
-
-                while (child != 0) {
-                    if (arena.dataTypes[child] == EnumToken.ListTokenType) {
-                        token = arena.firstToken[child];
-
-                        while (token != 0) {
-                            stack[top++] = token;
-                            token = arena.nextSibling[token];
-                        }
-                    } else {
-                        stack[top++] = child;
-                    }
-
-                    child = arena.nextSibling[child];
-                }
-            }
-
-            for (let i = first, j = top - 1; i < j; i++, j--) {
-                const swap: Token = stack[i];
-
-                stack[i] = stack[j];
-                stack[j] = swap;
-            }
-        }
-    } finally {
-        visitTop = base;
-    }
-}
-
-/**
- * iterator of {@link walkValues}: a stack of the tokens to visit. the same result object is returned for every token
- */
-class ValueWalker implements Iterator<WalkAttributesResult> {
-    private readonly nodes: Token[] = [];
-    // iterator result, reused
-    private readonly iteration: IteratorResult<WalkAttributesResult>;
-    private readonly fn: WalkerValueFilter | null = null;
-    private readonly type: EnumToken | EnumToken[] | ((token: Token) => boolean) | null = null;
-    private readonly eventType: WalkerEvent = WalkerEvent.Enter;
-    private readonly result: WalkAttributesResult;
-    private previous: Token | null = null;
-    // token returned by the last call of next(): its children are visited by the next call
-    private current: Token | null = null;
-    // value returned by the filter for the current token
+export class NodeWalker implements IterableIterator<AstNode | Token> {
+    private readonly stack: number[];
+    private readonly filter: WalkerFilter | null = null;
+    private readonly reverse: boolean = false;
+    private readonly children: boolean = true;
+    private readonly attributes: boolean = false;
+    // iteration result, reused
+    private readonly iteration: IteratorResult<number> = { done: false, value: 0 };
+    // node returned by the last call of next(): its children are pushed by the next call
+    private current: number = 0;
+    // value returned by the filter for the current node
     private option: WalkerOption = null;
-    // last visited token, see parents()
-    private node: Token = 0;
 
     constructor(
         private readonly arena: AstArena,
-        tokens: Token[],
-        private readonly root: AstNode | Token | null,
-        filter:
-            | WalkerValueFilter
-            | null
-            | undefined
-            | {
-                  event?: WalkerEvent;
-                  fn?: WalkerValueFilter;
-                  type?: EnumToken | EnumToken[] | ((token: Token) => boolean);
-              },
-        private readonly reverse: boolean | undefined,
+        node: AstNode | Token,
+        filter?: WalkerFilter | WalkerOptions | null,
+        reverse?: boolean,
     ) {
-        if (reverse) {
+        this.stack = [node];
+
+        if (filter != null && typeof filter == "object") {
+            this.filter = filter.filter ?? null;
+            this.reverse = filter.reverse === true;
+            this.attributes = filter.attributes === true;
+            this.children = filter.children ?? true;
+        } else {
+            this.filter = filter ?? null;
+            this.reverse = reverse === true;
+        }
+    }
+
+    [Symbol.iterator](): this {
+        return this;
+    }
+
+    /**
+     * push the value tokens and the children of a node
+     * @param node
+     * @param option
+     */
+    private expand(node: number, option: WalkerOption): void {
+        if (typeof option == "number" && option & WalkerOptionEnum.IgnoreChildren) {
+            return;
+        }
+
+        const arena: AstArena = this.arena;
+        const stack: number[] = this.stack;
+
+        if (this.attributes) {
+            // prelude tokens, declaration values or token children
+            pushValues(arena, stack, node, this.reverse);
+        }
+
+        if (this.children && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
+            // children are pushed in reverse so that they are popped in document order
+            if (this.reverse) {
+                for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
+                    stack.push(child);
+                }
+            } else {
+                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
+                    stack.push(child);
+                }
+            }
+        }
+    }
+
+    next(): IteratorResult<number> {
+        const stack: number[] = this.stack;
+        const filter: WalkerFilter | null = this.filter;
+
+        if (this.current != 0) {
+            this.expand(this.current, this.option);
+            this.current = 0;
+        }
+
+        while (stack.length > 0) {
+            const node: number = stack.pop() as number;
+            let option: WalkerOption = null;
+
+            if (filter != null) {
+                option = filter(this.arena, node);
+
+                if (typeof option == "number") {
+                    if (option & WalkerOptionEnum.Ignore) {
+                        continue;
+                    }
+
+                    if (option & WalkerOptionEnum.Stop) {
+                        break;
+                    }
+
+                    if (option & WalkerOptionEnum.Children) {
+                        // the node is not returned, its children are walked
+                        this.expand(node, option);
+                        continue;
+                    }
+                }
+            }
+
+            this.current = node;
+            this.option = option;
+            this.iteration.value = node;
+
+            return this.iteration;
+        }
+
+        return this.return();
+    }
+
+    /**
+     * stop the iteration (break of a for ... of loop)
+     */
+    return(value?: unknown): IteratorResult<number> {
+        this.stack.length = 0;
+        this.current = 0;
+
+        return { done: true, value: value as undefined };
+    }
+
+    throw(error?: unknown): IteratorResult<number> {
+        this.return();
+
+        throw error;
+    }
+}
+
+/**
+ * iterator of {@link AstArena.walkValues}: token ids in document order. the children of a token are read when the
+ * next token is requested: the token may be modified by the caller
+ */
+export class ValueWalker implements IterableIterator<Token> {
+    private readonly stack: Token[] = [];
+    private readonly fn: WalkerValueFilter | null = null;
+    private readonly type: EnumToken | EnumToken[] | ((arena: AstArena, token: Token) => boolean) | null = null;
+    private readonly eventType: WalkerEvent = WalkerEvent.Enter;
+    private readonly reverse: boolean;
+    // iteration result, reused
+    private readonly iteration: IteratorResult<Token> = { done: false, value: 0 };
+    // token returned by the last call of next(): its children are visited by the next call
+    private current: Token = 0;
+    // value returned by the filter for the current token
+    private option: WalkerOption | Token[] = null;
+
+    constructor(
+        private readonly arena: AstArena,
+        tokens: Token | Token[],
+        filter?: WalkerValueFilter | WalkerValueOptions | null,
+        reverse?: boolean,
+    ) {
+        this.reverse = reverse === true;
+
+        if (typeof tokens == "number") {
+            // the value tokens of a node or a token
+            pushValues(arena, this.stack, tokens, this.reverse);
+        } else if (this.reverse) {
             for (let i = 0; i < tokens.length; i++) {
-                this.nodes.push(tokens[i]);
+                this.stack.push(tokens[i]);
             }
         } else {
             for (let i = tokens.length - 1; i >= 0; i--) {
-                this.nodes.push(tokens[i]);
+                this.stack.push(tokens[i]);
             }
         }
 
@@ -451,50 +242,10 @@ class ValueWalker implements Iterator<WalkAttributesResult> {
             this.type = filter.type ?? null;
             this.eventType = filter.event ?? WalkerEvent.Enter;
         }
-
-        const walker: ValueWalker = this;
-
-        // @ts-ignore
-        this.result = {
-            value: 0,
-            parent: null,
-            previousValue: null,
-            nextValue: null,
-            root: root ?? null,
-            parents: function* () {
-                let parent: Token | AstNode | null = walker.parentOf(walker.node);
-
-                while (parent != null && parent != 0) {
-                    yield parent;
-
-                    if (parent == root) {
-                        break;
-                    }
-
-                    parent = walker.parentOf(parent);
-                }
-            },
-        } as WalkAttributesResult;
-
-        this.iteration = { done: false, value: this.result };
     }
 
-    /**
-     * parent of a token: the owner of the token list or the structured token owning the field list
-     * @param token
-     */
-    private parentOf(token: Token): Token | AstNode | null {
-        let parent: Token = this.arena.parents[token];
-
-        if (parent == 0) {
-            return this.root ?? null;
-        }
-
-        if (this.arena.dataTypes[parent] == EnumToken.ListTokenType) {
-            parent = this.arena.parents[parent];
-        }
-
-        return parent == 0 ? (this.root ?? null) : parent;
+    [Symbol.iterator](): this {
+        return this;
     }
 
     /**
@@ -508,7 +259,7 @@ class ValueWalker implements Iterator<WalkAttributesResult> {
             type == null ||
             this.arena.dataTypes[token] == type ||
             (Array.isArray(type) && type.includes(this.arena.dataTypes[token])) ||
-            (typeof type == "function" && type(token))
+            (typeof type == "function" && type(this.arena, token))
         );
     }
 
@@ -516,16 +267,14 @@ class ValueWalker implements Iterator<WalkAttributesResult> {
      * the tokens returned by the filter are visited too
      * @param option
      */
-    private pushOption(option: Token | Token[]): void {
-        if (!Array.isArray(option)) {
-            this.nodes.push(option);
-        } else if (this.reverse) {
+    private pushOption(option: Token[]): void {
+        if (this.reverse) {
             for (let i = 0; i < option.length; i++) {
-                this.nodes.push(option[i]);
+                this.stack.push(option[i]);
             }
         } else {
             for (let i = option.length - 1; i >= 0; i--) {
-                this.nodes.push(option[i]);
+                this.stack.push(option[i]);
             }
         }
     }
@@ -534,109 +283,76 @@ class ValueWalker implements Iterator<WalkAttributesResult> {
      * children of the token returned by the previous call, then the leave event
      */
     private leave(value: Token): void {
-        const arena: AstArena = this.arena;
-        const nodes: Token[] = this.nodes;
-        const option: WalkerOption = this.option;
+        const option: WalkerOption | Token[] = this.option;
 
         // the children are read after the token is visited (it may have been modified)
         if (typeof option != "number" || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
-            pushChildren(arena, nodes, value, this.reverse);
+            pushValues(this.arena, this.stack, value, this.reverse);
         }
 
         if (this.eventType & WalkerEvent.Leave && this.fn != null && this.isValid(value)) {
-            // @ts-expect-error
-            const option: WalkerOption = this.fn(value, this.parentOf(value), WalkerEvent.Leave, this.result.parents);
+            const option: WalkerOption | Token[] = this.fn(this.arena, value, WalkerEvent.Leave);
 
-            if (option != null && typeof option != "number") {
-                this.pushOption(option as Token | Token[]);
+            if (Array.isArray(option)) {
+                this.pushOption(option);
             }
         }
-
-        this.previous = value;
     }
 
-    [Symbol.iterator](): this {
-        return this;
-    }
+    next(): IteratorResult<Token> {
+        const stack: Token[] = this.stack;
 
-    next(): IteratorResult<WalkAttributesResult> {
-        const result: WalkAttributesResult | null = this.nextValue();
+        if (this.current != 0) {
+            this.leave(this.current);
+            this.current = 0;
+        }
 
-        // the value of the iteration is always the result object
-        return result == null ? { done: true, value: undefined } : this.iteration;
+        while (stack.length > 0) {
+            const value: Token = stack.pop() as Token;
+
+            this.option = null;
+
+            if (this.fn != null && this.eventType & WalkerEvent.Enter && this.isValid(value)) {
+                const option: WalkerOption | Token[] = this.fn(this.arena, value, WalkerEvent.Enter);
+
+                this.option = option;
+
+                if (typeof option == "number") {
+                    if (option & WalkerOptionEnum.Stop) {
+                        break;
+                    }
+
+                    if (option & WalkerOptionEnum.Ignore) {
+                        continue;
+                    }
+                } else if (Array.isArray(option)) {
+                    this.pushOption(option);
+                }
+            }
+
+            this.current = value;
+            this.iteration.value = value;
+
+            return this.iteration;
+        }
+
+        return this.return();
     }
 
     /**
      * stop the iteration (break of a for ... of loop)
      * @param value
      */
-    return(value?: unknown): IteratorResult<WalkAttributesResult> {
-        this.nodes.length = 0;
-        this.current = null;
+    return(value?: unknown): IteratorResult<Token> {
+        this.stack.length = 0;
+        this.current = 0;
 
         return { done: true, value: value as undefined };
     }
 
-    throw(error?: unknown): IteratorResult<WalkAttributesResult> {
-        this.nodes.length = 0;
-        this.current = null;
+    throw(error?: unknown): IteratorResult<Token> {
+        this.return();
 
         throw error;
-    }
-
-    /**
-     * next token, null at the end
-     */
-    private nextValue(): WalkAttributesResult | null {
-        const nodes: Token[] = this.nodes;
-        let value: Token;
-
-        if (this.current != null) {
-            this.leave(this.current);
-            this.current = null;
-        }
-
-        while (nodes.length > 0) {
-            value = nodes.pop() as Token;
-            this.node = value;
-            this.option = null;
-
-            if (this.fn != null && this.eventType & WalkerEvent.Enter && this.isValid(value)) {
-                // @ts-expect-error
-                const option: WalkerOption = this.fn(
-                    value,
-                    this.parentOf(value),
-                    WalkerEvent.Enter,
-                    this.result.parents,
-                );
-
-                this.option = option;
-
-                if (typeof option == "number") {
-                    if (option & WalkerOptionEnum.Stop) {
-                        nodes.length = 0;
-                        return null;
-                    }
-
-                    if (option & WalkerOptionEnum.Ignore) {
-                        continue;
-                    }
-                } else if (option != null) {
-                    this.pushOption(option as Token | Token[]);
-                }
-            }
-
-            const result: WalkAttributesResult = this.result;
-
-            result.value = value;
-            result.parent = this.parentOf(value);
-            result.previousValue = this.previous;
-            result.nextValue = nodes.length > 0 ? nodes[nodes.length - 1] : null;
-
-            this.current = value;
-            return result;
-        }
-
-        return null;
     }
 }

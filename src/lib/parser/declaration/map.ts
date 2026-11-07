@@ -203,7 +203,8 @@ export class PropertyMap {
 
                             // default
                             if (props.default.length > 0) {
-                                const defaults: Token[] = this.parse(props.default[0]);
+                                // inlined: this.parse(props.default[0])
+                                const defaults: Token[] = this.memo == null ? parseString(this.arena, props.default[0]) : this.memo.parse(this.arena, props.default[0]);
 
                                 if (!(property in tokens)) {
                                     tokens[property] = [[...defaults]];
@@ -339,7 +340,8 @@ export class PropertyMap {
 
                                 if (mappedValues.length == 0) {
                                     mappedValues.push(
-                                        ...this.parse((value as PropertyMap).config.properties[key].default[0]),
+                                        // inlined: this.parse((value as PropertyMap).config.properties[key].default[0])
+                                        ...(this.memo == null ? parseString(this.arena, (value as PropertyMap).config.properties[key].default[0]) : this.memo.parse(this.arena, (value as PropertyMap).config.properties[key].default[0])),
                                     );
                                 }
 
@@ -527,7 +529,8 @@ export class PropertyMap {
                         arena.createDeclaration(
                             EnumToken.DeclarationNodeType,
                             this.config.shorthand,
-                            this.parse(this.config.default[0]),
+                            // inlined: this.parse(this.config.default[0])
+                            this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]),
                             null,
                             null,
                         ),
@@ -557,14 +560,16 @@ export class PropertyMap {
 
                 // @ts-ignore
                 for (const [key, val] of Object.entries(config.mapping)) {
-                    const keys: Token[] = this.parse(key);
+                    // inlined: this.parse(key)
+                    const keys: Token[] = this.memo == null ? parseString(this.arena, key) : this.memo.parse(this.arena, key);
 
                     if (keys.length != declarationValues.length) {
                         continue;
                     }
 
                     if (keys.every((k: Token, index: number) => eqToken(arena, k, declarationValues[index]))) {
-                        arena.setTokenList(declaration, this.parse(val as string));
+                        // inlined: this.parse(val as string)
+                        arena.setTokenList(declaration, this.memo == null ? parseString(this.arena, (val as string)) : this.memo.parse(this.arena, (val as string)));
                         break;
                     }
                 }
@@ -887,13 +892,15 @@ export class PropertyMap {
                                                     // @ts-expect-error
                                                     arena.strings[arena.stringValue[values[i]]] in props.mapping
                                                 ) {
+                                                    // inlined: this.parse(props.mapping[arena.strings[arena.stringValue[values[i]]]])
                                                     values.splice(
                                                         i,
                                                         1,
-                                                        ...this.parse(
-                                                            // @ts-ignore
-                                                            props.mapping[arena.strings[arena.stringValue[values[i]]]],
-                                                        ),
+                                                        ...(this.memo == null
+                                                            ? // @ts-ignore
+                                                              parseString(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])
+                                                            : // @ts-ignore
+                                                              this.memo.parse(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])),
                                                     );
                                                 }
                                             }
@@ -930,7 +937,8 @@ export class PropertyMap {
 
                         if (curr.length == 0 && this.config.default.length > 0) {
                             curr.push(
-                                ...this.parse(this.config.default[0]).reduce(
+                                // inlined: this.parse(this.config.default[0])
+                                ...(this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0])).reduce(
                                     (acc: Token[], curr: Token) => {
                                         if (acc.length > 0) {
                                             acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
@@ -982,7 +990,8 @@ export class PropertyMap {
                     this.config.default.includes(arena.strings[arena.stringValue[values[0]]].toLowerCase()) &&
                     this.config.default[0] != arena.strings[arena.stringValue[values[0]]].toLowerCase()
                 ) {
-                    values = this.parse(this.config.default[0]);
+                    // inlined: this.parse(this.config.default[0])
+                    values = this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]);
                 }
 
                 iterable = [

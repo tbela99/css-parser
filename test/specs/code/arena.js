@@ -1,7 +1,6 @@
 import { EnumToken, EnumAstNodeStatus, ColorType } from "../../../dist/src/lib/ast/types.js";
 import { Arena, AstArena, TokenField, arenaColumns } from "../../../dist/src/lib/ast/arena.js";
-import { walk } from "../../../dist/src/lib/ast/walk.js";
-import { cloneNode } from "../../../dist/src/lib/ast/clone.js";
+import { ARENA, ARENAID, AstArenaNode } from "../../../dist/src/lib/ast/arena-node.js";
 import { parseDeclarations, parseString } from "../../../dist/src/lib/parser/parse.js";
 import { renderValue as renderToken } from "../../../dist/src/lib/printer/render.js";
 import { replaceNode } from "../../../dist/src/lib/parser/utils/token.js";
@@ -32,14 +31,14 @@ h1 { font-size: 2em }
 
             let count = 0;
 
-            for (const { node, parent } of walk(arena, result.ast)) {
+            for (const node of arena.walk(result.ast)) {
                 count++;
                 expect(node).to.be.above(0);
                 expect(node).to.be.at.most(arena.current);
 
-                if (parent != 0) {
+                if (node != result.ast) {
                     // parent links are stored in the arena
-                    expect(arena.parents[node]).equals(parent);
+                    expect(arena.children(arena.getParent(node))).to.include(node);
                 }
             }
 
@@ -106,7 +105,7 @@ h1 { font-size: 2em }
             expect(arena.numericValue[right]).equals(2);
             expect(arena.getUnit(right)).equals("px");
             expect(arena.getSpanStart(calc)).to.be.below(arena.getSpanStart(left));
-            expect(arena.toObject(expression)).deep.equals({
+            expect(arena.toPlainObject(expression)).deep.equals({
                 typ: EnumToken.BinaryExpressionTokenType,
                 op: EnumToken.Add,
                 l: { typ: EnumToken.LengthTokenType, val: 1, unit: "px", loc: arena.getLocation(left) },
@@ -153,13 +152,13 @@ h1 { font-size: 2em }
             );
         });
 
-        it("cloneNode() allocates the clone in the arena #4", async function () {
+        it("arena.clone() allocates the clone in the arena #4", async function () {
             const result = await parse(css, { minify: false });
             const arena = result.arena;
             const rule = arena.firstChild[arena.getChildAt(result.ast, 2)];
 
-            const shallow = cloneNode(arena, rule);
-            const deep = cloneNode(arena, rule, true);
+            const shallow = arena.clone(rule);
+            const deep = arena.clone(rule, true);
 
             expect(shallow).not.equals(rule);
             expect(arena.getSelector(shallow)).equals(arena.getSelector(rule));
@@ -180,7 +179,7 @@ h1 { font-size: 2em }
                 minify: false,
                 visitor: {
                     Declaration: {
-                        color: (node, arena) => [
+                        color: (arena, node) => [
                             node,
                             arena.createDeclaration(
                                 EnumToken.DeclarationNodeType,
@@ -192,7 +191,7 @@ h1 { font-size: 2em }
                         ],
                     },
                     AtRule: {
-                        media: (node, arena) => {
+                        media: (arena, node) => {
                             const clone = arena.clone(node, true);
 
                             arena.setValueString(clone, "print");
@@ -230,8 +229,8 @@ h1 { font-size: 2em }
             expect(copy).not.equals(rule);
             expect(arena.getSelector(copy)).equals(other.arena.getSelector(rule));
             expect(arena.getName(arena.firstChild[copy])).equals("--base-color");
-            expect(arena.toObject(arena.firstChild[copy]).val).deep.equals(
-                other.arena.toObject(other.arena.firstChild[rule]).val,
+            expect(arena.toPlainObject(arena.firstChild[copy]).val).deep.equals(
+                other.arena.toPlainObject(other.arena.firstChild[rule]).val,
             );
             expect(arena.parents[arena.firstToken[arena.firstChild[copy]]]).equals(arena.firstChild[copy]);
             expect(arena.parents[arena.firstChild[copy]]).equals(copy);
@@ -256,9 +255,9 @@ h1 { font-size: 2em }
 
             const arena = result.arena;
 
-            for (const { node, parent } of walk(arena, result.ast)) {
-                if (parent != 0) {
-                    expect(arena.parents[node]).equals(parent);
+            for (const node of arena.walk(result.ast)) {
+                if (node != result.ast) {
+                    expect(arena.children(arena.getParent(node))).to.include(node);
                 }
             }
 
@@ -270,11 +269,11 @@ h1 { font-size: 2em }
             expect(arena.getSource(arena.lastChild[result.ast])).equals(arena.getSource(result.ast));
         });
 
-        it("toObject() / fromObject() round trip #8", async function () {
+        it("toPlainObject() / fromObject() round trip #8", async function () {
             const result = await parse(css, { minify: false });
             const arena = result.arena;
             const rule = arena.firstChild[arena.getChildAt(result.ast, 2)];
-            const plain = arena.toObject(rule);
+            const plain = arena.toPlainObject(rule);
 
             expect(plain.typ).equals(EnumToken.RuleNodeType);
             expect(plain.sel).equals(".foo,.bar");
@@ -436,7 +435,7 @@ h1 { font-size: 2em }
 
             expect(renderToken(arena, gradient, { minify: true })).equals("linear-gradient(#fff,#000)");
             expect(renderToken(arena, gradient, { minify: false })).equals("linear-gradient(to bottom,#fff,#000)");
-            expect(arena.toObject(tokens[2])).deep.equals({ typ: EnumToken.LengthTokenType, val: 1, unit: "px" });
+            expect(arena.toPlainObject(tokens[2])).deep.equals({ typ: EnumToken.LengthTokenType, val: 1, unit: "px" });
         });
 
         it("tokens are created in the arena #16", async function () {
@@ -463,17 +462,17 @@ h1 { font-size: 2em }
             expect(arena.take(expression)).not.equals(expression);
             expect(arena.parents[expression]).equals(calc);
 
-            // fromObject() / toObject()
+            // fromObject() / toPlainObject()
             const fraction = arena.fromObject({ typ: EnumToken.NumberTokenType, val: { typ: EnumToken.FractionTokenType, l: { typ: EnumToken.NumberTokenType, val: 1 }, r: { typ: EnumToken.NumberTokenType, val: 3 } } });
 
             expect(arena.hasFraction(fraction)).equals(true);
             expect(arena.numericValue[fraction]).to.be.closeTo(1 / 3, 1e-9);
             expect(renderToken(arena, fraction)).equals("1/3");
-            expect(arena.toObject(fraction)).deep.equals({
+            expect(arena.toPlainObject(fraction)).deep.equals({
                 typ: EnumToken.NumberTokenType,
                 val: { typ: EnumToken.FractionTokenType, l: { typ: EnumToken.NumberTokenType, val: 1 }, r: { typ: EnumToken.NumberTokenType, val: 3 } },
             });
-            expect(arena.toObject(calc)).deep.equals({
+            expect(arena.toPlainObject(calc)).deep.equals({
                 typ: EnumToken.MathFunctionTokenType,
                 val: "calc",
                 chi: [
@@ -485,7 +484,9 @@ h1 { font-size: 2em }
                     },
                 ],
             });
-            expect(renderToken(arena, arena.fromObject(arena.toObject(calc)))).equals("calc(1px + 2px)");
+            expect(renderToken(arena, arena.fromObject(arena.toPlainObject(calc)))).equals("calc(1px + 2px)");
+            // importing the object view of a node of the arena is a noop
+            expect(arena.fromObject(arena.toObject(calc))).equals(calc);
 
             // token lists
             const declaration = arena.createDeclaration(EnumToken.DeclarationNodeType, "width", [calc], null, null);
@@ -545,7 +546,7 @@ h1 { font-size: 2em }
             // parsing does not compact the arena: the released nodes are still allocated
             let count = 0;
 
-            for (const { node } of walk(arena, result.ast, { attributes: true })) {
+            for (const node of arena.walk(result.ast, { attributes: true })) {
                 count++;
                 expect(node).to.be.at.most(arena.current);
             }
@@ -704,6 +705,58 @@ h1 { font-size: 2em }
             const rule = arena.createRule(EnumToken.RuleNodeType, ".baz", null, null, null);
 
             expect(arena.dataTypes.length).to.be.above(rule);
+        });
+
+        it("the columns are read with the accessor methods #21", async function () {
+            const result = await parse(css, { minify: false });
+            const arena = result.arena;
+
+            expect(arena.getCapacity()).equals(arena.dataTypes.length);
+            expect(arena.getLastId()).equals(arena.current);
+            expect(arena.getStringCount()).equals(arena.strings.length);
+
+            for (let id = 1; id <= arena.getLastId(); id++) {
+                expect(arena.getType(id)).equals(arena.dataTypes[id]);
+                expect(arena.getParent(id)).equals(arena.parents[id]);
+                expect(arena.getFirstChild(id)).equals(arena.firstChild[id]);
+                expect(arena.getLastChild(id)).equals(arena.lastChild[id]);
+                expect(arena.getNextSibling(id)).equals(arena.nextSibling[id]);
+                expect(arena.getPreviousSibling(id)).equals(arena.previousSibling[id]);
+                expect(arena.getFirstToken(id)).equals(arena.firstToken[id]);
+                expect(arena.getLastToken(id)).equals(arena.lastToken[id]);
+            }
+
+            // the children and the tokens are linked lists
+            const children = [];
+
+            for (let child = arena.getFirstChild(result.ast); child != 0; child = arena.getNextSibling(child)) {
+                expect(arena.getParent(child)).equals(result.ast);
+                children.push(child);
+            }
+
+            expect(children).deep.equals(arena.children(result.ast));
+            expect(arena.getLastChild(result.ast)).equals(children[children.length - 1]);
+            expect(arena.getPreviousSibling(children[1])).equals(children[0]);
+
+            const rule = children.find((id) => arena.getType(id) == EnumToken.RuleNodeType);
+            const declaration = arena.getFirstChild(rule);
+            const tokens = [];
+
+            for (let token = arena.getFirstToken(declaration); token != 0; token = arena.getNextSibling(token)) {
+                tokens.push(token);
+            }
+
+            expect(arena.getName(rule)).equals("h1");
+            expect(arena.getName(declaration)).equals("font-size");
+            expect(tokens).deep.equals(arena.tokens(declaration));
+            expect(arena.getLastToken(declaration)).equals(tokens[tokens.length - 1]);
+            expect(arena.getNumericValue(tokens[0])).equals(2);
+
+            const capacity = arena.getCapacity();
+
+            arena.compact();
+            expect(arena.getCapacity()).to.be.at.most(capacity);
+            expect(arena.getLastId()).equals(arena.current);
         });
     });
 }

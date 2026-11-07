@@ -86,8 +86,6 @@ export enum EnumAstNodeStatus {
     Matched = 1 << 20,
 }
 
-export declare type AstNodePropertyType = "state" | "errors" | "location" | "tokens" | "parent" | "selector";
-
 /**
  * Enum of all token types
  */
@@ -420,24 +418,6 @@ export enum EnumToken {
      */
     NestingSelectorTokenType, // &
     /**
-     * Invalid rule token type
-     * @deprecated
-     */
-    InvalidRuleNodeType,
-    /**
-     * invalid class selector token type
-     */
-    InvalidClassSelectorTokenType,
-    /**
-     * invalid attribute token type
-     */
-    InvalidAttrTokenType,
-    /**
-     * Invalid at rule token type
-     * @deprecated
-     */
-    InvalidAtRuleNodeType,
-    /**
      * media query condition token type
      */
     MediaQueryConditionTokenType,
@@ -474,11 +454,6 @@ export enum EnumToken {
      * keyframe at rule node type
      */
     KeyframesAtRuleNodeType,
-    /**
-     * invalid declaration node type.
-     * @deprecated
-     */
-    InvalidDeclarationNodeType,
 
     /* css module nodes */
 
@@ -506,11 +481,6 @@ export enum EnumToken {
      * media range query token type
      */
     MediaRangeQueryTokenType,
-
-    /**
-     * invalid media query token type
-     */
-    InvalidMediaQueryTokenType,
 
     /**
      * supports query condition token type
@@ -662,11 +632,6 @@ export enum EnumToken {
      * supports function token type 'font-tech('
      */
     SupportsFunctionTokenDefType,
-
-    /**
-     *  CDOCOMMTokenType not allowed in this context
-     */
-    InvalidCommentTokenType,
 
     /**
      * custom function token type '--function-name('
@@ -1054,4 +1019,40 @@ export enum ModuleScopeEnumOptions {
      * ```
      */
     Shortest = 0x200,
+}
+
+/**
+ * Options returned by the filters of {@link AstArena.walk} and {@link AstArena.walkValues}
+ */
+export enum WalkerOptionEnum {
+    /**
+     * ignore the current node and its children
+     */
+    Ignore = 1 << 0,
+    /**
+     * stop walking the tree
+     */
+    Stop = 1 << 1,
+    /**
+     * ignore the current node and process its children
+     */
+    Children = 1 << 2,
+    /**
+     * ignore the current node children
+     */
+    IgnoreChildren = 1 << 3,
+}
+
+/**
+ * Event types of the {@link AstArena.walkValues} filter
+ */
+export enum WalkerEvent {
+    /**
+     * enter node
+     */
+    Enter = 0x1,
+    /**
+     * leave node
+     */
+    Leave = 0x2,
 }

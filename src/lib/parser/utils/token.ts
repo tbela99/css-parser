@@ -25,36 +25,29 @@ const trimSpaceAfter: Set<EnumToken> = new Set([
 ]);
 
 /**
- * Replace a value token in its parent (token list of a node, function arguments or structured token field)
+ * Replace a value token in its parent (token list of a node, function arguments or structured token field). the
+ * parent is `arena.getValueParent(node)`
  * @param arena
- * @param parent parent token or node id. the token must be attached to this parent
  * @param node token id
  * @param replacement token id(s)
  * @throws TypeError replacement is null
- * @throws ReferenceError node not found in parent
+ * @throws ReferenceError the token is detached
  */
-export function replaceNodeOrValue(
-    arena: AstArena,
-    parent: AstNode | Token | null,
-    node: Token,
-    replacement: Token | Token[],
-): boolean {
+export function replaceNodeOrValue(arena: AstArena, node: Token, replacement: Token | Token[]): boolean {
     if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
         throw new TypeError(`replacement is null`);
     }
 
-    const owner: number = arena.parents[node];
-
-    if (owner == 0) {
+    if (arena.parents[node] == 0) {
         throw new ReferenceError("Node not found");
     }
 
-    // structured fields are stored in list tokens
-    if (parent != null && owner != parent && arena.parents[owner] != parent) {
-        throw new ReferenceError("Node not found");
+    if (Array.isArray(replacement)) {
+        arena.replaceToken(node, ...replacement);
+    } else {
+        arena.replaceToken(node, replacement);
     }
 
-    arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
     return true;
 }
 

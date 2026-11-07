@@ -1,6 +1,5 @@
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { Token, AstNode, ParserOptions } from "../../../@types/index.d.ts";
-import { walkValues } from "../walk.ts";
 import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
@@ -13,6 +12,7 @@ import { getSyntaxConfig } from "../../validation/config.ts";
 import { splitTokenList } from "../../validation/utils/list.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { toDegrees } from "../../parser/utils/angle.ts";
+import { ValueWalker } from "../walk.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -37,10 +37,11 @@ function replacePseudo(tokens: string[][]): string[][] {
     );
 }
 
-function replaceAstNodes(arena: AstArena, tokens: Token[], root?: AstNode): boolean {
+function replaceAstNodes(arena: AstArena, tokens: Token[]): boolean {
     let result: boolean = false;
 
-    for (const { value } of walkValues(arena, tokens, root)) {
+    // inlined: arena.walkValues(tokens)
+    for (const value of new ValueWalker(arena, tokens)) {
         const typ: EnumToken = arena.dataTypes[value];
 
         if (typ == EnumToken.MediaQueryConditionTokenType) {
@@ -53,7 +54,8 @@ function replaceAstNodes(arena: AstArena, tokens: Token[], root?: AstNode): bool
 
                 if (val in pseudoAliasMap) {
                     val = pseudoAliasMap[val];
-                    arena.setStr(token, val);
+                    // inlined: arena.setStr(token, val)
+                    arena.stringValue[token] = arena.internString(val);
 
                     const r: Token[] = arena.fieldTokens(value, TokenField.R);
 
@@ -63,7 +65,8 @@ function replaceAstNodes(arena: AstArena, tokens: Token[], root?: AstNode): bool
                         arena.dataTypes[r[0]] == EnumToken.NumberTokenType
                     ) {
                         arena.dataTypes[r[0]] = EnumToken.ResolutionTokenType;
-                        arena.setUnitString(r[0], "x");
+                        // inlined: arena.setUnitString(r[0], "x")
+                        arena.unit[r[0]] = "x" == null ? 0 : arena.internString("x");
                         result = true;
                     }
 
@@ -71,7 +74,8 @@ function replaceAstNodes(arena: AstArena, tokens: Token[], root?: AstNode): bool
                     let isMax: boolean = val.startsWith("max-");
 
                     if (isMin || isMax) {
-                        arena.setStr(token, val.slice(4));
+                        // inlined: arena.setStr(token, val.slice(4))
+                        arena.stringValue[token] = arena.internString(val.slice(4));
                         arena.dataTypes[arena.field(value, TokenField.Op)] = isMax
                             ? EnumToken.LteTokenType
                             : EnumToken.GteTokenType;
@@ -90,7 +94,8 @@ function replaceAstNodes(arena: AstArena, tokens: Token[], root?: AstNode): bool
             if (key in pseudoAliasMap) {
                 const isPseudClass: boolean = pseudoAliasMap[key].startsWith("::");
 
-                arena.setStr(value, pseudoAliasMap[key]);
+                // inlined: arena.setStr(value, pseudoAliasMap[key])
+                arena.stringValue[value] = arena.internString(pseudoAliasMap[key]);
 
                 if (isPseudClass && typ == EnumToken.PseudoElementTokenType) {
                     arena.dataTypes[value] = EnumToken.PseudoClassTokenType;
@@ -156,18 +161,16 @@ export class ComputePrefixFeature {
         const typ: EnumToken = arena.dataTypes[node];
 
         if (typ == EnumToken.RuleNodeType) {
-            arena.setSelector(
-                node,
-                replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce(
+            // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
+            arena.name[node] = arena.internString(replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce(
                     (acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""),
                     "",
-                ),
-            );
+                ));
 
             if (arena.firstToken[node] != 0) {
                 const tokens: Token[] = arena.tokens(node);
 
-                replaceAstNodes(arena, tokens, node);
+                replaceAstNodes(arena, tokens);
                 arena.setTokenList(node, tokens);
             }
         } else if (typ == EnumToken.DeclarationNodeType) {
@@ -193,7 +196,8 @@ export class ComputePrefixFeature {
 
             let hasPrefix: boolean = false;
 
-            for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+            // inlined: arena.walkValues(node)
+            for (const value of new ValueWalker(arena, node)) {
                 const typ: EnumToken = arena.dataTypes[value];
                 const val: string = arena.strings[arena.stringValue[value]];
 
@@ -220,12 +224,14 @@ export class ComputePrefixFeature {
             }
 
             if (hasPrefix) {
-                for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                // inlined: arena.walkValues(node)
+                for (const value of new ValueWalker(arena, node)) {
                     if (arena.dataTypes[value] == EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
                         const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
 
                         if (match != null) {
-                            arena.setStr(value, match[2]);
+                            // inlined: arena.setStr(value, match[2])
+                            arena.stringValue[value] = arena.internString(match[2]);
                         }
                     }
                 }
@@ -243,7 +249,7 @@ export class ComputePrefixFeature {
 
             if (typ == EnumToken.AtRuleNodeType && arena.stringValue[node] !== 0) {
                 const tokens: Token[] = arena.tokens(node);
-                const result: boolean = replaceAstNodes(arena, tokens, node);
+                const result: boolean = replaceAstNodes(arena, tokens);
 
                 arena.setTokenList(node, tokens);
 
@@ -368,12 +374,10 @@ export class ComputePrefixFeature {
             }
         }
 
-        arena.setStr(
-            token,
-            equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
+        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
                 ? "repeating-linear-gradient"
-                : "linear-gradient",
-        );
+                : "linear-gradient"));
         arena.setTokenList(token, tokens);
     }
 
@@ -545,7 +549,8 @@ export class ComputePrefixFeature {
         }
 
         if (type !== "") {
-            arena.setStr(token, type);
+            // inlined: arena.setStr(token, type)
+            arena.stringValue[token] = arena.internString(type);
             arena.setTokenList(token, tokens);
         }
     }
@@ -676,12 +681,10 @@ export class ComputePrefixFeature {
             tokens.push(arena.createToken(EnumToken.CommaTokenType));
         }
 
-        arena.setStr(
-            token,
-            equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
+        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
                 ? "repeating-radial-gradient"
-                : "radial-gradient",
-        );
+                : "radial-gradient"));
 
         for (const colorStop of colorStops) {
             tokens.push(colorStop);

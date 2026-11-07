@@ -212,7 +212,8 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
     const name: string = arena.strings[arena.stringValue[transform]];
 
     if ("skewX" == name) {
-        arena.setStr(transform, "skew");
+        // inlined: arena.setStr(transform, "skew")
+        arena.stringValue[transform] = arena.internString("skew");
         return transform;
     }
 

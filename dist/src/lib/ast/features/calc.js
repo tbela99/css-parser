@@ -5,12 +5,13 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
+import { TokenField, numericTokenTypes } from '../arena.js';
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
-import { walkValues } from '../walk.js';
 import { evaluate } from '../math/expression.js';
 import { FeatureWalkMode } from './type.js';
 import { tokensfuncSet, mathFuncs } from '../../syntax/constants.js';
 import { replaceNodeOrValue } from '../../parser/utils/token.js';
+import { ValueWalker } from '../walk.js';
 
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -39,7 +40,10 @@ class ComputeCalcExpressionFeature {
             }
             // function tokens already evaluated, created on demand
             let set = null;
-            for (const { value, parent } of walkValues(arena, arena.tokens(node), node)) {
+            // inlined: arena.walkValues(node)
+            for (const value of new ValueWalker(arena, node)) {
+                // the parent of a detached token is the declaration
+                const parent = arena.getValueParent(value) || node;
                 if (parent != null && arena.dataTypes[parent] == EnumToken.BinaryExpressionTokenType) {
                     continue;
                 }
@@ -47,7 +51,7 @@ class ComputeCalcExpressionFeature {
                 if (typ == EnumToken.BinaryExpressionTokenType) {
                     const result = evaluate(arena, [value]);
                     try {
-                        replaceNodeOrValue(arena, parent, value, result);
+                        replaceNodeOrValue(arena, value, result);
                     }
                     catch (e) { }
                     continue;
@@ -64,11 +68,14 @@ class ComputeCalcExpressionFeature {
                                 const cp = name != "calc" ? [value] : arena.tokens(value);
                                 const values = evaluate(arena, cp);
                                 // fix a + -b into a - b
-                                for (const { value } of walkValues(arena, values)) {
+                                // inlined: arena.walkValues(values)
+                                for (const value of new ValueWalker(arena, values)) {
                                     if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
-                                        const r = arena.getRight(value)[0];
+                                        // inlined: arena.getRight(value)
+                                        const r = (arena.getChildAt(value, TokenField.R) == null ? null : arena.fieldTokens(value, TokenField.R))[0];
                                         if (arena.numericValue[value] === EnumToken.Add &&
-                                            arena.isNumeric(r) &&
+                                            // inlined: arena.isNumeric(r)
+                                            numericTokenTypes.has(arena.dataTypes[r]) &&
                                             Math.sign(arena.numericValue[r]) == -1) {
                                             arena.numericValue[value] = EnumToken.Sub;
                                             arena.numericValue[r] *= -1;
@@ -82,7 +89,8 @@ class ComputeCalcExpressionFeature {
                                     const wrap = !(parentType === EnumToken.MathFunctionTokenType ||
                                         (parentType == EnumToken.FunctionTokenType &&
                                             arena.strings[arena.stringValue[parent]] == "calc")) &&
-                                        (!arena.isNumeric(values[0]) || arena.hasFraction(values[0])) &&
+                                        // inlined: arena.isNumeric(values[0])
+                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) || arena.hasFraction(values[0])) &&
                                         !(arena.dataTypes[values[0]] == EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] == EnumToken.FunctionTokenType &&
                                                 mathFuncs.includes(arena.strings[arena.stringValue[values[0]]])));

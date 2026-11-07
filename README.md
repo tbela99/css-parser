@@ -4,6 +4,12 @@
 
 # css-parser
 
+> [!CAUTION] 
+> This new experimental version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
+
+> [!IMPORTANT] 
+> This branch is a work in progress and it might contain bugs.
+
 An all-in-one CSS parsing solution for Node.js and the browser, covering parsing, validation, transformation, minification, and AST-based tooling.
 
 The library always fully parses the stylesheet into a structured AST, and token values are exposed as typed data so custom transforms, plugins, and analysis can work with reliable, semantic input instead of raw strings.
@@ -109,7 +115,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 129.64 ms          | 266.74 ms                 |
+| Time                  | 147.37 ms          | 356.65 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 ## Playground
@@ -134,7 +140,9 @@ Try it [online](https://tbela99.github.io/css-parser/playground/)
 - [Syntax Lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html)
 - [Prefix Removal](https://tbela99.github.io/css-parser/docs/documents/Guide.Prefix_Removal.html)
 - [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide.Ast_Manipulation.html)
+- [Arena Memory](https://tbela99.github.io/css-parser/docs/documents/Guide.Arena_Memory.html)
 - [Utility Functions](https://tbela99.github.io/css-parser/docs/documents/Guide.Utility_Functions.html)
+- [Migration to 2.0](https://tbela99.github.io/css-parser/docs/documents/Guide.Migration.html)
   
 ## AST
 
@@ -146,28 +154,28 @@ node or token objects:
 import {parse, render, EnumToken} from '@tbela99/css-parser';
 
 const {arena, ast} = await parse(`.foo { color: red }`);
-const rule = arena.firstChild[ast];
-const declaration = arena.firstChild[rule];
+const rule = arena.getFirstChild(ast);
+const declaration = arena.getFirstChild(rule);
 
-console.log(arena.dataTypes[rule] == EnumToken.RuleNodeType, arena.getSelector(rule)); // true '.foo'
+console.log(arena.getType(rule) == EnumToken.RuleNodeType, arena.getSelector(rule)); // true '.foo'
 console.log(arena.getName(declaration)); // 'color'
-console.log(arena.tokens(declaration).map((token) => [EnumToken[arena.dataTypes[token]], arena.str(token)])); // [['Color', 'red']]
+console.log(arena.tokens(declaration).map((token) => [EnumToken[arena.getType(token)], arena.str(token)])); // [['Color', 'red']]
 console.log(render(arena, ast).code); // .foo{color:red}
 ```
 
 ### Comment
 
-- `arena.dataTypes[n]`: EnumToken.CommentNodeType
+- `arena.getType(n)`: EnumToken.CommentNodeType
 - `arena.getValue(n)`: string, the comment
 
 ### StyleSheet
 
-- `arena.dataTypes[n]`: EnumToken.StyleSheetNodeType
+- `arena.getType(n)`: EnumToken.StyleSheetNodeType
 - `arena.children(n)`: array of children ids
 
 ### Declaration
 
-- `arena.dataTypes[n]`: EnumToken.DeclarationNodeType
+- `arena.getType(n)`: EnumToken.DeclarationNodeType
 - `arena.getName(n)`: string, declaration name
 - `arena.tokens(n)`: array of token ids, the declaration value
 - `arena.getState(n)`: EnumAstNodeStatus, validation state
@@ -175,7 +183,7 @@ console.log(render(arena, ast).code); // .foo{color:red}
 
 ### Rule and KeyframesRule
 
-- `arena.dataTypes[n]`: EnumToken.RuleNodeType or EnumToken.KeyframesRuleNodeType
+- `arena.getType(n)`: EnumToken.RuleNodeType or EnumToken.KeyframesRuleNodeType
 - `arena.getSelector(n)`: string, css selector
 - `arena.tokens(n)`: array of token ids, the parsed selector
 - `arena.children(n)`: array of children ids
@@ -184,13 +192,77 @@ console.log(render(arena, ast).code); // .foo{color:red}
 
 ### AtRule and KeyframesAtRule
 
-- `arena.dataTypes[n]`: EnumToken.AtRuleNodeType or EnumToken.KeyframesAtRuleNodeType
+- `arena.getType(n)`: EnumToken.AtRuleNodeType or EnumToken.KeyframesAtRuleNodeType
 - `arena.getName(n)`: string. AtRule name
 - `arena.getValue(n)`: rule prelude
 - `arena.tokens(n)`: array of token ids, the parsed prelude
 - `arena.children(n)`: array of children ids (at-rules with a block)
 - `arena.getState(n)`: EnumAstNodeStatus, validation state
 - `arena.getErrors(n)`: ErrorDescription[], validation errors
+
+### Object views
+
+`arena.toObject(id)` returns an object view of a node or a token (`AstArenaNode`): its properties (`typ`, `nam`, `sel`,
+`val`, `chi`, `tokens`, `loc`, `state`, `errors`, `parent`, ...) are getters and setters that read and write the arena.
+The view only holds the arena and the node id (`view[ARENAID]`). Importing a view of the same arena is a noop:
+
+```ts
+const rule = arena.toObject(arena.getFirstChild(ast));
+
+rule.sel = '.bar';
+rule.chi[0].nam = 'background-color';
+
+// the returned arrays are frozen: assign the property to modify the arena
+rule.chi = [...rule.chi, {typ: EnumToken.DeclarationNodeType, nam: 'width', val: [{typ: EnumToken.LengthTokenType, val: 3, unit: 'px'}]}];
+
+console.log(arena.fromObject(rule) == rule[ARENAID]); // true: nothing is copied
+console.log(JSON.stringify(rule)); // deep plain copy
+```
+
+### Traversal and visitors
+
+The traversal and search functions are methods of the arena: `arena.walk()`, `arena.walkValues()`, `arena.find()`,
+`arena.findAll()`, `arena.findLast()`, `arena.findByValue()`, `arena.findValue()`. They return node ids. Their callbacks,
+like the visitors, are called with the arena and the node id: everything else is read from the arena.
+
+```ts
+for (const node of arena.walk(ast)) {
+
+    console.log(EnumToken[arena.getType(node)], arena.getParent(node));
+}
+
+const result = await transform(css, {
+    visitor: {
+
+        Declaration(arena: AstArena, id: number) {
+
+            const node = arena.toObject(id);
+
+            if (node.nam == 'height') {
+
+                node.nam = 'width';
+            }
+        }
+    }
+});
+```
+
+A visitor returns nothing to keep the node, or an object or a node id (or an array of objects and node ids) to replace it.
+
+### Arena memory
+
+The arena never frees memory by itself: detached nodes keep their memory and their ids stay valid. A long-lived arena
+can be compacted. `compact()` and `trim()` renumber the nodes and return the mapping of the old ids to the new ids:
+
+```ts
+console.log(arena.getCapacity(), arena.getLastId(), arena.getStringCount()); // capacity, last allocated id, interned strings
+
+arena.mark(node);                          // mark a node to be released later
+const mapping = arena.trim(result.errors); // release the marked nodes, drop the unreachable nodes, shrink the columns
+const newId = mapping[oldId];              // 0 when the node has been dropped
+```
+
+See [Arena Memory](https://tbela99.github.io/css-parser/docs/documents/Guide.Arena_Memory.html).
 
 ### Workers
 

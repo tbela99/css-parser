@@ -12,7 +12,6 @@ import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '..
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
 import { matchDeclarationSyntax, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
-import { visitValues } from '../../ast/walk.js';
 import { lowercase, equalsIgnoreCase } from './text.js';
 import { buildExpression } from '../../ast/math/expression.js';
 import { splitTokenList } from '../../validation/utils/list.js';
@@ -51,7 +50,7 @@ function parseGridTemplate(template) {
     return buffer.length > 0 ? result + buffer : result;
 }
 /**
- * parse the color of an identifier or a color token, see {@link visitValues}
+ * parse the color of an identifier or a color token, see {@link AstArena.visitValues}
  * @param arena
  * @param value
  */
@@ -66,7 +65,7 @@ function parseColorToken(arena, value) {
     }
 }
 /**
- * parse the color of an identifier, see {@link visitValues}
+ * parse the color of an identifier, see {@link AstArena.visitValues}
  * @param arena
  * @param value
  */
@@ -110,18 +109,21 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     let validate = !!options.validation;
     if (renamedStandardProperties.has(nam)) {
         nam = renamedStandardProperties.get(nam);
-        arena.setStr(name, nam);
+        // inlined: arena.setStr(name, nam)
+        arena.stringValue[name] = arena.internString(nam);
     }
     for (i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (arena.dataTypes[token] == EnumToken.WhitespaceTokenType ||
             arena.dataTypes[token] == EnumToken.CommentTokenType ||
-            arena.dataTypes[token] == EnumToken.InvalidCommentTokenType) {
+            arena.dataTypes[token] == EnumToken.BadCdoTokenType) {
             continue;
         }
         break;
     }
-    if ((arena.typeOf(name) !== EnumToken.IdenTokenType && arena.typeOf(name) !== EnumToken.DashedIdenTokenType) ||
+    if (
+    // inlined: arena.typeOf(name)
+    (arena.dataTypes[name] !== EnumToken.IdenTokenType && arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) ||
         arena.dataTypes[tokens[i]] !== EnumToken.ColonTokenType) {
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
@@ -141,7 +143,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         end--;
     }
     tokens = tokens.slice(start, end);
-    if (validate && arena.typeOf(name) === EnumToken.IdenTokenType) {
+    // inlined: arena.typeOf(name)
+    if (validate && arena.dataTypes[name] === EnumToken.IdenTokenType) {
         if (isAtRule && parentNam != "import" && parentNam != "supports" && parentNam != "media") {
             // check @at-rule description
             // pick up the syntax or reject immediately
@@ -189,12 +192,14 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
             }
         }
     }
-    if (tokens.length === 0 && arena.typeOf(name) !== EnumToken.DashedIdenTokenType) {
+    // inlined: arena.typeOf(name)
+    if (tokens.length === 0 && arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) {
         errors.push({
             action: "drop",
             message: "declaration value missing",
             node: name,
-            location: options.source.getSourceLocation(arena.getSpanStart(name)),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(name))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(name))],
         });
         return createDeclarationNode(arena, name, tokens, EnumAstNodeStatus.Invalid, [errors[errors.length - 1]]);
     }
@@ -208,7 +213,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         if (doNotValidate || result != null) {
             success = doNotValidate || result?.success;
             if (success) {
-                visitValues(arena, tokens, parseColorToken);
+                arena.visitValues(tokens, parseColorToken);
             }
             if (!doNotValidate && !result?.success && result.errors.length > 0) {
                 for (index = 0; index < result.errors.length; index++) {
@@ -231,11 +236,13 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         }
         switch (arena.dataTypes[token]) {
             case EnumToken.Literal:
-                if (arena.strings[arena.stringValue[token]] === "/" && arena.typeOf(stack.at(-1)) == EnumToken.MathFunctionTokenDefType) {
+                // inlined: arena.typeOf(stack.at(-1))
+                if (arena.strings[arena.stringValue[token]] === "/" && arena.dataTypes[stack.at(-1)] == EnumToken.MathFunctionTokenDefType) {
                     arena.dataTypes[token] = EnumToken.Div;
                 }
                 else if (arena.strings[arena.stringValue[token]] === "-" &&
-                    arena.typeOf(stack.at(-1)) == EnumToken.MathFunctionTokenDefType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    arena.dataTypes[stack.at(-1)] == EnumToken.MathFunctionTokenDefType) {
                     arena.dataTypes[token] = EnumToken.Sub;
                 }
                 break;
@@ -244,7 +251,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                 arena.dataTypes[token] = tokensMap.get(arena.dataTypes[token]);
                 break;
             case EnumToken.BlockEndTokenType:
-                if (arena.typeOf(stack.at(-1)) === EnumToken.BlockStartTokenType) {
+                // inlined: arena.typeOf(stack.at(-1))
+                if (arena.dataTypes[stack.at(-1)] === EnumToken.BlockStartTokenType) {
                     // stack.pop();index = tokens.indexOf(stack.at(-1)!);
                     index = tokens.indexOf(stack.at(-1));
                     tokens.splice(i, 1);
@@ -272,7 +280,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                             arena.detach(last);
                         }
                         let foundElse = false;
-                        arena.setTokens(tokens[index], ...splitTokenList(arena, arena.tokens(tokens[index]), [EnumToken.SemiColonTokenType], true).reduce((acc, curr) => {
+                        // inlined: arena.setTokens(tokens[index], ...splitTokenList(...)), the array is passed as is
+                        arena.setTokenList(tokens[index], splitTokenList(arena, arena.tokens(tokens[index]), [EnumToken.SemiColonTokenType], true).reduce((acc, curr) => {
                             if (foundElse) {
                                 // else already found
                                 // ignore everything after else
@@ -291,35 +300,43 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                             }
                             if (foundElse && acc.length > 0) {
                                 const condition = arena.createToken(EnumToken.IfConditionTokenType);
-                                arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)));
-                                arena.setField(condition, TokenField.R, ...trimArray(arena, arena.typeOf(curr.at(-1)) === EnumToken.SemiColonTokenType
+                                // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
+                                arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, curr.slice(0, index)));
+                                // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, arena.typeOf(curr.at(-1)) === EnumToken.SemiColonTokenType ? curr.slice(index + 1, -1) : curr.slice(index + 1)))
+                                arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, arena.dataTypes[curr.at(-1)] === EnumToken.SemiColonTokenType
                                     ? curr.slice(index + 1, -1)
                                     : curr.slice(index + 1)));
                                 const ifElse = arena.createToken(EnumToken.IfElseConditionTokenType);
-                                arena.setField(ifElse, TokenField.L, acc[acc.length - 1]);
-                                arena.setField(ifElse, TokenField.R, condition);
+                                // inlined: arena.setField(ifElse, TokenField.L, acc[acc.length - 1])
+                                arena.setTokenList(arena.fieldList(ifElse, TokenField.L), [acc[acc.length - 1]]);
+                                // inlined: arena.setField(ifElse, TokenField.R, condition)
+                                arena.setTokenList(arena.fieldList(ifElse, TokenField.R), [condition]);
                                 acc[acc.length - 1] = ifElse;
                             }
                             else {
                                 const condition = arena.createToken(EnumToken.IfConditionTokenType);
-                                arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)));
-                                arena.setField(condition, TokenField.R, ...trimArray(arena, curr.slice(index + 1)));
+                                // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
+                                arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, curr.slice(0, index)));
+                                // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, curr.slice(index + 1)))
+                                arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, curr.slice(index + 1)));
                                 acc.push(condition);
                             }
                             return acc;
                         }, []));
                     }
                     else if (arena.dataTypes[tokens[index]] === EnumToken.UrlFunctionTokenType) {
-                        const url = arena.findToken(tokens[index], (t) => arena.dataTypes[t] === EnumToken.StringTokenType);
+                        const url = arena.findToken(tokens[index], (arena, t) => arena.dataTypes[t] === EnumToken.StringTokenType);
                         if (url != null && /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
                             arena.dataTypes[url] = EnumToken.UrlTokenTokenType;
-                            arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1));
+                            // inlined: arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1))
+                            arena.stringValue[url] = arena.internString(arena.strings[arena.stringValue[url]].slice(1, -1));
                         }
                     }
                     i = index;
                     if (arena.dataTypes[tokens[index]] === EnumToken.MathFunctionTokenType &&
                         equalsIgnoreCase("calc", arena.strings[arena.stringValue[tokens[index]]])) {
-                        arena.setTokens(tokens[index], buildExpression(arena, arena.tokens(tokens[index])));
+                        // inlined: arena.setTokens(tokens[index], buildExpression(arena, arena.tokens(tokens[index])))
+                        arena.setTokenList(tokens[index], [buildExpression(arena, arena.tokens(tokens[index]))]);
                     }
                     else if (arena.dataTypes[tokens[index]] === EnumToken.ColorTokenType) {
                         if (isColor(arena, tokens[index])) {
@@ -332,7 +349,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                                 action: "drop",
                                 message: `invalid color`,
                                 node: tokens[index],
-                                location: options.source.getSourceLocation(arena.getSpanStart(tokens[index])),
+                                // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[index]))
+                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[index]))],
                             });
                         }
                     }
@@ -343,21 +361,26 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                 {
                     const val = lowercase(arena.strings[arena.stringValue[token]]);
                     if (val in COLORS_NAMES || val === "currentcolor") {
-                        arena.setStr(token, val);
+                        // inlined: arena.setStr(token, val)
+                        arena.stringValue[token] = arena.internString(val);
                         arena.dataTypes[token] = EnumToken.ColorTokenType;
-                        arena.setColorType(token, ColorType.LIT);
+                        // inlined: arena.setColorType(token, ColorType.LIT)
+                        arena.colorType[token] = ColorType.LIT;
                     }
                     else if (nonStandardColors.has(val)) {
                         arena.dataTypes[token] = EnumToken.ColorTokenType;
-                        arena.setColorType(token, ColorType.NON_STD);
+                        // inlined: arena.setColorType(token, ColorType.NON_STD)
+                        arena.colorType[token] = ColorType.NON_STD;
                     }
                     else if (systemColors.has(val)) {
                         arena.dataTypes[token] = EnumToken.ColorTokenType;
-                        arena.setColorType(token, ColorType.SYS);
+                        // inlined: arena.setColorType(token, ColorType.SYS)
+                        arena.colorType[token] = ColorType.SYS;
                     }
                     else if (deprecatedSystemColors.has(val)) {
                         arena.dataTypes[token] = EnumToken.ColorTokenType;
-                        arena.setColorType(token, ColorType.DPSYS);
+                        // inlined: arena.setColorType(token, ColorType.DPSYS)
+                        arena.colorType[token] = ColorType.DPSYS;
                     }
                 }
                 break;
@@ -388,14 +411,15 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
             action: "drop",
             message: "unbalanced token",
             node: stack[stack.length - 1],
-            location: options.source.getSourceLocation(arena.getSpanStart(stack[stack.length - 1])),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
         });
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
         }
         return createDeclarationNode(arena, name, tokens, EnumAstNodeStatus.Invalid, result?.errors ?? null);
     }
-    visitValues(arena, tokens, parseColorIdent);
+    arena.visitValues(tokens, parseColorIdent);
     if (nam === "grid" ||
         nam === "grid-template-areas" ||
         nam === "grid-template-rows" ||
@@ -404,7 +428,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         for (; i < tokens.length; i++) {
             if (arena.dataTypes[tokens[i]] === EnumToken.StringTokenType) {
                 if (/[\s.]/.test(arena.strings[arena.stringValue[tokens[i]]])) {
-                    arena.setStr(tokens[i], parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]));
+                    // inlined: arena.setStr(tokens[i], parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]))
+                    arena.stringValue[tokens[i]] = arena.internString(parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]));
                 }
                 if (arena.dataTypes[tokens[i + 1]] === EnumToken.WhitespaceTokenType &&
                     arena.dataTypes[tokens[i + 2]] === EnumToken.StringTokenType) {
@@ -413,7 +438,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
             }
         }
     }
-    if (validate && syntaxRules == null && arena.typeOf(name) === EnumToken.IdenTokenType) {
+    // inlined: arena.typeOf(name)
+    if (validate && syntaxRules == null && arena.dataTypes[name] === EnumToken.IdenTokenType) {
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
         }
@@ -432,9 +458,11 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         const composes = arena.createToken(EnumToken.ComposesSelectorNodeType);
         const first = tokens[0];
         const last = index != -1 && right.length > 0 ? right[right.length - 1] : left[left.length - 1];
-        arena.setField(composes, TokenField.L, ...left);
+        // inlined: arena.setField(composes, TokenField.L, ...left)
+        arena.setTokenList(arena.fieldList(composes, TokenField.L), left);
         if (right != null && right.length > 0) {
-            arena.setField(composes, TokenField.R, right[0]);
+            // inlined: arena.setField(composes, TokenField.R, right[0])
+            arena.setTokenList(arena.fieldList(composes, TokenField.R), [right[0]]);
         }
         if (first != null && last != null) {
             arena.spanLocation(composes, first, last);

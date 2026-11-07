@@ -8,10 +8,29 @@ category: Guides
 
 Visitors are used to transform the ast tree produced by the parser. For more information about the visitor object see the [typescript definition](../docs/interfaces/node.VisitorNodeMap.html). You can register handlers for specific AST node types and lifecycle events such as enter, visit, and leave to inspect, validate, or modify nodes without altering the parser internals.
 
-Visitor handlers receive the node and the [arena](../docs/classes/node.AstArena.html) the node is allocated in: `handler(node, arena, parent, root)`.
-Ast nodes are node ids (numbers) and are read / modified through the arena, value tokens are plain objects.
-A handler returning a node id, an array of node ids (or tokens for value visitors) replaces the visited node. New nodes must be allocated in the arena
-(`arena.createDeclaration()`, `arena.createRule()`, `arena.createAtRule()`, `arena.clone()`, `arena.import()`, [parseDeclarations()](../docs/functions/node.parseDeclarations.html)).
+Visitor handlers receive the [arena](../docs/classes/node.AstArena.html) the node is allocated in and the node id:
+`handler(arena, id)`. Ast nodes and value tokens are ids (numbers). Everything else is read from the arena: the parent
+(`arena.getParent(id)`), the type (`arena.getType(id)`), ... The object view of the node, `arena.toObject(id)`, reads and
+writes the arena through properties (`node.nam`, `node.val`, `node.chi`, ..., see [Object views](./ast.md)):
+
+```ts
+function visitor(arena: AstArena, id: number) {
+
+    const node = arena.toObject(id);
+
+    // everything else stays the same
+    if (node.nam == 'height') {
+
+        node.nam = 'width';
+    }
+}
+```
+
+A handler returns nothing (or null) to keep the node, or an object or a node id (or an array of objects and node ids) to
+replace the visited node. Returning the object view of the node keeps the node: importing a view of the same arena is a
+noop. Plain objects ([PlainAstNode](../docs/interfaces/node.PlainAstNode.html), [PlainToken](../docs/types/node.PlainToken.html))
+are allocated in the arena. New nodes can also be allocated with `arena.createDeclaration()`, `arena.createRule()`,
+`arena.createAtRule()`, `arena.clone()`, `arena.import()` or [parseDeclarations()](../docs/functions/node.parseDeclarations.html).
 
 This pattern is useful for building reusable plugins that enforce conventions, inject transformations, or add custom analysis on top of the parsed AST.
 
@@ -23,10 +42,10 @@ A visitor can be specified as a function whose name is a keyof EnumToken. All to
 
 import {transformSync} from "@tbela99/css-parser;
 
-function UrlFunctionTokenType(node) {
+function UrlFunctionTokenType(arena, id) {
 
     // ...
-    console.debug(node);
+    console.debug(arena.toObject(id));
 }
 
 const options = {
@@ -63,16 +82,16 @@ import {transformSync, WalkerEvent} from "@tbela99/css-parser;
 const visitor = {
     UrlFunctionTokenType: {
         type: WalkerEvent.Enter,
-        handler(node) {
+        handler(arena, id) {
             // ...
-            console.debug(node);
+            console.debug(arena.toObject(id));
         },
     },
     AngleTokenType: {
         type: WalkerEvent.Leave,
-        handler(node) {
+        handler(arena, id) {
             // ...
-            console.debug(node);
+            console.debug(arena.toObject(id));
         },
     },
 };
@@ -116,10 +135,10 @@ import {transformSync} from '@tbela99/css-parser';
     `,
             beautify: true,
 // visit all nodes and value tokens
-  visitor (node, arena) {
+  visitor (arena, node) {
       
     // ast nodes and value tokens are ids
-    console.error(EnumToken[arena.dataTypes[node]]);
+    console.error(EnumToken[arena.getType(node)]);
   }
         };
 
@@ -142,7 +161,7 @@ const options: ParserOptions = {
                 // called when entering a node
                 {
                     type: WalkerEvent.Enter,
-                    handler: (node: AstAtRule, arena: AstArena): AstAtRule => {
+                    handler: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                         console.error(`> enter '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`);
                         return node
@@ -152,14 +171,14 @@ const options: ParserOptions = {
                 {
 
                     type: WalkerEvent.Leave,
-                    handler: (node: AstAtRule, arena: AstArena): AstAtRule => {
+                    handler: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                         console.error(`> leaving '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`)
                         return node
                     }
                 },
                 // called after node enter handlers but before node leave handlers
-                (node: AstAtRule, arena: AstArena): AstAtRule => {
+                (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                     console.error(`> visiting '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`);
                     return node
@@ -181,13 +200,13 @@ const options: ParserOptions = {
         {
 
             AtRule: [
-                (node: AstAtRule, arena: AstArena): AstAtRule => {
+                (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                     console.error(`> visiting '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`);
                     return node
                 }, {
 
-                    media: (node: AstAtRule, arena: AstArena): AstAtRule => {
+                    media: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                         console.error(`> visiting only '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`);
                         return node
@@ -195,7 +214,7 @@ const options: ParserOptions = {
                 }, {
 
                     type: WalkerEvent.Leave,
-                    handler: (node: AstAtRule, arena: AstArena): AstAtRule => {
+                    handler: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                         console.error(`> leaving '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`)
                         return node
@@ -203,7 +222,7 @@ const options: ParserOptions = {
                 },
                 {
                     type: WalkerEvent.Enter,
-                    handler: (node: AstAtRule, arena: AstArena): AstAtRule => {
+                    handler: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                         console.error(`> enter '@${arena.getName(node)}' node at position ${arena.getLocation(node)!.sta}`);
                         return node
@@ -258,7 +277,7 @@ const options: ParserOptions = {
 
         AtRule: {
 
-            media: (node: AstAtRule, arena: AstArena): AstAtRule => {
+            media: (arena: AstArena, node: AstAtRule): AstAtRule => {
 
                 arena.setValueString(node, 'tv,screen');
                 return node
@@ -300,7 +319,7 @@ const options: ParserOptions = {
         Declaration: {
 
             // called only for height declaration
-            height: (node: AstDeclaration, arena: AstArena): AstDeclaration[] => {
+            height: (arena: AstArena, node: AstDeclaration): AstDeclaration[] => {
                 
                 return [
                     node,
@@ -339,17 +358,19 @@ const options: ParserOptions = {
     visitor: {
 
         // called for every declaration
-        Declaration: (node: AstDeclaration, arena: AstArena): null => {
+        Declaration: (arena: AstArena, id: AstDeclaration): null => {
 
+            // the object view of the declaration
+            const node = arena.toObject(id);
 
-            if (arena.getName(node) == 'height') {
+            if (node.nam == 'height') {
 
-                arena.setNameString(node, 'width');
+                node.nam = 'width';
             }
 
-            else if (arena.getName(node) == 'margin') {
+            else if (node.nam == 'margin') {
 
-                arena.setNameString(node, 'padding');
+                node.nam = 'padding';
             }
 
             return null;
@@ -387,7 +408,7 @@ const options: ParserOptions = {
     removeEmpty: false,
     visitor: {
 
-        Rule: (node: AstRule, arena: AstArena): AstRule | null => {
+        Rule: (arena: AstArena, node: AstRule): AstRule | null => {
 
             if (arena.getSelector(node) == '.foo') {
 
@@ -459,7 +480,7 @@ const result = await transform(css, {
     beautify: true,
     visitor: {
         KeyframesAtRule: {
-            slideIn(node, arena) {
+            slideIn(arena, node) {
                 arena.setValueString(node, 'slide-in-out');
                 return node;
             }
@@ -480,9 +501,9 @@ const options: ParserOptions = {
 
     visitor:  {
 
-        Value: (node: Token, arena: AstArena): Token => {
+        Value: (arena: AstArena, node: Token): Token => {
 
-            console.error(`> visiting token ${EnumToken[arena.dataTypes[node]]}`);
+            console.error(`> visiting token ${EnumToken[arena.getType(node)]}`);
             return node
         }
     } as VisitorNodeMap
@@ -501,26 +522,26 @@ const options: ParserOptions = {
     visitor: {
 
         // Stylesheet node visitor
-        StyleSheetNodeType: async (node, arena) => {
+        StyleSheetNodeType: async (arena, node) => {
 
             // insert a new rule. nodes of another arena are imported
             const result = await parse('html {--base-color: pink}');
-            arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
+            arena.prependChildren(node, arena.import(result.arena, result.arena.getFirstChild(result.ast)));
         },
-        ColorTokenType:  (node, arena) => {
+        ColorTokenType:  (arena, node) => {
 
             // dump all color tokens
             // console.debug(arena.toObject(node));
          },
-         FunctionTokenType:  (node, arena) => {
+         FunctionTokenType:  (arena, node) => {
 
              // dump all function tokens
              // console.debug(arena.toObject(node));
          },
-         DeclarationNodeType:  (node) => {
+         DeclarationNodeType:  (arena, node) => {
 
              // dump all declaration nodes
-             // console.debug(node);
+             // console.debug(arena.toObject(node));
          }
     }
 };

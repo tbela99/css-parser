@@ -422,275 +422,244 @@ var EnumToken;
      */
     EnumToken[EnumToken["NestingSelectorTokenType"] = 81] = "NestingSelectorTokenType";
     /**
-     * Invalid rule token type
-     * @deprecated
-     */
-    EnumToken[EnumToken["InvalidRuleNodeType"] = 82] = "InvalidRuleNodeType";
-    /**
-     * invalid class selector token type
-     */
-    EnumToken[EnumToken["InvalidClassSelectorTokenType"] = 83] = "InvalidClassSelectorTokenType";
-    /**
-     * invalid attribute token type
-     */
-    EnumToken[EnumToken["InvalidAttrTokenType"] = 84] = "InvalidAttrTokenType";
-    /**
-     * Invalid at rule token type
-     * @deprecated
-     */
-    EnumToken[EnumToken["InvalidAtRuleNodeType"] = 85] = "InvalidAtRuleNodeType";
-    /**
      * media query condition token type
      */
-    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 86] = "MediaQueryConditionTokenType";
+    EnumToken[EnumToken["MediaQueryConditionTokenType"] = 82] = "MediaQueryConditionTokenType";
     /**
      * media feature token type
      */
-    EnumToken[EnumToken["MediaFeatureTokenType"] = 87] = "MediaFeatureTokenType";
+    EnumToken[EnumToken["MediaFeatureTokenType"] = 83] = "MediaFeatureTokenType";
     /**
      * media feature only token type
      */
-    EnumToken[EnumToken["OnlyTokenType"] = 88] = "OnlyTokenType";
+    EnumToken[EnumToken["OnlyTokenType"] = 84] = "OnlyTokenType";
     /**
      * media feature not token type
      */
-    EnumToken[EnumToken["NotTokenType"] = 89] = "NotTokenType";
+    EnumToken[EnumToken["NotTokenType"] = 85] = "NotTokenType";
     /**
      * media feature and token type
      */
-    EnumToken[EnumToken["AndTokenType"] = 90] = "AndTokenType";
+    EnumToken[EnumToken["AndTokenType"] = 86] = "AndTokenType";
     /**
      * media feature or token type
      */
-    EnumToken[EnumToken["OrTokenType"] = 91] = "OrTokenType";
+    EnumToken[EnumToken["OrTokenType"] = 87] = "OrTokenType";
     /**
      * pseudo page token type
      */
-    EnumToken[EnumToken["PseudoPageTokenType"] = 92] = "PseudoPageTokenType";
+    EnumToken[EnumToken["PseudoPageTokenType"] = 88] = "PseudoPageTokenType";
     /**
      * pseudo element token type
      */
-    EnumToken[EnumToken["PseudoElementTokenType"] = 93] = "PseudoElementTokenType";
+    EnumToken[EnumToken["PseudoElementTokenType"] = 89] = "PseudoElementTokenType";
     /**
      * keyframe at rule node type
      */
-    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 94] = "KeyframesAtRuleNodeType";
-    /**
-     * invalid declaration node type.
-     * @deprecated
-     */
-    EnumToken[EnumToken["InvalidDeclarationNodeType"] = 95] = "InvalidDeclarationNodeType";
+    EnumToken[EnumToken["KeyframesAtRuleNodeType"] = 90] = "KeyframesAtRuleNodeType";
     /* css module nodes */
     /**
      * composes token node type
      */
-    EnumToken[EnumToken["ComposesSelectorNodeType"] = 96] = "ComposesSelectorNodeType";
+    EnumToken[EnumToken["ComposesSelectorNodeType"] = 91] = "ComposesSelectorNodeType";
     /**
      * css variable token type
      */
-    EnumToken[EnumToken["CssVariableTokenType"] = 97] = "CssVariableTokenType";
+    EnumToken[EnumToken["CssVariableTokenType"] = 92] = "CssVariableTokenType";
     /**
      * css variable import token type
      */
-    EnumToken[EnumToken["CssVariableImportTokenType"] = 98] = "CssVariableImportTokenType";
+    EnumToken[EnumToken["CssVariableImportTokenType"] = 93] = "CssVariableImportTokenType";
     /**
      * css variable declaration map token type
      */
-    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 99] = "CssVariableDeclarationMapTokenType";
+    EnumToken[EnumToken["CssVariableDeclarationMapTokenType"] = 94] = "CssVariableDeclarationMapTokenType";
     /**
      * media range query token type
      */
-    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 100] = "MediaRangeQueryTokenType";
-    /**
-     * invalid media query token type
-     */
-    EnumToken[EnumToken["InvalidMediaQueryTokenType"] = 101] = "InvalidMediaQueryTokenType";
+    EnumToken[EnumToken["MediaRangeQueryTokenType"] = 95] = "MediaRangeQueryTokenType";
     /**
      * supports query condition token type
      */
-    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 102] = "SupportsQueryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryConditionTokenType"] = 96] = "SupportsQueryConditionTokenType";
     /**
      * supports query unary condition token type
      */
-    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 103] = "SupportsQueryUnaryConditionTokenType";
+    EnumToken[EnumToken["SupportsQueryUnaryConditionTokenType"] = 97] = "SupportsQueryUnaryConditionTokenType";
     /**
      * when else query condition token type
      */
-    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 104] = "WhenElseQueryConditionTokenType";
+    EnumToken[EnumToken["WhenElseQueryConditionTokenType"] = 98] = "WhenElseQueryConditionTokenType";
     /**
      * when else query unary condition token type
      */
-    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 105] = "WhenElseUnaryConditionTokenType";
+    EnumToken[EnumToken["WhenElseUnaryConditionTokenType"] = 99] = "WhenElseUnaryConditionTokenType";
     /**
      * container style range token type
      */
-    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 106] = "ContainerStyleRangeTokenType";
+    EnumToken[EnumToken["ContainerStyleRangeTokenType"] = 100] = "ContainerStyleRangeTokenType";
     /**
      * '*'
      */
-    EnumToken[EnumToken["Star"] = 107] = "Star";
+    EnumToken[EnumToken["Star"] = 101] = "Star";
     /**
      * '+'
      */
-    EnumToken[EnumToken["Plus"] = 108] = "Plus";
+    EnumToken[EnumToken["Plus"] = 102] = "Plus";
     /**
      * '~'
      */
-    EnumToken[EnumToken["Tilda"] = 109] = "Tilda";
+    EnumToken[EnumToken["Tilda"] = 103] = "Tilda";
     /**
      * '|'
      */
-    EnumToken[EnumToken["PipeTokenType"] = 110] = "PipeTokenType";
+    EnumToken[EnumToken["PipeTokenType"] = 104] = "PipeTokenType";
     /**
      * '::'
      */
-    EnumToken[EnumToken["DoubleColonTokenType"] = 111] = "DoubleColonTokenType";
+    EnumToken[EnumToken["DoubleColonTokenType"] = 105] = "DoubleColonTokenType";
     /**
      * math function token type  such as'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenType"] = 112] = "MathFunctionTokenType";
+    EnumToken[EnumToken["MathFunctionTokenType"] = 106] = "MathFunctionTokenType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenType"] = 113] = "TransformFunctionTokenType";
+    EnumToken[EnumToken["TransformFunctionTokenType"] = 107] = "TransformFunctionTokenType";
     /**
      * when function token type such as 'supports(' etc.
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 114] = "WhenElseFunctionTokenType";
+    EnumToken[EnumToken["WhenElseFunctionTokenType"] = 108] = "WhenElseFunctionTokenType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 115] = "GeneralEnclosedFunctionTokenType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenType"] = 109] = "GeneralEnclosedFunctionTokenType";
     /**
      * supports function token type such as 'at-rule('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenType"] = 116] = "SupportsFunctionTokenType";
+    EnumToken[EnumToken["SupportsFunctionTokenType"] = 110] = "SupportsFunctionTokenType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenType"] = 117] = "ContainerFunctionTokenType";
+    EnumToken[EnumToken["ContainerFunctionTokenType"] = 111] = "ContainerFunctionTokenType";
     /**
      * unrecognized node token type
      */
-    EnumToken[EnumToken["RawNodeTokenType"] = 118] = "RawNodeTokenType";
+    EnumToken[EnumToken["RawNodeTokenType"] = 112] = "RawNodeTokenType";
     /**
      * media query boolean token type
      * at-rule media not ()
      * at-rule media only ()
      */
-    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 119] = "MediaQueryUnaryFeatureTokenType";
+    EnumToken[EnumToken["MediaQueryUnaryFeatureTokenType"] = 113] = "MediaQueryUnaryFeatureTokenType";
     /**
      * grid template function token type such as 'minmax('
      */
-    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 120] = "GridTemplateFuncTokenDefType";
+    EnumToken[EnumToken["GridTemplateFuncTokenDefType"] = 114] = "GridTemplateFuncTokenDefType";
     /**
      * image function token type such as 'image(' etc.
      */
-    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 121] = "ImageFunctionTokenDefType";
+    EnumToken[EnumToken["ImageFunctionTokenDefType"] = 115] = "ImageFunctionTokenDefType";
     /**
      * function token type such as 'view(' etc.
      */
-    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 122] = "TimelineFunctionTokenDefType";
+    EnumToken[EnumToken["TimelineFunctionTokenDefType"] = 116] = "TimelineFunctionTokenDefType";
     /**
      * function token type
      */
-    EnumToken[EnumToken["FunctionTokenDefType"] = 123] = "FunctionTokenDefType";
+    EnumToken[EnumToken["FunctionTokenDefType"] = 117] = "FunctionTokenDefType";
     /**
      * timing function token type such as 'linear(' etc.
      */
-    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 124] = "TimingFunctionTokenDefType";
+    EnumToken[EnumToken["TimingFunctionTokenDefType"] = 118] = "TimingFunctionTokenDefType";
     /**
      * color function token type such as 'rgb(' etc.
      */
-    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 125] = "ColorFunctionTokenDefType";
+    EnumToken[EnumToken["ColorFunctionTokenDefType"] = 119] = "ColorFunctionTokenDefType";
     /**
      * math function token type such as 'calc(' etc.
      */
-    EnumToken[EnumToken["MathFunctionTokenDefType"] = 126] = "MathFunctionTokenDefType";
+    EnumToken[EnumToken["MathFunctionTokenDefType"] = 120] = "MathFunctionTokenDefType";
     /**
      * container function token type such as 'style(' or 'scroll-state('
      */
-    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 127] = "ContainerFunctionTokenDefType";
+    EnumToken[EnumToken["ContainerFunctionTokenDefType"] = 121] = "ContainerFunctionTokenDefType";
     /**
      * url function token type 'url('
      */
-    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 128] = "UrlFunctionTokenDefType";
+    EnumToken[EnumToken["UrlFunctionTokenDefType"] = 122] = "UrlFunctionTokenDefType";
     /**
      * pseudo-class function token type
      */
-    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 129] = "PseudoClassFunctionTokenDefType";
+    EnumToken[EnumToken["PseudoClassFunctionTokenDefType"] = 123] = "PseudoClassFunctionTokenDefType";
     /**
      * transform function token type such as 'translate(' etc.
      */
-    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 130] = "TransformFunctionTokenDefType";
+    EnumToken[EnumToken["TransformFunctionTokenDefType"] = 124] = "TransformFunctionTokenDefType";
     /**
      * when function token type such as 'supports(' or 'media('
      */
-    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 131] = "WhenElseFunctionTokenDefType";
+    EnumToken[EnumToken["WhenElseFunctionTokenDefType"] = 125] = "WhenElseFunctionTokenDefType";
     /**
      * general enclosed function token type 'font-tech(' etc.
      */
-    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 132] = "GeneralEnclosedFunctionTokenDefType";
+    EnumToken[EnumToken["GeneralEnclosedFunctionTokenDefType"] = 126] = "GeneralEnclosedFunctionTokenDefType";
     /**
      * supports function token type 'font-tech('
      */
-    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 133] = "SupportsFunctionTokenDefType";
-    /**
-     *  CDOCOMMTokenType not allowed in this context
-     */
-    EnumToken[EnumToken["InvalidCommentTokenType"] = 134] = "InvalidCommentTokenType";
+    EnumToken[EnumToken["SupportsFunctionTokenDefType"] = 127] = "SupportsFunctionTokenDefType";
     /**
      * custom function token type '--function-name('
      */
-    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 135] = "CustomFunctionTokenDefType";
+    EnumToken[EnumToken["CustomFunctionTokenDefType"] = 128] = "CustomFunctionTokenDefType";
     /**
      * custom function token type
      */
-    EnumToken[EnumToken["CustomFunctionTokenType"] = 136] = "CustomFunctionTokenType";
+    EnumToken[EnumToken["CustomFunctionTokenType"] = 129] = "CustomFunctionTokenType";
     /**
      * function tokens such as 'var(', 'env(', 'if(')
      */
-    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 137] = "WildCardFunctionTokenDefType";
+    EnumToken[EnumToken["WildCardFunctionTokenDefType"] = 130] = "WildCardFunctionTokenDefType";
     /**
      * function such as 'var()', 'env()', 'if()'
      */
-    EnumToken[EnumToken["WildCardFunctionTokenType"] = 138] = "WildCardFunctionTokenType";
+    EnumToken[EnumToken["WildCardFunctionTokenType"] = 131] = "WildCardFunctionTokenType";
     /**
      * if condition token
      */
-    EnumToken[EnumToken["IfConditionTokenType"] = 139] = "IfConditionTokenType";
+    EnumToken[EnumToken["IfConditionTokenType"] = 132] = "IfConditionTokenType";
     /**
      * if-Else condition token
      */
-    EnumToken[EnumToken["IfElseConditionTokenType"] = 140] = "IfElseConditionTokenType";
+    EnumToken[EnumToken["IfElseConditionTokenType"] = 133] = "IfElseConditionTokenType";
     /**
      * wrapped values token type like {Arial, sans-serif}
      */
-    EnumToken[EnumToken["WrappedValuesTokenType"] = 141] = "WrappedValuesTokenType";
+    EnumToken[EnumToken["WrappedValuesTokenType"] = 134] = "WrappedValuesTokenType";
     /**
      * list of arena tokens (binary expression operands)
      */
-    EnumToken[EnumToken["ListTokenType"] = 142] = "ListTokenType";
+    EnumToken[EnumToken["ListTokenType"] = 135] = "ListTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["NaNTokenType"] = 143] = "NaNTokenType";
+    EnumToken[EnumToken["NaNTokenType"] = 136] = "NaNTokenType";
     /**
      * infinity token
      */
-    EnumToken[EnumToken["InfinityTokenType"] = 144] = "InfinityTokenType";
+    EnumToken[EnumToken["InfinityTokenType"] = 137] = "InfinityTokenType";
     /**
      * negative infinity token
      */
-    EnumToken[EnumToken["NegativeInfinityTokenType"] = 145] = "NegativeInfinityTokenType";
+    EnumToken[EnumToken["NegativeInfinityTokenType"] = 138] = "NegativeInfinityTokenType";
     /**
      * CSS type token
      */
-    EnumToken[EnumToken["CssTypeTokenType"] = 146] = "CssTypeTokenType";
+    EnumToken[EnumToken["CssTypeTokenType"] = 139] = "CssTypeTokenType";
     /**
      * user defined dimension token type
      */
-    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 147] = "UserDefinedDimensionTokenType";
+    EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 140] = "UserDefinedDimensionTokenType";
     /* aliases */
     /**
      * alias for time token type
@@ -1011,5 +980,41 @@ var ModuleScopeEnumOptions;
      */
     ModuleScopeEnumOptions[ModuleScopeEnumOptions["Shortest"] = 512] = "Shortest";
 })(ModuleScopeEnumOptions || (ModuleScopeEnumOptions = {}));
+/**
+ * Options returned by the filters of {@link AstArena.walk} and {@link AstArena.walkValues}
+ */
+var WalkerOptionEnum;
+(function (WalkerOptionEnum) {
+    /**
+     * ignore the current node and its children
+     */
+    WalkerOptionEnum[WalkerOptionEnum["Ignore"] = 1] = "Ignore";
+    /**
+     * stop walking the tree
+     */
+    WalkerOptionEnum[WalkerOptionEnum["Stop"] = 2] = "Stop";
+    /**
+     * ignore the current node and process its children
+     */
+    WalkerOptionEnum[WalkerOptionEnum["Children"] = 4] = "Children";
+    /**
+     * ignore the current node children
+     */
+    WalkerOptionEnum[WalkerOptionEnum["IgnoreChildren"] = 8] = "IgnoreChildren";
+})(WalkerOptionEnum || (WalkerOptionEnum = {}));
+/**
+ * Event types of the {@link AstArena.walkValues} filter
+ */
+var WalkerEvent;
+(function (WalkerEvent) {
+    /**
+     * enter node
+     */
+    WalkerEvent[WalkerEvent["Enter"] = 1] = "Enter";
+    /**
+     * leave node
+     */
+    WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
+})(WalkerEvent || (WalkerEvent = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, WalkerEvent, WalkerOptionEnum };

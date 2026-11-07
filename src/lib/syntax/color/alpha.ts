@@ -6,8 +6,8 @@ import { getColorComponents } from "./utils/components.ts";
 import { makeColor } from "./utils/make-color.ts";
 import { getColorType } from "./utils/color-type.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
-import { walkValues } from "../../ast/walk.ts";
 import { evaluate } from "../../ast/math/expression.ts";
+import { ValueWalker } from "../../ast/walk.ts";
 
 /**
  * Compute alpha color
@@ -28,7 +28,8 @@ export function alpha(arena: AstArena, color: Token, alpha: Token): Token | null
     let components = getColorComponents(arena, color);
 
     if (arena.dataTypes[alpha] === EnumToken.MathFunctionTokenType) {
-        for (const { value } of walkValues(arena, arena.tokens(alpha), alpha)) {
+        // inlined: arena.walkValues(arena.tokens(alpha))
+        for (const value of new ValueWalker(arena, arena.tokens(alpha))) {
             if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase(arena.strings[arena.stringValue[value]], "alpha")) {
                     // replace the identifier with the alpha value

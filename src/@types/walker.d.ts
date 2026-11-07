@@ -1,10 +1,10 @@
-import type { AstNode, AstRuleList } from "./ast.d.ts";
+import type { AstNode } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
-import { WalkerEvent, WalkerOptionEnum } from "../lib/ast/walk.ts";
+import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../lib/ast/types.ts";
 import type { AstArena } from "../lib/ast/arena.ts";
 
 /**
- * node walker options
+ * node walker options of {@link AstArena.walk}
  */
 export declare interface WalkerOptions {
     /**
@@ -24,92 +24,55 @@ export declare interface WalkerOptions {
     /**
      * filter function to control the walk
      */
-    filter?: WalkerFilter;
+    filter?: WalkerFilter | null;
 }
 
 /**
- * node walker option
+ * node walker option, see {@link WalkerOptionEnum}
  */
-export declare type WalkerOption = WalkerOptionEnum | AstNode | Token | null;
-/**
- * returned value:
- * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
- * - {@link WalkerOptionEnum.Stop}: stop walking the tree
- * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
- * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
- * - {@link AstNode}:
- * - {@link Token}:
- */
-export declare type WalkerFilter = (node: AstNode | Token, arena?: AstArena) => WalkerOption;
+export declare type WalkerOption = WalkerOptionEnum | null | undefined | void;
 
 /**
+ * filter of {@link AstArena.walk}, called for every node. the parent of the node is `arena.getParent(node)`.
+ *
  * returned value:
  * - {@link WalkerOptionEnum.Ignore}: ignore this node and its children
  * - {@link WalkerOptionEnum.Stop}: stop walking the tree
  * - {@link WalkerOptionEnum.Children}: walk the children and ignore the current node
  * - {@link WalkerOptionEnum.IgnoreChildren}: walk the node and ignore children
- * - {@link AstNode}:
- * - {@link Token}:
+ */
+export declare type WalkerFilter = (arena: AstArena, node: AstNode | Token) => WalkerOption;
+
+/**
+ * filter of {@link AstArena.walkValues}, called for every token. the parent of the token is
+ * `arena.getValueParent(token)`.
+ *
+ * returned value:
+ * - {@link WalkerOptionEnum.Ignore}: ignore this token and its children
+ * - {@link WalkerOptionEnum.Stop}: stop walking the tokens
+ * - {@link WalkerOptionEnum.IgnoreChildren}: walk the token and ignore its children
+ * - an array of token ids: the tokens are walked next
  */
 export declare type WalkerValueFilter = (
-    node: AstNode | Token,
-    parent?: AstNode | Token | AstNode[] | Token[] | null,
-    event?: WalkerEvent,
-    parents?: Generator<Token>,
-) => WalkerOption | AstNode | Token | AstNode[] | Token[] | null;
+    arena: AstArena,
+    token: Token,
+    event: WalkerEvent,
+) => WalkerOption | Token[];
 
 /**
- * walker result
+ * options of {@link AstArena.walkValues}
  */
-export declare interface WalkResult {
+export declare interface WalkerValueOptions {
     /**
-     * current node: a node id or a value token (when walking attributes)
+     * events the filter is called for. defaults to {@link WalkerEvent.Enter}
      */
-    node: AstNode | Token;
+    event?: WalkerEvent;
     /**
-     * parent node id (0 for the root) or parent token
+     * filter function
      */
-    parent: AstRuleList | Token;
+    fn?: WalkerValueFilter | null;
     /**
-     * root node
+     * the filter is only called for the tokens of this type, these types, or the tokens accepted by this function
      */
-    root: AstNode | Token;
-    /**
-     * arena
-     */
-    arena: AstArena;
-    /**
-     * parent nodes generator
-     */
-    parents: () => Generator<AstNode | Token>;
-}
-
-/**
- * walker result
- */
-export declare interface WalkAttributesResult {
-    /**
-     * current node
-     */
-    value: Token;
-    /**
-     * previous node
-     */
-    previousValue: Token | null;
-    /**
-     * next node
-     */
-    nextValue: Token | null;
-    /**
-     * root node
-     */
-    root?: AstNode | Token | null;
-    /**
-     * parent node
-     */
-    parent: AstNode | Token | null;
-    /**
-     * parent nodes
-     */
-    parents: Generator<Token>;
+    type?: EnumToken | EnumToken[] | ((arena: AstArena, token: Token) => boolean) | null;
 }

@@ -1,11 +1,13 @@
+import { numericTokenTypes } from "../arena.ts";
+import { TokenField } from "../arena.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import { walkValues } from "../walk.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
 import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import type { AstArena } from "../arena.ts";
+import { ValueWalker } from "../walk.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -42,7 +44,11 @@ export class ComputeCalcExpressionFeature {
             // function tokens already evaluated, created on demand
             let set: Set<Token> | null = null;
 
-            for (const { value, parent } of walkValues(arena, arena.tokens(node), node)) {
+            // inlined: arena.walkValues(node)
+            for (const value of new ValueWalker(arena, node)) {
+                // the parent of a detached token is the declaration
+                const parent: Token = arena.getValueParent(value) || node;
+
                 if (parent != null && arena.dataTypes[parent] == EnumToken.BinaryExpressionTokenType) {
                     continue;
                 }
@@ -53,7 +59,7 @@ export class ComputeCalcExpressionFeature {
                     const result: Token[] = evaluate(arena, [value]);
 
                     try {
-                        replaceNodeOrValue(arena, parent, value, result);
+                        replaceNodeOrValue(arena, value, result);
                     } catch (e) {}
                     continue;
                 }
@@ -75,13 +81,16 @@ export class ComputeCalcExpressionFeature {
                                 const values: Token[] = evaluate(arena, cp);
 
                                 // fix a + -b into a - b
-                                for (const { value } of walkValues(arena, values)) {
+                                // inlined: arena.walkValues(values)
+                                for (const value of new ValueWalker(arena, values)) {
                                     if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
-                                        const r: Token = arena.getRight(value)![0];
+                                        // inlined: arena.getRight(value)
+                                        const r: Token = (arena.getChildAt(value, TokenField.R) == null ? null : arena.fieldTokens(value, TokenField.R))![0];
 
                                         if (
                                             arena.numericValue[value] === EnumToken.Add &&
-                                            arena.isNumeric(r) &&
+                                            // inlined: arena.isNumeric(r)
+                                            numericTokenTypes.has(arena.dataTypes[r]) &&
                                             Math.sign(arena.numericValue[r]) == -1
                                         ) {
                                             arena.numericValue[value] = EnumToken.Sub;
@@ -102,7 +111,8 @@ export class ComputeCalcExpressionFeature {
                                             (parentType == EnumToken.FunctionTokenType &&
                                                 arena.strings[arena.stringValue[parent]] == "calc")
                                         ) &&
-                                        (!arena.isNumeric(values[0]) || arena.hasFraction(values[0])) &&
+                                        // inlined: arena.isNumeric(values[0])
+                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) || arena.hasFraction(values[0])) &&
                                         !(
                                             arena.dataTypes[values[0]] == EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] == EnumToken.FunctionTokenType &&

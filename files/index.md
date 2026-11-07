@@ -17,6 +17,7 @@ children:
     - ./ast.md
     - ./arena.md
     - ./utilities.md
+    - ./migration.md
 ---
 
 ## Contents
@@ -35,6 +36,7 @@ children:
 - [Ast Manipulation](./ast.md)
 - [Arena Memory](./arena.md)
 - [Utility Functions](./utilities.md)
+- [Migration to 2.0](./migration.md)
 
 ## Modules
 

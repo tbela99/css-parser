@@ -77,12 +77,14 @@ export class DeclarationMemo {
      */
     key(arena: AstArena, node: AstNode): string {
         const slot: number = this.keys.token(arena, node);
-        let key: string | undefined = this.keys.get(slot);
+        // inlined: this.keys.get(slot)
+        let key: string | undefined = this.keys.values[slot];
 
         if (key === undefined) {
             // not a property name
             key = "\0" + slot;
-            this.keys.set(slot, key);
+            // inlined: this.keys.set(slot, key)
+            this.keys.values[slot] = key;
         }
 
         return key;

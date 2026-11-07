@@ -8,7 +8,6 @@
 import { getAngle, convertColor } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, ColorType, EnumAstNodeStatus } from '../ast/types.js';
-import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { pseudoElements, anglePrecision, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
 import { minifyNumber, toPrecisionAngle, toPrecisionValue, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace } from '../syntax/syntax.js';
@@ -52,7 +51,10 @@ class RenderMemo {
      */
     constructs = new StructuralMemo();
     /**
-     * cleared memos, reused by the next renders: their buffers are not allocated again
+     * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
+     * (see {@link acquire})
+     *
+     * @internal
      */
     static free = [];
     /**
@@ -293,7 +295,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
         }
         arena.appendChild(sheet, data);
         if (expandNesting) {
-            data = expand(arena, data);
+            data = arena.expand(data);
         }
     }
     const startTime = performance.now();
@@ -305,7 +307,8 @@ function doRender(arena, data, options = {}, mapping, memo) {
     // identical values are rendered once. the memo is valid for these options only. a memo that is not provided is
     // reused by the next renders
     const ownMemo = memo == null;
-    const cache = new RenderCache(memo ?? RenderMemo.acquire(), options);
+    // inlined: RenderMemo.acquire()
+    const cache = new RenderCache(memo ?? (RenderMemo.free.pop() ?? new RenderMemo()), options);
     const sourceLocation = {
         end: 0,
     };
@@ -351,7 +354,8 @@ function doRender(arena, data, options = {}, mapping, memo) {
         let source;
         for (const sourceId of sourcemaps.sources) {
             source = options.sourcesMap.get(sourceId);
-            sourcemap.addSourceContent(source.id, source.getFileName(), source.getContent());
+            // inlined: source.getFileName(), source.getContent()
+            sourcemap.addSourceContent(source.id, source.file, source.content);
         }
         sourcemap.add(sourcemaps.maps);
         result.map = sourcemap;
@@ -384,16 +388,19 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
         move(sourceLocation, linesMap, str, 0, offset + 1);
     }
     if (arena.flags[node] & EnumAstNodeStatus.HasLocation) {
-        let srcId = arena.getSource(node);
+        // inlined: arena.getSource(node)
+        let srcId = arena.sources[arena.getSourceId(node)] ?? 0;
         const source = options.sourcesMap.get(srcId);
         const inputSourceMap = source.getInputSourceMap();
-        const offsets = source.getOffsets(arena.getSpanStart(node));
+        // inlined: source.getOffsets(arena.getSpanStart(node))
+        const offsets = source.lineStarts.getOffsets(arena.getSpanStart(node));
         // generated position, see LineMap.getOffsets()
         const line = linesMap.search(sourceLocation.end);
         const newLine = line + 1;
         const newColumn = sourceLocation.end - linesMap.lineStarts[line] + (line == 0 ? 1 : 0);
         let records = null;
-        let sourceFileName = source.getFileName() || null;
+        // inlined: source.getFileName()
+        let sourceFileName = source.file || null;
         let sourceContent; // = (source.getContent() as string) || null;
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
             let newId = null;
@@ -419,11 +426,13 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
                     sourceFileName = cache.paths[sourceFileName];
                 }
                 for (const [id, file] of options.sourcesMap.entries()) {
-                    if (file.getFileName() === sourceFileName) {
+                    // inlined: file.getFileName()
+                    if (file.file === sourceFileName) {
                         newId = id;
                         break;
                     }
-                    if (sourceFileName == null && file.getContent() === sourceContent) {
+                    // inlined: file.getContent()
+                    if (sourceFileName == null && file.content === sourceContent) {
                         newId = id;
                         break;
                     }
@@ -480,7 +489,8 @@ function move(sourceLocation, linesMap, str, start, end) {
             if (codepoint == 0xd && i + 1 < str.length && str.charCodeAt(i + 1) == 0xa) ;
             else if (codepoint == 0xa && i > 0 && str.charCodeAt(i - 1) == 0xd) ;
             else {
-                linesMap.addLineStart(sourceLocation.end);
+                // inlined: linesMap.addLineStart(sourceLocation.end)
+                linesMap.lineStarts.push(sourceLocation.end);
             }
         }
     }
@@ -551,7 +561,8 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             if (isAtRule && !(arena.flags[data] & EnumAstNodeStatus.HasChildren)) {
                 return `${(indent.length > 0 ? options.newLine : "") + indent}@${nam}${val === "" ? "" : options.indent || " "}${val};`;
             }
-            const lineMapLength = linesMap ? linesMap.getLineStarts().length : 0;
+            // inlined: linesMap.getLineStarts()
+            const lineMapLength = linesMap ? linesMap.lineStarts.length : 0;
             const prelude = (indent.length > 0 ? options.newLine : "") +
                 indent +
                 (isAtRule
@@ -634,7 +645,8 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             if (options.removeEmpty && children === "") {
                 if (sourcemaps != null) {
                     sourceLocation.end -= prelude.length;
-                    linesMap.getLineStarts().length = lineMapLength;
+                    // inlined: linesMap!.getLineStarts()
+                    linesMap.lineStarts.length = lineMapLength;
                 }
                 return "";
             }
@@ -692,10 +704,12 @@ function renderDeclaration(arena, node, options, cache, reducer) {
     }
     // the name is part of the key
     const slot = memo.declarations.list(arena, arena.firstToken[node], arena.name[node]);
-    let rendered = memo.declarations.get(slot);
+    // inlined: memo.declarations.get(slot)
+    let rendered = memo.declarations.values[slot];
     if (rendered === undefined) {
         rendered = `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
-        memo.declarations.set(slot, rendered);
+        // inlined: memo.declarations.set(slot, rendered)
+        memo.declarations.values[slot] = rendered;
     }
     return rendered;
 }
@@ -924,10 +938,12 @@ function renderValue(arena, token, options = defaultRenderOptions, cache = defau
         const memo = getRenderMemo(cache, options);
         if (memo != null) {
             const slot = memo.constructs.token(arena, token);
-            let rendered = memo.constructs.get(slot);
+            // inlined: memo.constructs.get(slot)
+            let rendered = memo.constructs.values[slot];
             if (rendered === undefined) {
                 rendered = renderToken(arena, token, options, cache, reducer);
-                memo.constructs.set(slot, rendered);
+                // inlined: memo.constructs.set(slot, rendered)
+                memo.constructs.values[slot] = rendered;
             }
             return rendered;
         }
@@ -974,8 +990,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             return renderList(arena, arena.firstToken[token], options, cache);
         case EnumToken.BinaryExpressionTokenType: {
             const op = arena.numericValue[token];
-            const l = arena.getLeft(token)[0];
-            const r = arena.getRight(token)[0];
+            // inlined: arena.getLeft(token)
+            const l = (arena.getChildAt(token, TokenField.L) == null ? null : arena.fieldTokens(token, TokenField.L))[0];
+            // inlined: arena.getRight(token)
+            const r = (arena.getChildAt(token, TokenField.R) == null ? null : arena.fieldTokens(token, TokenField.R))[0];
             if (EnumToken.Mul === op || EnumToken.Div === op) {
                 let result = "";
                 if (arena.dataTypes[l] == EnumToken.BinaryExpressionTokenType &&
@@ -1000,8 +1018,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 renderValue(arena, r, options, cache));
         }
         case EnumToken.FractionTokenType: {
-            const numerator = arena.numerator(token);
-            const denominator = arena.denominator(token);
+            // inlined: arena.numerator(token)
+            const numerator = arena.firstChild[token];
+            // inlined: arena.denominator(token)
+            const denominator = arena.lastChild[token];
             const fraction = renderValue(arena, numerator) + "/" + renderValue(arena, denominator);
             if (arena.numericValue[denominator] != 0) {
                 const value = minifyNumber(arena.numericValue[numerator] / arena.numericValue[denominator]);
@@ -1040,7 +1060,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         }
         case EnumToken.UrlFunctionTokenType:
             if (options.minifyValues && arena.dataTypes[token] === EnumToken.UrlFunctionTokenType) {
-                if (arena.typeOf(arena.firstToken[token]) === EnumToken.BadUrlTokenType) {
+                // inlined: arena.typeOf(arena.firstToken[token])
+                if (arena.dataTypes[arena.firstToken[token]] === EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
                 for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
@@ -1048,7 +1069,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                         const val = arena.strings[arena.stringValue[child]];
                         if (val.slice(1, 5) !== "data:" && urlTokenMatcher.test(val)) {
                             arena.dataTypes[child] = EnumToken.UrlTokenTokenType;
-                            arena.setStr(child, val.slice(1, -1));
+                            // inlined: arena.setStr(child, val.slice(1, -1))
+                            arena.stringValue[child] = arena.internString(val.slice(1, -1));
                         }
                         break;
                     }
@@ -1707,10 +1729,6 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             return arena.strings[arena.stringValue[token]];
         case EnumToken.NestingSelectorTokenType:
             return "&";
-        case EnumToken.InvalidAttrTokenType:
-            return "[" + renderList(arena, arena.firstToken[token], options, cache);
-        case EnumToken.InvalidClassSelectorTokenType:
-            return arena.strings[arena.stringValue[token]];
         case EnumToken.SupportsQueryUnaryConditionTokenType:
         case EnumToken.WhenElseUnaryConditionTokenType:
             return (renderValue(arena, arena.field(token, TokenField.L), options, cache, reducer) +
@@ -1776,8 +1794,6 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             return "and";
         case EnumToken.OrTokenType:
             return "or";
-        case EnumToken.InvalidMediaQueryTokenType:
-        case EnumToken.InvalidCommentTokenType:
         case EnumToken.BadCommentTokenType:
         case EnumToken.BadCdoTokenType:
         case EnumToken.BadStringTokenType:

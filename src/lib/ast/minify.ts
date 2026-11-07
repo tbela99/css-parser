@@ -1,7 +1,6 @@
 import { eq, eqToken } from "../parser/utils/eq.ts";
 import { NodeRenderer, renderValue } from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
-import { walkValues } from "./walk.ts";
 import type {
     AstNode,
     AstRule,
@@ -23,8 +22,8 @@ import { trimArray } from "../validation/match.ts";
 import { combinators } from "../syntax/constants.ts";
 import { replaceNode } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
-import { replaceCompound } from "./expand.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
+import { ValueWalker } from "./walk.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 // @ts-ignore
@@ -485,8 +484,10 @@ function doMinify(
                     acc +
                     (arena.dataTypes[curr] === EnumToken.CommentTokenType ||
                     (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType &&
-                        arena.typeOf(arr[index + 1]) === EnumToken.CommentTokenType &&
-                        (index + 3 < arr.length || arena.typeOf(arr[index + 2]) === EnumToken.WhitespaceTokenType))
+                        // inlined: arena.typeOf(arr[index + 1])
+                        arena.dataTypes[arr[index + 1]] === EnumToken.CommentTokenType &&
+                        // inlined: arena.typeOf(arr[index + 2])
+                        (index + 3 < arr.length || arena.dataTypes[arr[index + 2]] === EnumToken.WhitespaceTokenType))
                         ? ""
                         : renderValue(arena, curr));
 
@@ -497,7 +498,8 @@ function doMinify(
 
                         if (slice.length !== tokens.length) {
                             arena.setTokenList(node, slice);
-                            arena.setValueString(node, slice.reduce(renderPrelude, ""));
+                            // inlined: arena.setValueString(node, slice.reduce(renderPrelude, ""))
+                            arena.stringValue[node] = arena.internString(slice.reduce(renderPrelude, ""));
                         }
                     }
 
@@ -530,7 +532,8 @@ function doMinify(
 
                         tokens.splice(l, slice.length, ...minifyAtRuleMedia(arena, slice));
                         arena.setTokenList(node, tokens);
-                        arena.setValueString(node, trimArray(arena, tokens).reduce(renderPrelude, ""));
+                        // inlined: arena.setValueString(node, trimArray(arena, tokens).reduce(renderPrelude, ""))
+                        arena.stringValue[node] = arena.internString(trimArray(arena, tokens).reduce(renderPrelude, ""));
                     }
                 } else if (
                     arena.dataTypes[ast] === nodeType &&
@@ -621,13 +624,17 @@ function doMinify(
 
                         wrapper = arena.clone(node);
 
-                        arena.setSelector(wrapper, optimized.optimized[0]);
+                        // inlined: arena.setSelector(wrapper, optimized.optimized[0])
+                        arena.name[wrapper] = arena.internString(optimized.optimized[0]);
                         arena.raw[wrapper] = [[optimized.optimized[0]]];
-                        arena.setTokens(wrapper);
+                        // inlined: arena.setTokens(wrapper)
+                        arena.setTokenList(wrapper, []);
 
-                        arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","));
+                        // inlined: arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","))
+                        arena.name[node] = arena.internString(optimized.selector.reduce(reducer, []).join(","));
                         arena.raw[node] = optimized.selector.slice();
-                        arena.setTokens(node);
+                        // inlined: arena.setTokens(node)
+                        arena.setTokenList(node, []);
 
                         // the wrapper takes the place of the node
                         arena.insertBefore(node, wrapper);
@@ -649,21 +656,22 @@ function doMinify(
                                 "",
                             );
 
-                            arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2);
-                            arena.setTokens(node);
+                            // inlined: arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2)
+                            arena.name[node] = arena.internString((sel1.length < sel2.length ? sel1 : sel2));
+                            // inlined: arena.setTokens(node)
+                            arena.setTokenList(node, []);
                         } else if (optimized.optimized.length === 0) {
                             const testIdent = /^[a-zA-Z]/;
-                            arena.setSelector(
-                                node,
-                                optimized.selector.reduce(
+                            // inlined: arena.setSelector(node, optimized.selector.reduce((acc: string, curr: string[]) => (acc.length > 0 ? acc + "," : "") + (nestingContent && testIdent.test(curr[0]) ? "& " : "") + curr.join(""), ""))
+                            arena.name[node] = arena.internString(optimized.selector.reduce(
                                     (acc: string, curr: string[]) =>
                                         (acc.length > 0 ? acc + "," : "") +
                                         (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                                         curr.join(""),
                                     "",
-                                ),
-                            );
-                            arena.setTokens(node);
+                                ));
+                            // inlined: arena.setTokens(node)
+                            arena.setTokenList(node, []);
                         }
                     }
                 } else if (arena.optimized[node]?.match) {
@@ -774,8 +782,10 @@ function doMinify(
                     let sel: string = wrap ? optimizedSelector.optimized.join("") + `:is(${rule})` : rule;
 
                     if (sel.length < arena.strings[arena.name[node]].length) {
-                        arena.setSelector(node, sel);
-                        arena.setTokens(node);
+                        // inlined: arena.setSelector(node, sel)
+                        arena.name[node] = arena.internString(sel);
+                        // inlined: arena.setTokens(node)
+                        arena.setTokenList(node, []);
                     }
                 } else if (arena.optimized[node]?.reducible) {
                     const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
@@ -789,30 +799,33 @@ function doMinify(
                             "",
                         );
 
-                        arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2);
-                        arena.setTokens(node);
+                        // inlined: arena.setSelector(node, sel1.length < sel2.length ? sel1 : sel2)
+                        arena.name[node] = arena.internString((sel1.length < sel2.length ? sel1 : sel2));
+                        // inlined: arena.setTokens(node)
+                        arena.setTokenList(node, []);
                     } else if (optimized.optimized.length === 0) {
                         const testIdent = /^[a-zA-Z]/;
-                        arena.setSelector(
-                            node,
-                            optimized.selector.reduce(
+                        // inlined: arena.setSelector(node, optimized.selector.reduce((acc: string, curr: string[]) => (acc.length > 0 ? acc + "," : "") + (nestingContent && testIdent.test(curr[0]) ? "& " : "") + curr.join(""), ""))
+                        arena.name[node] = arena.internString(optimized.selector.reduce(
                                 (acc: string, curr: string[]) =>
                                     (acc.length > 0 ? acc + "," : "") +
                                     (nestingContent && testIdent.test(curr[0]) ? "& " : "") +
                                     curr.join(""),
                                 "",
-                            ),
-                        );
-                        arena.setTokens(node);
+                            ));
+                        // inlined: arena.setTokens(node)
+                        arena.setTokenList(node, []);
                     }
                 } else if ((arena.optimized[node]?.optimized.length as number) > 0) {
                     const optimized: OptimizedSelector = arena.optimized[node] as OptimizedSelector;
                     const sel = optimized.optimized.join("");
 
                     if (sel.length < arena.strings[arena.name[node]].length) {
-                        arena.setSelector(node, sel);
+                        // inlined: arena.setSelector(node, sel)
+                        arena.name[node] = arena.internString(sel);
                         arena.raw[node] = [optimized.optimized.slice()];
-                        arena.setTokens(node);
+                        // inlined: arena.setTokens(node)
+                        arena.setTokenList(node, []);
                     }
                 }
 
@@ -831,10 +844,7 @@ function doMinify(
                         let k: AstNode = arena.lastChild[previous];
 
                         while (k != 0) {
-                            if (
-                                arena.dataTypes[k] === EnumToken.CommentNodeType ||
-                                arena.dataTypes[k] === EnumToken.InvalidRuleNodeType
-                            ) {
+                            if (arena.dataTypes[k] === EnumToken.CommentNodeType) {
                                 k = arena.previousSibling[k];
                                 continue;
                             }
@@ -1500,12 +1510,13 @@ function fixSelector(arena: AstArena, node: AstRule): void {
     if (sel.includes("&")) {
         const attributes: Token[] = parseString(arena, sel);
 
-        for (const attr of walkValues(arena, attributes)) {
+        // inlined: arena.walkValues(attributes)
+        for (const attr of new ValueWalker(arena, attributes)) {
             if (
-                arena.dataTypes[attr.value] == EnumToken.PseudoClassFuncTokenType &&
-                arena.strings[arena.stringValue[attr.value]] == ":is"
+                arena.dataTypes[attr] == EnumToken.PseudoClassFuncTokenType &&
+                arena.strings[arena.stringValue[attr]] == ":is"
             ) {
-                let child: Token = arena.lastToken[attr.value];
+                let child: Token = arena.lastToken[attr];
 
                 while (child != 0) {
                     const previous: Token = arena.previousSibling[child];
@@ -1519,11 +1530,10 @@ function fixSelector(arena: AstArena, node: AstRule): void {
             }
         }
 
-        arena.setSelector(
-            node,
-            attributes.reduce((acc: string, curr: Token) => acc + renderValue(arena, curr), ""),
-        );
-        arena.setTokens(node);
+        // inlined: arena.setSelector(node, attributes.reduce((acc: string, curr: Token) => acc + renderValue(arena, curr), ""))
+        arena.name[node] = arena.internString(attributes.reduce((acc: string, curr: Token) => acc + renderValue(arena, curr), ""));
+        // inlined: arena.setTokens(node)
+        arena.setTokenList(node, []);
     }
 }
 
@@ -1552,11 +1562,13 @@ function wrapNodes(
 
     const wrapper: AstRule = arena.clone(previous);
 
+    // inlined: arena.setSelector(wrapper, match.match.reduce(reducer, []).join(","))
     // @ts-ignore
-    arena.setSelector(wrapper, match.match.reduce(reducer, []).join(","));
+    arena.name[wrapper] = arena.internString(match.match.reduce(reducer, []).join(","));
     arena.raw[wrapper] = match.match.map((t) => t.slice());
     arena.optimized[wrapper] = null;
-    arena.setTokens(wrapper);
+    // inlined: arena.setTokens(wrapper)
+    arena.setTokenList(wrapper, []);
 
     const parent: AstNode = arena.parents[node];
 
@@ -1587,19 +1599,24 @@ function wrapNodes(
 
     // update the selectors of the wrapped nodes
     if (arena.parents[previous] == wrapper) {
-        arena.setSelector(previous, pSel);
+        // inlined: arena.setSelector(previous, pSel)
+        arena.name[previous] = arena.internString(pSel);
         arena.raw[previous] = match.selector1;
-        arena.setTokens(previous);
+        // inlined: arena.setTokens(previous)
+        arena.setTokenList(previous, []);
     }
 
     if (arena.parents[node] == wrapper) {
-        arena.setSelector(node, nSel);
+        // inlined: arena.setSelector(node, nSel)
+        arena.name[node] = arena.internString(nSel);
         arena.raw[node] = match.selector2;
-        arena.setTokens(node);
+        // inlined: arena.setTokens(node)
+        arena.setTokenList(node, []);
     }
 
     reduceRuleSelector(arena, wrapper);
-    arena.setTokens(wrapper);
+    // inlined: arena.setTokens(wrapper)
+    arena.setTokenList(wrapper, []);
     return wrapper;
 }
 
@@ -1751,16 +1768,14 @@ function diff(
     // the shared declarations are moved into the result node
     const result: AstRule = arena.clone(node1);
 
-    arena.setSelector(
-        result,
-        [
+    // inlined: arena.setSelector(result, [ ...new Set(splitRule(arena.strings[arena.name[node1]]) .concat(splitRule(arena.strings[arena.name[node2]])) .map((s) => s.join(""))), ].join(","))
+    arena.name[result] = arena.internString([
             ...new Set(
                 splitRule(arena.strings[arena.name[node1]])
                     .concat(splitRule(arena.strings[arena.name[node2]]))
                     .map((s) => s.join("")),
             ),
-        ].join(","),
-    );
+        ].join(","));
 
     // the matched declarations of node1 are moved into the result, the duplicates in node2 are dropped.
     // the moves are recorded (node, parent, next sibling) to be undone when the result is not smaller
@@ -1813,7 +1828,8 @@ function diff(
         return null;
     }
 
-    arena.setTokens(result);
+    // inlined: arena.setTokens(result)
+    arena.setTokenList(result, []);
     arena.raw[result] = null;
     arena.optimized[result] = null;
 
@@ -1835,11 +1851,13 @@ function diff(
         }, "");
 
         const match = optimized.optimized.join("");
-        const sel = match + ":is(" + replaceCompound(arena, rule, match) + ")";
+        const sel = match + ":is(" + arena.replaceCompound(rule, match) + ")";
 
         if (sel.length < arena.strings[arena.name[result]].length) {
-            arena.setSelector(result, sel);
-            arena.setTokens(result);
+            // inlined: arena.setSelector(result, sel)
+            arena.name[result] = arena.internString(sel);
+            // inlined: arena.setTokens(result)
+            arena.setTokenList(result, []);
         }
     }
 
@@ -1978,9 +1996,11 @@ function reduceRuleSelector(arena: AstArena, node: AstRule) {
         const sel: string = raw[0].join("");
 
         if (sel.length < arena.strings[arena.name[node]].length) {
-            arena.setSelector(node, sel);
+            // inlined: arena.setSelector(node, sel)
+            arena.name[node] = arena.internString(sel);
             arena.raw[node] = raw;
-            arena.setTokens(node);
+            // inlined: arena.setTokens(node)
+            arena.setTokenList(node, []);
         }
     }
 }

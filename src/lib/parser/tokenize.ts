@@ -1194,11 +1194,13 @@ export class Tokenizer {
         let charCode: number;
 
         // consume an <url>
-        while (isWhiteSpace(this.peekCharCode(parseInfo))) {
+        // inlined: this.peekCharCode(parseInfo)
+        while (isWhiteSpace(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
             this.advanceCode(parseInfo);
         }
 
-        charCode = this.peekCharCode(parseInfo);
+        // inlined: this.peekCharCode(parseInfo)
+        charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
         if (charCode == TokenMap.DOUBLE_QUOTE || charCode == TokenMap.SINGLE_QUOTE) {
             return this.consumeStringAsURLToken(parseInfo);
@@ -1206,7 +1208,8 @@ export class Tokenizer {
 
         do {
             this.advanceCode(parseInfo);
-            charCode = this.peekCharCode(parseInfo);
+            // inlined: this.peekCharCode(parseInfo)
+            charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
         } while (
             // !(value === "/" && this.match(parseInfo, "/*") &&
             charCode !== TokenMap.RIGHT_PARENTHESIS &&
@@ -1235,7 +1238,8 @@ export class Tokenizer {
         return this.makeToken(
             parseInfo,
             // parseInfo.position < parseInfo.currentPosition
-            (charCode = this.peekCharCode(parseInfo)) != charCode || !this.isURLToken(parseInfo)
+            // inlined: this.peekCharCode(parseInfo)
+            (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode || !this.isURLToken(parseInfo)
                 ? EnumToken.BadUrlTokenType
                 : EnumToken.UrlTokenTokenType,
         );
@@ -1749,7 +1753,8 @@ export class Tokenizer {
         let tokensCount: number;
 
         // NaN is not equal to NaN
-        while ((charCode = this.peekCharCode(parseInfo)) == charCode) {
+        // inlined: this.peekCharCode(parseInfo)
+        while ((charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) == charCode) {
             if (this.state === EnumToken.UrlFunctionTokenDefType) {
                 this.state = null;
                 return this.consumeURLToken(parseInfo, endPosition);
@@ -1777,7 +1782,8 @@ export class Tokenizer {
                     if (tokensCount > 0) {
                         this.skipIdent(parseInfo, tokensCount);
 
-                        charCode = this.peekCharCode(parseInfo);
+                        // inlined: this.peekCharCode(parseInfo)
+                        charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                         // do not match function
                         if (TokenMap.LEFT_PARENTHESIS != charCode) {
@@ -1794,10 +1800,12 @@ export class Tokenizer {
                 if (charCode == TokenMap.AT) {
                     this.skip(parseInfo, 1);
 
-                    charCode = this.peekCharCode(parseInfo);
+                    // inlined: this.peekCharCode(parseInfo)
+                    charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                     // match at-rule
-                    if (charCode == TokenMap.MINUS || isIdentStart(this.peekCharCode(parseInfo))) {
+                    // inlined: this.peekCharCode(parseInfo)
+                    if (charCode == TokenMap.MINUS || isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
                         // consume '@'
                         parseInfo.position = parseInfo.currentPosition;
                         tokensCount = this.consumeIdentToken(parseInfo);
@@ -1988,7 +1996,8 @@ export class Tokenizer {
 
                     this.skip(parseInfo, 1);
 
-                    if (this.peekCharCode(parseInfo) == TokenMap.COLON) {
+                    // inlined: this.peekCharCode(parseInfo)
+                    if (parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset) == TokenMap.COLON) {
                         this.skip(parseInfo, 1);
 
                         return this.makeToken(parseInfo, EnumToken.DoubleColonTokenType);
@@ -2010,7 +2019,8 @@ export class Tokenizer {
                     }
 
                     this.advanceCode(parseInfo);
-                    nextCharCode = this.peekCharCode(parseInfo);
+                    // inlined: this.peekCharCode(parseInfo)
+                    nextCharCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
 
                     while (
                         nextCharCode == 0x20 ||
@@ -2019,7 +2029,8 @@ export class Tokenizer {
                         nextCharCode == 0x2029
                     ) {
                         this.advanceCode(parseInfo);
-                        nextCharCode = this.peekCharCode(parseInfo);
+                        // inlined: this.peekCharCode(parseInfo)
+                        nextCharCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
                     }
 
                     return this.makeToken(parseInfo, EnumToken.WhitespaceTokenType);
@@ -2305,13 +2316,15 @@ export class Tokenizer {
             const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
 
             if (!done) {
-                parseInfo.source.append(stream as string);
+                // inlined: parseInfo.source.append(stream as string)
+                parseInfo.source.content += (stream as string);
             } else {
                 break;
             }
         }
 
-        parseInfo.stream = parseInfo.source.getContent();
+        // inlined: parseInfo.source.getContent()
+        parseInfo.stream = parseInfo.source.content;
         return this; // .next();
     }
 }

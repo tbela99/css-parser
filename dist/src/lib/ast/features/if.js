@@ -11,7 +11,6 @@ import { FeatureWalkMode } from './type.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
 import { replaceNode, replaceNodeOrValue } from '../../parser/utils/token.js';
 import { trimArray } from '../../validation/match.js';
-import { findByValue } from '../find.js';
 import { eqToken } from '../../parser/utils/eq.js';
 import { TokenField } from '../arena.js';
 
@@ -97,7 +96,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
             if (target != null &&
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
                 equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])) {
-                replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(targetWrapper), conditionValue(arena, elseCondition, nodeMap));
+                replaceNodeOrValue(arena, mapped(targetWrapper), conditionValue(arena, elseCondition, nodeMap));
                 if (targetParentWrapper != declaration) {
                     const siblings = arena.tokens(targetParentWrapper);
                     let index = siblings.indexOf(targetWrapper);
@@ -112,7 +111,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
                                     if (arena.dataTypes[child] === EnumToken.IfElseConditionTokenType) {
                                         const leftSide = conditionLeft(arena, arena.field(child, TokenField.L));
                                         if (left != null && leftSide != null && eqToken(arena, left, leftSide)) {
-                                            replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(siblings[i]), conditionValue(arena, arena.field(child, TokenField.R), nodeMap));
+                                            replaceNodeOrValue(arena, mapped(siblings[i]), conditionValue(arena, arena.field(child, TokenField.R), nodeMap));
                                             cache.add(arena.field(child, TokenField.L));
                                         }
                                     }
@@ -125,7 +124,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
         }
         result.push(clonedDeclaration);
         clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-        replaceNodeOrValue(arena, mapped(targetParentWrapper), mapped(targetWrapper), mapped(arena.field(node, TokenField.L)));
+        replaceNodeOrValue(arena, mapped(targetWrapper), mapped(arena.field(node, TokenField.L)));
         result.push(clonedDeclaration);
     }
     else if (arena.dataTypes[node] === EnumToken.IfConditionTokenType) {
@@ -136,7 +135,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
         const leftType = arena.dataTypes[left];
         if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-            replaceNodeOrValue(arena, mapped(parentWrapper), mapped(targetWrapper == declaration ? node : targetWrapper), conditionValue(arena, node, nodeMap));
+            replaceNodeOrValue(arena, mapped(targetWrapper == declaration ? node : targetWrapper), conditionValue(arena, node, nodeMap));
             result.push(clonedDeclaration);
         }
         else if (leftType === EnumToken.WhenElseFunctionTokenType) {
@@ -149,8 +148,9 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
                 convertColor: minify,
             });
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-            replaceNodeOrValue(arena, mapped(targetWrapper), mapped(node), conditionValue(arena, node, nodeMap));
-            arena.appendChildren(atRule, clonedDeclaration);
+            replaceNodeOrValue(arena, mapped(node), conditionValue(arena, node, nodeMap));
+            // inlined: arena.appendChildren(atRule, clonedDeclaration)
+            arena.appendChildList(atRule, [clonedDeclaration]);
             result.push(atRule);
             processNode(arena, clonedDeclaration, cache, parent);
         }
@@ -158,8 +158,9 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
             const atRule = createAtRule(arena, declaration, parent, "container", [arena.clone(left, true)]);
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
             const isWildCard = targetWrapper != declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
-            replaceNodeOrValue(arena, mapped(isWildCard ? targetParentWrapper : targetWrapper), mapped(isWildCard ? targetWrapper : node), conditionValue(arena, node, nodeMap));
-            arena.appendChildren(atRule, clonedDeclaration);
+            replaceNodeOrValue(arena, mapped(isWildCard ? targetWrapper : node), conditionValue(arena, node, nodeMap));
+            // inlined: arena.appendChildren(atRule, clonedDeclaration)
+            arena.appendChildList(atRule, [clonedDeclaration]);
             result.push(atRule);
             processNode(arena, clonedDeclaration, cache, parent);
         }
@@ -183,18 +184,18 @@ function processNode(arena, declarationNode, cache, parent = 0) {
     if (arena.parents[declarationNode] != 0) {
         parent = arena.parents[declarationNode];
     }
-    const nodeMatcher = (value) => isIfToken(arena, value);
     while (++k < stack.length) {
         astNode = stack[k];
-        const { node: declaration, value: node } = findByValue(arena, astNode, nodeMatcher) ?? {};
-        if (declaration == null || node == null || node.node == null) {
+        const found = arena.findByValue(astNode, isIfToken);
+        if (found == null) {
             result.push(astNode);
             continue;
         }
-        const value = node.node;
-        // @ts-expect-error
-        const parents = [...(node.parents?.() ?? [])];
-        const parentWrapper = node.parent ?? declaration;
+        const declaration = found.node;
+        const value = found.value;
+        // the parent of a detached token is the declaration
+        const parentWrapper = arena.getValueParent(value) || declaration;
+        const grandParent = parentWrapper == declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
         if (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType) {
             const conditions = arena.tokens(value);
             for (i = 0; i < conditions.length; i++) {
@@ -202,7 +203,7 @@ function processNode(arena, declarationNode, cache, parent = 0) {
             }
         }
         else {
-            stack.push(...substituteIfElseNode(arena, declaration, value, parentWrapper, parents[parents.indexOf(parentWrapper) + 1] ?? declaration, cache, parent));
+            stack.push(...substituteIfElseNode(arena, declaration, value, parentWrapper, grandParent, cache, parent));
         }
         // the node is substituted: release it unless it is the node being replaced
         if (astNode != declarationNode) {

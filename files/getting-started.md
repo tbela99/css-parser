@@ -161,12 +161,13 @@ const result = await transform(css, {
 console.debug(result.code);
 ```
 
-The library exposes three entry points:
+The library exposes two entry points:
 
 - `@tbela99/css-parser` or `@tbela99/css-parser/node` which relies on node fs and fs/promises to read files
 - `@tbela99/css-parser/web` which relies on the web fetch api to read files
-- ~~`@tbela99/css-parser/cjs` same as the previous except it is exported as a commonjs module.~~ 
-> Loading as a commonjs module is deprecated and will be removed in a future release.  ⚠️
+
+The library is an ES module. The deprecated commonjs entry point (`@tbela99/css-parser/cjs`) is removed in 2.0.0: use
+`import` (or a dynamic `import()` in a commonjs module, see [Migration](./migration.md)).
 
 ## From the web browser
 

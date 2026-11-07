@@ -32,6 +32,7 @@ export * as sourceMap from './sourcemaps.js';
 export * as vars from './vars.js';
 export * as visitors from './visitors.js';
 export * as walk from './walk.js';
+export * as object from './object.js';
 export * as validation from './validation.js';
 export * as atRules from './at-rules.js';
 export * as lenient from './lenient.js';

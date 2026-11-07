@@ -35,13 +35,14 @@ console.debug(isOkLabClose(arena, color, srgbColor));
 
 # Ast utility functions
 
-## cloneNode()
+## arena.clone()
 
-[Clone](../functions/node.cloneNode.html) an ast node. The clone is allocated in the same arena and returned as a node id.
+[Clone](../classes/node.AstArena.html#clone) an ast node. The clone is allocated in the same arena, detached, and
+returned as a node id. The children are cloned too when `deep` is true.
 
 ```ts
 
-import {cloneNode, parse} from '@tbela99/css-parser';
+import {parse} from '@tbela99/css-parser';
 
 const css = `
 body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
@@ -60,7 +61,7 @@ body {
 const result = await parse(css);
 
 // deep clone
-const clonedAst = cloneNode(result.arena, result.ast, true);
+const clonedAst = result.arena.clone(result.ast, true);
 ```
 
 
@@ -82,10 +83,11 @@ console.debug(render(arena, result.ast).code); // .bar{color:blue}.bar{color:blu
 
 ### replaceNodeOrValue()
 
-The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) replaces a value token in its parent token or in the values of an ast node. Throws an error if the target token is not found in the parent.
+The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) replaces a value token in its parent token or in the values of an ast node
+(the parent is `arena.getValueParent(target)`). Throws an error if the target token is detached.
 
 ```ts
-replaceNodeOrValue(arena: AstArena, parent: AstNode | Token | null, target: Token, replacement: Token | Token[]);
+replaceNodeOrValue(arena: AstArena, target: Token, replacement: Token | Token[]);
 ```
 
 ```ts
@@ -93,10 +95,10 @@ import {parse, replaceNodeOrValue, render, EnumToken} from '@tbela99/css-parser'
 
 const result = await parse(`.foo { width: calc(1px + 2px) }`);
 const arena = result.arena;
-const declaration = arena.firstChild[arena.firstChild[result.ast]];
+const declaration = arena.getFirstChild(arena.getFirstChild(result.ast));
 
 // replace the first value token
-replaceNodeOrValue(arena, declaration, arena.firstToken[declaration], arena.createToken(EnumToken.LengthTokenType, 3, 'px'));
+replaceNodeOrValue(arena, arena.getFirstToken(declaration), arena.createToken(EnumToken.LengthTokenType, 3, 'px'));
 
 console.debug(render(arena, result.ast).code); // .foo{width:3px}
 ```
@@ -174,4 +176,4 @@ console.debug(result.arena.toObject(values[1])); // second rule
 ```
 
 ------
-[← Arena Memory](./arena.md) | [Node Module →](../docs/modules/node.html)
+[← Arena Memory](./arena.md) | [Migration →](./migration.md)

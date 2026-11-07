@@ -70,7 +70,8 @@ export function matchAtRuleImportSyntax(
                     message: "Expected string or url()",
                     syntax: "@import",
                     node: stream[0],
-                    location: options.source!.getSourceLocation(arena.getSpanStart(stream[0])),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[0]))
+                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[0]))],
                 } as ErrorDescription,
             ],
         };
@@ -108,7 +109,8 @@ export function matchAtRuleImportSyntax(
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[index])),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                     } as ErrorDescription,
                 ],
             };
@@ -135,7 +137,8 @@ export function matchAtRuleImportSyntax(
                         message: `Expected <layer-name>`,
                         syntax: "@import",
                         node: stream[index],
-                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[index])),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                     } as ErrorDescription,
                 ],
             };

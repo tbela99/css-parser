@@ -31,20 +31,6 @@ export declare interface ClassSelectorToken extends BaseToken {
 }
 
 /**
- * Invalid class selector token
- */
-export declare interface InvalidClassSelectorToken extends BaseToken {
-    /**
-     * @inheritdoc
-     */
-    typ: EnumToken.InvalidClassSelectorTokenType;
-    /**
-     * invalid class name
-     */
-    val: string;
-}
-
-/**
  * Universal selector token
  */
 export declare interface UniversalSelectorToken extends BaseToken {
@@ -961,20 +947,6 @@ export declare interface AttrToken extends BaseToken {
 }
 
 /**
- * Invalid attribute token
- */
-export declare interface InvalidAttrToken extends BaseToken {
-    /**
-     * @inheritdoc
-     */
-    typ: EnumToken.InvalidAttrTokenType;
-    /**
-     * Children
-     */
-    chi: PlainToken[];
-}
-
-/**
  * Child combinator token
  */
 export declare interface ChildCombinatorToken extends BaseToken {
@@ -1237,21 +1209,6 @@ export declare interface MediaRangeQueryToken extends BaseToken {
      * right handle
      */
     r: PlainToken[];
-}
-
-/**
- * @inheritdoc
- */
-export declare interface InvalidMediaQueryToken extends BaseToken {
-    /**
-     * @inheritdoc
-     */
-    typ: EnumToken.InvalidMediaQueryTokenType;
-
-    /**
-     * children
-     */
-    chi: PlainToken[];
 }
 
 /**
@@ -1618,22 +1575,21 @@ export declare interface DeclarationToken extends BaseToken {
 /**
  * Value tokens are integer ids of records stored in an {@link AstArena}.
  *
- * - `arena.dataTypes[token]` is the token type ({@link EnumToken}),
- * - `arena.strings[arena.stringValue[token]]` is the string value (`val`),
- * - `arena.numericValue[token]` is the numeric value (`val`) of numbers, dimensions and percentages,
- * - `arena.strings[arena.unit[token]]` is the unit,
- * - `arena.colorType[token]` is the color kind (`kin`),
+ * - `arena.getType(token)` is the token type ({@link EnumToken}),
+ * - `arena.getValue(token)` is the string value (`val`),
+ * - `arena.getNumericValue(token)` is the numeric value (`val`) of numbers, dimensions and percentages,
+ * - `arena.getUnit(token)` is the unit,
+ * - `arena.getColorType(token)` is the color kind (`kin`),
  * - `arena.tokens(token)` are the children (`chi`),
  * - `arena.fieldTokens(token, TokenField.L)` ... are the structured fields (`l`, `r`, `op`, ...).
  */
 export declare type Token = number;
 
 /**
- * Plain object representation of a token (`arena.toObject()` / `arena.fromObject()`)
+ * Plain object representation of a token (`arena.toPlainObject()` / `arena.fromObject()`). `arena.toObject()` returns
+ * an {@link AstArenaNode} view with the same properties
  */
 export declare type PlainToken =
-    | InvalidClassSelectorToken
-    | InvalidAttrToken
     | LiteralToken
     | IdentToken
     | IdentListToken
@@ -1733,7 +1689,6 @@ export declare type PlainToken =
     | AttrToken
     | FunctionDefToken
     | RawNodeToken
-    | InvalidMediaQueryToken
     | NaNToken
     | InfinityToken
     | NegativeInfinityToken

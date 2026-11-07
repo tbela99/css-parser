@@ -83,7 +83,8 @@ export function parseMediaqueryList(
                             action: "drop",
                             message: `expecting '<media-type>'`,
                             node: stream[i],
-                            location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                         });
                     }
                 } else if (arena.dataTypes[stream[i]] !== EnumToken.StartParensTokenType) {
@@ -92,7 +93,8 @@ export function parseMediaqueryList(
                         action: "drop",
                         message: `expecting '('`,
                         node: stream[i],
-                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                     });
                 }
             }
@@ -151,7 +153,8 @@ export function parseMediaqueryList(
                                         action: "drop",
                                         node: stream[i],
                                         message: `<or> is not allowed outside of parentheses`,
-                                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                     });
 
                                     break;
@@ -163,7 +166,8 @@ export function parseMediaqueryList(
                                         action: "drop",
                                         node: stream[i],
                                         message: `cannot mix <and> and <or> at the same level`,
-                                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                     });
                                 }
 
@@ -293,11 +297,16 @@ export function parseMediaqueryList(
 
                                 const rangeQuery: Token = arena.createToken(EnumToken.MediaRangeQueryTokenType);
 
-                                arena.setField(rangeQuery, TokenField.L, ...left);
-                                arena.setField(rangeQuery, TokenField.Val, ...filteredNames);
-                                arena.setField(rangeQuery, TokenField.Op, prevToken);
-                                arena.setField(rangeQuery, TokenField.Op2, stack[stack.length - 1]);
-                                arena.setField(rangeQuery, TokenField.R, ...right);
+                                // inlined: arena.setField(rangeQuery, TokenField.L, ...left)
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.L), left);
+                                // inlined: arena.setField(rangeQuery, TokenField.Val, ...filteredNames)
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Val), filteredNames);
+                                // inlined: arena.setField(rangeQuery, TokenField.Op, prevToken)
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op), [prevToken]);
+                                // inlined: arena.setField(rangeQuery, TokenField.Op2, stack[stack.length - 1])
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [stack[stack.length - 1]]);
+                                // inlined: arena.setField(rangeQuery, TokenField.R, ...right)
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.R), right);
 
                                 if (left.length > 0 && right.length > 0) {
                                     arena.spanLocation(rangeQuery, left[0], right[right.length - 1]);
@@ -370,7 +379,8 @@ export function parseMediaqueryList(
                                 errors.push({
                                     action: "drop",
                                     node: arr[0],
-                                    location: options.source!.getSourceLocation(arena.getSpanStart(arr[0])),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(arr[0]))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(arr[0]))],
                                     message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
 
@@ -404,21 +414,27 @@ export function parseMediaqueryList(
                                 }
                             }
 
-                            if (arena.typeOf(stack.at(-1)) === EnumToken.ColonTokenType) {
+                            // inlined: arena.typeOf(stack.at(-1))
+                            if (arena.dataTypes[stack.at(-1) as number] === EnumToken.ColonTokenType) {
                                 if (name.startsWith("min-")) {
-                                    arena.setStr(filteredNames[0], name.substring(4));
+                                    // inlined: arena.setStr(filteredNames[0], name.substring(4))
+                                    arena.stringValue[filteredNames[0]] = arena.internString(name.substring(4));
                                     arena.dataTypes[stack[stack.length - 1]] = EnumToken.GteTokenType;
                                 } else if (name.startsWith("max-")) {
-                                    arena.setStr(filteredNames[0], name.substring(4));
+                                    // inlined: arena.setStr(filteredNames[0], name.substring(4))
+                                    arena.stringValue[filteredNames[0]] = arena.internString(name.substring(4));
                                     arena.dataTypes[stack[stack.length - 1]] = EnumToken.LteTokenType;
                                 }
                             }
 
                             const condition: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
-                            arena.setField(condition, TokenField.L, ...names);
-                            arena.setField(condition, TokenField.Op, stack.pop() as Token);
-                            arena.setField(condition, TokenField.R, ...values);
+                            // inlined: arena.setField(condition, TokenField.L, ...names)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.L), names);
+                            // inlined: arena.setField(condition, TokenField.Op, stack.pop() as Token)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.Op), [(stack.pop() as Token)]);
+                            // inlined: arena.setField(condition, TokenField.R, ...values)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.R), values);
 
                             if (names.length > 0 && values.length > 0) {
                                 arena.spanLocation(condition, names[0], values[values.length - 1]);
@@ -432,7 +448,8 @@ export function parseMediaqueryList(
                             errors.push({
                                 action: "drop",
                                 node: stream[i],
-                                location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                 message: `unmatched ')'`,
                             });
 
@@ -452,8 +469,10 @@ export function parseMediaqueryList(
                             stack.pop();
 
                             if (
-                                arena.typeOf(stack.at(-1)) === EnumToken.AndTokenType ||
-                                arena.typeOf(stack.at(-1)) === EnumToken.OrTokenType
+                                // inlined: arena.typeOf(stack.at(-1))
+                                arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType ||
+                                // inlined: arena.typeOf(stack.at(-1))
+                                arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType
                             ) {
                                 const index = tokens.indexOf(stack.at(-1)!);
                                 let l: number = index - 1;
@@ -472,9 +491,12 @@ export function parseMediaqueryList(
                                 const op: Token = stack.pop() as Token;
                                 const condition: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
-                                arena.setField(condition, TokenField.Op, op);
-                                arena.setField(condition, TokenField.L, ...left);
-                                arena.setField(condition, TokenField.R, ...right);
+                                // inlined: arena.setField(condition, TokenField.Op, op)
+                                arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
+                                // inlined: arena.setField(condition, TokenField.L, ...left)
+                                arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
+                                // inlined: arena.setField(condition, TokenField.R, ...right)
+                                arena.setTokenList(arena.fieldList(condition, TokenField.R), right);
 
                                 if (left.length > 0 && right.length > 0) {
                                     arena.spanLocation(condition, left[0], right[right.length - 1]);
@@ -530,16 +552,22 @@ export function parseMediaqueryList(
                                                     ? EnumToken.LteTokenType
                                                     : EnumToken.LtTokenType;
 
-                                            arena.setField(rangeQuery, TokenField.L, ...arena.fieldTokens(leftCondition, TokenField.R));
-                                            arena.setField(rangeQuery, TokenField.Val, ...leftNames);
-                                            arena.setField(rangeQuery, TokenField.Op, leftOp);
-                                            arena.setField(rangeQuery, TokenField.Op2, rightOp);
-                                            arena.setField(rangeQuery, TokenField.R, ...arena.fieldTokens(rightCondition, TokenField.R));
+                                            // inlined: arena.setField(rangeQuery, TokenField.L, ...arena.fieldTokens(leftCondition, TokenField.R))
+                                            arena.setTokenList(arena.fieldList(rangeQuery, TokenField.L), arena.fieldTokens(leftCondition, TokenField.R));
+                                            // inlined: arena.setField(rangeQuery, TokenField.Val, ...leftNames)
+                                            arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Val), leftNames);
+                                            // inlined: arena.setField(rangeQuery, TokenField.Op, leftOp)
+                                            arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op), [leftOp]);
+                                            // inlined: arena.setField(rangeQuery, TokenField.Op2, rightOp)
+                                            arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [rightOp]);
+                                            // inlined: arena.setField(rangeQuery, TokenField.R, ...arena.fieldTokens(rightCondition, TokenField.R))
+                                            arena.setTokenList(arena.fieldList(rangeQuery, TokenField.R), arena.fieldTokens(rightCondition, TokenField.R));
                                             arena.spanLocation(rangeQuery, left[0], right[right.length - 1]);
 
                                             const parens: Token = arena.createToken(EnumToken.ParensTokenType);
 
-                                            arena.setTokens(parens, rangeQuery);
+                                            // inlined: arena.setTokens(parens, rangeQuery)
+                                            arena.setTokenList(parens, [rangeQuery]);
                                             arena.copyLocation(parens, rangeQuery);
                                             tokens[l] = parens;
                                         }
@@ -575,7 +603,7 @@ export function parseMediaqueryList(
     let hasPart: boolean = false;
 
     for (const part of parts) {
-        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+        if (part.length == 0) {
             continue;
         }
 
@@ -597,7 +625,6 @@ export function parseMediaqueryList(
                 (t) =>
                     arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
                     arena.dataTypes[t] !== EnumToken.CommentTokenType &&
-                    arena.dataTypes[t] !== EnumToken.InvalidMediaQueryTokenType &&
                     arena.dataTypes[t] !== EnumToken.CommaTokenType,
             ).length !== 0,
         errors,

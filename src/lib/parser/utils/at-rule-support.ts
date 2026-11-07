@@ -42,9 +42,11 @@ export function parseAtRuleSupportSyntax(
                 arena.dataTypes[stream[i]] = pseudoElements.includes(val)
                     ? EnumToken.PseudoElementTokenType
                     : EnumToken.PseudoClassTokenType;
-                arena.setStr(stream[i], ":" + val);
+                // inlined: arena.setStr(stream[i], ":" + val)
+                arena.stringValue[stream[i]] = arena.internString((":" + val));
 
-                arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]));
+                // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
+                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -56,17 +58,20 @@ export function parseAtRuleSupportSyntax(
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.dataTypes[stream[i + 1]];
-                arena.setStr(stream[i], val);
+                // inlined: arena.setStr(stream[i], val)
+                arena.stringValue[stream[i]] = arena.internString(val);
 
                 stack.push(stream[i]);
-                arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]));
+                // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
+                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
                 stream.splice(i + 1, 1);
                 continue;
             }
         }
 
         if (trimWhiteSpace.has(arena.dataTypes[stream[i]])) {
-            if (arena.typeOf(tokens.at(-2)) === EnumToken.WhitespaceTokenType) {
+            // inlined: arena.typeOf(tokens.at(-2))
+            if (arena.dataTypes[tokens.at(-2) as number] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(tokens.length - 2, 1);
             }
 
@@ -116,7 +121,8 @@ export function parseAtRuleSupportSyntax(
 
                     // match <support-condition-name>
                     // @supports (--condition-name) {}
-                    if (arena.typeOf(stack.at(-1)) === EnumToken.StartParensTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1) as number] === EnumToken.StartParensTokenType) {
                         const parens: Token = stack[stack.length - 1];
                         const index: number = tokens.indexOf(parens);
                         const slice: Token[] = trimArray(arena, tokens.splice(index + 1, tokens.length - index - 2));
@@ -180,20 +186,24 @@ export function parseAtRuleSupportSyntax(
                         scope = scopes[scopes.length - 1];
                     }
 
-                    if (arena.typeOf(stack.at(-1)) === EnumToken.NotTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1) as number] === EnumToken.NotTokenType) {
                         const not: Token = stack[stack.length - 1];
                         const index: number = tokens.indexOf(not);
                         const unary: Token = arena.createToken(EnumToken.SupportsQueryUnaryConditionTokenType);
 
-                        arena.setField(unary, TokenField.R, ...trimArray(arena, tokens.splice(index + 1, i - index - 1)));
-                        arena.setField(unary, TokenField.L, not);
+                        // inlined: arena.setField(unary, TokenField.R, ...trimArray(arena, tokens.splice(index + 1, i - index - 1)))
+                        arena.setTokenList(arena.fieldList(unary, TokenField.R), trimArray(arena, tokens.splice(index + 1, i - index - 1)));
+                        // inlined: arena.setField(unary, TokenField.L, not)
+                        arena.setTokenList(arena.fieldList(unary, TokenField.L), [not]);
                         arena.spanLocation(unary, not, stream[i]);
                         tokens[index] = unary;
 
                         stack.pop();
                     }
 
-                    if (arena.typeOf(stack.at(-1)) === EnumToken.AndTokenType || arena.typeOf(stack.at(-1)) === EnumToken.OrTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType || arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType) {
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         const index2: number = stack.length > 1 ? tokens.indexOf(stack.at(-2)!) + 1 : 0;
 
@@ -201,9 +211,12 @@ export function parseAtRuleSupportSyntax(
                         const left: Token[] = trimArray(arena, tokens.slice(index2, index));
                         const condition: Token = arena.createToken(EnumToken.SupportsQueryConditionTokenType);
 
-                        arena.setField(condition, TokenField.L, ...left);
-                        arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)));
-                        arena.setField(condition, TokenField.Op, op);
+                        // inlined: arena.setField(condition, TokenField.L, ...left)
+                        arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
+                        // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)))
+                        arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, tokens.slice(index + 1)));
+                        // inlined: arena.setField(condition, TokenField.Op, op)
+                        arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
                         arena.spanLocation(condition, op, stream[i]);
                         tokens[index2] = condition;
                         tokens.length = index2 + 1;
@@ -228,8 +241,10 @@ export function parseAtRuleSupportSyntax(
 
                     if ("and" === val || "or" === val) {
                         if ("or" === val && scopes.length === 1 && scopes[0].size > 0) {
-                            const fileName = options.source!.getFileName() ?? "";
-                            const [line, column] = options.source!.getOffsets(arena.getSpanStart(stream[i]));
+                            // inlined: options.source!.getFileName()
+                            const fileName = options.source!.file ?? "";
+                            // inlined: options.source!.getOffsets(arena.getSpanStart(stream[i]))
+                            const [line, column] = options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]));
                             return {
                                 success: false,
                                 errors: [

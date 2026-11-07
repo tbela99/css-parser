@@ -156,7 +156,8 @@ class PropertyMap {
                         }
                         // default
                         if (props.default.length > 0) {
-                            const defaults = this.parse(props.default[0]);
+                            // inlined: this.parse(props.default[0])
+                            const defaults = this.memo == null ? parseString(this.arena, props.default[0]) : this.memo.parse(this.arena, props.default[0]);
                             if (!(property in tokens)) {
                                 tokens[property] = [[...defaults]];
                             }
@@ -253,7 +254,9 @@ class PropertyMap {
                                     }
                                 }
                                 if (mappedValues.length == 0) {
-                                    mappedValues.push(...this.parse(value.config.properties[key].default[0]));
+                                    mappedValues.push(
+                                    // inlined: this.parse((value as PropertyMap).config.properties[key].default[0])
+                                    ...(this.memo == null ? parseString(this.arena, value.config.properties[key].default[0]) : this.memo.parse(this.arena, value.config.properties[key].default[0])));
                                 }
                                 arena.setTokenList(mapped[key], mappedValues);
                             }
@@ -393,7 +396,9 @@ class PropertyMap {
                     }
                 }
                 if (filtered.length == 0 && this.config.default.length > 0) {
-                    filtered.push(arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, this.parse(this.config.default[0]), null, null));
+                    filtered.push(arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, 
+                    // inlined: this.parse(this.config.default[0])
+                    this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]), null, null));
                     if (isImportant) {
                         arena.appendToken(filtered[0], arena.createToken(EnumToken.ImportantTokenType));
                     }
@@ -412,12 +417,14 @@ class PropertyMap {
                 const declarationValues = arena.tokens(declaration);
                 // @ts-ignore
                 for (const [key, val] of Object.entries(config.mapping)) {
-                    const keys = this.parse(key);
+                    // inlined: this.parse(key)
+                    const keys = this.memo == null ? parseString(this.arena, key) : this.memo.parse(this.arena, key);
                     if (keys.length != declarationValues.length) {
                         continue;
                     }
                     if (keys.every((k, index) => eqToken(arena, k, declarationValues[index]))) {
-                        arena.setTokenList(declaration, this.parse(val));
+                        // inlined: this.parse(val as string)
+                        arena.setTokenList(declaration, this.memo == null ? parseString(this.arena, val) : this.memo.parse(this.arena, val));
                         break;
                     }
                 }
@@ -639,9 +646,12 @@ class PropertyMap {
                                         if (arena.dataTypes[values[i]] == EnumToken.IdenTokenType &&
                                             // @ts-expect-error
                                             arena.strings[arena.stringValue[values[i]]] in props.mapping) {
-                                            values.splice(i, 1, ...this.parse(
-                                            // @ts-ignore
-                                            props.mapping[arena.strings[arena.stringValue[values[i]]]]));
+                                            // inlined: this.parse(props.mapping[arena.strings[arena.stringValue[values[i]]]])
+                                            values.splice(i, 1, ...(this.memo == null
+                                                ? // @ts-ignore
+                                                    parseString(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])
+                                                : // @ts-ignore
+                                                    this.memo.parse(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])));
                                         }
                                     }
                                 }
@@ -670,7 +680,9 @@ class PropertyMap {
                         acc.push(configToken(arena, separator));
                     }
                     if (curr.length == 0 && this.config.default.length > 0) {
-                        curr.push(...this.parse(this.config.default[0]).reduce((acc, curr) => {
+                        curr.push(
+                        // inlined: this.parse(this.config.default[0])
+                        ...(this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0])).reduce((acc, curr) => {
                             if (acc.length > 0) {
                                 acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                             }
@@ -702,7 +714,8 @@ class PropertyMap {
                     arena.stringValue[values[0]] != 0 &&
                     this.config.default.includes(arena.strings[arena.stringValue[values[0]]].toLowerCase()) &&
                     this.config.default[0] != arena.strings[arena.stringValue[values[0]]].toLowerCase()) {
-                    values = this.parse(this.config.default[0]);
+                    // inlined: this.parse(this.config.default[0])
+                    values = this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]);
                 }
                 iterable = [
                     arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, values, null, null),

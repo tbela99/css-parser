@@ -70,7 +70,8 @@ class TransformCssFeature {
                 r.push(minified);
             }
             const l = renderValue(arena, matrix).length;
-            arena.setTokens(node, ...r.reduce((acc, curr) => {
+            // inlined: arena.setTokens(node, ...r.reduce((acc: Token[], curr: Token[]): Token[] => { if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) { return curr; } return acc; }, [matrix]))
+            arena.setTokenList(node, r.reduce((acc, curr) => {
                 if (curr.reduce((acc, t) => acc + renderValue(arena, t), "").length < l) {
                     return curr;
                 }

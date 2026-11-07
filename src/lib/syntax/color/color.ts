@@ -236,7 +236,8 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
 
             for (const t of Object.values(components)) {
                 // a component token may be used more than once: rgb(from #ff0 r g r)
-                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : arena.take(t));
+                // inlined: arena.take(t)
+                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : (arena.parents[t] == 0 ? t : arena.clone(t, true)));
                 seen.add(t);
             }
 
@@ -249,7 +250,8 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
         if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
             const val: string = reduceHexValue(arena.strings[arena.stringValue[token]]);
 
-            arena.setStr(token, val);
+            // inlined: arena.setStr(token, val)
+            arena.stringValue[token] = arena.internString(val);
             arena.colorType[token] = val[0] == "#" ? ColorType.HEX : ColorType.LIT;
         }
 
@@ -259,7 +261,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
     if (arena.colorType[token] == ColorType.COLOR) {
         const colorSpace: Token | null = arena.findToken(
             token,
-            (t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]),
+            (arena: AstArena, t: Token) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]),
         );
 
         if (

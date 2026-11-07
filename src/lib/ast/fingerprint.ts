@@ -71,7 +71,7 @@ function normalize(value: number): number {
  *
  * ```ts
  * const memo = new StructuralMemo<string>();
- * const slot = memo.list(arena, arena.firstToken[declaration]);
+ * const slot = memo.list(arena, arena.getFirstToken(declaration));
  * let value = memo.get(slot);
  *
  * if (value === undefined) {
@@ -90,9 +90,11 @@ export class StructuralMemo<T> {
     static readonly shape: StructuralMemo<unknown> = new StructuralMemo();
 
     /**
-     * values by slot
+     * values by slot. read and written by the library (see {@link get} and {@link set})
+     *
+     * @internal
      */
-    private values: Array<T | undefined> = [];
+    readonly values: Array<T | undefined> = [];
     /**
      * key hash, key offset in the pool and key length of each slot (3 values per slot)
      */

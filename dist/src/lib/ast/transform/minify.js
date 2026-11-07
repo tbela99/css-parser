@@ -189,7 +189,8 @@ function eqMatrix(arena, a, b) {
 function minifyTransformFunctions(arena, transform) {
     const name = arena.strings[arena.stringValue[transform]];
     if ("skewX" == name) {
-        arena.setStr(transform, "skew");
+        // inlined: arena.setStr(transform, "skew")
+        arena.stringValue[transform] = arena.internString("skew");
         return transform;
     }
     if (!["translate", "translate3d", "scale", "scale3d"].includes(name)) {

@@ -7,8 +7,7 @@
  */
 import { TokenField } from '../ast/arena.js';
 import { isOkLabClose } from './color/utils/distance.js';
-import { EnumToken, ColorType } from '../ast/types.js';
-import { walkValues, WalkerOptionEnum } from '../ast/walk.js';
+import { EnumToken, ColorType, WalkerOptionEnum } from '../ast/types.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { memoize } from '../parser/utils/cache.js';
 import { equalsIgnoreCase, lowercase } from '../parser/utils/text.js';
@@ -18,6 +17,7 @@ import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
 import { colorPrecision, epsilon, anglePrecision, colorFuncColorSpace, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
+import { ValueWalker } from '../ast/walk.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
 // https://www.w3.org/TR/2021/CRD-css-syntax-3-20211224/#typedef-ident-token
@@ -851,9 +851,10 @@ function isColor(arena, token, errors) {
                         else if (arena.dataTypes[value] === EnumToken.MathFunctionTokenType &&
                             equalsIgnoreCase("calc", arena.strings[arena.stringValue[value]])) {
                             let val;
-                            for (const v of walkValues(arena, arena.tokens(value))) {
-                                if (arena.dataTypes[v.value] === EnumToken.IdenTokenType) {
-                                    val = arena.strings[arena.stringValue[v.value]].toLowerCase();
+                            // inlined: arena.walkValues(arena.tokens(value))
+                            for (const v of new ValueWalker(arena, arena.tokens(value))) {
+                                if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
+                                    val = arena.strings[arena.stringValue[v]].toLowerCase();
                                     if (
                                     // @ts-expect-error
                                     typeof Math[val.toUpperCase()] !== "number" &&
@@ -864,7 +865,7 @@ function isColor(arena, token, errors) {
                                         errors?.push({
                                             action: "drop",
                                             message: `Unexpected constant '${val}'`,
-                                            node: v.value,
+                                            node: v,
                                         });
                                         return false;
                                     }
@@ -874,9 +875,12 @@ function isColor(arena, token, errors) {
                     }
                 }
             }
-            for (const { value, parent } of walkValues(arena, arena.tokens(token), token, (value) => arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType
+            // inlined: arena.walkValues(arena.tokens(token), filter)
+            for (const value of new ValueWalker(arena, arena.tokens(token), (arena, value) => arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType
                 ? WalkerOptionEnum.Ignore | WalkerOptionEnum.IgnoreChildren
                 : null)) {
+                // the parent of a detached token is the root token
+                const parent = arena.getValueParent(value) || token;
                 let k = 0;
                 let l;
                 let tk = 0;
@@ -1038,46 +1042,55 @@ function parseColor(arena, token) {
         const val = arena.strings[arena.stringValue[token]].toLowerCase();
         if (nonStandardColors.has(val)) {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
-            arena.setColorType(token, ColorType.NON_STD);
+            // inlined: arena.setColorType(token, ColorType.NON_STD)
+            arena.colorType[token] = ColorType.NON_STD;
             return token;
         }
         if (systemColors.has(val)) {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
-            arena.setColorType(token, ColorType.SYS);
+            // inlined: arena.setColorType(token, ColorType.SYS)
+            arena.colorType[token] = ColorType.SYS;
             return token;
         }
         if (deprecatedSystemColors.has(val)) {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
-            arena.setColorType(token, ColorType.DPSYS);
+            // inlined: arena.setColorType(token, ColorType.DPSYS)
+            arena.colorType[token] = ColorType.DPSYS;
             return token;
         }
         if (val in COLORS_NAMES || val === "currentcolor") {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
-            arena.setStr(token, val);
-            arena.setColorType(token, ColorType.LIT);
+            // inlined: arena.setStr(token, val)
+            arena.stringValue[token] = arena.internString(val);
+            // inlined: arena.setColorType(token, ColorType.LIT)
+            arena.colorType[token] = ColorType.LIT;
             return token;
         }
     }
     if (typ === EnumToken.ColorTokenType) {
         const val = arena.strings[arena.stringValue[token]];
         if (arena.colorType[token] == ColorType.NONE && arena.stringValue[token] != 0) {
+            // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
-            arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
+            arena.colorType[token] = (ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
         }
         if (arena.firstToken[token] != 0) {
-            const tk = arena.findToken(token, (t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
+            const tk = arena.findToken(token, (arena, t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
                 arena.dataTypes[t] !== EnumToken.CommentTokenType);
             if (tk != null &&
                 arena.dataTypes[tk] === EnumToken.IdenTokenType &&
                 arena.strings[arena.stringValue[tk]] === "from") {
-                arena.setUnitString(token, "rel");
+                // inlined: arena.setUnitString(token, "rel")
+                arena.unit[token] = arena.internString("rel");
             }
             else if (val == "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] == "in") {
-                arena.setUnitString(token, "mix");
+                // inlined: arena.setUnitString(token, "mix")
+                arena.unit[token] = arena.internString("mix");
             }
             if (val == "color") {
                 if (tk != null && EnumToken.DashedIdenTokenType == arena.dataTypes[tk]) {
-                    arena.setColorType(token, ColorType.CUSTOM_COLOR);
+                    // inlined: arena.setColorType(token, ColorType.CUSTOM_COLOR)
+                    arena.colorType[token] = ColorType.CUSTOM_COLOR;
                 }
             }
         }

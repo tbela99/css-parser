@@ -6,12 +6,12 @@
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
-import { walkValues } from '../walk.js';
 import { renderValue } from '../../printer/render.js';
 import { splitRule } from '../minify.js';
 import { FeatureWalkMode } from './type.js';
 import { mathFuncs } from '../../syntax/constants.js';
 import { TokenField } from '../arena.js';
+import { ValueWalker } from '../walk.js';
 
 /**
  * inline a binary expression into a parens token: (l op r)
@@ -34,7 +34,10 @@ function inlineExpression(arena, token) {
     return result;
 }
 function replace(arena, node, variableScope) {
-    for (const { value, parent: parentValue } of walkValues(arena, arena.tokens(node), node)) {
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
+        // the parent of a detached token is the declaration
+        const parentValue = arena.getValueParent(value) || node;
         if (arena.dataTypes[value] == EnumToken.BinaryExpressionTokenType &&
             parentValue != null &&
             parentValue != node &&
@@ -43,7 +46,8 @@ function replace(arena, node, variableScope) {
             arena.replaceToken(value, ...inlineExpression(arena, value));
         }
     }
-    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
         const typ = arena.dataTypes[value];
         if (typ == EnumToken.MathFunctionTokenType ||
             (typ == EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")) {
@@ -104,7 +108,8 @@ class InlineCssVariablesFeature {
                 info.parent.add(ast);
                 variableScope.set(name, info);
                 let recursive = false;
-                for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                // inlined: arena.walkValues(node)
+                for (const value of new ValueWalker(arena, node)) {
                     if (arena.dataTypes[value] == EnumToken.MathFunctionTokenDefType ||
                         (arena.dataTypes[value] == EnumToken.WildCardFunctionTokenType &&
                             (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||

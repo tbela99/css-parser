@@ -484,7 +484,8 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
                     ),
                 );
 
-                arena.setUnitString(color, "col");
+                // inlined: arena.setUnitString(color, "col")
+                arena.unit[color] = "col" == null ? 0 : arena.internString("col");
                 return color;
             }
 
@@ -516,7 +517,8 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
 
             if (colorSpace == "hsl") {
                 arena.dataTypes[components[0]] = EnumToken.AngleTokenType;
-                arena.setUnitString(components[0], "deg");
+                // inlined: arena.setUnitString(components[0], "deg")
+                arena.unit[components[0]] = "deg" == null ? 0 : arena.internString("deg");
                 arena.dataTypes[components[1]] = EnumToken.PercentageTokenType;
                 arena.dataTypes[components[2]] = EnumToken.PercentageTokenType;
             }

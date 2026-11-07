@@ -11,8 +11,8 @@ import { getColorComponents } from './utils/components.js';
 import { makeColor } from './utils/make-color.js';
 import { getColorType } from './utils/color-type.js';
 import { equalsIgnoreCase } from '../../parser/utils/text.js';
-import { walkValues } from '../../ast/walk.js';
 import { evaluate } from '../../ast/math/expression.js';
+import { ValueWalker } from '../../ast/walk.js';
 
 /**
  * Compute alpha color
@@ -30,7 +30,8 @@ function alpha(arena, color, alpha) {
     }
     let components = getColorComponents(arena, color);
     if (arena.dataTypes[alpha] === EnumToken.MathFunctionTokenType) {
-        for (const { value } of walkValues(arena, arena.tokens(alpha), alpha)) {
+        // inlined: arena.walkValues(arena.tokens(alpha))
+        for (const value of new ValueWalker(arena, arena.tokens(alpha))) {
             if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
                 if (equalsIgnoreCase(arena.strings[arena.stringValue[value]], "alpha")) {
                     // replace the identifier with the alpha value

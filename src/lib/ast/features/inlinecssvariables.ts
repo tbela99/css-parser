@@ -9,12 +9,12 @@ import type {
     VariableScopeInfo,
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import { walkValues } from "../walk.ts";
 import { renderValue } from "../../printer/render.ts";
 import { splitRule } from "../minify.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
 import { type AstArena, TokenField } from "../arena.ts";
+import { ValueWalker } from "../walk.ts";
 
 /**
  * inline a binary expression into a parens token: (l op r)
@@ -42,7 +42,11 @@ function inlineExpression(arena: AstArena, token: Token): Token[] {
 }
 
 function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<string, VariableScopeInfo>) {
-    for (const { value, parent: parentValue } of walkValues(arena, arena.tokens(node), node)) {
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
+        // the parent of a detached token is the declaration
+        const parentValue: Token = arena.getValueParent(value) || node;
+
         if (
             arena.dataTypes[value] == EnumToken.BinaryExpressionTokenType &&
             parentValue != null &&
@@ -54,7 +58,8 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
         }
     }
 
-    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+    // inlined: arena.walkValues(node)
+    for (const value of new ValueWalker(arena, node)) {
         const typ: EnumToken = arena.dataTypes[value];
 
         if (
@@ -147,7 +152,8 @@ export class InlineCssVariablesFeature {
 
                 let recursive: boolean = false;
 
-                for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                // inlined: arena.walkValues(node)
+                for (const value of new ValueWalker(arena, node)) {
                     if (
                         arena.dataTypes[value] == EnumToken.MathFunctionTokenDefType ||
                         (arena.dataTypes[value] == EnumToken.WildCardFunctionTokenType &&

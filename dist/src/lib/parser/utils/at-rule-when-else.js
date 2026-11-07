@@ -103,9 +103,12 @@ function matchAtRuleWhenElseSyntax(arena, stream, context, options = {}) {
                         const index = tokens.indexOf(op);
                         const index2 = stack.length > 1 ? tokens.indexOf(stack[stack.length - 2]) + 1 : 0;
                         const condition = arena.createToken(EnumToken.WhenElseQueryConditionTokenType);
-                        arena.setField(condition, TokenField.L, ...trimArray(arena, tokens.slice(index2, index)));
-                        arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)));
-                        arena.setField(condition, TokenField.Op, op);
+                        // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, tokens.slice(index2, index)))
+                        arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, tokens.slice(index2, index)));
+                        // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)))
+                        arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, tokens.slice(index + 1)));
+                        // inlined: arena.setField(condition, TokenField.Op, op)
+                        arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
                         arena.spanLocation(condition, op, stream[i]);
                         tokens[index2] = condition;
                         tokens.length = index2 + 1;

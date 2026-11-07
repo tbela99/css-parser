@@ -1,3 +1,4 @@
+import { numericTokenTypes } from "../arena.ts";
 import type { Token } from "../../../@types/index.d.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
@@ -196,7 +197,8 @@ function evaluateTokens(arena: AstArena, tokens: Token[]): Token[] {
         const token: Token = values.reduce((acc: Token, curr: Token) => doEvaluate(arena, acc, curr, EnumToken.Add));
 
         if (arena.dataTypes[token] != EnumToken.BinaryExpressionTokenType) {
-            if (arena.isNumeric(token) && arena.numericValue[token] < 0) {
+            // inlined: arena.isNumeric(token)
+            if (numericTokenTypes.has(arena.dataTypes[token]) && arena.numericValue[token] < 0) {
                 arena.numericValue[token] = -arena.numericValue[token];
                 result.push(tokenAt(arena, EnumToken.Sub, token), token);
                 continue;
@@ -204,7 +206,8 @@ function evaluateTokens(arena: AstArena, tokens: Token[]): Token[] {
         }
 
         if (result.length > 0 && key != EnumToken.ListToken) {
-            if (arena.isNumeric(token) && arena.numericValue[token] == 0) {
+            // inlined: arena.isNumeric(token)
+            if (numericTokenTypes.has(arena.dataTypes[token]) && arena.numericValue[token] == 0) {
                 continue;
             }
 
@@ -403,7 +406,8 @@ function computeNaN(arena: AstArena, l: Token, r: Token, defaultReturn: () => To
             return l;
         }
 
-        if (arena.isNumeric(r)) {
+        // inlined: arena.isNumeric(r)
+        if (numericTokenTypes.has(arena.dataTypes[r])) {
             setNumericValue(arena, r, 1);
         }
 
@@ -420,7 +424,8 @@ function computeNaN(arena: AstArena, l: Token, r: Token, defaultReturn: () => To
             return r;
         }
 
-        if (arena.isNumeric(l)) {
+        // inlined: arena.isNumeric(l)
+        if (numericTokenTypes.has(arena.dataTypes[l])) {
             setNumericValue(arena, l, 1);
         }
     }
@@ -540,7 +545,8 @@ function getValue(arena: AstArena, t: Token): number | null {
         return arena.numericValue[arena.firstChild[t]] / arena.numericValue[arena.lastChild[t]];
     }
 
-    if (!arena.isNumeric(t)) {
+    // inlined: arena.isNumeric(t)
+    if (!numericTokenTypes.has(arena.dataTypes[t])) {
         // not a number
         return NaN;
     }
@@ -562,20 +568,24 @@ function getValue(arena: AstArena, t: Token): number | null {
 function toRadians(arena: AstArena, token: Token): Token {
     if (arena.dataTypes[token] == EnumToken.NumberTokenType) {
         arena.dataTypes[token] = EnumToken.AngleTokenType;
-        arena.setUnitString(token, "rad");
+        // inlined: arena.setUnitString(token, "rad")
+        arena.unit[token] = "rad" == null ? 0 : arena.internString("rad");
     } else if (arena.dataTypes[token] == EnumToken.AngleTokenType && arena.strings[arena.unit[token]] != "rad") {
         switch (arena.strings[arena.unit[token]]) {
             case "deg":
                 arena.numericValue[token] *= Math.PI / 180;
-                arena.setUnitString(token, "rad");
+                // inlined: arena.setUnitString(token, "rad")
+                arena.unit[token] = "rad" == null ? 0 : arena.internString("rad");
                 break;
             case "grad":
                 arena.numericValue[token] *= Math.PI / 200;
-                arena.setUnitString(token, "rad");
+                // inlined: arena.setUnitString(token, "rad")
+                arena.unit[token] = "rad" == null ? 0 : arena.internString("rad");
                 break;
             case "turn":
                 arena.numericValue[token] *= 2 * Math.PI;
-                arena.setUnitString(token, "rad");
+                // inlined: arena.setUnitString(token, "rad")
+                arena.unit[token] = "rad" == null ? 0 : arena.internString("rad");
                 break;
         }
     }
@@ -709,7 +719,8 @@ export function evaluateFunc(arena: AstArena, token: Token): Token[] | null {
 
             if (name == "atan2") {
                 arena.dataTypes[result] = EnumToken.AngleTokenType;
-                arena.setUnitString(result, "rad");
+                // inlined: arena.setUnitString(result, "rad")
+                arena.unit[result] = "rad" == null ? 0 : arena.internString("rad");
                 setNumericValue(arena, result, Math.atan2(val1, val2));
                 return [result];
             }

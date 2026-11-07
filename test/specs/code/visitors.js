@@ -1,5 +1,5 @@
 import { ColorType, EnumToken } from "../../../dist/src/lib/ast/types.js";
-import { WalkerEvent } from "../../../dist/src/lib/ast/walk.js";
+import { WalkerEvent } from "../../../dist/src/lib/ast/types.js";
 
 export function run(
     describe,
@@ -32,18 +32,18 @@ export function run(
             const options = {
                 visitor: {
                     AtRule: {
-                        media: (node, arena) => {
+                        media: (arena, node) => {
                             arena.setValueString(node, "all");
                             return node;
                         },
                     },
 
-                    Rule(node, arena) {
+                    Rule(arena, node) {
                         arena.setSelector(node, ".foo,.bar,.fubar");
                         return node;
                     },
                     Declaration: {
-                        height: (node, arena) => {
+                        height: (arena, node) => {
                             return [
                                 node,
                                 arena.createDeclaration(
@@ -83,12 +83,12 @@ body {
             const options = {
                 beautify: true,
                 visitor: {
-                    DeclarationNodeType: (declaration, arena) => {
+                    DeclarationNodeType: (arena, declaration) => {
                         if (arena.getName(declaration) == "height") {
                             arena.setNameString(declaration, "width");
                         }
                     },
-                    ColorTokenType: (color) => {
+                    ColorTokenType: (arena, color) => {
                         return {
                             typ: EnumToken.Color,
                             val: "red",
@@ -141,22 +141,22 @@ body {
                 inlineCssVariables: true,
                 resolveImport: true,
                 visitor: {
-                    StyleSheetNodeType: async (node, arena) => {
+                    StyleSheetNodeType: async (arena, node) => {
                         // insert a new rule
                         const result = await parse("html {--base-color: pink}");
 
                         arena.prependChildren(node, arena.import(result.arena, result.arena.firstChild[result.ast]));
                     },
 
-                    ColorTokenType: (node) => {
+                    ColorTokenType: (arena, node) => {
                         // dump all color tokens
                         // console.debug(node);
                     },
-                    FunctionTokenType: (node) => {
+                    FunctionTokenType: (arena, node) => {
                         // dump all function tokens
                         // console.debug(node);
                     },
-                    DeclarationNodeType: (node) => {
+                    DeclarationNodeType: (arena, node) => {
                         // dump all declaration nodes
                         // console.debug(node);
                     },
@@ -217,7 +217,7 @@ html,body {
                 beautify: true,
                 visitor: {
                     KeyframesAtRule: {
-                        slideIn(node, arena) {
+                        slideIn(arena, node) {
                             arena.setValueString(node, "slide-in-out");
                             return node;
                         },
@@ -274,13 +274,13 @@ body {
                 visitor: {
                     DeclarationNodeType: {
                         type: WalkerEvent.Enter,
-                        handler: (declaration, arena) => {
+                        handler: (arena, declaration) => {
                             if (arena.getName(declaration) == "height") {
                                 arena.setNameString(declaration, "width");
                             }
                         },
                     },
-                    ColorTokenType: (color) => {
+                    ColorTokenType: (arena, color) => {
                         return {
                             typ: EnumToken.Color,
                             val: "red",
@@ -323,12 +323,12 @@ body {
             const options = {
                 beautify: true,
                 visitor: {
-                    DeclarationNodeType: (declaration, arena) => {
+                    DeclarationNodeType: (arena, declaration) => {
                         if (arena.getName(declaration) == "height") {
                             arena.setNameString(declaration, "width");
                         }
                     },
-                    ColorTokenType: (color) => {
+                    ColorTokenType: (arena, color) => {
                         return {
                             typ: EnumToken.Color,
                             val: "red",
@@ -384,7 +384,7 @@ body {
                     StyleSheetNodeType: {
                         type: WalkerEvent.Leave,
 
-                        handler: (node, arena) => {
+                        handler: (arena, node) => {
                             // insert a new rule
                             const result = parseSync("html {--base-color: pink}");
 
@@ -394,15 +394,15 @@ body {
                             );
                         },
                     },
-                    ColorTokenType: (node) => {
+                    ColorTokenType: (arena, node) => {
                         // dump all color tokens
                         // console.debug(node);
                     },
-                    FunctionTokenType: (node) => {
+                    FunctionTokenType: (arena, node) => {
                         // dump all function tokens
                         // console.debug(node);
                     },
-                    DeclarationNodeType: (node) => {
+                    DeclarationNodeType: (arena, node) => {
                         // dump all declaration nodes
                         // console.debug(node);
                     },
@@ -469,7 +469,7 @@ html,body {
                 visitor: {
                     Rule: {
                         type: WalkerEvent.Enter,
-                        handler(node, arena) {
+                        handler(arena, node) {
                             arena.setSelector(node, ".ruled");
                             // node.val = "slide-in-out";
                             // return node;
@@ -477,14 +477,14 @@ html,body {
                     },
                     Declaration: {
                         type: WalkerEvent.Leave,
-                        handler(node) {
+                        handler(arena, node) {
                             // node.sel = ".ruled";
                             // node.val = "slide-in-out";
                             // return node;
                         },
                     },
                     KeyframesAtRule: {
-                        slideIn(node, arena) {
+                        slideIn(arena, node) {
                             arena.setValueString(node, "slide-in-out");
                             return node;
                         },
@@ -542,7 +542,7 @@ body {
             const options = {
                 beautify: true,
                 visitor: [
-                    function DeclarationNodeType(declaration, arena) {
+                    function DeclarationNodeType(arena, declaration) {
                         if (arena.getName(declaration) == "height") {
                             arena.setNameString(declaration, "width");
                         }
@@ -550,7 +550,7 @@ body {
                     {
                         ColorTokenType: {
                             type: WalkerEvent.Enter,
-                            handler: function (color) {
+                            handler: function (arena, color) {
                                 return {
                                     typ: EnumToken.Color,
                                     val: "red",
@@ -618,7 +618,7 @@ html,body {
                     {
                         Rule: {
                             type: WalkerEvent.Enter,
-                            handler(node, arena) {
+                            handler(arena, node) {
                                 arena.setSelector(node, ".ruled");
                                 // node.val = "slide-in-out";
                                 // return node;
@@ -627,7 +627,7 @@ html,body {
                     },
                     {
                         KeyframesAtRule: {
-                            slideIn(node, arena) {
+                            slideIn(arena, node) {
                                 arena.setValueString(node, "slide-in-out");
                                 return node;
                             },
@@ -678,7 +678,7 @@ html,body {
             const options = {
                 removePrefix: true,
                 beautify: true,
-                visitor: function Rule(node, arena) {
+                visitor: function Rule(arena, node) {
                     arena.setSelector(node, ".ruled");
                     // node.val = "slide-in-out";
                     // return node;
@@ -711,7 +711,7 @@ body {
             const options = {
                 beautify: true,
                 visitor: [
-                    function DeclarationNodeType(declaration, arena) {
+                    function DeclarationNodeType(arena, declaration) {
                         if (arena.getName(declaration) == "height") {
                             arena.setNameString(declaration, "width");
                         }
@@ -719,7 +719,7 @@ body {
                     {
                         ColorTokenType: {
                             type: WalkerEvent.Enter,
-                            handler: function (color) {
+                            handler: function (arena, color) {
                                 return {
                                     typ: EnumToken.Color,
                                     val: "red",
@@ -764,7 +764,7 @@ body {
 `;
             const options = {
                 beautify: true,
-                visitor(node, arena) {
+                visitor(arena, node) {
                     // nodes and tokens are arena ids
                     visitor.push(
                         `${EnumToken[arena.dataTypes[node]]} -> ${arena.getName(node) || arena.getValue(node) || (arena.isNumeric(node) ? arena.numericValue[node] : "")}`,

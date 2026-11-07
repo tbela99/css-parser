@@ -372,7 +372,8 @@ function colorMix(arena, ...args) {
         case "prophoto-rgb":
             {
                 const color = arena.createColor("color", ColorType.COLOR, [arena.createToken(EnumToken.IdenTokenType, colorSpace)].concat(values.map((v) => arena.createToken(EnumToken.NumberTokenType, v))));
-                arena.setUnitString(color, "col");
+                // inlined: arena.setUnitString(color, "col")
+                arena.unit[color] = arena.internString("col");
                 return color;
             }
         // case "rgb":
@@ -403,7 +404,8 @@ function colorMix(arena, ...args) {
             const components = values.map((v) => arena.createToken(EnumToken.NumberTokenType, v));
             if (colorSpace == "hsl") {
                 arena.dataTypes[components[0]] = EnumToken.AngleTokenType;
-                arena.setUnitString(components[0], "deg");
+                // inlined: arena.setUnitString(components[0], "deg")
+                arena.unit[components[0]] = arena.internString("deg");
                 arena.dataTypes[components[1]] = EnumToken.PercentageTokenType;
                 arena.dataTypes[components[2]] = EnumToken.PercentageTokenType;
             }

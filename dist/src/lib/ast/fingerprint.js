@@ -49,7 +49,7 @@ function normalize(value) {
  *
  * ```ts
  * const memo = new StructuralMemo<string>();
- * const slot = memo.list(arena, arena.firstToken[declaration]);
+ * const slot = memo.list(arena, arena.getFirstToken(declaration));
  * let value = memo.get(slot);
  *
  * if (value === undefined) {
@@ -68,7 +68,9 @@ class StructuralMemo {
      */
     static shape = new StructuralMemo();
     /**
-     * values by slot
+     * values by slot. read and written by the library (see {@link get} and {@link set})
+     *
+     * @internal
      */
     values = [];
     /**

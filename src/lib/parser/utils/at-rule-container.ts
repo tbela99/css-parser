@@ -99,7 +99,8 @@ export function parseAtRuleContainerQueryList(
                         {
                             action: "drop",
                             node: stream[i],
-                            location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                             message: `expecting <container-condition>`,
                         },
                     ],
@@ -129,7 +130,8 @@ export function parseAtRuleContainerQueryList(
                             action: "drop",
                             node: stream[i],
                             message: `expecting <and>, <or> or comma`,
-                            location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                         });
                         break;
                     }
@@ -167,7 +169,8 @@ export function parseAtRuleContainerQueryList(
                                     errors.push({
                                         action: "drop",
                                         node: stream[i],
-                                        location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                         message: `<or> is not allowed outside of parentheses`,
                                     });
 
@@ -197,9 +200,12 @@ export function parseAtRuleContainerQueryList(
                             const op: Token = stack.pop() as Token;
                             const token: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
-                            arena.setField(token, TokenField.L, ...names);
-                            arena.setField(token, TokenField.Op, op);
-                            arena.setField(token, TokenField.R, ...values);
+                            // inlined: arena.setField(token, TokenField.L, ...names)
+                            arena.setTokenList(arena.fieldList(token, TokenField.L), names);
+                            // inlined: arena.setField(token, TokenField.Op, op)
+                            arena.setTokenList(arena.fieldList(token, TokenField.Op), [op]);
+                            // inlined: arena.setField(token, TokenField.R, ...values)
+                            arena.setTokenList(arena.fieldList(token, TokenField.R), values);
 
                             if (names.length > 0 && values.length > 0) {
                                 arena.spanLocation(token, names[0], values[values.length - 1]);
@@ -216,10 +222,12 @@ export function parseAtRuleContainerQueryList(
                                     const val: string = arena.strings[arena.stringValue[name]];
 
                                     if (val.startsWith("min-")) {
-                                        arena.setStr(name, val.substring(4));
+                                        // inlined: arena.setStr(name, val.substring(4))
+                                        arena.stringValue[name] = arena.internString(val.substring(4));
                                         arena.dataTypes[op] = EnumToken.GteTokenType;
                                     } else if (val.startsWith("max-")) {
-                                        arena.setStr(name, val.substring(4));
+                                        // inlined: arena.setStr(name, val.substring(4))
+                                        arena.stringValue[name] = arena.internString(val.substring(4));
                                         arena.dataTypes[op] = EnumToken.LteTokenType;
                                     }
                                 }
@@ -245,7 +253,8 @@ export function parseAtRuleContainerQueryList(
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                     message: `expecting '<${arena.strings[arena.stringValue[tokens[index]]]}-query>'`,
                                 });
                                 break;
@@ -273,7 +282,8 @@ export function parseAtRuleContainerQueryList(
                                 errors.push({
                                     action: "drop",
                                     node: stream[i],
-                                    location: options.source!.getSourceLocation(arena.getSpanStart(stream[i])),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                                     message: `expecting '<query-in-parens>'`,
                                 });
                                 break;
@@ -285,7 +295,8 @@ export function parseAtRuleContainerQueryList(
                             stack.pop();
                         }
 
-                        if (arena.typeOf(stack.at(-1)) === EnumToken.NotTokenType) {
+                        // inlined: arena.typeOf(stack.at(-1))
+                        if (arena.dataTypes[stack.at(-1) as number] === EnumToken.NotTokenType) {
                             let j: number = tokens.indexOf(stack.at(-1)!);
                             let k: number = j;
 
@@ -301,7 +312,8 @@ export function parseAtRuleContainerQueryList(
                                     errors.push({
                                         action: "drop",
                                         node: tokens[k],
-                                        location: options.source!.getSourceLocation(arena.getSpanStart(tokens[k])),
+                                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[k]))
+                                        location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[k]))],
                                         message: `unexpected token 'not'`,
                                     });
                                     break;
@@ -310,8 +322,10 @@ export function parseAtRuleContainerQueryList(
                         }
 
                         if (
-                            arena.typeOf(stack.at(-1)) === EnumToken.AndTokenType ||
-                            arena.typeOf(stack.at(-1)) === EnumToken.OrTokenType
+                            // inlined: arena.typeOf(stack.at(-1))
+                            arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType ||
+                            // inlined: arena.typeOf(stack.at(-1))
+                            arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType
                         ) {
                             const index = tokens.indexOf(stack.at(-1)!);
                             let l: number = index - 1;
@@ -330,9 +344,12 @@ export function parseAtRuleContainerQueryList(
                             const op: Token = stack.pop() as Token;
                             const condition: Token = arena.createToken(EnumToken.MediaQueryConditionTokenType);
 
-                            arena.setField(condition, TokenField.Op, op);
-                            arena.setField(condition, TokenField.L, ...left);
-                            arena.setField(condition, TokenField.R, ...right);
+                            // inlined: arena.setField(condition, TokenField.Op, op)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
+                            // inlined: arena.setField(condition, TokenField.L, ...left)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
+                            // inlined: arena.setField(condition, TokenField.R, ...right)
+                            arena.setTokenList(arena.fieldList(condition, TokenField.R), right);
 
                             if (left.length > 0 && right.length > 0) {
                                 arena.spanLocation(condition, left[0], right[right.length - 1]);
@@ -404,24 +421,22 @@ export function parseAtRuleContainerQueryList(
 
                                                 const rangeQuery: Token = arena.createToken(EnumToken.MediaRangeQueryTokenType);
 
-                                                arena.setField(
-                                                    rangeQuery,
-                                                    TokenField.L,
-                                                    ...arena.fieldTokens(leftCondition, TokenField.R),
-                                                );
-                                                arena.setField(rangeQuery, TokenField.Val, name);
-                                                arena.setField(rangeQuery, TokenField.Op, leftOp);
-                                                arena.setField(rangeQuery, TokenField.Op2, rightOp);
-                                                arena.setField(
-                                                    rangeQuery,
-                                                    TokenField.R,
-                                                    ...arena.fieldTokens(rightCondition, TokenField.R),
-                                                );
+                                                // inlined: arena.setField(rangeQuery, TokenField.L, ...arena.fieldTokens(leftCondition, TokenField.R))
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.L), arena.fieldTokens(leftCondition, TokenField.R));
+                                                // inlined: arena.setField(rangeQuery, TokenField.Val, name)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Val), [name]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.Op, leftOp)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op), [leftOp]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.Op2, rightOp)
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [rightOp]);
+                                                // inlined: arena.setField(rangeQuery, TokenField.R, ...arena.fieldTokens(rightCondition, TokenField.R))
+                                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.R), arena.fieldTokens(rightCondition, TokenField.R));
                                                 arena.spanLocation(rangeQuery, leftCondition, rightCondition);
 
                                                 const parens: Token = arena.createToken(EnumToken.ParensTokenType);
 
-                                                arena.setTokens(parens, rangeQuery);
+                                                // inlined: arena.setTokens(parens, rangeQuery)
+                                                arena.setTokenList(parens, [rangeQuery]);
                                                 arena.copyLocation(parens, rangeQuery);
                                                 tokens[l] = parens;
                                             }
@@ -456,7 +471,7 @@ export function parseAtRuleContainerQueryList(
 
     stream.length = 0;
     for (const part of parts) {
-        if (part.length == 0 || arena.dataTypes[part[0]] === EnumToken.InvalidMediaQueryTokenType) {
+        if (part.length == 0) {
             continue;
         }
 
@@ -472,7 +487,6 @@ export function parseAtRuleContainerQueryList(
                 (t) =>
                     arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
                     arena.dataTypes[t] !== EnumToken.CommentTokenType &&
-                    arena.dataTypes[t] !== EnumToken.InvalidMediaQueryTokenType &&
                     arena.dataTypes[t] !== EnumToken.CommaTokenType,
             ).length !== 0,
         errors,

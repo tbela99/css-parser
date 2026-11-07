@@ -30,7 +30,8 @@ const css = `...`;
 
 const result = await parse(css); // or parse({input: css});
 console.debug(result.ast); // the id of the stylesheet node in result.arena
-console.debug(result.arena.toObject(result.ast)); // the ast as a plain object
+console.debug(result.arena.toObject(result.ast)); // object view of the ast, printed as a plain object
+console.debug(JSON.stringify(result.arena.toObject(result.ast))); // the ast as json
 console.debug(result.stats);
 
 const rendered = render(result.arena, result.ast);

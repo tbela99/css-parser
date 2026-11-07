@@ -27,7 +27,8 @@ export function makeColor(arena: AstArena, kind: ColorType, components: Token[],
 
     // the components may belong to another color token: a token belongs to one token list
     for (let i = 0; i < components.length; i++) {
-        components[i] = arena.take(components[i]);
+        // inlined: arena.take(components[i])
+        components[i] = arena.parents[components[i]] == 0 ? components[i] : arena.clone(components[i], true);
     }
 
     if (alphaValue !== 1) {

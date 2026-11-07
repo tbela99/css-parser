@@ -12,7 +12,6 @@ import { FeatureWalkMode } from "./type.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { replaceNode, replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { trimArray } from "../../validation/match.ts";
-import { findByValue } from "../find.ts";
 import { eqToken } from "../../parser/utils/eq.ts";
 import { type AstArena, TokenField } from "../arena.ts";
 
@@ -149,7 +148,6 @@ function substituteIfElseNode(
             ) {
                 replaceNodeOrValue(
                     arena,
-                    mapped(targetParentWrapper),
                     mapped(targetWrapper) as Token,
                     conditionValue(arena, elseCondition, nodeMap),
                 );
@@ -177,7 +175,6 @@ function substituteIfElseNode(
                                         if (left != null && leftSide != null && eqToken(arena, left, leftSide)) {
                                             replaceNodeOrValue(
                                                 arena,
-                                                mapped(targetParentWrapper),
                                                 mapped(siblings[i]) as Token,
                                                 conditionValue(arena, arena.field(child, TokenField.R), nodeMap),
                                             );
@@ -199,7 +196,6 @@ function substituteIfElseNode(
 
         replaceNodeOrValue(
             arena,
-            mapped(targetParentWrapper),
             mapped(targetWrapper) as Token,
             mapped(arena.field(node, TokenField.L)) as Token,
         );
@@ -218,7 +214,6 @@ function substituteIfElseNode(
 
             replaceNodeOrValue(
                 arena,
-                mapped(parentWrapper),
                 mapped(targetWrapper == declaration ? node : targetWrapper) as Token,
                 conditionValue(arena, node, nodeMap),
             );
@@ -248,12 +243,12 @@ function substituteIfElseNode(
 
             replaceNodeOrValue(
                 arena,
-                mapped(targetWrapper),
                 mapped(node) as Token,
                 conditionValue(arena, node, nodeMap),
             );
 
-            arena.appendChildren(atRule, clonedDeclaration);
+            // inlined: arena.appendChildren(atRule, clonedDeclaration)
+            arena.appendChildList(atRule, [clonedDeclaration]);
             result.push(atRule);
 
             processNode(arena, clonedDeclaration, cache, parent);
@@ -267,12 +262,12 @@ function substituteIfElseNode(
 
             replaceNodeOrValue(
                 arena,
-                mapped(isWildCard ? targetParentWrapper : targetWrapper),
                 mapped(isWildCard ? targetWrapper : node) as Token,
                 conditionValue(arena, node, nodeMap),
             );
 
-            arena.appendChildren(atRule, clonedDeclaration);
+            // inlined: arena.appendChildren(atRule, clonedDeclaration)
+            arena.appendChildList(atRule, [clonedDeclaration]);
             result.push(atRule);
 
             processNode(arena, clonedDeclaration, cache, parent);
@@ -306,21 +301,21 @@ function processNode(
         parent = arena.parents[declarationNode];
     }
 
-    const nodeMatcher = (value: Token): boolean => isIfToken(arena, value);
-
     while (++k < stack.length) {
         astNode = stack[k];
-        const { node: declaration, value: node } = findByValue(arena, astNode, nodeMatcher) ?? {};
+        const found: { node: AstNode; value: Token } | null = arena.findByValue(astNode, isIfToken);
 
-        if (declaration == null || node == null || node.node == null) {
+        if (found == null) {
             result.push(astNode);
             continue;
         }
 
-        const value: Token = node.node;
-        // @ts-expect-error
-        const parents: Array<AstNode | Token> = [...(node.parents?.() ?? [])];
-        const parentWrapper: AstNode | Token = node.parent ?? declaration;
+        const declaration: AstNode = found.node;
+        const value: Token = found.value;
+        // the parent of a detached token is the declaration
+        const parentWrapper: AstNode | Token = arena.getValueParent(value) || declaration;
+        const grandParent: AstNode | Token =
+            parentWrapper == declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
 
         if (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType) {
             const conditions: Token[] = arena.tokens(value);
@@ -337,7 +332,7 @@ function processNode(
                     declaration,
                     value,
                     parentWrapper,
-                    parents[parents.indexOf(parentWrapper) + 1] ?? declaration,
+                    grandParent,
                     cache,
                     parent,
                 ),

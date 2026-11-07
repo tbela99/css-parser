@@ -32,24 +32,6 @@ export default [
         ],
     },
     {
-        input: "src/node.ts",
-        treeshake: "smallest",
-        plugins: [
-            versionInjector(versionInjectoroptions),
-            nodeResolve(),
-            commonjs({ transformMixedEsModules: true }),
-            json(),
-            typescript(),
-        ],
-        output: [
-            {
-                file: "./dist/index.cjs",
-                format: "cjs",
-                name: "CSSParser",
-            },
-        ],
-    },
-    {
         input: "src/web.ts",
         treeshake: "smallest",
         plugins: [

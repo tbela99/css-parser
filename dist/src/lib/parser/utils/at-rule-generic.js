@@ -36,7 +36,8 @@ function matchGenericSyntax(arena, stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                 });
                 success = false;
                 break;
@@ -51,7 +52,8 @@ function matchGenericSyntax(arena, stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                 });
                 success = false;
                 break;
@@ -67,7 +69,8 @@ function matchGenericSyntax(arena, stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                 });
                 success = false;
                 break;
@@ -83,7 +86,8 @@ function matchGenericSyntax(arena, stream, options) {
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
-                    location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                 });
                 success = false;
                 break;
@@ -94,7 +98,8 @@ function matchGenericSyntax(arena, stream, options) {
         }
         expectAndOr = true;
         expectComma = true;
-        if (stack.length > 0 && arena.typeOf(stack.at(-1)) === EnumToken.CommaTokenType) {
+        // inlined: arena.typeOf(stack.at(-1))
+        if (stack.length > 0 && arena.dataTypes[stack.at(-1)] === EnumToken.CommaTokenType) {
             stack.pop();
         }
     }
@@ -103,7 +108,8 @@ function matchGenericSyntax(arena, stream, options) {
             action: "drop",
             message: `unexpected token ${EnumToken[arena.dataTypes[stack[stack.length - 1]]]}`,
             node: stack[stack.length - 1],
-            location: options.source.getSourceLocation(arena.getSpanStart(stack[stack.length - 1])),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
         });
         success = false;
     }

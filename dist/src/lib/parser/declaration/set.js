@@ -5,6 +5,7 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
+import { numericTokenTypes } from '../../ast/arena.js';
 import { eqToken } from '../utils/eq.js';
 import { EnumToken } from '../../ast/types.js';
 import { isLength } from '../../syntax/syntax.js';
@@ -15,8 +16,11 @@ function dedup(arena, values) {
         while (i-- > 1) {
             const t = value[i];
             const k = value[i == 1 ? 0 : i % 2];
-            if (arena.isNumeric(t) &&
-                arena.isNumeric(k) &&
+            if (
+            // inlined: arena.isNumeric(t)
+            numericTokenTypes.has(arena.dataTypes[t]) &&
+                // inlined: arena.isNumeric(k)
+                numericTokenTypes.has(arena.dataTypes[k]) &&
                 arena.numericValue[t] == 0 &&
                 arena.numericValue[k] == 0 &&
                 !arena.hasFraction(t) &&
@@ -150,7 +154,8 @@ class PropertySet {
                     }
                     return acc;
                 }, []);
-                arena.setTokens(values[0], ...val.reduce((acc, curr) => {
+                // inlined: arena.setTokens(values[0], ...val.reduce((acc: Token[], curr: Token) => { if (acc.length > 0) { acc.push(arena.createToken(EnumToken.WhitespaceTokenType)); } acc.push(curr); return acc; }, <Token[]>[]))
+                arena.setTokenList(values[0], val.reduce((acc, curr) => {
                     if (acc.length > 0) {
                         acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                     }

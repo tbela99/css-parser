@@ -8,12 +8,11 @@
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
 import { renderValue } from '../printer/render.js';
-import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from '../ast/types.js';
+import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent } from '../ast/types.js';
 import { minify } from '../ast/minify.js';
-import { expand } from '../ast/expand.js';
-import { walk, walkValues, WalkerEvent } from '../ast/walk.js';
 import { Tokenizer } from './tokenize.js';
 import { AstArena, TokenField } from '../ast/arena.js';
+import { AstArenaNode, ARENAID } from '../ast/arena-node.js';
 import { tokensfuncDefMap, pageMarginBoxType } from '../syntax/constants.js';
 import { hashAlgorithms, hash, syncHash } from './utils/hash.js';
 import { parseSelector } from './utils/selector.js';
@@ -33,6 +32,7 @@ import { matchGenericSyntax } from './utils/at-rule-generic.js';
 import { memoize } from './utils/cache.js';
 import { SourceFile } from './source.js';
 import { dirname } from '../fs/resolve.js';
+import { NodeWalker, ValueWalker } from '../ast/walk.js';
 
 function renderTokens(arena, tokens, options) {
     if (tokens == null || tokens.length === 0)
@@ -59,7 +59,8 @@ function createAtRuleNode(arena, atRule, typ, tokens, state, errors, end, val, b
     return node;
 }
 /**
- * convert a visitor result to node ids. plain objects are allocated in the arena
+ * convert a visitor result to node ids. the object views of the arena ({@link AstArenaNode}) are not copied, the views
+ * of another arena are imported, plain objects are allocated in the arena
  * @param arena
  * @param replacement
  */
@@ -134,7 +135,8 @@ function allocateToken(arena, tokenizer, sourceIndex) {
             arena.stringValue[item] = arena.internString(val);
         }
         if (tokenizer.kin != null) {
-            arena.setColorType(item, tokenizer.kin);
+            // inlined: arena.setColorType(item, tokenizer.kin)
+            arena.colorType[item] = tokenizer.kin;
         }
     }
     if (sourceIndex >= 0) {
@@ -170,19 +172,6 @@ function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes,
             arena.recycle(token);
         }
     }
-}
-/**
- * build a css variable token from a css variable node
- * @param arena
- * @param node
- */
-function cssVariableToken(arena, node) {
-    return {
-        typ: EnumToken.CssVariableTokenType,
-        nam: arena.strings[arena.name[node]],
-        val: arena.tokens(node),
-        loc: arena.getLocation(node),
-    };
 }
 const trimWhiteSpace = [
     EnumToken.CommentTokenType,
@@ -695,7 +684,8 @@ function doParseSync(tokenizer, options = {}) {
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
     const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
     let itemType;
-    while (!tokenizer.done()) {
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
         item = allocateToken(arena, tokenizer, sourceIndex);
         itemType = tokenizer.typ;
@@ -709,7 +699,8 @@ function doParseSync(tokenizer, options = {}) {
                 message: "Bad token",
                 syntax: null,
                 node: item,
-                location: options.source.getSourceLocation(arena.getSpanStart(item)),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(item))
+                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(item))],
             });
             // bad token
             continue;
@@ -755,12 +746,14 @@ function doParseSync(tokenizer, options = {}) {
                     else if (itemType === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0 && !tokenizer.done());
+                    // inlined: tokenizer.done()
+                } while (inBlock != 0 && !(tokenizer.typ === EnumToken.EOF));
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: options.source.getSourceLocation(arena.getSpanStart(tokens[0])),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
+                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
                     });
                 }
             }
@@ -772,7 +765,8 @@ function doParseSync(tokenizer, options = {}) {
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
-            arena.setSpanEnd(context, arena.getSpanEnd(item));
+            // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
+            arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
             if (options.removeEmpty &&
@@ -801,7 +795,7 @@ function doParseSync(tokenizer, options = {}) {
     }
     const endParseTime = performance.now();
     if (options.expandNestingRules) {
-        ast = expand(arena, ast);
+        ast = arena.expand(ast);
     }
     let replacement;
     if (options.visitor != null) {
@@ -900,15 +894,8 @@ function doParseSync(tokenizer, options = {}) {
             }
             if (handlers.length > 0) {
                 for (const callable of handlers) {
-                    replacement = callable(node, arena, arena.parents[node] == 0 ? null : arena.parents[node], ast, 
-                    // @ts-expect-error
-                    function* () {
-                        let parent = arena.parents[node];
-                        while (parent != 0) {
-                            yield parent;
-                            parent = arena.parents[parent];
-                        }
-                    });
+                    // the parent, the root, ... are read from the arena
+                    replacement = callable(arena, node);
                     if (replacement == null) {
                         continue;
                     }
@@ -922,20 +909,22 @@ function doParseSync(tokenizer, options = {}) {
                 }
                 // @ts-ignore
                 if (replacement != null && node != replacement) {
-                    // nodes and tokens are replaced by ids allocated in the arena. plain objects are imported
+                    // nodes and tokens are replaced by ids allocated in the arena. the object views of the arena are
+                    // not copied, plain objects are imported
                     replacement = visitorResult(arena, replacement);
-                    if (replacement != null) {
+                    if (replacement == node) ;
+                    else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
                             replaceNode(arena, node, replacement);
                         }
                         else {
-                            replaceNodeOrValue(arena, null, node, replacement);
+                            replaceNodeOrValue(arena, node, replacement);
                         }
                     }
                     else {
                         errors.push({
                             action: "ignore",
-                            message: "doParse: visitor must return node ids allocated in the arena or plain objects",
+                            message: "doParse: visitor must return node ids, objects or arrays of node ids and objects",
                             node,
                         });
                     }
@@ -1059,11 +1048,14 @@ function doParseSync(tokenizer, options = {}) {
         moduleSettings.filePath = filePath;
         moduleSettings.pattern =
             pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
-        for (const { node, parent } of walk(arena, ast)) {
+        // inlined: arena.walk(ast)
+        for (const node of new NodeWalker(arena, ast)) {
+            const parent = arena.parents[node];
             const nodeType = arena.dataTypes[node];
             if (nodeType == EnumToken.CssVariableImportTokenType) {
                 throw new Error("css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
-                    options.source.getSourceLocation(arena.getSpanStart(node)).join(":"));
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node as AstNode))
+                    [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))].join(":"));
             }
             // @ts-ignore
             if (nodeType == EnumToken.CssVariableDeclarationMapTokenType) {
@@ -1104,7 +1096,9 @@ function doParseSync(tokenizer, options = {}) {
                     if (result.cssModuleVariables == null) {
                         result.cssModuleVariables = {};
                     }
-                    result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
+                    // inlined: cssVariableToken(arena, node as AstNode): the object view of the css variable node
+                    // inlined: arena.toObject(node as AstNode)
+                    result.cssModuleVariables[arena.strings[arena.name[node]]] = new AstArenaNode(arena, node);
                 }
                 arena.detach(node);
                 continue;
@@ -1124,7 +1118,8 @@ function doParseSync(tokenizer, options = {}) {
                         revMapping[arena.strings[arena.name[node]]] =
                             arena.strings[arena.name[node]];
                     }
-                    arena.setNameString(node, mapping[arena.strings[arena.name[node]]]);
+                    // inlined: arena.setNameString(node as AstNode, mapping[arena.strings[arena.name[node as AstNode]]])
+                    arena.name[node] = arena.internString(mapping[arena.strings[arena.name[node]]]);
                 }
                 if (equalsIgnoreCase("composes", arena.strings[arena.name[node]])) {
                     const composeSelectors = [];
@@ -1189,7 +1184,9 @@ function doParseSync(tokenizer, options = {}) {
                         }
                         // composes: a b c from 'file.css';
                         else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.StringTokenType) {
-                            throw new Error(`composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${options.source.getSourceLocation(arena.getSpanStart(node)).join(":")}`);
+                            throw new Error(
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(node as AstNode))
+                            `composes from file is not supported using parseSync() or transformSync(). Use parse() or transform() instead.\nat ${[options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))].join(":")}`);
                         }
                         // composes: a b c from global;
                         else if (arena.dataTypes[arena.field(token, TokenField.R)] == EnumToken.IdenTokenType) {
@@ -1240,7 +1237,8 @@ function doParseSync(tokenizer, options = {}) {
                     "grid-template-columns",
                     "grid-template-rows",
                 ].includes(arena.strings[arena.name[node]])) {
-                    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node)) {
                         if (arena.dataTypes[value] != EnumToken.IdenTokenType) {
                             continue;
                         }
@@ -1268,7 +1266,8 @@ function doParseSync(tokenizer, options = {}) {
                                 }
                             }
                         }
-                        arena.setStr(value, mapping[idenToken]);
+                        // inlined: arena.setStr(value, mapping[idenToken])
+                        arena.stringValue[value] = arena.internString(mapping[idenToken]);
                     }
                 }
                 else if (arena.strings[arena.name[node]] == "grid-template-areas" ||
@@ -1277,11 +1276,13 @@ function doParseSync(tokenizer, options = {}) {
                         if (arena.dataTypes[token] == EnumToken.StringTokenType) {
                             const str = arena.strings[arena.stringValue[token]];
                             const tokens = parseString(arena, str.slice(1, -1));
-                            for (const { value } of walkValues(arena, tokens)) {
+                            // inlined: arena.walkValues(tokens)
+                            for (const value of new ValueWalker(arena, tokens)) {
                                 if (arena.dataTypes[value] == EnumToken.IdenTokenType ||
                                     arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
                                     if (arena.strings[arena.stringValue[value]] in mapping) {
-                                        arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                                     }
                                     else {
                                         let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
@@ -1289,17 +1290,20 @@ function doParseSync(tokenizer, options = {}) {
                                             : moduleSettings.generateScopedName(arena.strings[arena.stringValue[value]], moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                         mapping[arena.strings[arena.stringValue[value]]] = result;
                                         revMapping[result] = arena.strings[arena.stringValue[value]];
-                                        arena.setStr(value, result);
+                                        // inlined: arena.setStr(value, result)
+                                        arena.stringValue[value] = arena.internString(result);
                                     }
                                 }
                             }
-                            arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1));
+                            // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
+                            arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
                         }
                     }
                 }
                 else if (arena.strings[arena.name[node]] == "animation" ||
                     arena.strings[arena.name[node]] == "animation-name") {
-                    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node)) {
                         if (arena.dataTypes[value] == EnumToken.IdenTokenType &&
                             ![
                                 "none",
@@ -1337,17 +1341,20 @@ function doParseSync(tokenizer, options = {}) {
                                         : moduleSettings.generateScopedName(arena.strings[arena.stringValue[value]], moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
                                 revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
-                            arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
                 }
-                for (const r of walkValues(arena, arena.tokens(node), node)) {
-                    if (arena.dataTypes[r.value] == EnumToken.DashedIdenTokenType) {
-                        arena.setStr(r.value, mapping[arena.strings[arena.stringValue[r.value]]]);
+                // inlined: arena.walkValues(node as AstNode)
+                for (const value of new ValueWalker(arena, node)) {
+                    if (arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
+                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                     }
-                    else if ((arena.dataTypes[r.value] == EnumToken.IdenTokenType || isIdentColor(arena, r.value)) &&
-                        arena.strings[arena.stringValue[r.value]] in importedCssVariables) {
-                        replaceNodeOrValue(arena, r.parent, r.value, importedCssVariables[arena.strings[arena.stringValue[r.value]]].val.map((token) => arena.clone(token, true)));
+                    else if ((arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
+                        arena.strings[arena.stringValue[value]] in importedCssVariables) {
+                        replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                     }
                 }
             }
@@ -1357,9 +1364,8 @@ function doParseSync(tokenizer, options = {}) {
                 matchSelectorSyntax(arena, tokens, [], options);
                 arena.setTokenList(node, trimArray(arena, tokens));
                 let hasIdOrClass = false;
-                for (const { value } of walkValues(arena, arena.tokens(node), node, 
-                // @ts-ignore
-                (value) => {
+                // inlined: arena.walkValues(node as AstNode, filter)
+                for (const value of new ValueWalker(arena, node, (arena, value) => {
                     if (arena.dataTypes[value] == EnumToken.PseudoClassTokenType ||
                         arena.dataTypes[value] == EnumToken.PseudoElementTokenType) {
                         const val = arena.strings[arena.stringValue[value]].toLowerCase();
@@ -1421,21 +1427,26 @@ function doParseSync(tokenizer, options = {}) {
                                         : value;
                                 revMapping[mapping[val]] = val;
                             }
-                            arena.setStr(value, "." + mapping[val]);
+                            // inlined: arena.setStr(value, "." + mapping[val])
+                            arena.stringValue[value] = arena.internString(("." + mapping[val]));
                         }
                     }
                 }
                 if (moduleSettings.scoped & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
-                        throw new Error(`pure module: No id or class found in selector '${arena.strings[arena.name[node]]}' at '${options.source.getOffsets(arena.getSpanStart(node)).join(":")}'`);
+                        throw new Error(
+                        // inlined: options.source!.getOffsets(arena.getSpanStart(node as AstNode))
+                        `pure module: No id or class found in selector '${arena.strings[arena.name[node]]}' at '${options.source.lineStarts.getOffsets(arena.getSpanStart(node)).join(":")}'`);
                     }
                 }
-                arena.setSelector(node, arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
+                // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
+                arena.name[node] = arena.internString(arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
             }
             else if (nodeType == EnumToken.AtRuleNodeType || nodeType == EnumToken.KeyframesAtRuleNodeType) {
                 const val = arena.strings[arena.name[node]].toLowerCase();
                 if (arena.firstToken[node] == 0) {
-                    arena.setTokens(node, ...parseString(arena, arena.strings[arena.stringValue[node]]));
+                    // inlined: arena.setTokens(node as AstNode, ...parseString(arena, arena.strings[arena.stringValue[node as AstNode]]))
+                    arena.setTokenList(node, parseString(arena, arena.strings[arena.stringValue[node]]));
                 }
                 if (val == "property" || val == "keyframes") {
                     const prefix = val == "property" ? "--" : "";
@@ -1454,10 +1465,12 @@ function doParseSync(tokenizer, options = {}) {
                                             : val);
                                 revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
-                            arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
-                    arena.setValueString(node, renderTokens(arena, arena.tokens(node)));
+                    // inlined: arena.setValueString(node as AstNode, renderTokens(arena, arena.tokens(node as AstNode)))
+                    arena.stringValue[node] = arena.internString(renderTokens(arena, arena.tokens(node)));
                 }
             }
         }
@@ -1568,7 +1581,8 @@ async function doParse(iter, options = {}) {
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
     const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
     let itemType;
-    while (!tokenizer.done()) {
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
         item = allocateToken(arena, tokenizer, sourceIndex);
         itemType = tokenizer.typ;
@@ -1582,7 +1596,8 @@ async function doParse(iter, options = {}) {
                 message: "Bad token",
                 syntax: null,
                 node: item,
-                location: options.source.getSourceLocation(arena.getSpanStart(item)),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(item))
+                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(item))],
             });
             // bad token
             continue;
@@ -1632,12 +1647,14 @@ async function doParse(iter, options = {}) {
                     else if (itemType === EnumToken.BlockEndTokenType) {
                         inBlock--;
                     }
-                } while (inBlock != 0 && !tokenizer.done());
+                    // inlined: tokenizer.done()
+                } while (inBlock != 0 && !(tokenizer.typ === EnumToken.EOF));
                 if (tokens.length > 0) {
                     errors.push({
                         action: "drop",
                         message: "invalid block",
-                        location: options.source.getSourceLocation(arena.getSpanStart(tokens[0])),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
+                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
                     });
                 }
             }
@@ -1649,7 +1666,8 @@ async function doParse(iter, options = {}) {
         }
         else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
-            arena.setSpanEnd(context, arena.getSpanEnd(item));
+            // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
+            arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
             const previousNode = stack.pop();
             context = stack[stack.length - 1] ?? ast;
             if (options.removeEmpty &&
@@ -1736,7 +1754,7 @@ async function doParse(iter, options = {}) {
     }
     const endParseTime = performance.now();
     if (options.expandNestingRules) {
-        ast = expand(arena, ast);
+        ast = arena.expand(ast);
     }
     let replacement;
     if (options.visitor != null) {
@@ -1835,15 +1853,8 @@ async function doParse(iter, options = {}) {
             }
             if (handlers.length > 0) {
                 for (const callable of handlers) {
-                    replacement = callable(node, arena, arena.parents[node] == 0 ? null : arena.parents[node], ast, 
-                    // @ts-expect-error
-                    function* () {
-                        let parent = arena.parents[node];
-                        while (parent != 0) {
-                            yield parent;
-                            parent = arena.parents[parent];
-                        }
-                    });
+                    // the parent, the root, ... are read from the arena
+                    replacement = callable(arena, node);
                     if (replacement == null) {
                         continue;
                     }
@@ -1860,20 +1871,22 @@ async function doParse(iter, options = {}) {
                 }
                 // @ts-ignore
                 if (replacement != null && node != replacement) {
-                    // nodes and tokens are replaced by ids allocated in the arena. plain objects are imported
+                    // nodes and tokens are replaced by ids allocated in the arena. the object views of the arena are
+                    // not copied, plain objects are imported
                     replacement = visitorResult(arena, replacement);
-                    if (replacement != null) {
+                    if (replacement == node) ;
+                    else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
                             replaceNode(arena, node, replacement);
                         }
                         else {
-                            replaceNodeOrValue(arena, null, node, replacement);
+                            replaceNodeOrValue(arena, node, replacement);
                         }
                     }
                     else {
                         errors.push({
                             action: "ignore",
-                            message: "doParse: visitor must return node ids allocated in the arena or plain objects",
+                            message: "doParse: visitor must return node ids, objects or arrays of node ids and objects",
                             node,
                         });
                     }
@@ -1998,10 +2011,12 @@ async function doParse(iter, options = {}) {
         moduleSettings.filePath = filePath;
         moduleSettings.pattern =
             pattern != null && pattern !== "" ? pattern : filePath === "" ? `[local]_[hash]` : `[local]_[hash]_[name]`;
-        for (const { node, parent } of walk(arena, ast)) {
+        // inlined: arena.walk(ast)
+        for (const node of new NodeWalker(arena, ast)) {
+            const parent = arena.parents[node];
             const nodeType = arena.dataTypes[node];
             if (nodeType == EnumToken.CssVariableImportTokenType) {
-                const url = arena.strings[arena.stringValue[arena.findToken(node, (t) => arena.dataTypes[t] == EnumToken.StringTokenType)]].slice(1, -1);
+                const url = arena.strings[arena.stringValue[arena.findToken(node, (arena, t) => arena.dataTypes[t] == EnumToken.StringTokenType)]].slice(1, -1);
                 const src = options.resolve(url, options.dirname(options.src), options.cwd);
                 const result = options.load(src, "");
                 const stream = result instanceof Promise || Object.getPrototypeOf(result).constructor.name == "AsyncFunction"
@@ -2070,7 +2085,9 @@ async function doParse(iter, options = {}) {
                     if (result.cssModuleVariables == null) {
                         result.cssModuleVariables = {};
                     }
-                    result.cssModuleVariables[arena.strings[arena.name[node]]] = cssVariableToken(arena, node);
+                    // inlined: cssVariableToken(arena, node as AstNode): the object view of the css variable node
+                    // inlined: arena.toObject(node as AstNode)
+                    result.cssModuleVariables[arena.strings[arena.name[node]]] = new AstArenaNode(arena, node);
                 }
                 arena.detach(node);
                 continue;
@@ -2092,7 +2109,8 @@ async function doParse(iter, options = {}) {
                         revMapping[arena.strings[arena.name[node]]] =
                             arena.strings[arena.name[node]];
                     }
-                    arena.setNameString(node, mapping[arena.strings[arena.name[node]]]);
+                    // inlined: arena.setNameString(node as AstNode, mapping[arena.strings[arena.name[node as AstNode]]])
+                    arena.name[node] = arena.internString(mapping[arena.strings[arena.name[node]]]);
                 }
                 if (equalsIgnoreCase("composes", arena.strings[arena.name[node]])) {
                     const composeSelectors = [];
@@ -2277,7 +2295,8 @@ async function doParse(iter, options = {}) {
                     "grid-template-columns",
                     "grid-template-rows",
                 ].includes(arena.strings[arena.name[node]])) {
-                    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node)) {
                         if (arena.dataTypes[value] != EnumToken.IdenTokenType) {
                             continue;
                         }
@@ -2309,7 +2328,8 @@ async function doParse(iter, options = {}) {
                                 }
                             }
                         }
-                        arena.setStr(value, mapping[idenToken]);
+                        // inlined: arena.setStr(value, mapping[idenToken])
+                        arena.stringValue[value] = arena.internString(mapping[idenToken]);
                     }
                 }
                 else if (arena.strings[arena.name[node]] == "grid-template-areas" ||
@@ -2318,11 +2338,13 @@ async function doParse(iter, options = {}) {
                         if (arena.dataTypes[token] == EnumToken.StringTokenType) {
                             const str = arena.strings[arena.stringValue[token]];
                             const tokens = parseString(arena, str.slice(1, -1));
-                            for (const { value } of walkValues(arena, tokens)) {
+                            // inlined: arena.walkValues(tokens)
+                            for (const value of new ValueWalker(arena, tokens)) {
                                 if (arena.dataTypes[value] == EnumToken.IdenTokenType ||
                                     arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
                                     if (arena.strings[arena.stringValue[value]] in mapping) {
-                                        arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                                     }
                                     else {
                                         let result = moduleSettings.scoped & ModuleScopeEnumOptions.Global
@@ -2334,17 +2356,20 @@ async function doParse(iter, options = {}) {
                                         }
                                         mapping[arena.strings[arena.stringValue[value]]] = result;
                                         revMapping[result] = arena.strings[arena.stringValue[value]];
-                                        arena.setStr(value, result);
+                                        // inlined: arena.setStr(value, result)
+                                        arena.stringValue[value] = arena.internString(result);
                                     }
                                 }
                             }
-                            arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1));
+                            // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
+                            arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
                         }
                     }
                 }
                 else if (arena.strings[arena.name[node]] == "animation" ||
                     arena.strings[arena.name[node]] == "animation-name") {
-                    for (const { value } of walkValues(arena, arena.tokens(node), node)) {
+                    // inlined: arena.walkValues(node as AstNode)
+                    for (const value of new ValueWalker(arena, node)) {
                         if (arena.dataTypes[value] == EnumToken.IdenTokenType &&
                             ![
                                 "none",
@@ -2383,17 +2408,20 @@ async function doParse(iter, options = {}) {
                                 mapping[arena.strings[arena.stringValue[value]]] = result instanceof Promise ? await result : result;
                                 revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
-                            arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
                 }
-                for (const { value, parent } of walkValues(arena, arena.tokens(node), node)) {
+                // inlined: arena.walkValues(node as AstNode)
+                for (const value of new ValueWalker(arena, node)) {
                     if (arena.dataTypes[value] == EnumToken.DashedIdenTokenType) {
-                        arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                        // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                        arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                     }
                     else if ((arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                         arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                        replaceNodeOrValue(arena, parent, value, importedCssVariables[arena.strings[arena.stringValue[value]]].val.map((token) => arena.clone(token, true)));
+                        replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                     }
                 }
             }
@@ -2403,9 +2431,8 @@ async function doParse(iter, options = {}) {
                 matchSelectorSyntax(arena, tokens, [], options);
                 arena.setTokenList(node, trimArray(arena, tokens));
                 let hasIdOrClass = false;
-                for (const { value } of walkValues(arena, arena.tokens(node), node, 
-                // @ts-ignore
-                (value) => {
+                // inlined: arena.walkValues(node as AstNode, filter)
+                for (const value of new ValueWalker(arena, node, (arena, value) => {
                     if (arena.dataTypes[value] == EnumToken.PseudoClassTokenType ||
                         arena.dataTypes[value] == EnumToken.PseudoElementTokenType) {
                         const val = arena.strings[arena.stringValue[value]].toLowerCase();
@@ -2469,21 +2496,26 @@ async function doParse(iter, options = {}) {
                                         : value;
                                 revMapping[mapping[val]] = val;
                             }
-                            arena.setStr(value, "." + mapping[val]);
+                            // inlined: arena.setStr(value, "." + mapping[val])
+                            arena.stringValue[value] = arena.internString(("." + mapping[val]));
                         }
                     }
                 }
                 if (moduleSettings.scoped & ModuleScopeEnumOptions.Pure) {
                     if (!hasIdOrClass) {
-                        throw new Error(`pure module: No id or class found in selector '${arena.strings[arena.name[node]]}' at '${(options.source?.getOffsets?.(arena.getSpanStart(node)) ?? []).join(":")}'`);
+                        throw new Error(
+                        // inlined: options.source?.getOffsets?.(arena.getSpanStart(node as AstNode))
+                        `pure module: No id or class found in selector '${arena.strings[arena.name[node]]}' at '${(options.source?.lineStarts.getOffsets(arena.getSpanStart(node)) ?? []).join(":")}'`);
                     }
                 }
-                arena.setSelector(node, arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
+                // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
+                arena.name[node] = arena.internString(arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
             }
             else if (nodeType == EnumToken.AtRuleNodeType || nodeType == EnumToken.KeyframesAtRuleNodeType) {
                 const val = arena.strings[arena.name[node]].toLowerCase();
                 if (arena.firstToken[node] == 0) {
-                    arena.setTokens(node, ...parseString(arena, arena.strings[arena.stringValue[node]]));
+                    // inlined: arena.setTokens(node as AstNode, ...parseString(arena, arena.strings[arena.stringValue[node as AstNode]]))
+                    arena.setTokenList(node, parseString(arena, arena.strings[arena.stringValue[node]]));
                 }
                 if (val == "property" || val == "keyframes") {
                     const prefix = val == "property" ? "--" : "";
@@ -2504,10 +2536,12 @@ async function doParse(iter, options = {}) {
                                             : val);
                                 revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
                             }
-                            arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]]);
+                            // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
+                            arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
                         }
                     }
-                    arena.setValueString(node, renderTokens(arena, arena.tokens(node)));
+                    // inlined: arena.setValueString(node as AstNode, renderTokens(arena, arena.tokens(node as AstNode)))
+                    arena.stringValue[node] = arena.internString(renderTokens(arena, arena.tokens(node)));
                 }
             }
         }
@@ -2567,9 +2601,11 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
                 action: "drop",
                 message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                 node: tokens[i],
-                location: options.source.getSourceLocation(arena.getSpanStart(tokens[i])),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
+                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
             });
-            arena.dataTypes[tokens[i]] = EnumToken.InvalidCommentTokenType;
+            // the misplaced CDO / CDC comment is rendered as an empty string
+            arena.dataTypes[tokens[i]] = EnumToken.BadCdoTokenType;
             continue;
         }
         if (arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType ||
@@ -2583,7 +2619,8 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
         // the leading comments are appended to the context, then removed with the whitespace (no array is created)
         for (let k = 0; k < i; k++) {
             if (arena.dataTypes[tokens[k]] !== EnumToken.WhitespaceTokenType) {
-                arena.appendChildren(context, createCommentNode(arena, tokens[k]));
+                // inlined: arena.appendChildren(context, createCommentNode(arena, tokens[k]))
+                arena.appendChildList(context, [createCommentNode(arena, tokens[k])]);
             }
         }
         tokens.copyWithin(0, i);
@@ -2597,12 +2634,15 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
                     action: "drop",
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
-                    location: options.source.getSourceLocation(arena.getSpanStart(tokens[i])),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
                 });
-                arena.dataTypes[tokens[i]] = EnumToken.InvalidCommentTokenType;
+                // the misplaced CDO / CDC comment is rendered as an empty string
+                arena.dataTypes[tokens[i]] = EnumToken.BadCdoTokenType;
                 continue;
             }
-            arena.appendChildren(context, createCommentNode(arena, tokens[i]));
+            // inlined: arena.appendChildren(context, createCommentNode(arena, tokens[i]))
+            arena.appendChildList(context, [createCommentNode(arena, tokens[i])]);
             stats.nodesCount++;
         }
         else if (arena.dataTypes[tokens[i]] != EnumToken.WhitespaceTokenType) {
@@ -2645,7 +2685,8 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
             invalidNodes.push(node);
         }
         stats.nodesCount++;
-        arena.appendChildren(context, node);
+        // inlined: arena.appendChildren(context, node)
+        arena.appendChildList(context, [node]);
         return node;
     }
     else {
@@ -2653,7 +2694,8 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
         // rule
         if (arena.dataTypes[delim] == EnumToken.BlockStartTokenType) {
             const node = parseSelector(arena, tokens, context, options, errors);
-            arena.appendChildren(context, node);
+            // inlined: arena.appendChildren(context, node)
+            arena.appendChildList(context, [node]);
             if (arena.flags[node] &
                 (EnumAstNodeStatus.Invalid |
                     EnumAstNodeStatus.Disallowed |
@@ -2675,11 +2717,13 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
                     message: "<declaration> not allowed in <stylesheet>",
                     action: "drop",
                     node,
-                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
             }
             else if (options.lenient || arena.dataTypes[node] === EnumToken.DeclarationNodeType) {
-                arena.appendChildren(context, node);
+                // inlined: arena.appendChildren(context, node)
+                arena.appendChildList(context, [node]);
             }
             if (arena.flags[node] &
                 (EnumAstNodeStatus.Invalid |
@@ -2723,7 +2767,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
             message: "unknown at-rule",
         });
         const result = matchGenericSyntax(arena, stream, options);
@@ -2737,7 +2782,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             errors.push({
                 action: "drop",
                 node: atRule,
-                location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                 message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
             });
             atRuleTokens = parseTokens(arena, stream);
@@ -2750,7 +2796,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             errors.push({
                 action: "drop",
                 node: token,
-                location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                 message: `unexpected token`,
             });
             atRuleTokens = parseTokens(arena, stream);
@@ -2766,7 +2813,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
         errors.push({
             action: "drop",
             node: atRule,
-            location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
             message: parseAsBlock ? "at-rule block not supported" : "at-rule block is required",
         });
         atRuleTokens = parseTokens(arena, stream);
@@ -2781,13 +2829,15 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             if (stream.length === 0 ||
                 arena.dataTypes[stream[0]] !== EnumToken.WhitespaceTokenType ||
                 arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
-                options.sourcesMap?.get(arena.getSource(stream[0]))?.getContent().charCodeAt(arena.getSpanStart(stream[0])) !==
+                // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
+                options.sourcesMap?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)?.content.charCodeAt(arena.getSpanStart(stream[0])) !==
                     0x20) {
                 success = false;
                 errors.push({
                     action: "drop",
                     node: stream[0] ?? atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(stream[0] ?? atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[0] ?? atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[0] ?? atRule))],
                     message: "expecting <space>",
                 });
             }
@@ -2796,7 +2846,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
                     message: "expecting <string>",
                 });
             }
@@ -2805,7 +2856,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: stream[1] ?? atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
                     message: "expecting double-quoted string",
                 });
             }
@@ -2849,7 +2901,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                     message: `unexpected at-rule ${nam}`,
                 });
             }
@@ -2860,7 +2913,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         errors.push({
                             action: "drop",
                             node: token,
-                            location: options.source.getSourceLocation(arena.getSpanStart(token)),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
+                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
                             message: `unexpected token`,
                         });
                     }
@@ -2911,7 +2965,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                     message: `expected <keyframe-name>`,
                 });
                 success = false;
@@ -3037,7 +3092,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         message: "at-rule @when is required before @else block",
                     });
                 }
@@ -3046,7 +3102,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                     errors.push({
                         action: "drop",
                         node: atRule,
-                        location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                        // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         message: "at-rule @else block is defined after last @else block",
                     });
                 }
@@ -3082,16 +3139,19 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: range[0] ?? atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(range[0] ?? atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range[0] ?? atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range[0] ?? atRule))],
                     message: "expected '(' at start of @scope block",
                 });
                 success = false;
+                // inlined: arena.typeOf(range.at(-1))
             }
-            else if (arena.typeOf(range.at(-1)) !== EnumToken.EndParensTokenType) {
+            else if (arena.dataTypes[range.at(-1)] !== EnumToken.EndParensTokenType) {
                 errors.push({
                     action: "drop",
                     node: range.at(-1) ?? atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
                     message: "expected ')' at end of @scope block",
                 });
                 success = false;
@@ -3117,7 +3177,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         errors.push({
                             action: "drop",
                             node: stream[index],
-                            location: options.source.getSourceLocation(arena.getSpanStart(stream[index])),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                             message: "expected 'to' at end of @scope block",
                         });
                         success = false;
@@ -3130,7 +3191,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                             errors.push({
                                 action: "drop",
                                 node: stream[index],
-                                location: options.source.getSourceLocation(arena.getSpanStart(stream[index])),
+                                // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
+                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
                                 message: "expected 'to' at end of @scope block",
                             });
                             success = false;
@@ -3139,11 +3201,13 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                             context = createValidationContext(arena, stream.slice(index));
                             // @ts-ignore
                             range = context.peekRange((t) => arena.dataTypes[t] === EnumToken.EndParensTokenType);
-                            if (arena.typeOf(range.at(-1)) !== EnumToken.EndParensTokenType) {
+                            // inlined: arena.typeOf(range.at(-1))
+                            if (arena.dataTypes[range.at(-1)] !== EnumToken.EndParensTokenType) {
                                 errors.push({
                                     action: "drop",
                                     node: range.at(-1) ?? atRule,
-                                    location: options.source.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule)),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
+                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
                                     message: "expected ')' at end of @scope block",
                                 });
                                 success = false;
@@ -3196,7 +3260,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 errors.push({
                     action: "drop",
                     node: atRule,
-                    location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                     message: "node is allowed only in @page rule",
                 });
             }
@@ -3209,7 +3274,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         errors.push({
                             action: "drop",
                             node: stream[i],
-                            location: options.source.getSourceLocation(arena.getSpanStart(stream[i])),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
+                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
                             message: "expected whitespace or comment",
                         });
                         break;
@@ -3229,7 +3295,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                 if (arena.dataTypes[stream[index]] == EnumToken.PseudoClassTokenType) {
                     const colon = arena.createToken(EnumToken.ColonTokenType);
                     arena.copyLocation(colon, stream[index]);
-                    arena.setStr(stream[index], arena.strings[arena.stringValue[stream[index]]].slice(1));
+                    // inlined: arena.setStr(stream[index], arena.strings[arena.stringValue[stream[index]]].slice(1))
+                    arena.stringValue[stream[index]] = arena.internString(arena.strings[arena.stringValue[stream[index]]].slice(1));
                     arena.dataTypes[stream[index]] = EnumToken.IdenTokenType;
                     stream.splice(index, 0, colon);
                     isVarDeclaration = true;
@@ -3278,7 +3345,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             // import variables from alias: @value <ident># from <ident>;
             // the imported variable names are stored as the node values, the alias tokens as the `l` field
             const node = arena.createDeclaration(EnumToken.CssVariableDeclarationMapTokenType, nam, trimArray(arena, stream.slice(0, index)), EnumAstNodeStatus.Validated, []);
-            arena.setField(node, TokenField.L, ...stream.slice(index + 1));
+            // inlined: arena.setField(node, TokenField.L, ...stream.slice(index + 1))
+            arena.setTokenList(arena.fieldList(node, TokenField.L), stream.slice(index + 1));
             arena.spanLocation(node, atRule, atRuleEnd);
             return node;
         }
@@ -3314,9 +3382,11 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         }
                         if (arena.dataTypes[stream[i]] === EnumToken.EndParensTokenType && stack.length > 0) {
                             const index = stream.indexOf(stack[stack.length - 1]);
-                            arena.setSpanEnd(stream[index], arena.getSpanEnd(stream[i]));
+                            // inlined: arena.setSpanEnd(stream[index], arena.getSpanEnd(stream[i]))
+                            arena.setSpan(stream[index], arena.getSourceId(stream[index]), arena.getSpanStart(stream[index]), arena.getSpanEnd(stream[i]));
                             arena.dataTypes[stream[index]] = tokensfuncDefMap.get(arena.dataTypes[stream[index]]);
-                            arena.setTokens(stream[index], ...trimWhiteSpaceTokens(arena, stream.splice(index + 1, i - index - 1)));
+                            // inlined: arena.setTokens(stream[index], ...trimWhiteSpaceTokens(arena, stream.splice(index + 1, i - index - 1)))
+                            arena.setTokenList(stream[index], trimWhiteSpaceTokens(arena, stream.splice(index + 1, i - index - 1)));
                             i = index;
                             stream.splice(index + 1, 1);
                             stack.pop();
@@ -3335,7 +3405,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         atRuleErrors.push({
                             action: "drop",
                             message: "mixin rule cannot be a nested group rule or rule style body",
-                            location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         });
                     }
                     break;
@@ -3355,7 +3426,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         atRuleErrors.push({
                             action: "drop",
                             message: "contents rule cannot be used outside mixin rule",
-                            location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                            // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                         });
                     }
                     break;
@@ -3369,7 +3441,8 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                                 atRuleErrors.push({
                                     action: "drop",
                                     message: "at-rule layeris not allowed inside mixin rule",
-                                    location: options.source.getSourceLocation(arena.getSpanStart(atRule)),
+                                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
+                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
                                 });
                                 break;
                             }
@@ -3459,7 +3532,8 @@ function parseString(arena, src, options = { parseColor: true }, errors) {
         currentPosition: 0,
     });
     const mapped = [];
-    while (!tokenizer.done()) {
+    // inlined: tokenizer.done()
+    while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
         // tokens parsed from a string have no location
         mapped.push(allocateToken(arena, tokenizer, -1));
@@ -3513,10 +3587,12 @@ function parseTokens(arena, tokens, options, errors) {
                     arena.dataTypes[tokens[i - 1]] === EnumToken.DoubleColonTokenType)) {
                 // merge the colon and the function name into a pseudo class function
                 const previous = tokens[i - 1];
-                arena.setStr(previous, (arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") +
-                    arena.strings[arena.stringValue[t]]);
+                // inlined: arena.setStr(previous, (arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") + arena.strings[arena.stringValue[t]])
+                arena.stringValue[previous] = arena.internString(((arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") +
+                    arena.strings[arena.stringValue[t]]));
                 arena.dataTypes[previous] = EnumToken.PseudoClassFunctionTokenDefType;
-                arena.setSpanEnd(previous, arena.getSpanEnd(t));
+                // inlined: arena.setSpanEnd(previous, arena.getSpanEnd(t))
+                arena.setSpan(previous, arena.getSourceId(previous), arena.getSpanStart(previous), arena.getSpanEnd(t));
                 tokens.splice(i--, 1);
                 t = previous;
                 typ = EnumToken.PseudoClassFunctionTokenDefType;
@@ -3538,7 +3614,8 @@ function parseTokens(arena, tokens, options, errors) {
                     action: "drop",
                     message: `Unbalanced token ')'`,
                     node,
-                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
                 // return [];
                 continue;
@@ -3551,7 +3628,8 @@ function parseTokens(arena, tokens, options, errors) {
                     ? EnumToken.ParensTokenType
                     : tokensfuncDefMap.get(arena.dataTypes[func]);
             arena.setTokenList(func, trimArray(arena, tokens.splice(index + 1, i - index - 1)));
-            arena.setSpanEnd(func, arena.getSpanEnd(t));
+            // inlined: arena.setSpanEnd(func, arena.getSpanEnd(t))
+            arena.setSpan(func, arena.getSourceId(func), arena.getSpanStart(func), arena.getSpanEnd(t));
             i = index;
             if (arena.dataTypes[func] === EnumToken.ColorTokenType && options?.parseColor) {
                 parseColor(arena, func);
@@ -3567,13 +3645,15 @@ function parseTokens(arena, tokens, options, errors) {
                     action: "drop",
                     message: `Unbalanced token ']'`,
                     node,
-                    location: options.source.getSourceLocation(arena.getSpanStart(node)),
+                    // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
                 });
                 continue;
             }
             const attr = stack[stack.length - 1];
             index = tokens.indexOf(attr);
-            arena.setSpanEnd(attr, arena.getSpanEnd(t));
+            // inlined: arena.setSpanEnd(attr, arena.getSpanEnd(t))
+            arena.setSpan(attr, arena.getSourceId(attr), arena.getSpanStart(attr), arena.getSpanEnd(t));
             tokens.splice(i, 1);
             arena.dataTypes[attr] = EnumToken.AttrTokenType;
             arena.setTokenList(attr, tokens.splice(index + 1, i - index - 1));
@@ -3634,9 +3714,11 @@ function parseTokens(arena, tokens, options, errors) {
                             from = b;
                         }
                     }
-                    arena.setField(composes, TokenField.L, ...left);
+                    // inlined: arena.setField(composes, TokenField.L, ...left)
+                    arena.setTokenList(arena.fieldList(composes, TokenField.L), left);
                     if (from != 0) {
-                        arena.setField(composes, TokenField.R, from);
+                        // inlined: arena.setField(composes, TokenField.R, from)
+                        arena.setTokenList(arena.fieldList(composes, TokenField.R), [from]);
                     }
                     tokens.splice(k, l - k + 1, composes);
                     i = k;
@@ -3667,7 +3749,8 @@ function parseTokens(arena, tokens, options, errors) {
                     arena.dataTypes[tokens[i + 1]] = EnumToken.PseudoClassFuncTokenType;
                 }
                 else if (next == EnumToken.IdenTokenType) {
-                    arena.setStr(tokens[i + 1], ":" + arena.strings[arena.stringValue[tokens[i + 1]]]);
+                    // inlined: arena.setStr(tokens[i + 1], ":" + arena.strings[arena.stringValue[tokens[i + 1]]])
+                    arena.stringValue[tokens[i + 1]] = arena.internString((":" + arena.strings[arena.stringValue[tokens[i + 1]]]));
                     arena.dataTypes[tokens[i + 1]] = EnumToken.PseudoClassTokenType;
                 }
                 if (next == EnumToken.FunctionTokenType || next == EnumToken.IdenTokenType) {
@@ -3692,7 +3775,8 @@ function parseTokens(arena, tokens, options, errors) {
             action: "drop",
             message: `Unbalanced token. Expecting ${arena.dataTypes[node] === EnumToken.AttrStartTokenType ? "']'" : ")"}'`,
             node,
-            location: options.source.getSourceLocation(arena.getSpanStart(node)),
+            // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
+            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
         });
     }
     return tokens;

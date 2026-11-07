@@ -5,8 +5,7 @@
   "exports": {
     ".": "./dist/src/node.js",
     "./node": "./dist/src/node.js",
-    "./web": "./dist/src/web.js",
-    "./cjs": "./dist/index.cjs"
+    "./web": "./dist/src/web.js"
   },
   "type": "module",
   "typings": "dist/index.d.ts",

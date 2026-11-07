@@ -71,7 +71,8 @@ function minifyNthExpression(arena, func) {
     if (list.length == 1) {
         if (arena.dataTypes[list[0]] == EnumToken.IdenTokenType &&
             equalsIgnoreCase("-n", arena.strings[arena.stringValue[list[0]]])) {
-            arena.setStr(list[0], "n");
+            // inlined: arena.setStr(list[0], "n")
+            arena.stringValue[list[0]] = arena.internString("n");
         }
     }
     if (list.length == 3) {
@@ -81,7 +82,8 @@ function minifyNthExpression(arena, func) {
                 "+n" == arena.strings[arena.stringValue[list[0]]])) {
             if (arena.dataTypes[list[1]] == EnumToken.NextSiblingCombinatorTokenType) {
                 if (arena.dataTypes[list[2]] == EnumToken.NumberTokenType && 0 == arena.numericValue[list[2]]) {
-                    arena.setStr(list[0], "n");
+                    // inlined: arena.setStr(list[0], "n")
+                    arena.stringValue[list[0]] = arena.internString("n");
                     chi.splice(0, index, list[0]);
                     arena.setTokenList(func, chi);
                     return;
@@ -189,7 +191,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                 return acc;
             }, new Set()),
         ].join(), tokens.length === 0 ? null : tokens, result.success ? EnumAstNodeStatus.Validated : EnumAstNodeStatus.Invalid, result.errors);
-        arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+        // inlined: arena.getSource(tokens[0])
+        arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
         return node;
     }
     const stack = [];
@@ -238,7 +241,8 @@ function parseSelector(arena, tokens, context, options, errors) {
             const next = tokens[read + 1];
             if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoElementTokenType;
-                arena.setStr(token, ":" + arena.strings[arena.stringValue[next]]);
+                // inlined: arena.setStr(token, ":" + arena.strings[arena.stringValue[next]])
+                arena.stringValue[token] = arena.internString((":" + arena.strings[arena.stringValue[next]]));
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -250,7 +254,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.dataTypes[next];
-                arena.setStr(token, val);
+                // inlined: arena.setStr(token, val)
+                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -262,7 +267,8 @@ function parseSelector(arena, tokens, context, options, errors) {
             val = ":" + arena.strings[arena.stringValue[next]];
             if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoClassTokenType;
-                arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val);
+                // inlined: arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val)
+                arena.stringValue[token] = arena.internString(((pseudoElements.includes(val) ? "" : ":") + val));
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -274,7 +280,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : EnumToken.FunctionTokenDefType;
-                arena.setStr(token, val);
+                // inlined: arena.setStr(token, val)
+                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -294,7 +301,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                     message: "invalid hash id",
                 },
             ]);
-            arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+            // inlined: arena.getSource(tokens[0])
+            arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
             return node;
         }
         all[write++] = token;
@@ -315,7 +323,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                     stack.push(token);
                     break;
                 case EnumToken.AttrEndTokenType:
-                    if (arena.typeOf(stack.at(-1)) == EnumToken.AttrStartTokenType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1)] == EnumToken.AttrStartTokenType) {
                         const attr = stack[stack.length - 1];
                         index = tokens.indexOf(attr);
                         arena.spanLocation(attr, attr, token);
@@ -331,7 +340,8 @@ function parseSelector(arena, tokens, context, options, errors) {
                     stack.push(token);
                     break;
                 case EnumToken.EndParensTokenType:
-                    if (arena.typeOf(stack.at(-1)) == EnumToken.PseudoClassFunctionTokenDefType) {
+                    // inlined: arena.typeOf(stack.at(-1))
+                    if (arena.dataTypes[stack.at(-1)] == EnumToken.PseudoClassFunctionTokenDefType) {
                         const func = stack[stack.length - 1];
                         index = tokens.indexOf(func);
                         arena.spanLocation(func, func, token);
@@ -363,7 +373,8 @@ function parseSelector(arena, tokens, context, options, errors) {
         : allowed
             ? EnumAstNodeStatus.Invalid
             : EnumAstNodeStatus.Disallowed, result.success ? [] : result.errors);
-    arena.setLocation(node, arena.getSource(tokens[0]), arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
+    // inlined: arena.getSource(tokens[0])
+    arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
     return node;
 }
 // options of the rendering of the selector tokens
@@ -384,8 +395,10 @@ function renderSelector(arena, tokens) {
         if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
             if (trimWhiteSpace.includes(arena.dataTypes[tokens[index - 1]]) ||
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index + 1]]) ||
-                combinators.includes(arena.str(tokens[index - 1])) ||
-                combinators.includes(arena.str(tokens[index + 1]))) {
+                // inlined: arena.str(tokens[index - 1])
+                combinators.includes(arena.strings[arena.stringValue[tokens[index - 1]]]) ||
+                // inlined: arena.str(tokens[index + 1])
+                combinators.includes(arena.strings[arena.stringValue[tokens[index + 1]]])) {
                 continue;
             }
         }

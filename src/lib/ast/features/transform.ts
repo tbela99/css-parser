@@ -86,9 +86,8 @@ export class TransformCssFeature {
 
             const l: number = renderValue(arena, matrix).length;
 
-            arena.setTokens(
-                node,
-                ...r.reduce(
+            // inlined: arena.setTokens(node, ...r.reduce((acc: Token[], curr: Token[]): Token[] => { if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) { return curr; } return acc; }, [matrix]))
+            arena.setTokenList(node, r.reduce(
                     (acc: Token[], curr: Token[]): Token[] => {
                         if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) {
                             return curr;
@@ -97,8 +96,7 @@ export class TransformCssFeature {
                         return acc;
                     },
                     [matrix],
-                ),
-            );
+                ));
         }
 
         return null;
