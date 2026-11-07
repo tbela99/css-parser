@@ -2,23 +2,9 @@ import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
 /**
- * Location source id
- */
-export const LOCSRCID = Symbol.for("locSrcId");
-export const LOCSTA = Symbol.for("locSta");
-export const LOCEND = Symbol.for("locEnd");
-/**
  * Used by the validation parser
  */
 export const LOC = Symbol.for("loc");
-export const RAW = Symbol.for("raw");
-export const STATE = Symbol.for("state");
-export const ROOT = Symbol.for("root");
-export const ERRORS = Symbol.for("errors");
-export const TOKENS = Symbol.for("tokens");
-export const PARENT = Symbol.for("parent");
-export const OPTIMIZED = Symbol.for("optimized");
-export const PROPERTYNAME = Symbol.for("propertyName");
 
 export const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 export const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;

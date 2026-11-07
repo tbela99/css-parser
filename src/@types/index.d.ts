@@ -7,12 +7,14 @@ import type {
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
 import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ValidationLevel } from "../lib/ast/types.ts";
-import type { CssVariableToken, Token } from "./token.d.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../lib/ast/types.ts";
+import type { Token } from "./token.d.ts";
+import type { AstArenaNode } from "../lib/ast/arena-node.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
 import { ResponseType } from "../types.ts";
+import type { AstArena } from "../lib/ast/arena.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -68,11 +70,9 @@ export interface ValidationOptions {
     nestedRule?: boolean;
 
     /**
-     * Enable CSS validation. Using ValidationLevel as value is deprecated and will be removed
-     *
-     * see {@link ValidationLevel}
+     * Enable CSS validation
      */
-    validation?: boolean | ValidationLevel;
+    validation?: boolean;
 
     /**
      * Lenient validation. retain nodes that failed validation
@@ -470,6 +470,11 @@ export declare interface ParseSourceOptions {
      * @internal
      */
     source?: SourceFile | null;
+    /**
+     * Arena the ast nodes are allocated in. Created by the parser when omitted.
+     * Nested parses (`@import`) allocate their nodes in the parent arena.
+     */
+    arena?: AstArena;
 }
 
 /**
@@ -583,7 +588,7 @@ export declare interface ParserSyncOptions
      *
      * @private
      */
-    cache?: WeakMap<AstNode, string>;
+    cache?: Map<AstNode, string>;
 
     /**
      * CSS modules options
@@ -677,6 +682,7 @@ export declare interface MinifyFeature {
      * @param mode
      */
     run: (
+        arena: AstArena,
         ast: AstRule | AstAtRule,
         options: ParserOptions,
         parent: AstRule | AstAtRule | AstStyleSheet,
@@ -684,7 +690,7 @@ export declare interface MinifyFeature {
             [key: string]: any;
         },
         mode: FeatureWalkMode,
-    ) => AstNode | null;
+    ) => AstNode | AstNode[] | null;
 }
 
 /**
@@ -869,9 +875,13 @@ export declare interface ParseResultStats {
  */
 export declare interface ParseResult {
     /**
-     * Parsed ast tree
+     * Parsed ast tree: the id of the stylesheet node in {@link ParseResult.arena}
      */
     ast: AstStyleSheet;
+    /**
+     * arena the ast nodes are stored in
+     */
+    arena: AstArena;
     /**
      * Parse errors
      */
@@ -890,7 +900,7 @@ export declare interface ParseResult {
      * CSS module variables
      * @private
      */
-    cssModuleVariables?: Record<string, CssVariableToken>;
+    cssModuleVariables?: Record<string, AstArenaNode>;
 
     /**
      * css module import mapping

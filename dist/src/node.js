@@ -2,10 +2,9 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { deprecate } from 'node:util';
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
@@ -14,25 +13,21 @@ export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
 export { renderValue as renderToken } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ValidationLevel } from './lib/ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
-import { dirname, resolve, matchUrl } from './lib/fs/resolve.js';
+import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
 import { cwd } from 'node:process';
 import { parseResult, validateSyncArguments } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
-export { expand } from './lib/ast/expand.js';
-export { WalkerEvent, WalkerOptionEnum, walk, walkValues } from './lib/ast/walk.js';
 export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
-export { find, findAll, findByValue, findLast } from './lib/ast/find.js';
-export { cloneNode } from './lib/ast/clone.js';
-export { replaceNodeOrValue } from './lib/parser/utils/token.js';
+export { Arena, AstArena, TokenField, arenaColumns } from './lib/ast/arena.js';
+export { ARENA, ARENAID, AstArenaNode } from './lib/ast/arena-node.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
-export { getNodeProperty, setNodeProperty } from './lib/ast/node.js';
 export { parseSyntax } from './lib/validation/parser/parse.js';
 export { version } from '../package.json.js';
 
@@ -102,13 +97,13 @@ async function load(url, currentDirectory = ".", responseType = false) {
  *  const css = 'body { color: color(from hsl(0 100% 50%) xyz x y z); }';
  *  const parseResult = await parse(css);
  *
- * let renderResult = render(parseResult.ast);
+ * let renderResult = render(parseResult.arena, parseResult.ast);
  * console.log(result.code);
  *
  * // body{color:red}
  *
  *
- * renderResult = render(parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
+ * renderResult = render(parseResult.arena, parseResult.ast, {beautify: true, convertColor: ColorType.SRGB});
  * console.log(renderResult.code);
  *
  * // body {
@@ -116,35 +111,9 @@ async function load(url, currentDirectory = ".", responseType = false) {
  * // }
  * ```
  */
-function render(data, options = {}, mapping) {
-    return doRender(data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
+function render(arena, data, options = {}, mapping) {
+    return doRender(arena, data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
 }
-/**
- * Parse CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated
- * @see {@link parse}
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {parseFile} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await parseFile('https://docs.deno.com/styles.css');
- * console.log(result.ast);
- *
- * // local file
- * result = await parseFile('./css/styles.css');
- * console.log(result.ast);
- * ```
- */
-const parseFile = deprecate(async (file, options = {}, asStream = false) => parse({ file, asStream, ...options }), "parseFile is deprecated, use parse instead as parse({file, asStream, ...options})");
 /**
  * Parse CSS
  * @param args
@@ -254,7 +223,7 @@ function transformSync(...args) {
         importMapping = parseResult.importMapping;
     }
     // ast already expanded by parse
-    const rendered = render(parseResult.ast, {
+    const rendered = render(parseResult.arena, parseResult.ast, {
         ...options,
         expandNestingRules: false,
     }, mapping != null ? { mapping, importMapping } : null);
@@ -364,35 +333,6 @@ async function parse(...args) {
         : parseResult(result, options));
 }
 /**
- * Transform CSS file
- * @param file url or path
- * @param options
- * @param asStream load file as stream
- *
- * @deprecated Use transform() instead.
- * @throws Error file not found
- *
- * Example:
- *
- * ```ts
- *
- *  import {transform} from '@tbela99/css-parser';
- *
- *  // remote file
- * let result = await transform({file: 'https://docs.deno.com/styles.css'});
- * console.log(result.code);
- *
- * // local file
- * result = await transform({file: './css/styles.css'});
- * console.log(result.code);
- * ```
- */
-const transformFile = deprecate(async (file, options = {}, asStream = false) => transform({
-    file,
-    asStream,
-    ...options,
-}), "transformFile is deprecated, use transform instead as transform({file, asStream, ...options})");
-/**
  * Transform CSS
  *
  * Parsing a string
@@ -474,7 +414,7 @@ async function transform(...args) {
             importMapping = parseResult.importMapping;
         }
         // ast already expanded by parse
-        const rendered = render(parseResult.ast, {
+        const rendered = render(parseResult.arena, parseResult.ast, {
             ...options,
             expandNestingRules: false,
         }, mapping != null ? { mapping, importMapping } : null);
@@ -492,4 +432,4 @@ async function transform(...args) {
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseFile, parseSync, render, resolve, transform, transformFile, transformSync };
+export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseSync, render, resolve, transform, transformSync };

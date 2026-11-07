@@ -1,20 +1,7 @@
-import type {
-    AstAtRule,
-    AstDeclaration,
-    AstKeyframesAtRule,
-    AstKeyframesRule,
-    AstNode,
-    AstRule,
-} from "../../../@types/ast.d.ts";
-import type {
-    BinaryExpressionToken,
-    FunctionToken,
-    MediaQueryConditionToken,
-    ParensToken,
-    Token,
-} from "../../../@types/token.d.ts";
+import type { Token } from "../../../@types/token.d.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { PARENT, tokensfuncSet } from "../../syntax/constants.ts";
+import { tokensfuncSet } from "../../syntax/constants.ts";
+import type { AstArena } from "../../ast/arena.ts";
 
 const trimTokenSpace: Set<EnumToken> = new Set([
     EnumToken.CommaTokenType,
@@ -35,107 +22,25 @@ const trimSpaceAfter: Set<EnumToken> = new Set([
     EnumToken.CommaTokenType,
     EnumToken.PipeTokenType,
 ]);
+
 /**
- * Replace token in its parent node
- * @param parent
- * @param node
- * @param replacement
- * @throws TypeError replacement is null
- * @throws ReferenceError node not found in parent
+ * remove leading, trailing and redundant whitespace tokens (in place)
+ * @param arena
+ * @param tokens
  */
-export function replaceNodeOrValue(
-    parent:
-        | BinaryExpressionToken
-        | (AstNode &
-              (
-                  | { chi: Token[] }
-                  | {
-                        val: Token[];
-                    }
-              ))
-        | (Token &
-              (
-                  | { chi: Token[] }
-                  | {
-                        val: Token[];
-                    }
-              )),
-    node: Token,
-    replacement: Token | Token[],
-): boolean {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-
-    if (!Array.isArray(replacement)) {
-        if (replacement[PARENT] != parent) {
-            replacement[PARENT] = parent;
-        }
-    } else {
-        for (const newNode of replacement as Token[]) {
-            if (newNode[PARENT] != parent) {
-                newNode[PARENT] = parent;
-            }
-        }
-    }
-
-    if (parent.typ == EnumToken.BinaryExpressionTokenType) {
-        if ((parent as BinaryExpressionToken).l == node) {
-            (parent as BinaryExpressionToken).l = replacement as Token;
-        } else if ((parent as BinaryExpressionToken).r == node) {
-            (parent as BinaryExpressionToken).r = replacement as Token;
-        } else {
-            throw new ReferenceError("Node not found");
-        }
-    } else {
-        const target =
-            "val" in parent! && Array.isArray((parent as AstDeclaration).val)
-                ? (parent as AstDeclaration).val
-                : (((
-                      parent as
-                          | FunctionToken
-                          | ParensToken
-                          | AstAtRule
-                          | AstKeyframesAtRule
-                          | AstRule
-                          | AstKeyframesRule
-                  ).chi as Token[]) ?? parent);
-
-        if (Array.isArray(target)) {
-            // @ts-ignore
-            const index: number = target.indexOf(node);
-
-            if (index == -1) {
-                throw new ReferenceError("Node not found");
-            }
-
-            target.splice(index, 1, ...(Array.isArray(replacement) ? replacement : [replacement]));
-        } else if ("l" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).l == node) {
-            (target as BinaryExpressionToken | MediaQueryConditionToken).l = replacement as Token;
-        } else if ("r" in target && (target as BinaryExpressionToken | MediaQueryConditionToken).r == node) {
-            (target as BinaryExpressionToken | MediaQueryConditionToken).r = replacement as Token;
-        } else {
-            throw new ReferenceError("Node not found");
-        }
-    }
-
-    node[PARENT] = null;
-    return true;
-}
-
-export function trimWhiteSpaceTokens(tokens: Token[]): Token[] {
+export function trimWhiteSpaceTokens(arena: AstArena, tokens: Token[]): Token[] {
     let i: number = 0;
 
-    if (tokens[0]?.typ === EnumToken.WhitespaceTokenType) {
+    if (tokens.length > 0 && arena.dataTypes[tokens[0]] === EnumToken.WhitespaceTokenType) {
         tokens.shift();
     }
 
-    if (tokens[tokens.length - 1]?.typ === EnumToken.WhitespaceTokenType) {
+    if (tokens.length > 0 && arena.dataTypes[tokens[tokens.length - 1]] === EnumToken.WhitespaceTokenType) {
         tokens.pop();
     }
 
     if (tokens.length === 1) {
-        if (tokens[0].typ === EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[tokens[0]] === EnumToken.WhitespaceTokenType) {
             tokens.length = 0;
         }
 
@@ -143,18 +48,22 @@ export function trimWhiteSpaceTokens(tokens: Token[]): Token[] {
     }
 
     for (; i < tokens.length; i++) {
-        if (trimTokenSpace.has(tokens[i].typ)) {
-            if (tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+        if (trimTokenSpace.has(arena.dataTypes[tokens[i]])) {
+            if (i + 1 < tokens.length && arena.dataTypes[tokens[i + 1]] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(i + 1, 1);
             }
 
-            if (i > 0 && tokens[i - 1].typ === EnumToken.Whitespace) {
+            if (i > 0 && arena.dataTypes[tokens[i - 1]] === EnumToken.WhitespaceTokenType) {
                 tokens.splice(--i, 1);
                 continue;
             }
         }
 
-        if (trimSpaceAfter.has(tokens[i].typ) && tokens[i + 1]?.typ === EnumToken.WhitespaceTokenType) {
+        if (
+            trimSpaceAfter.has(arena.dataTypes[tokens[i]]) &&
+            i + 1 < tokens.length &&
+            arena.dataTypes[tokens[i + 1]] === EnumToken.WhitespaceTokenType
+        ) {
             tokens.splice(i + 1, 1);
         }
     }

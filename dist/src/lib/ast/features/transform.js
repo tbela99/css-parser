@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 1.8.2
+	Version: 2.0.0-alpha.1
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
@@ -10,8 +10,11 @@ import { compute } from '../transform/compute.js';
 import { filterValues, renderValue } from '../../printer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
-import { STATE } from '../../syntax/constants.js';
 
+/**
+ * transform property and its prefixed versions
+ */
+const transformProperty = /^(-[a-z]+-)?transform$/;
 class TransformCssFeature {
     accept = new Set([
         EnumToken.RuleNodeType,
@@ -31,52 +34,49 @@ class TransformCssFeature {
             options.features.push(new TransformCssFeature());
         }
     }
-    run(ast) {
-        if (ast.chi == null) {
+    run(arena, ast) {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
-        let i = 0;
         let node;
-        // @ts-ignore
-        for (; i < ast.chi.length; i++) {
-            // @ts-ignore
-            node = ast.chi[i];
-            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
+        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+            if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
-            if (node.typ != EnumToken.DeclarationNodeType ||
-                !node.nam.match(/^(-[a-z]+-)?transform$/)) {
+            if (arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+                !transformProperty.test(arena.strings[arena.name[node]])) {
                 continue;
             }
             const children = [];
-            for (const child of node.val) {
-                children.push(child.typ == EnumToken.TransformFunctionTokenType
-                    ? minifyTransformFunctions(child)
+            for (const child of arena.tokens(node)) {
+                children.push(arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                    ? minifyTransformFunctions(arena, child)
                     : child);
             }
-            let { matrix, cumulative, minified } = compute(children) ?? {
+            let { matrix, cumulative, minified } = compute(arena, children) ?? {
                 matrix: null,
                 cumulative: null,
                 minified: null,
             };
             if (matrix == null || cumulative == null || minified == null) {
-                node.val = children.map((t) => t.typ == EnumToken.TransformFunctionTokenType ? minifyTransformFunctions(t) : t);
+                arena.setTokenList(node, children);
                 continue;
             }
-            let r = [filterValues(children)];
-            if (eqMatrix(matrix, cumulative)) {
+            let r = [filterValues(arena, children)];
+            if (eqMatrix(arena, matrix, cumulative)) {
                 r.push(cumulative);
             }
-            if (eqMatrix(matrix, minified)) {
+            if (eqMatrix(arena, matrix, minified)) {
                 r.push(minified);
             }
-            const l = renderValue(matrix).length;
-            node.val = r.reduce((acc, curr) => {
-                if (curr.reduce((acc, t) => acc + renderValue(t), "").length < l) {
+            const l = renderValue(arena, matrix).length;
+            // inlined: arena.setTokens(node, ...r.reduce((acc: Token[], curr: Token[]): Token[] => { if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) { return curr; } return acc; }, [matrix]))
+            arena.setTokenList(node, r.reduce((acc, curr) => {
+                if (curr.reduce((acc, t) => acc + renderValue(arena, t), "").length < l) {
                     return curr;
                 }
                 return acc;
-            }, [matrix]);
+            }, [matrix]));
         }
         return null;
     }

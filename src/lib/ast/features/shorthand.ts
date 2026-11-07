@@ -1,8 +1,8 @@
-import { PropertyList } from "../../parser/declaration/list.ts";
-import { EnumToken } from "../types.ts";
+import { DeclarationMemo, PropertyList } from "../../parser/declaration/list.ts";
+import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import type { AstArena } from "../arena.ts";
 
 export class ComputeShorthandFeature {
     public accept: Set<EnumToken> = new Set([
@@ -26,22 +26,27 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule, options: PropertyListOptions): AstNode | null {
-        if (!("chi" in ast || ast.chi?.length == 0)) {
+    run(
+        arena: AstArena,
+        ast: AstRule | AstAtRule,
+        options: PropertyListOptions,
+        _parent?: AstNode,
+        context?: {
+            [key: string]: any;
+        },
+    ): AstNode | null {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;
         }
 
-        // @ts-ignore
-        const j: number = ast.chi.length;
-        let k: number = 0;
-        let l: number;
-
-        const rules: AstNode[] = [];
-        const declarations: AstNode[] = [];
+        // the keys of the declarations are shared by the rules of the minification
+        const memo: DeclarationMemo | null = context == null ? null : (context.declarations ??= new DeclarationMemo());
+        const list: PropertyList = new PropertyList(arena, options, memo);
         let doNotSort: boolean = false;
+        let hasDeclarations: boolean = false;
 
-        if (ast.typ == EnumToken.AtRuleNodeType) {
-            switch (ast.nam) {
+        if (arena.dataTypes[ast] == EnumToken.AtRuleNodeType) {
+            switch (arena.strings[arena.name[ast]]) {
                 case "function":
                 case "mixin":
                     doNotSort = true;
@@ -49,50 +54,51 @@ export class ComputeShorthandFeature {
             }
         }
 
-        // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
-        if (doNotSort) {
-            for (const node of ast.chi!) {
-                declarations.push(node);
-            }
-        } else {
-            // @ts-ignore
-            for (; k < j; k++) {
-                l = k;
-                // capture comments with the next token
-                while (l + 1 < j) {
-                    // @ts-ignore
-                    const node = ast.chi[l];
+        // the declarations (with their leading comments) are moved into the property list,
+        // the rules (with their leading comments) stay in place
+        let child: AstNode = arena.firstChild[ast];
 
-                    if (node.typ == EnumToken.CommentNodeType) {
-                        l++;
-                        continue;
-                    }
+        while (child != 0) {
+            let last: AstNode = child;
 
-                    break;
+            if (!doNotSort) {
+                // capture comments with the next node
+                while (arena.nextSibling[last] != 0 && arena.dataTypes[last] == EnumToken.CommentNodeType) {
+                    last = arena.nextSibling[last];
                 }
+            }
 
-                // @ts-ignore
-                const node = ast.chi[l];
+            const next: AstNode = arena.nextSibling[last];
 
-                if (node.typ == EnumToken.DeclarationNodeType) {
-                    for (let m = k; m <= l; m++) {
-                        declarations.push(ast.chi![m]);
-                    }
+            // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+            if (doNotSort || arena.dataTypes[last] == EnumToken.DeclarationNodeType) {
+                hasDeclarations = true;
+
+                for (let node: AstNode = child; node != next; ) {
+                    const nextNode: AstNode = arena.nextSibling[node];
+
+                    arena.detach(node);
+                    list.addDeclaration(node);
+                    node = nextNode;
+                }
+            }
+
+            child = next;
+        }
+
+        if (hasDeclarations) {
+            // the declarations are inserted before the rules
+            const first: AstNode = arena.firstChild[ast];
+
+            for (const node of list) {
+                if (first == 0) {
+                    arena.appendChild(ast, node);
                 } else {
-                    for (let m = k; m <= l; m++) {
-                        rules.push(ast.chi![m]);
-                    }
+                    arena.insertBefore(first, node);
                 }
-
-                k = l;
             }
         }
 
-        if (declarations.length > 0) {
-            ast.chi!.length = 0;
-            // @ts-expect-error
-            ast.chi!.push(...new PropertyList(options).add(declarations), ...rules);
-        }
         return ast;
     }
 }

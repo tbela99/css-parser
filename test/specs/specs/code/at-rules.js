@@ -1,0 +1,2076 @@
+export function run(describe, expect, it, transform, parse, render, dirname) {
+    describe("media queries level 5", function () {
+        it("empty query #1", function () {
+            return transform(
+                `
+@media {
+    
+    p .a { color: red; }
+    p .b { color: red; }
+    }
+}
+
+`,
+                { nestingRules: false },
+            ).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
+        });
+
+        it("error handling #2", function () {
+            return transform(
+                `
+ @media &test, all, (example, all,), speech {
+        
+    p .a { color: red; }
+    p .b { color: red; }
+    }
+    }
+
+`,
+                { nestingRules: false },
+            ).then((result) => expect(result.code).equals(`p .a,p .b{color:red}`));
+        });
+
+        it("error handling #3", function () {
+            return transform(`
+   @media (hover) and (width > 1024px) or (--modern), (color) {
+       .a {
+           color: green; }
+       
+   }
+`).then((result) => expect(result.code).equals(`@media (color){.a{color:green}}`));
+        });
+
+        it("error handling #4", function () {
+            return transform(`
+  @media (hover) and ((width > 1024px) and (--modern) and (color)), (color) {
+       .a {
+           color: green; }
+       
+   }
+`).then((result) =>
+                expect(result.code).equals(
+                    `@media (hover) and ((width>1024px) and (--modern) and (color)),(color){.a{color:green}}`,
+                ),
+            );
+        });
+
+        it("error handling #5", function () {
+            return transform(`
+  @media (hover) and ((width > 1024px) and (--modern) or (color)), (color) {
+       .a {
+           color: green; }
+       
+   }
+`).then((result) => expect(result.code).equals(`@media (color){.a{color:green}}`));
+        });
+
+        it("error handling #6", function () {
+            return transform(
+                `
+@when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {
+
+.a {
+      color: green; }
+}
+@else  {
+  
+.a {
+      color: red; }
+}
+@else supports(caret-color: pink) and supports(background: double-rainbow()){
+
+.a {
+      color: green; }
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
+ .a {
+  color: green
+ }
+}
+@else {
+ .a {
+  color: red
+ }
+}`),
+            );
+        });
+
+        it("support font-tech, font-format #7", function () {
+            return transform(
+                `
+
+@when font-tech(color-COLRv1) and font-tech(variations) {
+  @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
+}
+@else font-tech(color-SVG) {
+  @font-face { font-family: icons; src: url(icons-gradient.woff2); }
+}
+@else font-tech(color-COLRv0) {
+  @font-face { font-family: icons; src: url(icons-flat.woff2); }
+}
+@else {
+  @font-face { font-family: icons; src: url(icons-fallback.woff2); }
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@when font-tech(color-COLRv1) and font-tech(variations) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient-var.woff2)
+ }
+}
+@else font-tech(color-SVG) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient.woff2)
+ }
+}
+@else font-tech(color-COLRv0) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-flat.woff2)
+ }
+}
+@else {
+ @font-face {
+  font-family: icons;
+  src: url(icons-fallback.woff2)
+ }
+}`),
+            );
+        });
+
+        it("font-face #8", function () {
+            return transform(
+                `
+
+@font-face { font-family: icons; src: url(icons-fallback.woff2);}
+@supports font-tech(color-COLRv1) {
+  @font-face { font-family: icons; src: url(icons-gradient-var.woff2); }
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-face {
+ font-family: icons;
+ src: url(icons-fallback.woff2)
+}
+@supports font-tech(color-COLRv1) {
+ @font-face {
+  font-family: icons;
+  src: url(icons-gradient-var.woff2)
+ }
+}`),
+            );
+        });
+
+        it("container #9", function () {
+            return transform(
+                `
+
+/* condition list */
+@container card scroll-state(stuck: top) and
+    style(--themeBackground),
+    not style(background-color: red),
+     style(color: green) and style(background-color: transparent),
+     style(--themeColor: blue) or style(--themeColor: purple){
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("container #10", function () {
+            return transform(
+                `
+
+/* condition list */
+@container {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("container #11", function () {
+            return transform(
+                `
+
+/* condition list */
+@container card {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@container card {
+ h2 {
+  font-size: 1.5em
+ }
+}`),
+            );
+        });
+
+        it("container #12", function () {
+            return transform(
+                `
+
+/* condition list */
+@container card  card{
+  h2 {
+    font-size: 1.5em;
+  }
+}
+@container card  style() {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+@container card  (()) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+@container card  ((--themeBackground) and (--themeColor),) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+@container card  ((--themeBackground) not (--themeColor)) {
+  h2 {
+    font-size: 1.5em;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("container #13", function () {
+            return transform(
+                `
+
+/* condition list */
+@container card ;
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("custom-media #14", function () {
+            return transform(`
+ /* --modern targets modern devices that support color or hover */
+@custom-media --modern (color), (hover);
+
+@media (--modern) and (width > 1024px) {
+  .a { color: green; }
+}
+
+`).then((result) =>
+                expect(result.code).equals(
+                    `@custom-media --modern (color),(hover);@media (--modern) and (width>1024px){.a{color:green}}`,
+                ),
+            );
+        });
+
+        it("when-else #15", function () {
+            return transform(
+                `
+@when media(width >= 400px) and media(pointer: fine) and supports(display: flex) {
+
+.a {
+      color: green; }
+}
+@else supports(caret-color: pink) and supports(background: double-rainbow()) {
+  
+.a {
+      color: green; }
+}
+@else {
+
+.a {
+      color: green; }
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@when media(width>=400px) and media(pointer:fine) and supports(display:flex) {
+ .a {
+  color: green
+ }
+}
+@else supports(caret-color:pink) and supports(background:double-rainbow()) {
+ .a {
+  color: green
+ }
+}
+@else {
+ .a {
+  color: green
+ }
+}`),
+            );
+        });
+
+        it("counter-syle #16", function () {
+            return transform(
+                `
+
+/* condition list */@counter-style thumbs {
+  system: cyclic;
+  symbols: "\\1F44D";
+  suffix: " ";
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@counter-style thumbs {
+ system: cyclic;
+ symbols: "👍";
+ suffix: " "
+}`),
+            );
+        });
+
+        it("counter-style #17", function () {
+            return transform(
+                `
+
+/* condition list */
+@counter-style  {
+  system: cyclic;
+  symbols: "\\1F44D";
+  suffix: " ";
+}
+
+@counter-style thumbs;
+@counter-style thumbs thumbs;
+@counter-style /* thumbs thumbs */;
+@counter-style var();
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("at-rule #18", function () {
+            return transform(
+                `@charset  "UTF-8"
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("at-rule #19", function () {
+            return transform(
+                `@charset "UTF-8"
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(`@charset "UTF-8";`));
+        });
+
+        it("at-rule #20", function () {
+            return transform(
+                `@charset 'UTF-8'
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("at-rule #21", function () {
+            return transform(
+                `@charset /* erw */ 'UTF-8';
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("at-rule #22", function () {
+            return transform(
+                `@charset /* erw */ "UTF-8";
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("at-rule #23", function () {
+            return transform(
+                `@charset /* erw */"UTF-8";
+`,
+                { beautify: true, removeCharset: false },
+            ).then((result) => expect(result.code).equals(``));
+        });
+    });
+
+    describe("@import", function () {
+        it("import #24", function () {
+            return transform(`
+@import "custom.css
+";
+@import url("chrome://communicator/skin/
+");
+
+`).then((result) => expect(result.code).equals(``));
+        });
+        it("import #25", function () {
+            return transform(`
+
+@import url("landscape.css") screen and (orientation: landscape);
+
+`).then((result) => expect(result.code).equals(`@import "landscape.css" screen and (orientation:landscape);`));
+        });
+
+        it("import #26", function () {
+            return transform(`
+
+@import url("gridy.css") supports((not (display: grid)) and (display: flex))
+  screen and (max-width: 400px)
+
+`).then((result) =>
+                expect(result.code).equals(
+                    `@import "gridy.css" supports((not (display:grid)) and (display:flex))screen and (width<=400px);`,
+                ),
+            );
+        });
+
+        it("import #27", function () {
+            return transform(`
+
+
+@import url("whatever.css")
+supports((selector(h2 > p)) and (font-tech(color-COLRv1)));
+
+
+`).then((result) =>
+                expect(result.code).equals(
+                    `@import "whatever.css" supports((selector(h2>p)) and (font-tech(color-COLRv1)));`,
+                ),
+            );
+        });
+
+        it("import #28", function () {
+            return transform(`
+
+
+@import url("whatever.css")
+supports((selector(h2 > p)) and (font-tech(color-COLRv1))) {
+
+}
+
+`).then((result) => expect(result.code).equals(``));
+        });
+
+        it("import #29", function () {
+            return transform(
+                `
+
+@import "theme.css" layer("bar");
+@import "theme.css" layer();
+@import "style.css" layer;
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(`@import "style.css" layer;`));
+        });
+    });
+
+    describe("@document", function () {
+        it("document #30", function () {
+            return transform(
+                `
+@document url("https://www.example.com/")
+{
+  h1 {
+    color: green;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@document url(https://www.example.com/) {
+ h1 {
+  color: green
+ }
+}`),
+            );
+        });
+        it("document #31", function () {
+            return transform(
+                `
+
+@document url("http://www.w3.org/"),
+          url-prefix("http://www.w3.org/Style/"),
+          domain("mozilla.org"),
+          media-document("video"),
+          regexp("https:.*") {
+  /* CSS rules here apply to:
+     - The page "http://www.w3.org/"
+     - Any page whose URL begins with "http://www.w3.org/Style/"
+     - Any page whose URL's host is "mozilla.org"
+       or ends with ".mozilla.org"
+     - Any standalone video
+     - Any page whose URL starts with "https:" */
+
+  /* Make the above-mentioned pages really ugly */
+  body {
+    color: purple;
+    background: yellow;
+  }
+}
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@document url(http://www.w3.org/),url-prefix("http://www.w3.org/Style/"),domain("mozilla.org"),media-document("video"),regexp("https:.*") {
+ body {
+  color: purple;
+  background: #ff0
+ }
+}`),
+            );
+        });
+    });
+
+    describe("@keyframes", function () {
+        it("keyframes #32", function () {
+            return transform(
+                `
+
+    @-webkit-keyframes flash {
+            from,
+            50%,
+                100% {
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                opacity: 0;
+            }
+        }
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@-webkit-keyframes flash {
+ 0%,50%,to {
+  opacity: 1
+ }
+ 25%,75% {
+  opacity: 0
+ }
+}`),
+            );
+        });
+
+        it("keyframes #33", function () {
+            return transform(
+                `
+
+@keyframes slide-right {
+
+  from {
+    margin-left: 0px;
+  }
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  to {
+    margin-left: 200px;
+  }
+
+}
+
+@keyframes slide-right {
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+    margin-left: 100px;
+  }
+
+  100% {
+    margin-left: 250px;
+  }
+
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes slide-right {
+ 50% {
+  margin-left: 100px;
+  opacity: .9
+ }
+ to {
+  margin-left: 250px
+ }
+}`),
+            );
+        });
+
+        it("keyframes #34", function () {
+            return transform(
+                `
+
+@keyframes slide-right {
+
+  from {
+    margin-left: 0px;
+  }
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  to {
+    margin-left: 200px;
+  }
+
+}
+
+@keyframes slide-right {
+
+  50% {
+    margin-left: 110px;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.9;
+    margin-left: 100px;
+  }
+
+  100% {
+    margin-left: 250px;
+  }
+
+}
+
+
+            @keyframes slide-in {
+  from, 13%, 0% {
+    transform: translateX(0%);
+  }
+
+  to, 100% {
+    transform: translateX(100%);
+  }
+}
+
+
+@keyframes important1 {
+  from {
+    margin-top: 50px;
+  }
+  50% {
+    margin-right: 150px !important; /* ignored */
+  }
+  to {
+    margin-top: 100px;
+  }
+}
+
+@keyframes important2 {
+  from {
+    margin-top: 50px;
+  }
+  0% {
+    margin-bottom: 100px;
+  }
+  to {
+    margin-top: 150px !important; /* ignored */
+    margin-bottom: 50px;
+  }
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes slide-right {
+ 50% {
+  margin-left: 100px;
+  opacity: .9
+ }
+ to {
+  margin-left: 250px
+ }
+}
+@keyframes slide-in {
+ 0%,13% {
+  transform: translateX(0)
+ }
+ to {
+  transform: translateX(100%)
+ }
+}
+@keyframes important1 {
+ 0% {
+  margin-top: 50px
+ }
+ to {
+  margin-top: 100px
+ }
+}
+@keyframes important2 {
+ 0% {
+  margin-top: 50px;
+  margin-bottom: 100px
+ }
+ to {
+  margin-bottom: 50px
+ }
+}`),
+            );
+        });
+    });
+
+    describe("other", function () {
+        it("font-palette-values #33", function () {
+            return transform(
+                `
+@font-palette-values --identifier {
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-palette-values --identifier {
+ font-family: Bixa
+}
+.my-class {
+ font-palette: --identifier
+}`),
+            );
+        });
+
+        it("font-palette-values #34", function () {
+            return transform(
+                `
+@font-palette-values identifier {
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`),
+            );
+        });
+
+        it("font-palette-values #35", function () {
+            return transform(
+                `
+@font-palette-values identifier unexpected {
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`),
+            );
+        });
+
+        it("font-palette-values #36", function () {
+            return transform(
+                `
+@font-palette-values identifier;
+.my-class {
+  font-palette: --identifier;
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`),
+            );
+        });
+
+        it("font-palette-values #37", function () {
+            return transform(
+                `
+@font-palette-values {
+
+  font-family: Bixa;
+}
+.my-class {
+  font-palette: --identifier;
+}
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`.my-class {
+ font-palette: --identifier
+}`),
+            );
+        });
+
+        it("font-palette-values #38", function () {
+            return transform(
+                `
+@font-feature-values Font Name {
+  font-display: swap;
+  @styleset {
+    nice-style: 12;
+  }
+  @swash {
+    fancy: 2;
+  }
+}
+
+`,
+                { beautify: true, validation: true },
+            ).then((result) =>
+                expect(result.code).equals(`@font-feature-values Font Name {
+ font-display: swap;
+ @styleset {
+  nice-style: 12
+ }
+ @swash {
+  fancy: 2
+ }
+}`),
+            );
+        });
+
+        it("font-palette-values #39", function () {
+            return transform(
+                `
+/* Targets all the pages */
+@page {
+  size: 8.5in 9in;
+  margin-top: 4in;
+}
+
+/* Targets all even-numbered pages */
+@page :left {
+  margin-top: 4in;
+}
+
+/* Targets all odd-numbered pages */
+@page :right {
+  size: 11in;
+  margin-top: 4in;
+}
+
+/* Targets all selectors with \`page: wide;\` set */
+@page wide {
+  size: a4 landscape;
+}
+
+@page {
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`,
+                { beautify: true },
+            ).then((result) =>
+                expect(result.code).equals(`@page {
+ size: 8.5in 9in;
+ margin-top: 4in
+}
+@page :left {
+ margin-top: 4in
+}
+@page :right {
+ size: 11in;
+ margin-top: 4in
+}
+@page wide {
+ size: a4 landscape
+}
+@page {
+ @top-right {
+  content: "Page " counter(pageNumber)
+ }
+}`),
+            );
+        });
+
+        it("font-palette-values #40", function () {
+            return transform(
+                `
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("font-palette-values #41", function () {
+            return transform(
+                `
+  /* margin box at top right showing page number */
+  @top-right no;
+}
+
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("font-palette-values #40", function () {
+            return transform(
+                `
+  /* margin box at top right showing page number */
+  @top-right {
+    content: "Page " counter(pageNumber);
+  }
+}
+
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("keyframes #42", function () {
+            return transform(
+                `
+
+    @keyframes {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("keyframes #43", function () {
+            return transform(
+                `
+
+    @keyframes /* 1 */ {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("keyframes #44", function () {
+            return transform(
+                `
+
+    @keyframes /* 1 */ test test1 {
+
+            from {
+                margin-left: 0px;
+            }
+
+            50% {
+                margin-left: 110px;
+            opacity: 1;
+        }
+
+            50% {
+                opacity: 0.9;
+            }
+
+            to {
+                margin-left: 200px;
+            }
+
+        }
+
+`,
+                { beautify: true },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("keyframes #45", function () {
+            return transform(
+                `
+
+@font-feature-values Bongo {
+    @swash { ornate: 1; }
+    annotation { boxed: 4; } /* should be @annotation! */
+    @swash { double-loops: 1; flowing: -1; } /* negative value */
+    @ornaments ; /* incomplete definition */
+    @styleset { double-W: 14; sharp-terminals: 16 1 } /* missing ; */
+    redrum  /* random editing mistake */
+}
+
+`,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@font-feature-values Bongo {
+ @swash {
+  ornate: 1;
+  double-loops: 1;
+  flowing: -1
+ }
+ @styleset {
+  double-W: 14;
+  sharp-terminals: 16 1
+ }
+}`),
+            );
+        });
+
+        it("media range query #46", function () {
+            return transform(
+                `
+
+  @media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
+@media (color) and (hover), (monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}
+`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    removeComments: false,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media ((color) and (hover)) or (monochrome) {
+ /* … */
+}
+/* or */
+@media (color) and (hover),(monochrome) {
+ /* … */
+}
+@media tv,(30em<=width<=50em),screen {
+}`),
+            );
+        });
+
+        it("import #47", function () {
+            return transform(
+                `
+
+@import 'charset.css' /* line comment */ layer(layer.one.two.three) supports((selector(h2 > p)) and (font-tech(color-COLRv1))) screen and (min-width: 30em) and (max-width: 50em), tv and (all),all and (((min-width: 30em) and (max-width: 50em)) or (all));
+`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(
+                    `@import 'charset.css' layer(layer.one.two.three) supports((selector(h2>p)) and (font-tech(color-COLRv1)))screen and (width>=30em) and (width<=50em),tv and (all),all and (((30em<=width<=50em)) or (all));`,
+                ),
+            );
+        });
+
+        it("import #48", function () {
+            return transform(
+                `
+
+
+@media all, tv,all and (min-width: 30em) and (max-width: 50em) or all, all, tv, screen or all {
+ 
+}`,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                    validation: true,
+                },
+            ).then((result) => expect(result.code).equals(``));
+        });
+
+        it("media ratio and calc() #49", function () {
+            return transform(
+                `
+
+  @media (calc(4 / 3) <= device-aspect-ratio <= 32 / 18) {}
+  @media ( device-aspect-ratio <= 32 / 18) {}
+@media (width >= calc(1024px - 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    removeEmpty: false,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (4/3<=device-aspect-ratio<=16/9) {
+}
+@media (device-aspect-ratio<=16/9) {
+}
+@media (width>=974px) {
+ h1 {
+  color: Highlight
+ }
+}`),
+            );
+        });
+
+        it("color-profile and color() #50", function () {
+            return transform(
+                `
+
+@color-profile --swop5c {
+  src: url("https://example.org/SWOP2006_Coated5v2.icc");
+}
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@color-profile --swop5c {
+ src: url(https://example.org/SWOP2006_Coated5v2.icc)
+}
+.header {
+ background-color: color(--swop5c 0 70% 20% 0)
+}`),
+            );
+        });
+
+        it("supports and env() #51", function () {
+            return transform(
+                `
+
+  @supports env(color-profile 1 2) {
+    
+.header {
+  background-color: color(--swop5c 0% 70% 20% 0%);
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@supports env(color-profile 1 2) {
+ .header {
+  background-color: color(--swop5c 0 70% 20% 0)
+ }
+}`),
+            );
+        });
+
+        it("@view-transition #52", function () {
+            return transform(
+                `
+
+/* Create a custom animation */
+@keyframes move-out {
+  from {
+    transform: translateY(0%);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes move-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0%);
+  }
+}
+
+/* Apply the custom animation to the old and new page states */
+::view-transition-old(root) {
+  animation: 0.4s ease-in both move-out;
+}
+
+::view-transition-new(root) {
+  animation: 0.4s ease-in both move-in;
+}
+  @view-transition {
+  navigation: auto;
+  types: slide;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes move-out {
+ 0% {
+  transform: translateY(0)
+ }
+ to {
+  transform: translateY(-100%)
+ }
+}
+@keyframes move-in {
+ 0% {
+  transform: translateY(100%)
+ }
+ to {
+  transform: translateY(0)
+ }
+}
+::view-transition-old(root) {
+ animation: .4s ease-in both move-out
+}
+::view-transition-new(root) {
+ animation: .4s ease-in both move-in
+}
+@view-transition {
+ navigation: auto;
+ types: slide
+}`),
+            );
+        });
+
+        it("@font-palette-values #53", function () {
+            return transform(
+                `
+@font-palette-values --Alternate {
+  font-family: "Bungee Spice";
+  override-colors:
+    0 #00ffbb,
+    1 #007744;
+}
+.alternate {
+  font-palette: --Alternate;
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@font-palette-values --Alternate {
+ font-family: "Bungee Spice";
+ override-colors: 0 #0fb,1 #074
+}
+.alternate {
+ font-palette: --Alternate
+}`),
+            );
+        });
+
+        it("@property  #54", function () {
+            return transform(
+                `
+
+@property --canBeAnything {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --rotation {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 45deg;
+}
+
+@property --defaultSize {
+  syntax: "<length> | <percentage>";
+  inherits: true;
+  initial-value: 200px;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@property --canBeAnything {
+ syntax: "*";
+ inherits: true
+}
+@property --rotation {
+ syntax: "<angle>";
+ inherits: false;
+ initial-value: 45deg
+}
+@property --defaultSize {
+ syntax: "<length> | <percentage>";
+ inherits: true;
+ initial-value: 200px
+}`),
+            );
+        });
+
+        it("@position-try  #55", function () {
+            return transform(
+                `
+@position-try --custom-left {
+  position-area: left;
+  width: 100px;
+  margin-right: 10px;
+}
+
+@position-try --custom-bottom {
+  top: anchor(bottom);
+  justify-self: anchor-center;
+  margin-top: 10px;
+  position-area: none;
+}
+
+@position-try --custom-right {
+  left: calc(anchor(right) + 10px);
+  align-self: anchor-center;
+  width: 100px;
+  position-area: none;
+}
+
+@position-try --custom-bottom-right {
+  position-area: bottom right;
+  margin: 10px 0 0 10px;
+}
+  .infobox {
+  position: fixed;
+  position-anchor: --my-anchor;
+  position-area: top;
+  width: 200px;
+  margin-bottom: 10px;
+  position-try-fallbacks:
+    --custom-left, --custom-bottom, --custom-right, --custom-bottom-right;
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@position-try --custom-left {
+ position-area: left;
+ width: 100px;
+ margin-right: 10px
+}
+@position-try --custom-bottom {
+ top: anchor(bottom);
+ justify-self: anchor-center;
+ margin-top: 10px;
+ position-area: none
+}
+@position-try --custom-right {
+ left: calc(anchor(right) + 10px);
+ align-self: anchor-center;
+ width: 100px;
+ position-area: none
+}
+@position-try --custom-bottom-right {
+ position-area: bottom right;
+ margin: 10px 0 0 10px
+}
+.infobox {
+ position: fixed;
+ position-anchor: --my-anchor;
+ position-area: top;
+ width: 200px;
+ margin-bottom: 10px;
+ position-try-fallbacks: --custom-left,--custom-bottom,--custom-right,--custom-bottom-right
+}`),
+            );
+        });
+
+        it("@starting-style  #56", function () {
+            return transform(
+                `
+@starting-style {
+  [popover]:popover-open {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+[popover]:popover-open {
+  opacity: 1;
+  transform: scaleX(1);
+
+  @starting-style {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@starting-style {
+ [popover]:popover-open {
+  opacity: 0;
+  transform: scaleX(0)
+ }
+}
+[popover]:popover-open {
+ opacity: 1;
+ transform: none;
+ @starting-style {
+  opacity: 0;
+  transform: scaleX(0)
+ }
+}`),
+            );
+        });
+
+        it("@starting-style  #57", function () {
+            return transform(
+                `
+
+@media (width >= calc(1024px + 50px)) {
+  h1 {
+    color: Highlight;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (width>=1074px) {
+ h1 {
+  color: Highlight
+ }
+}`),
+            );
+        });
+
+        it("do not minify supports() arguments #58", function () {
+            return transform(
+                `
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    expandIfSyntax: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`body {
+ background-color: #00adf3;
+ @supports (color:oklch(.7 .185 232)) {
+  background-color: #00aefc
+ }
+ &:after {
+  content: "Your browser does not support OKLCH";
+  @supports (color:oklch(.7 .185 232)) {
+   content: "Your browser supports OKLCH"
+  }
+ }
+}`),
+            );
+        });
+
+        it("do not minify supports() arguments #59", function () {
+            return transform(
+                `
+
+body {
+  background-color: if(
+    supports(color: oklch(0.7 0.185 232)): oklch(0.7 0.185 232);
+    else: #00adf3;
+  );
+  
+  &::after {
+    content: if(
+    supports(color: oklch(0.7 0.185 232)): "Your browser supports OKLCH";
+    else: "Your browser does not support OKLCH";
+    );
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`body {
+ background-color: if(supports(color:oklch(.7 .185 232)): #00aefc; else: #00adf3);
+ &:after {
+  content: if(supports(color:oklch(.7 .185 232)): "Your browser supports OKLCH"; else: "Your browser does not support OKLCH")
+ }
+}`),
+            );
+        });
+
+        it("boolean media queries #60", function () {
+            return transform(
+                `
+
+@media (grid: 1) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (grid:1) {
+ a:hover {
+  color: blue
+ }
+}`),
+            );
+        });
+
+        it("integer media queries #61", function () {
+            return transform(
+                `
+
+@media (color: 1) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (color:1) {
+ a:hover {
+  color: blue
+ }
+}`),
+            );
+        });
+
+        it("keyword media queries #61", function () {
+            return transform(
+                `
+
+@media (scripting: none) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (scripting:none) {
+ a:hover {
+  color: blue
+ }
+}`),
+            );
+        });
+
+        it("string media queries #61", function () {
+            return transform(
+                `
+
+@media (-moz-os-version) {
+  a:hover {
+    color: blue;
+  }
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@media (-moz-os-version) {
+ a:hover {
+  color: blue
+ }
+}`),
+            );
+        });
+
+        it("at-rule function #62", function () {
+            return transform(
+                `
+
+
+@function --transparent(--color, --alpha) {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+
+section {
+  --base-color: #faa6ff;
+  background-color: --transparent(var(--base-color), 0.8);
+}
+
+@function --transparent(--color <color>, --alpha type(<number> | <transform-function>))
+  returns <color> {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+  @function --max-plus-x(--list <length>#, --x <length>) {
+  result: calc(max(var(--list)) + var(--x));
+}
+  div {
+  width: --max-plus-x({1px, 7px, 2px}, 3px); /* 10px */
+}
+  @function --anim-1s(--animation, --count) {
+  --duration: 1s;
+  --easing: linear;
+  result: var(--animation) var(--duration) var(--count) var(--easing);
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --transparent(--color,--alpha) {
+ result: oklch(from var(--color) l c h/var(--alpha))
+}
+section {
+ --base-color: #faa6ff;
+ background-color: --transparent(var(--base-color),.8)
+}
+@function --transparent(--color <color>,--alpha type(<number>|<transform-function>))returns <color> {
+ result: oklch(from var(--color) l c h/var(--alpha))
+}
+@function --max-plus-x(--list <length>#,--x <length>) {
+ result: calc(max(var(--list)) + var(--x))
+}
+div {
+ width: --max-plus-x({1px,7px,2px},3px)
+}
+@function --anim-1s(--animation,--count) {
+ --duration: 1s;
+ --easing: linear;
+ result: var(--animation) var(--duration) var(--count) var(--easing)
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #63", function () {
+            return transform(
+                `
+
+@function --mypi() {
+  result: 3;
+  result: 3.14;
+}
+
+@function --outer(--outer-arg) {
+  --outer-local: 2;
+  result: --inner();
+}
+@function --inner() returns <number> {
+  result: calc(var(--outer-arg) + var(--outer-local));
+}
+div {
+  z-index: --outer(1); /* 3 */
+}
+
+@function --double-z() returns <number> {
+  result: calc(var(--z) * 2);
+}
+div {
+  --z: 3;
+  z-index: --double-z(); /* 6 */
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --mypi() {
+ result: 3.14
+}
+@function --outer(--outer-arg) {
+ --outer-local: 2;
+ result: --inner()
+}
+@function --inner()returns <number> {
+ result: calc(var(--outer-arg) + var(--outer-local))
+}
+div {
+ z-index: --outer(1)
+}
+@function --double-z()returns <number> {
+ result: calc(var(--z)*2)
+}
+div {
+ --z: 3;
+ z-index: --double-z()
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #64", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  result: 16px;
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px;
+ @media (width>=1000px) {
+  result: 20px
+ }
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #65", function () {
+            return transform(
+                `
+
+@function --suitable-font-size() {
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+  result: 16px;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ result: 16px
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #66", function () {
+            return transform(
+                `
+
+@mixin --gradient-text(
+  --from <color>: mediumvioletred,
+  --to <color>: teal,
+  --angle: to bottom right,
+) {
+  @private {
+    --gradient: linear-gradient(var(--angle), var(--from), var(--to));
+  }
+  color: var(--from, var(--to));
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    background: var(--gradient, var(--from));
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+  @apply --one;
+  /* Invokes the --one mixin, with no arguments or contents. */
+
+  @apply --two(blue);
+  /* Invokes --two with one argument, and no contents. */
+
+  @apply --three {color: red;}
+  /* Invokes --three with no arguments, but with contents. */
+
+  @apply --four(blue) {color: red;}
+  /* Invokes --four with both an argument and contents. */
+}
+
+h1 {
+  @apply --gradient-text(pink, powderblue);
+}
+
+.foo {
+    color: blue;
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code)
+                    .equals(`@mixin --gradient-text(--from <color>:mediumvioletred,--to <color>:teal,--angle:to bottom right,) {
+ @private {
+  --gradient: linear-gradient(var(--angle),var(--from),var(--to))
+ }
+ color: var(--from,var(--to));
+ @supports (background-clip:text) or (-webkit-background-clip:text) {
+  background: var(--gradient,var(--from));
+  color: #0000;
+  -webkit-background-clip: text;
+  background-clip: text
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ @apply --one;
+ @apply --two(blue);
+ @apply --three {
+  color: red
+ }
+ @apply --four(blue) {
+  color: red
+ }
+}
+h1 {
+ @apply --gradient-text(pink,powderblue)
+}
+.foo {
+ color: blue
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #67", function () {
+            return transform(
+                `
+
+  @mixin --box {
+  aspect-ratio: 1;
+  inline-size: 100px;
+  block-size: 100px;
+}
+
+
+.box {
+  @apply --box;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --box {
+ aspect-ratio: 1;
+ inline-size: 100px;
+ block-size: 100px
+}
+.box {
+ @apply --box
+}`),
+            );
+        });
+
+        it("at-rule function with no arguments #68", function () {
+            return transform(
+                `
+
+@mixin --one-column() {
+  @media (width <= 800px) or (height <= 600px) or (orientation: portrait) {
+    @contents;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@mixin --one-column() {
+ @media (width<=800px) or (height<=600px) or (orientation:portrait) {
+  @contents
+ }
+}`),
+            );
+        });
+
+        it("at-rule mixin, layer, contents #69", function () {
+            return transform(
+                `
+
+.goal .bg-indigo {
+  @mixin --shadowed-values(--color2: green, --color3: green) {
+  @private { --color3: blue; }
+  background: linear-gradient(var(--color1), var(--color2), var(--color3));
+}
+p {
+  --color1: red;
+  --color2: red;
+  --color3: red;
+  @apply --shadowed-values();
+}
+}
+
+
+  @mixin --shadowed-values(--color2: green, --color3: green) {
+  @private { --color3: blue; }
+  background: linear-gradient(var(--color1), var(--color2), var(--color3));
+@layer state {
+  .alert {
+    background-color: brown;
+  }
+  p {
+    border: medium solid limegreen;
+  }
+}
+
+  @contents;
+}
+
+@contents {
+  --color1: red;
+  --color2: red;
+  --color3: red;
+}
+
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`.goal .bg-indigo {
+ p {
+  --color1: red;
+  --color2: red;
+  --color3: red;
+  @apply --shadowed-values()
+ }
+}
+@mixin --shadowed-values(--color2:green,--color3:green) {
+ @private {
+  --color3: blue
+ }
+ background: linear-gradient(var(--color1),var(--color2),var(--color3));
+ @contents
+}`),
+            );
+        });
+    });
+}

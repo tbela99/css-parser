@@ -1,18 +1,15 @@
-import type {
-    AstAtRule,
-    AstDeclaration,
-    AstNode,
-    AstRule,
-    FunctionToken,
-    ParserOptions,
-    Token,
-} from "../../../@types/index.d.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { compute } from "../transform/compute.ts";
 import { filterValues, renderValue } from "../../printer/render.ts";
 import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { STATE } from "../../syntax/constants.ts";
+import type { AstArena } from "../arena.ts";
+
+/**
+ * transform property and its prefixed versions
+ */
+const transformProperty: RegExp = /^(-[a-z]+-)?transform$/;
 
 export class TransformCssFeature {
     public accept: Set<EnumToken> = new Set([
@@ -37,74 +34,69 @@ export class TransformCssFeature {
         }
     }
 
-    run(ast: AstRule | AstAtRule): AstNode | null {
-        if (ast.chi == null) {
+    run(arena: AstArena, ast: AstRule | AstAtRule): AstNode | null {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
 
-        let i: number = 0;
         let node: AstNode | AstDeclaration;
 
-        // @ts-ignore
-        for (; i < ast.chi.length; i++) {
-            // @ts-ignore
-            node = ast.chi[i] as AstNode | AstDeclaration;
-
-            if (node[STATE] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
+        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+            if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
 
             if (
-                node.typ != EnumToken.DeclarationNodeType ||
-                !(node as AstDeclaration).nam.match(/^(-[a-z]+-)?transform$/)
+                arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+                !transformProperty.test(arena.strings[arena.name[node]])
             ) {
                 continue;
             }
 
             const children: Token[] = [];
-            for (const child of (node as AstDeclaration).val as Token[]) {
+
+            for (const child of arena.tokens(node)) {
                 children.push(
-                    child.typ == EnumToken.TransformFunctionTokenType
-                        ? minifyTransformFunctions(child as FunctionToken)
+                    arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                        ? minifyTransformFunctions(arena, child)
                         : child,
                 );
             }
 
-            let { matrix, cumulative, minified } = compute(children as Token[]) ?? {
+            let { matrix, cumulative, minified } = compute(arena, children) ?? {
                 matrix: null,
                 cumulative: null,
                 minified: null,
             };
 
             if (matrix == null || cumulative == null || minified == null) {
-                (node as AstDeclaration).val = children.map((t) =>
-                    t.typ == EnumToken.TransformFunctionTokenType ? minifyTransformFunctions(t as FunctionToken) : t,
-                );
+                arena.setTokenList(node, children);
                 continue;
             }
 
-            let r: Token[][] = [filterValues(children)];
+            let r: Token[][] = [filterValues(arena, children)];
 
-            if (eqMatrix(matrix as FunctionToken, cumulative)) {
+            if (eqMatrix(arena, matrix, cumulative)) {
                 r.push(cumulative);
             }
 
-            if (eqMatrix(matrix as FunctionToken, minified)) {
+            if (eqMatrix(arena, matrix, minified)) {
                 r.push(minified);
             }
 
-            const l: number = renderValue(matrix).length;
+            const l: number = renderValue(arena, matrix).length;
 
-            (node as AstDeclaration).val = r.reduce(
-                (acc: Token[], curr: Token[]): Token[] => {
-                    if (curr.reduce((acc: string, t: Token) => acc + renderValue(t), "").length < l) {
-                        return curr;
-                    }
+            // inlined: arena.setTokens(node, ...r.reduce((acc: Token[], curr: Token[]): Token[] => { if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) { return curr; } return acc; }, [matrix]))
+            arena.setTokenList(node, r.reduce(
+                    (acc: Token[], curr: Token[]): Token[] => {
+                        if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) {
+                            return curr;
+                        }
 
-                    return acc;
-                },
-                [matrix],
-            );
+                        return acc;
+                    },
+                    [matrix],
+                ));
         }
 
         return null;

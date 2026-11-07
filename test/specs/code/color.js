@@ -1,5 +1,9 @@
 import { okLabDistance } from "../../../dist/src/lib/syntax/color/utils/distance.js";
 import { parseString } from "../../../dist/src/lib/parser/parse.js";
+import { AstArena } from "../../../dist/src/lib/ast/arena.js";
+
+// arena used by the color distance tests
+const arena = new AstArena();
 
 export function run(
     describe,
@@ -21,7 +25,7 @@ export function run(
     describe("Parse color", function () {
         it("hsl #1", function () {
             return parse(`.hsl { color: hsl(195, 100%, 50%); }`).then((result) =>
-                expect(render(result.ast, { beautify: true }).code).equals(`.hsl {
+                expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.hsl {
  color: #00bfff
 }`),
             );
@@ -30,7 +34,7 @@ export function run(
         it("hsl #2", function () {
             return parse(`.hsl { color: hsla(195, 100%, 50%, 50%);
              background-color: color(xyz-d50 0.3 80 0.3);}`).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`.hsl {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`.hsl {
  color: #00bfff80;
  background-color: lime
 }`),
@@ -40,7 +44,7 @@ export function run(
             return parse(`.hwb { color: hwb(195, 0%, 0%); 
             background-color: color-mix(in xyz-d50, #FF7F50 50%, #00FFFF 50%) ;
             }`).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`.hwb {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`.hwb {
  color: #00bfff;
  background-color: #bcccc2
 }`),
@@ -49,7 +53,7 @@ export function run(
 
         it("hwb #4", function () {
             return parse(`.hwb { color: hwb(195, 0%, 0%, 50%); }`).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`.hwb {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`.hwb {
  color: #00bfff80
 }`),
             );
@@ -59,7 +63,7 @@ export function run(
             return parse(`a {
 color: hsl(300deg 100% 50% / 1);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #f0f
 }`),
             );
@@ -69,7 +73,7 @@ color: hsl(300deg 100% 50% / 1);
             return parse(`a {
 color: device-cmyk(0 81% 81% 30%);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #b32222
 }`),
             );
@@ -80,7 +84,7 @@ color: device-cmyk(0 81% 81% 30%);
 a {
 color: hwb(3.1416rad 0% 0% / 100%)
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: cyan
 }`),
             );
@@ -91,7 +95,7 @@ color: hwb(3.1416rad 0% 0% / 100%)
 a {
 color: rgb(255 255 0 / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #ff00
 }`),
             );
@@ -102,7 +106,7 @@ color: rgb(255 255 0 / none);
 a {
 color: rgb(255 255 none / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #ff00
 }`),
             );
@@ -113,7 +117,7 @@ color: rgb(255 255 none / none);
 a {
 color: hsl(300deg 100% 50% / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #f0f0
 }`),
             );
@@ -124,7 +128,7 @@ color: hsl(300deg 100% 50% / none);
 a {
 color: hsl(none 100% 50% / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #f000
 }`),
             );
@@ -135,7 +139,7 @@ color: hsl(none 100% 50% / none);
 a {
 color: rgb(from white r g 0 / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #ff00
 }`),
             );
@@ -146,7 +150,7 @@ color: rgb(from white r g 0 / none);
 a {
 color: rgb(from rgb(255 255 none) r g 0 / none);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #ff00
 }`),
             );
@@ -157,7 +161,7 @@ color: rgb(from rgb(255 255 none) r g 0 / none);
 a {
 color: rgb(from #ff0 r g r);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #fff
 }`),
             );
@@ -168,7 +172,7 @@ color: rgb(from #ff0 r g r);
 a {
 color: rgb(from #ff0 r b g);
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #f0f
 }`),
             );
@@ -179,7 +183,7 @@ color: rgb(from #ff0 r b g);
 a {
 color: hsl(from rgb(0 128 0) h s l) ; 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -190,7 +194,7 @@ color: hsl(from rgb(0 128 0) h s l) ;
 a {
 color: hsl(from rgb(0 128 0 / 1) h s l) ; 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -201,7 +205,7 @@ color: hsl(from rgb(0 128 0 / 1) h s l) ;
 a {
 color: hsl(from hsl(120deg 100% 25%) h s l) ; 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -212,7 +216,7 @@ color: hsl(from hsl(120deg 100% 25%) h s l) ;
 a {
 color: rgb(from hsl(120, 100%, 25%) r g b) ; 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -223,7 +227,7 @@ color: rgb(from hsl(120, 100%, 25%) r g b) ;
 a {
 color: rgb(from hwb(120 0% 50%) r g b) 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -234,7 +238,7 @@ color: rgb(from hwb(120 0% 50%) r g b)
 a {
 color: hwb(from rgb(0 128 0) h w b) ;
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -245,7 +249,7 @@ color: hwb(from rgb(0 128 0) h w b) ;
 a {
 color: hwb(from hsl(120, 100%, 25%) h w b) 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -256,7 +260,7 @@ color: hwb(from hsl(120, 100%, 25%) h w b)
 a {
 color: hsl(from hwb(120 0% 50%) h s l) 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -267,7 +271,7 @@ color: hsl(from hwb(120 0% 50%) h s l)
 a {
 color: hwb(from hwb(120 0% 50%) h w b) 
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: green
 }`),
             );
@@ -278,7 +282,7 @@ color: hwb(from hwb(120 0% 50%) h w b)
 a {
 color: hsl(from green calc(h * 2) s l)
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: navy
 }`),
             );
@@ -289,7 +293,7 @@ color: hsl(from green calc(h * 2) s l)
 a {
 color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 `).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`a {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #00008080
 }`),
             );
@@ -311,7 +315,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
                     inlineCssVariables: true,
                 },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`:root {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`:root {
  /* --color: green */
 }
 ._19_u :focus {
@@ -336,7 +340,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
                     inlineCssVariables: true,
                 },
             ).then((result) =>
-                expect(render(result.ast, { minify: false }).code).equals(`:root {
+                expect(render(result.arena, result.ast, { minify: false }).code).equals(`:root {
  /* --color: 255 0 0 */
 }
 .selector {
@@ -352,7 +356,7 @@ color: hsl(from green calc(h * 2) s l / calc(alpha / 2))
 a {
 color: rgb(from rebeccapurple r calc(g * 2) b);
 `).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`a {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #669
 }`),
         );
@@ -364,7 +368,7 @@ color: rgb(from rebeccapurple r calc(g * 2) b);
 .selector {
 color: color(sRGB 0.41587 0.503670 0.36664 / calc(1 - 1/2));
 `).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.selector {
  color: #6a805d80
 }`),
         );
@@ -375,7 +379,7 @@ color: color(sRGB 0.41587 0.503670 0.36664 / calc(1 - 1/2));
 .selector {
 color: color(srgb .5 .5 .5);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -386,7 +390,7 @@ color: color(srgb .5 .5 .5);
 .selector {
 color: color-mix(in srgb , white , black );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -397,7 +401,7 @@ color: color-mix(in srgb , white , black );
 .selector {
 color: color( srgb-linear  0.21404 0.21404 0.21404 )
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #7f7f7f
 }`),
         );
@@ -408,7 +412,7 @@ color: color( srgb-linear  0.21404 0.21404 0.21404 )
 .selector {
 color: color(display-p3 0.5 .5 .5);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -419,7 +423,7 @@ color: color(display-p3 0.5 .5 .5);
 .selector {
 color: color(prophoto-rgb 0.42467 0.42467 0.42467);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #7f7f7f
 }`),
         );
@@ -430,7 +434,7 @@ color: color(prophoto-rgb 0.42467 0.42467 0.42467);
 .selector {
 color: color(a98-rgb 0.4961 0.4961 0.4961);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #7f7f7f
 }`),
         );
@@ -441,7 +445,7 @@ color: color(a98-rgb 0.4961 0.4961 0.4961);
 .selector {
 color: color(rec2020 0.45004 0.45004 0.45004);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #7f7f7f
 }`),
         );
@@ -452,7 +456,7 @@ color: color(rec2020 0.45004 0.45004 0.45004);
 .selector {
 color: color(xyz-d50 0.43607 0.22249 0.01392);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -463,7 +467,7 @@ color: color(xyz-d50 0.43607 0.22249 0.01392);
 .selector {
 color: color(xyz-d50 0.58098 0.49223 0.05045);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: orange
 }`),
         );
@@ -474,7 +478,7 @@ color: color(xyz-d50 0.58098 0.49223 0.05045);
 .selector {
 color: color(xyz 0.20344 0.21404 0.2331);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #807f7f
 }`),
         );
@@ -485,7 +489,7 @@ color: color(xyz 0.20344 0.21404 0.2331);
 .selector {
 color: color(xyz 0.41239 0.21264 0.01933);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -496,7 +500,7 @@ color: color(xyz 0.41239 0.21264 0.01933);
 .selector {
 color: color(xyz 0.54694 0.48173 0.06418);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: orange
 }`),
         );
@@ -507,7 +511,7 @@ color: color(xyz 0.54694 0.48173 0.06418);
 .selector {
 color: oklab(0.59988 -0 0);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -518,7 +522,7 @@ color: oklab(0.59988 -0 0);
 .selector {
 color: oklab(0.9960 -0.0057 0.0188);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: ivory
 }`),
         );
@@ -529,7 +533,7 @@ color: oklab(0.9960 -0.0057 0.0188);
 .selector {
 color: oklch(0.59988 0.00001 145.16718);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -540,7 +544,7 @@ color: oklch(0.59988 0.00001 145.16718);
 .selector {
 color: oklch(0.62796 0.25768 29.234);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -551,7 +555,7 @@ color: oklch(0.62796 0.25768 29.234);
 .selector {
 color: oklch(0.79269 0.17103 70.67);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: orange
 }`),
         );
@@ -562,7 +566,7 @@ color: oklch(0.79269 0.17103 70.67);
 .selector {
 color: oklch(0.51975 0.17686 142.5);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: green
 }`),
         );
@@ -573,7 +577,7 @@ color: oklch(0.51975 0.17686 142.5);
 .selector {
 color: lab(54.291, 80.805, 69.891);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -584,7 +588,7 @@ color: lab(54.291, 80.805, 69.891);
 .selector {
 color: lab(97.83 -12.04 62.08);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #fffe7a
 }`),
         ); // should be #fffe7a
@@ -595,7 +599,7 @@ color: lab(97.83 -12.04 62.08);
 .selector {
 color: rgb(from oklch(100% 0.4 30) r g b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         ); // should be #fffe7a
@@ -606,7 +610,7 @@ color: rgb(from oklch(100% 0.4 30) r g b)  ;
 .selector {
 color: rgb(from oklab(100% 0.4 0.4) r g b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         ); // should be #fffe7a
@@ -617,7 +621,7 @@ color: rgb(from oklab(100% 0.4 0.4) r g b)  ;
 .selector {
 color: rgb(from lab(100 125 125) r g b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         ); // should be #fffe7a
@@ -628,7 +632,7 @@ color: rgb(from lab(100 125 125) r g b)  ;
 .selector {
 color: rgb(from lch(50% 130 20) r g b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         ); // should be #fffe7a
@@ -639,7 +643,7 @@ color: rgb(from lch(50% 130 20) r g b)  ;
 .selector {
 color: hsl(from oklch(100% 0.4 30) h s l)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         ); // should be #fffe7a
@@ -650,7 +654,7 @@ color: hsl(from oklch(100% 0.4 30) h s l)  ;
 .selector {
 color: hsl(from oklab(100% 0.4 0.4) h s l)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         ); // should be #fffe7a
@@ -661,7 +665,7 @@ color: hsl(from oklab(100% 0.4 0.4) h s l)  ;
 .selector {
 color: hsl(from lab(100 125 125) h s l)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         );
@@ -672,7 +676,7 @@ color: hsl(from lab(100 125 125) h s l)  ;
 .selector {
 color: hsl(from lch(50% 130 20) h s l)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -683,7 +687,7 @@ color: hsl(from lch(50% 130 20) h s l)  ;
 .selector {
 color: hwb(from oklch(100% 0.4 30) h w b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         ); // should be #fffe7a
@@ -694,7 +698,7 @@ color: hwb(from oklch(100% 0.4 30) h w b)  ;
 .selector {
 color: hwb(from oklab(100% 0.4 0.4) h w b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         ); // should be #fffe7a
@@ -705,7 +709,7 @@ color: hwb(from oklab(100% 0.4 0.4) h w b)  ;
 .selector {
 color: hwb(from lab(100 125 125) h w b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         );
@@ -716,7 +720,7 @@ color: hwb(from lab(100 125 125) h w b)  ;
 .selector {
 color: hwb(from lch(50% 130 20) h w b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -727,7 +731,7 @@ color: hwb(from lch(50% 130 20) h w b)  ;
 .selector {
 color: lab(from #ff003b l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -738,7 +742,7 @@ color: lab(from #ff003b l a b)  ;
 .selector {
 color: lab(from rgb(255 0 59) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -749,7 +753,7 @@ color: lab(from rgb(255 0 59) l a b)  ;
 .selector {
 color: lab(from hsl(346.1 100% 50%) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -760,7 +764,7 @@ color: lab(from hsl(346.1 100% 50%) l a b)  ;
 .selector {
 color: lab(from lch(50% 130 20) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -771,7 +775,7 @@ color: lab(from lch(50% 130 20) l a b)  ;
 .selector {
 color: lab(from hwb(346 0 0) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -782,7 +786,7 @@ color: lab(from hwb(346 0 0) l a b)  ;
 .selector {
 color: lab(from oklab(100% 0.4 0.4)   l a b);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -793,7 +797,7 @@ color: lab(from oklab(100% 0.4 0.4)   l a b);
 .selector {
 color: lab(from hwb(346 0 0) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -804,7 +808,7 @@ color: lab(from hwb(346 0 0) l a b)  ;
 .selector {
 color: lab(from oklch(100% 0.4 30) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -815,7 +819,7 @@ color: lab(from oklch(100% 0.4 30) l a b)  ;
 .selector {
 color: lch(from #ff3306 l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -826,7 +830,7 @@ color: lch(from #ff3306 l c h)  ;
 .selector {
 color: lch(from rgb(255 0 59) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -837,7 +841,7 @@ color: lch(from rgb(255 0 59) l c h)  ;
 .selector {
 color: lch(from hsl(346.1 100% 50%) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -848,7 +852,7 @@ color: lch(from hsl(346.1 100% 50%) l c h)  ;
 .selector {
 color: lch(from hwb(346 0 0) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -859,7 +863,7 @@ color: lch(from hwb(346 0 0) l c h)  ;
 .selector {
 color: lch(from lab(100 125 125) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         );
@@ -870,7 +874,7 @@ color: lch(from lab(100 125 125) l c h)  ;
 .selector {
 color: lch(from oklab(100% 0.4 0.4) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -881,7 +885,7 @@ color: lch(from oklab(100% 0.4 0.4) l c h)  ;
 .selector {
 color: lch(from oklch(100% 0.4 30) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -892,7 +896,7 @@ color: lch(from oklch(100% 0.4 30) l c h)  ;
 .selector {
 color: oklab(from #ff3306 l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -903,7 +907,7 @@ color: oklab(from #ff3306 l a b)  ;
 .selector {
 color: oklab(from rgb(255 0 59) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -914,7 +918,7 @@ color: oklab(from rgb(255 0 59) l a b)  ;
 .selector {
 color: oklab(from hsl(346.1 100% 50%) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -925,7 +929,7 @@ color: oklab(from hsl(346.1 100% 50%) l a b)  ;
 .selector {
 color: oklab(from hwb(346 0 0) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -936,7 +940,7 @@ color: oklab(from hwb(346 0 0) l a b)  ;
 .selector {
 color: oklab(from lab(100 125 125) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         );
@@ -947,7 +951,7 @@ color: oklab(from lab(100 125 125) l a b)  ;
 .selector {
 color: oklab(from lch(50% 130 20) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -958,7 +962,7 @@ color: oklab(from lch(50% 130 20) l a b)  ;
 .selector {
 color: oklab(from oklch(100% 0.4 30) l a b)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -969,7 +973,7 @@ color: oklab(from oklch(100% 0.4 30) l a b)  ;
 .selector {
 color: oklch(from #ff3306 l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff3306
 }`),
         );
@@ -980,7 +984,7 @@ color: oklch(from #ff3306 l c h)  ;
 .selector {
 color: oklch(from rgb(255 0 59) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -991,7 +995,7 @@ color: oklch(from rgb(255 0 59) l c h)  ;
 .selector {
 color: oklch(from hsl(346.1 100% 50%) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -1002,7 +1006,7 @@ color: oklch(from hsl(346.1 100% 50%) l c h)  ;
 .selector {
 color: oklch(from hwb(346 0 0) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -1013,7 +1017,7 @@ color: oklch(from hwb(346 0 0) l c h)  ;
 .selector {
 color: oklch(from lab(100 125 125) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff4d00
 }`),
         );
@@ -1024,7 +1028,7 @@ color: oklch(from lab(100 125 125) l c h)  ;
 .selector {
 color: oklch(from lch(50% 130 20) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #ff003b
 }`),
         );
@@ -1035,7 +1039,7 @@ color: oklch(from lch(50% 130 20) l c h)  ;
 .selector {
 color: oklch(from oklab(100% 0.4 0.4) l c h)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: red
 }`),
         );
@@ -1046,7 +1050,7 @@ color: oklch(from oklab(100% 0.4 0.4) l c h)  ;
 .selector {
 color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2))  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #89760053
 }`),
         );
@@ -1057,7 +1061,7 @@ color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 25%, rgb(0% 100% 0% / 0.2))  ;
 .selector {
 color: color-mix(in srgb, white, blue)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #8080ff
 }`),
         );
@@ -1068,7 +1072,7 @@ color: color-mix(in srgb, white, blue)  ;
 .selector {
 color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 20%, rgb(0% 100% 0% / 0.2) 60%)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #89760042
 }`),
         );
@@ -1079,7 +1083,7 @@ color: color-mix(in srgb, rgb(100% 0% 0% / 0.7) 20%, rgb(0% 100% 0% / 0.2) 60%) 
 .selector {
 color: color-mix(in lch, purple 50%, plum 50%)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #af5cae
 }`),
         );
@@ -1090,7 +1094,7 @@ color: color-mix(in lch, purple 50%, plum 50%)  ;
 .selector {
 color: color-mix(in lch, peru 40%, palegoldenrod) ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #dfc279
 }`),
         );
@@ -1101,7 +1105,7 @@ color: color-mix(in lch, peru 40%, palegoldenrod) ;
 .selector {
 color: color-mix(in lch, purple 30%, plum 30%)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #af5cae99
 }`),
         );
@@ -1112,7 +1116,7 @@ color: color-mix(in lch, purple 30%, plum 30%)  ;
 .selector {
 color: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: lime
 }`),
         );
@@ -1123,7 +1127,7 @@ color: color-mix(in hsl, color(display-p3 0 1 0) 80%, yellow)  ;
 .selector {
 color: color-mix(in lch, teal 65%, olive)  ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #14865f
 }`),
         );
@@ -1134,7 +1138,7 @@ color: color-mix(in lch, teal 65%, olive)  ;
 .selector {
 color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))   ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #0880b0
 }`),
         );
@@ -1145,7 +1149,7 @@ color: lch(from peru calc(l * 0.8) calc(c * 0.7) calc(h + 180))   ;
 .selector {
 color: color-mix(in lch, white, blue)   ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #af89ff
 }`),
         );
@@ -1156,7 +1160,7 @@ color: color-mix(in lch, white, blue)   ;
 .selector {
 color: color-mix(in oklch, white, blue)   ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #74a3ff
 }`),
         );
@@ -1167,7 +1171,7 @@ color: color-mix(in oklch, white, blue)   ;
 .selector {
 color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none))   ;
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #c322c9
 }`),
         );
@@ -1178,7 +1182,7 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none))   ;
 .selector {
 color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / none));
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #d700a280
 }`),
         );
@@ -1189,7 +1193,7 @@ color: color-mix(in oklch, oklch(0.783 0.108 326.5 / 0.5), oklch(0.392 0.4 0 / n
 .selector {
 color: color-mix(in oklch , oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #f27900
 }`),
         );
@@ -1200,7 +1204,7 @@ color: color-mix(in oklch , oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 .selector {
 color: color-mix(in oklch shorter hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #f27900
 }`),
         );
@@ -1211,7 +1215,7 @@ color: color-mix(in oklch shorter hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) )
 .selector {
 color: color-mix(in oklch longer hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #00a9ff
 }`),
         );
@@ -1222,7 +1226,7 @@ color: color-mix(in oklch longer hue, oklch(0.6 0.24 30) , oklch(0.8 0.15 90) );
 .selector {
 color: color-mix(in oklch increasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #848538
 }`),
         );
@@ -1233,7 +1237,7 @@ color: color-mix(in oklch increasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190)
 .selector {
 color: color-mix(in oklch decreasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190) );
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #7f75b8
 }`),
         );
@@ -1244,7 +1248,7 @@ color: color-mix(in oklch decreasing hue, oklch(0.5 0.1 30) , oklch(0.7 0.1 190)
 .selector {
 color: color(sRGB 0.41587 0.503670 0.36664);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #6a805d
 }`),
         );
@@ -1255,7 +1259,7 @@ color: color(sRGB 0.41587 0.503670 0.36664);
 .selector {
 color: color(display-p3 0.43313 0.50108 0.37950)
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #6a805d
 }`),
         );
@@ -1266,7 +1270,7 @@ color: color(display-p3 0.43313 0.50108 0.37950)
 .selector {
 color: color(a98-rgb 0.44091 0.49971 0.37408);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #6a805d
 }`),
         );
@@ -1277,7 +1281,7 @@ color: color(a98-rgb 0.44091 0.49971 0.37408);
 .selector {
 color: color(prophoto-rgb 0.36589 0.41717 0.31333);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #6a805d
 }`),
         );
@@ -1288,7 +1292,7 @@ color: color(prophoto-rgb 0.36589 0.41717 0.31333);
 .selector {
 color: color(rec2020 0.42210 0.47580 0.35605);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #728765
 }`),
         );
@@ -1299,7 +1303,7 @@ color: color(rec2020 0.42210 0.47580 0.35605);
 .selector {
 color: color-mix(in rec2020, white, black);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #8b8b8b
 }`),
         );
@@ -1310,7 +1314,7 @@ color: color-mix(in rec2020, white, black);
 .selector {
 color: color-mix(in xyz, white, black);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #bcbcbc
 }`),
         );
@@ -1321,7 +1325,7 @@ color: color-mix(in xyz, white, black);
 .selector {
 color: color-mix(in lch, white, black);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #777
 }`),
         );
@@ -1332,7 +1336,7 @@ color: color-mix(in lch, white, black);
 .selector {
 color: color-mix(in srgb, white, black);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: grey
 }`),
         );
@@ -1343,7 +1347,7 @@ color: color-mix(in srgb, white, black);
 .selector {
 color: color-mix(in srgb-linear, white, black);
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #bcbcbc
 }`),
         );
@@ -1354,7 +1358,7 @@ color: color-mix(in srgb-linear, white, black);
 .selector {
 color: color-mix(in xyz, rgb(82.02% 30.21% 35.02%) 75.23%, rgb(5.64% 55.94% 85.31%));
 `).then((result) =>
-            expect(render(result.ast, { beautify: true }).code).equals(`.selector {
+            expect(render(result.arena, result.ast, { beautify: true }).code).equals(`.selector {
  color: #b86389
 }`),
         );
@@ -1371,7 +1375,7 @@ html { --color: green; }
             { inlineCssVariables: true },
         ).then((result) =>
             expect(
-                render(result.ast, {
+                render(result.arena, result.ast, {
                     beautify: true,
                     removeEmpty: false,
                     removeComments: false,
@@ -1395,7 +1399,7 @@ html { --base:  oklch(52.6% 0.115 44.6deg) }
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`html {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`html {
  /* --base: oklch(52.6% .115 44.6deg) */
 }
 .summary {
@@ -1436,7 +1440,7 @@ background: color(from color(srgb 0 0 0 / 60%) srgb alpha 0.6 0.6 / 0.9);
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.foo {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.foo {
  background: #999999e6
 }`),
         );
@@ -1451,7 +1455,7 @@ background: rgb(from rgb(0 0 0 / 60%) alpha 153 153 / 0.9);
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.foo {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.foo {
  background: #019999e6
 }`),
         );
@@ -1467,7 +1471,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`html {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`html {
  /* --bluegreen: oklab(54.3% -22.5% -5%) */
 }
 .overlay {
@@ -1485,7 +1489,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.overlay {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.overlay {
  background: #f0f
 }`),
         );
@@ -1500,7 +1504,7 @@ html { --bluegreen:  oklab(54.3% -22.5% -5%); }
 `,
             { inlineCssVariables: true },
         ).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.overlay {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.overlay {
  background: #f0f
 }`),
         );
@@ -1570,7 +1574,7 @@ color: light-dark(rgb(0 0 0), rgb(255 255 255));
     border-color:  ButtonBorder ;
   }
 `).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`.button {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`.button {
  /* Use a border instead, since box-shadow
     is forced to 'none' in forced-colors mode */
  border: ButtonBorder solid 2px
@@ -1599,7 +1603,7 @@ a {
 color: lch(from slateblue calc(l * sin(pi / 4)) c h);
 ;
 `).then((result) =>
-            expect(render(result.ast, { minify: false }).code).equals(`a {
+            expect(render(result.arena, result.ast, { minify: false }).code).equals(`a {
  color: #453ba9
 }`),
         );
@@ -1825,29 +1829,31 @@ color: lch(from slateblue calc(l * sin(pi / 4)) c h);
     it("color distance #139", function () {
         return expect(
             okLabDistance(
-                parseString("color(srgb .651595 .412381 .000822)")[0],
-                parseString("color-mix(red, green)")[0],
+                arena,
+                parseString(arena, "color(srgb .651595 .412381 .000822)")[0],
+                parseString(arena, "color-mix(red, green)")[0],
             ),
         ).equals(0);
     });
 
     it("color distance #140", function () {
-        return expect(okLabDistance(parseString("currentColor")[0], parseString("color-mix(red, green)")[0])).equals(
+        return expect(okLabDistance(arena, parseString(arena, "currentColor")[0], parseString(arena, "color-mix(red, green)")[0])).equals(
             null,
         );
     });
 
     it("color distance #141", function () {
         return expect(
-            okLabDistance(parseString("color(srgb .651595 .412381 .000822)")[0], parseString("currentcolor")[0]),
+            okLabDistance(arena, parseString(arena, "color(srgb .651595 .412381 .000822)")[0], parseString(arena, "currentcolor")[0]),
         ).equals(null);
     });
 
     it("color distance #142", function () {
         return expect(
             okLabDistance(
-                parseString("color(srgb .651595 .412381 .000822)")[0],
-                parseString("color-mix(red, var(--color))")[0],
+                arena,
+                parseString(arena, "color(srgb .651595 .412381 .000822)")[0],
+                parseString(arena, "color-mix(red, var(--color))")[0],
             ),
         ).equals(null);
     });
