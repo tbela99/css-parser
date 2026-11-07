@@ -1,6 +1,10 @@
 # Changelog
 
-# 2.0.0 (unreleased)
+# v2.0.1
+
+rename file due to firefox blocking it
+
+# v2.0.0
 
 breaking changes
 
