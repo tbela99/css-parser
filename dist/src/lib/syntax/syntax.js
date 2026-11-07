@@ -16,7 +16,7 @@ import { trimArray } from '../validation/match.js';
 import { splitTokenList } from '../validation/utils/list.js';
 import { getColorSpace } from './color/utils/colorspace.js';
 import { getColorComponents } from './color/utils/components.js';
-import { colorPrecision, anglePrecision, epsilon, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorFuncColorSpace, colorsFunc } from './constants.js';
+import { colorPrecision, epsilon, anglePrecision, colorFuncColorSpace, nonStandardColors, systemColors, deprecatedSystemColors, COLORS_NAMES, colorsFunc } from './constants.js';
 import { getSyntaxConfig } from '../validation/config.js';
 
 // https://www.w3.org/TR/CSS21/syndata.html#syntax
@@ -1371,6 +1371,38 @@ function length2Px(arena, value) {
  * @param val
  */
 function minifyNumber(val) {
+    if (typeof val != "number") {
+        return minifyNumberValue(val);
+    }
+    // the same numbers are rendered many times (0, 1, .5, 100, ...): the result only depends on the number
+    let result = minifiedNumbers.get(val);
+    if (result === undefined) {
+        result = minifyNumberValue(val);
+        if (minifiedNumbers.size >= minifiedNumbersSize) {
+            minifiedNumbers.clear();
+        }
+        // 0 and -0 share the same key: both are minified to "0"
+        minifiedNumbers.set(val, result);
+    }
+    return result;
+}
+/**
+ * minified numbers, see {@link minifyNumber}
+ */
+const minifiedNumbers = new Map();
+/**
+ * maximum number of minified numbers kept
+ */
+const minifiedNumbersSize = 4096;
+/**
+ * 10 ** colorPrecision, see {@link toPrecisionValue}
+ */
+const colorPrecisionFactor = Math.pow(10, colorPrecision);
+/**
+ * minify a number, see {@link minifyNumber}
+ * @param val
+ */
+function minifyNumberValue(val) {
     val = String(toPrecisionValue(val));
     if (val === "0") {
         return "0";
@@ -1388,7 +1420,7 @@ function minifyNumber(val) {
     return val;
 }
 function toPrecisionValue(value, precision = colorPrecision) {
-    const div = Math.pow(10, precision);
+    const div = precision === colorPrecision ? colorPrecisionFactor : Math.pow(10, precision);
     // @ts-ignore
     value = Math.round(value * div) / div;
     return Math.abs(value) < epsilon ? 0 : value;

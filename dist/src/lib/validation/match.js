@@ -692,9 +692,11 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
     return { success, errors };
 }
 /**
- * successful declaration validations, by arena, by syntax and by hash of the value encoding (see {@link encodeToken})
+ * declaration validations (successful and failed), by string table of the arena, by syntax and by hash of the value
+ * encoding (see {@link encodeToken}). the encoding contains interned string ids: the string table is the key, it is
+ * replaced when the arena is compacted and the ids change (see {@link AstArena.compact})
  */
-const validDeclarations = new WeakMap();
+const declarationValidations = new WeakMap();
 /**
  * shared result of a declaration whose validation is cached
  */
@@ -756,19 +758,19 @@ function encodeToken(arena, token) {
     }
 }
 /**
- * the cached valid encodings with the hash of the current encoding
+ * the cached validations with the hash of the current encoding
  * @param arena
  * @param syntaxes
  * @param create create the bucket when missing
  */
-function validEncodings(arena, syntaxes, create) {
-    let bySyntax = validDeclarations.get(arena);
+function cachedValidations(arena, syntaxes, create) {
+    let bySyntax = declarationValidations.get(arena.strings);
     if (bySyntax == null) {
         if (!create) {
             return null;
         }
         bySyntax = new Map();
-        validDeclarations.set(arena, bySyntax);
+        declarationValidations.set(arena.strings, bySyntax);
     }
     let byHash = bySyntax.get(syntaxes);
     if (byHash == null) {
@@ -786,43 +788,146 @@ function validEncodings(arena, syntaxes, create) {
     return bucket ?? null;
 }
 /**
- * true if the current encoding has been validated for the syntax
+ * the cached validation of the current encoding for the syntax
  * @param arena
  * @param syntaxes
  */
-function isCachedValid(arena, syntaxes) {
-    const bucket = validEncodings(arena, syntaxes, false);
+function findValidation(arena, syntaxes) {
+    const bucket = cachedValidations(arena, syntaxes, false);
     if (bucket != null) {
         for (let i = 0; i < bucket.length; i++) {
-            const candidate = bucket[i];
+            const candidate = bucket[i].encoding;
             if (candidate.length == encodingLength) {
                 let k = 0;
                 while (k < encodingLength && candidate[k] === encoding[k]) {
                     k++;
                 }
                 if (k == encodingLength) {
-                    return true;
+                    return bucket[i];
                 }
             }
         }
     }
-    return false;
+    return null;
 }
 /**
- * cache an encoding as valid for the syntax
+ * cache the validation of an encoding for the syntax
  * @param arena
  * @param syntaxes
  * @param value encoding
  * @param hash encoding hash
+ * @param valid
+ * @param errors errors of a failed validation, null when unknown
  */
-function cacheValid(arena, syntaxes, value, hash) {
+function cacheValidation(arena, syntaxes, value, hash, valid, errors) {
     encodingHash = hash;
-    validEncodings(arena, syntaxes, true).push(value);
+    cachedValidations(arena, syntaxes, true).push({ encoding: value, valid, errors });
+}
+/**
+ * the value tokens and their descendants, in the encoding order (see {@link encodeToken})
+ * @param arena
+ * @param token
+ * @param result
+ */
+function collectTokens(arena, token, result) {
+    result.push(token);
+    for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+        collectTokens(arena, child, result);
+    }
+    for (let child = arena.firstChild[token]; child != 0; child = arena.nextSibling[child]) {
+        collectTokens(arena, child, result);
+    }
+}
+/**
+ * same source location
+ * @param a
+ * @param b
+ */
+function sameLocation(a, b) {
+    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+}
+/**
+ * bind the errors of a failed validation to the position of their tokens in the value. null when an error refers to
+ * a token that is not part of the value (a copy created by the validation, ...)
+ * @param arena
+ * @param tokens value tokens, see {@link collectTokens}
+ * @param errors
+ * @param options
+ */
+function bindErrors(arena, tokens, errors, options) {
+    const result = [];
+    for (let i = 0; i < errors.length; i++) {
+        const error = errors[i];
+        let node = -1;
+        let location = -1;
+        if (error.node != null) {
+            node = tokens.indexOf(error.node);
+            if (node == -1) {
+                return null;
+            }
+        }
+        if (error.location != null) {
+            // the location is computed from a token of the value: the error node, the last token, ...
+            if (node != -1 &&
+                sameLocation(error.location, options.source.getSourceLocation(arena.getSpanStart(tokens[node])))) {
+                location = node;
+            }
+            else {
+                for (let k = 0; k < tokens.length; k++) {
+                    if (sameLocation(error.location, options.source.getSourceLocation(arena.getSpanStart(tokens[k])))) {
+                        location = k;
+                        break;
+                    }
+                }
+                if (location == -1) {
+                    return null;
+                }
+            }
+        }
+        const copy = { ...error };
+        delete copy.node;
+        delete copy.location;
+        result.push({ error: copy, node, location });
+    }
+    return result;
+}
+/**
+ * rebuild the errors of a cached failed validation with the tokens of the value
+ * @param arena
+ * @param tokens value tokens, see {@link collectTokens}
+ * @param errors
+ * @param options
+ */
+function rebuildErrors(arena, tokens, errors, options) {
+    const result = [];
+    for (let i = 0; i < errors.length; i++) {
+        const error = { ...errors[i].error };
+        if (errors[i].node != -1) {
+            error.node = tokens[errors[i].node];
+        }
+        if (errors[i].location != -1) {
+            error.location = options.source.getSourceLocation(arena.getSpanStart(tokens[errors[i].location]));
+        }
+        result.push(error);
+    }
+    return result;
+}
+/**
+ * the value tokens and their descendants
+ * @param arena
+ * @param tokens
+ */
+function valueTokens(arena, tokens) {
+    const result = [];
+    for (let i = 0; i < tokens.length; i++) {
+        collectTokens(arena, tokens[i], result);
+    }
+    return result;
 }
 /**
  * validate the value of a declaration. a value that has already been validated for the same syntax in the same arena
- * (same encoding, see {@link encodeToken}) is not validated again: `width: 10px` is validated once, whatever the number of rules that contain it.
- * only the successful validations are cached, the failures are validated again to report their errors
+ * (same encoding, see {@link encodeToken}) is not validated again: `width: 10px` is validated once, whatever the number
+ * of rules that contain it. the failed validations are cached too: their errors are rebuilt with the tokens of the value
  * @param arena
  * @param syntaxes declaration syntax
  * @param tokens value tokens
@@ -834,20 +939,44 @@ function matchDeclarationSyntax(arena, syntaxes, tokens, options) {
     for (let i = 0; i < tokens.length; i++) {
         encodeToken(arena, tokens[i]);
     }
-    if (isCachedValid(arena, syntaxes)) {
-        return cachedValidMatch;
+    const cached = findValidation(arena, syntaxes);
+    if (cached != null) {
+        if (cached.valid) {
+            return cachedValidMatch;
+        }
+        if (cached.errors != null) {
+            return {
+                success: false,
+                valid: true,
+                context: null,
+                token: null,
+                syntaxToken: null,
+                errors: rebuildErrors(arena, valueTokens(arena, tokens), cached.errors, options),
+            };
+        }
     }
     // the encoding is copied before the validation, which may encode other values
     const value = encoding.slice(0, encodingLength);
     const hash = encodingHash;
     const result = matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, tokens), options);
     if (result.success) {
-        cacheValid(arena, syntaxes, value, hash);
+        cacheValidation(arena, syntaxes, value, hash, true, null);
+    }
+    else {
+        const errors = bindErrors(arena, valueTokens(arena, tokens), result.errors, options);
+        if (cached != null) {
+            // failure cached without its errors
+            cached.errors = errors;
+        }
+        else {
+            cacheValidation(arena, syntaxes, value, hash, false, errors);
+        }
     }
     return result;
 }
 /**
- * validate the value tokens of a declaration node, see {@link matchDeclarationSyntax}
+ * validate the value tokens of a declaration node, see {@link matchDeclarationSyntax}. the successful and the failed
+ * validations are cached
  * @param arena
  * @param syntaxes declaration syntax
  * @param declaration declaration node
@@ -860,17 +989,17 @@ function isValidDeclarationValue(arena, syntaxes, declaration, options) {
     for (let token = arena.firstToken[declaration]; token != 0; token = arena.nextSibling[token]) {
         encodeToken(arena, token);
     }
-    if (isCachedValid(arena, syntaxes)) {
-        return true;
+    const cached = findValidation(arena, syntaxes);
+    if (cached != null) {
+        return cached.valid;
     }
     // the encoding is copied before the validation, which may encode other values
     const value = encoding.slice(0, encodingLength);
     const hash = encodingHash;
-    if (matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, arena.tokens(declaration)), options).success) {
-        cacheValid(arena, syntaxes, value, hash);
-        return true;
-    }
-    return false;
+    const valid = matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, arena.tokens(declaration)), options).success;
+    // the errors are not needed: they are computed if a declaration with the same value is validated by the parser
+    cacheValidation(arena, syntaxes, value, hash, valid, null);
+    return valid;
 }
 /**
  * matches all syntaxes

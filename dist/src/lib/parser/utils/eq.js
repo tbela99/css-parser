@@ -5,8 +5,6 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { nodeSignature } from './hash.js';
-
 /**
  *
  * @param a
@@ -49,13 +47,51 @@ function eq(a, b) {
     return true;
 }
 /**
- * structural equality of two tokens (source location is ignored)
+ * structural equality of two tokens (source location is ignored): same type, name, values, tokens and children.
+ * same result as comparing their {@link nodeSignature}
  * @param arena
  * @param a
  * @param b
  */
 function eqToken(arena, a, b) {
-    return a == b || nodeSignature(arena, a) == nodeSignature(arena, b);
+    if (a == b) {
+        return true;
+    }
+    if (arena.dataTypes[a] != arena.dataTypes[b] ||
+        arena.name[a] != arena.name[b] ||
+        arena.stringValue[a] != arena.stringValue[b] ||
+        arena.unit[a] != arena.unit[b] ||
+        arena.colorType[a] != arena.colorType[b]) {
+        return false;
+    }
+    const x = arena.numericValue[a];
+    const y = arena.numericValue[b];
+    // NaN values are equal
+    if (x !== y && (x === x || y === y)) {
+        return false;
+    }
+    let ta = arena.firstToken[a];
+    let tb = arena.firstToken[b];
+    while (ta != 0 && tb != 0) {
+        if (!eqToken(arena, ta, tb)) {
+            return false;
+        }
+        ta = arena.nextSibling[ta];
+        tb = arena.nextSibling[tb];
+    }
+    if (ta != tb) {
+        return false;
+    }
+    ta = arena.firstChild[a];
+    tb = arena.firstChild[b];
+    while (ta != 0 && tb != 0) {
+        if (!eqToken(arena, ta, tb)) {
+            return false;
+        }
+        ta = arena.nextSibling[ta];
+        tb = arena.nextSibling[tb];
+    }
+    return ta == tb;
 }
 
 export { eq, eqToken };

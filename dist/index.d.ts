@@ -7291,7 +7291,8 @@ declare function parseString(arena: AstArena, src: string, options?: {
 } | null, errors?: ErrorDescription[]): Token[];
 
 /**
- * render ast token
+ * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
+ * expressions, ...) are rendered once per render, see {@link RenderMemo}
  * @param token
  * @param options
  * @param cache

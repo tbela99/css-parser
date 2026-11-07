@@ -12,10 +12,66 @@ import { EnumAstNodeStatus, EnumToken } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { isValidDeclarationValue } from '../../validation/match.js';
-import { nodeHash } from '../utils/hash.js';
 import { equalsIgnoreCase, lowercase } from '../utils/text.js';
+import { StructuralMemo } from '../../ast/fingerprint.js';
+import { parseString } from '../parse.js';
 
 const config = getConfig();
+/**
+ * Results shared by the property lists of a minification, valid for the arena they were computed for:
+ * - the keys of the declarations that are not merged by name (invalid declarations, custom properties, comments, ...):
+ *   identical declarations have the same key
+ * - the tokens of the default values of the shorthand properties: each value is parsed once, the tokens are cloned
+ *
+ * @internal
+ */
+class DeclarationMemo {
+    /**
+     * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
+     * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
+     */
+    static shape = new DeclarationMemo();
+    /**
+     * key by structure. same equality as the structural signature: 0 and -0 are equal
+     */
+    keys = new StructuralMemo(true);
+    /**
+     * parsed values: detached tokens that are cloned, never attached to the tree
+     */
+    parsed = new Map();
+    /**
+     * tokens of a value, see {@link parseString}. the value is parsed once, the tokens are cloned
+     * @param arena
+     * @param value
+     */
+    parse(arena, value) {
+        let template = this.parsed.get(value);
+        if (template === undefined) {
+            template = parseString(arena, value);
+            this.parsed.set(value, template);
+        }
+        const tokens = new Array(template.length);
+        for (let i = 0; i < template.length; i++) {
+            tokens[i] = arena.clone(template[i], true);
+        }
+        return tokens;
+    }
+    /**
+     * unique key of the structure of a node (type, name, values, tokens and children). identical nodes have the same key
+     * @param arena
+     * @param node
+     */
+    key(arena, node) {
+        const slot = this.keys.token(arena, node);
+        let key = this.keys.get(slot);
+        if (key === undefined) {
+            // not a property name
+            key = "\0" + slot;
+            this.keys.set(slot, key);
+        }
+        return key;
+    }
+}
 /**
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
@@ -33,14 +89,20 @@ class PropertyList {
      */
     arena;
     /**
+     * keys shared by the lists that use the same arena
+     */
+    memo;
+    /**
      *
      * @param arena
      * @param options
+     * @param memo keys shared by the lists that use the same arena
      */
-    constructor(arena, options = {}) {
+    constructor(arena, options = {}, memo = null) {
         this.arena = arena;
         this.options = options;
         this.declarations = new Map();
+        this.memo = memo ?? new DeclarationMemo();
     }
     /**
      * add declarations
@@ -67,7 +129,7 @@ class PropertyList {
                 : arena.strings[arena.name[declaration]];
         // do not compute shorthand for invalid declarations
         if (name == null) {
-            this.declarations.set(nodeHash(arena, declaration), declaration);
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
             return this;
         }
         // @functiom / result
@@ -83,7 +145,7 @@ class PropertyList {
             (Array.isArray(this.options.removeDuplicateDeclarations)
                 ? this.options.removeDuplicateDeclarations.includes(name)
                 : !this.options.removeDuplicateDeclarations)) {
-            const key = nodeHash(arena, declaration);
+            const key = this.memo.key(arena, declaration);
             if (this.declarations.has(key)) {
                 this.declarations.delete(key);
             }
@@ -105,7 +167,7 @@ class PropertyList {
         }
         // do not compute shorthand for invalid declarations
         if (!(arena.flags[declaration] & EnumAstNodeStatus.Validated)) {
-            this.declarations.set(nodeHash(arena, declaration), declaration);
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
             return this;
         }
         let propertyName = name;
@@ -156,13 +218,13 @@ class PropertyList {
                 if (!this.declarations.has(mapName)) {
                     this.declarations.set(mapName, 
                     // @ts-ignore
-                    new PropertyMap(arena, config.map[mapName]));
+                    new PropertyMap(arena, config.map[mapName], this.memo));
                 }
                 owner = this.declarations.get(mapName);
             }
             else if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand]));
+                this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand], this.memo));
             }
             if (owner == this) {
                 // @ts-ignore
@@ -172,7 +234,7 @@ class PropertyList {
                 if (!owner.declarations.has(shorthand)) {
                     owner.declarations.set(shorthand, 
                     // @ts-ignore
-                    new PropertyMap(arena, config.map[shorthand]));
+                    new PropertyMap(arena, config.map[shorthand], this.memo));
                 }
                 // @ts-ignore
                 owner.declarations.get(shorthand).add(declaration);
@@ -279,13 +341,14 @@ class PropertyList {
                     value.value instanceof PropertySet ||
                     value.value instanceof PropertyMap) {
                     if (value.value instanceof PropertySet || value.value instanceof PropertyMap) {
-                        iterators.unshift(iterator);
+                        // stack of the parent iterators
+                        iterators.push(iterator);
                         // @ts-ignore
                         iterator = value.value[Symbol.iterator]();
                         value = iterator.next();
                     }
                     if (value.done && iterators.length > 0) {
-                        iterator = iterators.shift();
+                        iterator = iterators.pop();
                         value = iterator.next();
                     }
                 }
@@ -295,4 +358,4 @@ class PropertyList {
     }
 }
 
-export { PropertyList };
+export { DeclarationMemo, PropertyList };

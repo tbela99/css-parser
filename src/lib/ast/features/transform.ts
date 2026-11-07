@@ -6,6 +6,11 @@ import { eqMatrix, minifyTransformFunctions } from "../transform/minify.ts";
 import { FeatureWalkMode } from "./type.ts";
 import type { AstArena } from "../arena.ts";
 
+/**
+ * transform property and its prefixed versions
+ */
+const transformProperty: RegExp = /^(-[a-z]+-)?transform$/;
+
 export class TransformCssFeature {
     public accept: Set<EnumToken> = new Set([
         EnumToken.RuleNodeType,
@@ -43,7 +48,7 @@ export class TransformCssFeature {
 
             if (
                 arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
-                !arena.strings[arena.name[node]].match(/^(-[a-z]+-)?transform$/)
+                !transformProperty.test(arena.strings[arena.name[node]])
             ) {
                 continue;
             }

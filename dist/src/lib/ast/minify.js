@@ -6,7 +6,7 @@
 	License: MIT
  */
 import { eq, eqToken } from '../parser/utils/eq.js';
-import { renderValue, doRender } from '../printer/render.js';
+import { renderValue, NodeRenderer } from '../printer/render.js';
 import * as index from './features/index.js';
 import { walkValues } from './walk.js';
 import { EnumToken, EnumAstNodeStatus } from './types.js';
@@ -20,12 +20,6 @@ import { replaceCompound } from './expand.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 
 const notEndingWith = ["(", "["].concat(combinators);
-const rules = [
-    EnumToken.AtRuleNodeType,
-    EnumToken.RuleNodeType,
-    EnumToken.AtRuleTokenType,
-    EnumToken.KeyframesRuleNodeType,
-];
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
@@ -90,10 +84,8 @@ function minify(arena, ast, options = {}, recursive = false, errors, nestingCont
                 if (Array.isArray(replacement)) {
                     break;
                 }
-                if (rules.includes(arena.dataTypes[replacement]) && arena.firstToken[replacement] == 0) {
-                    // prelude tokens are parsed from the selector / at-rule prelude string when missing
-                    arena.setTokenList(replacement, parseString(arena, arena.strings[arena.name[replacement]]));
-                }
+                // the prelude tokens of the rules whose selector has been rewritten are not parsed again:
+                // the features and the renderer use the selector / prelude string
                 const result = feature.run(arena, replacement, options2, arena.parents[node] == 0 ? ast : arena.parents[node], context, mode);
                 if (result != null) {
                     replacement = result;
@@ -625,7 +617,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             }
                             else if (nodeType == previousType &&
                                 [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(nodeType)) {
-                                const intersect = diff(arena, previous, node, options);
+                                const intersect = diff(arena, previous, node, options, context);
                                 if (intersect != null) {
                                     // [result, node2] take the place of node1 (previous), node1 takes the place of node2 (node)
                                     const { node1, node2, result } = intersect;
@@ -1212,10 +1204,11 @@ function wrapNodes(arena, previous, node, match, reducer) {
  * @param n1
  * @param n2
  * @param options
+ * @param context minification context
  *
  * @private
  */
-function diff(arena, n1, n2, options = {}) {
+function diff(arena, n1, n2, options, context) {
     if (!("cache" in options)) {
         options.cache = new Map();
     }
@@ -1298,11 +1291,13 @@ function diff(arena, n1, n2, options = {}) {
     if (matches == 0 && (arena.firstChild[node1] != 0 || arena.firstChild[node2] != 0)) {
         return null;
     }
-    // doRender() copies the options
+    // the rules are rendered with the same options during the minification: the options are resolved once and
+    // identical values are rendered once
+    const renderer = (context.renderer ??= new NodeRenderer(options));
     const renderedSize = (node, cache) => {
         let css = cache ? options.cache.get(node) : undefined;
         if (css == null) {
-            css = doRender(arena, node, options).code;
+            css = renderer.render(arena, node);
             if (cache) {
                 options.cache.set(node, css);
             }

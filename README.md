@@ -4,12 +4,6 @@
 
 # css-parser
 
-> [!CAUTION] 
-> This new experimental version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
-
-> [!IMPORTANT] 
-> This branch is a work in progress and it might contain bugs.
-
 An all-in-one CSS parsing solution for Node.js and the browser, covering parsing, validation, transformation, minification, and AST-based tooling.
 
 The library always fully parses the stylesheet into a structured AST, and token values are exposed as typed data so custom transforms, plugins, and analysis can work with reliable, semantic input instead of raw strings.
@@ -115,7 +109,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 147.37 ms          | 356.65 ms                 |
+| Time                  | 129.64 ms          | 266.74 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 ## Playground

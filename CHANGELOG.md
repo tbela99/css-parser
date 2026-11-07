@@ -16,13 +16,23 @@ performance
 
 - [x] the parser recycles the tokens that are not attached to the tree (whitespace, `:`, `;`, `{`, `}`, ...): the arena allocates about half the nodes. `arena.recycle(id)` reuses the id of a detached leaf node
 - [x] the initial arena capacity is one node for every 4 bytes of css
-- [x] the successful validations of declaration values are cached per arena: a value is validated once per property syntax
+- [x] the validations of declaration values are cached per arena: a value is validated once per property syntax. the failed validations are cached too: their errors are rebuilt with the node and the location of each declaration. the cache is keyed by the string table of the arena: compacting the arena does not reuse stale results
 - [x] validation allocates less: the validation context is a class, the options are not copied, `matchAllSyntaxes()` passes its result object to the matching functions
 - [x] the syntax definitions are tokenized by character code (no per character strings, regular expressions or position copies)
 - [x] tokenizer: symbols, units and function names are looked up in hash tables by source range (no string per lookup), the characters are read by code (no single character strings), numbers are parsed without a string when the result is exact, the whitespace text is not kept
 - [x] `walkValues()` returns an iterator object instead of a generator: one small object per walk, no closure, no array per visited token. the iteration protocol (`next()`, `return()`, `throw()`, `for ... of`) is unchanged
 - [x] parser: the declaration colors are parsed without an iterator, the selector string is built without intermediate arrays, maps or closures, `toLowerCase()` is not called on lowercase strings
 - [x] renderer: `renderValue()` creates no options / cache object and no closure per call, token lists are rendered from the linked lists, `render()` copies the options with a fast clone and does not flatten the rendered children to remove the last semicolon
+- [x] renderer: identical declarations (same name and value tokens) are rendered once per render: `.s{width:10px} .g{width:10px}` renders `width:10px` once. colors and constructs (functions, parentheses, binary expressions, ...) are memoized too, the individual tokens are not (`convertColor()` is called once per distinct color, fewer tokens are allocated while rendering). the source map locations are still computed for every node
+- [x] renderer: numbers are minified once, the last semicolon of a block is known from the type of the last child (the rendered child is not read)
+- [x] renderer: the memo keys are serialized compactly (most tokens take 1 or 2 values) directly in the key pool, the memos are reused by the next renders
+- [x] minifier: the rule / at-rule preludes are not parsed again after the selectors are rewritten (at-rules used to get their name parsed as prelude tokens), the default values of the shorthand properties are parsed once
+- [x] minifier: the rule sizes are compared with a renderer that resolves the options once and shares the rendered values, tokens are compared and deduplicated by structure instead of signature strings
+- [x] parser: small inputs of known length do not allocate 4096 nodes
+
+documentation
+
+- [x] [Arena Memory](./files/arena.md): memory used by the arena, capacity and growth, what allocates nodes, reclaiming memory with `mark()`, `release()`, `compact()`, `trim()`
 
 # 1.8.2
 

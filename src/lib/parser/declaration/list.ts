@@ -16,11 +16,78 @@ import { getParsedSyntax } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import { isValidDeclarationValue } from "../../validation/match.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { nodeHash } from "../utils/hash.ts";
 import { equalsIgnoreCase, lowercase } from "../utils/text.ts";
 import type { AstArena } from "../../ast/arena.ts";
+import { StructuralMemo } from "../../ast/fingerprint.ts";
+import { parseString } from "../parse.ts";
 
 const config: PropertiesConfig = getConfig();
+
+/**
+ * Results shared by the property lists of a minification, valid for the arena they were computed for:
+ * - the keys of the declarations that are not merged by name (invalid declarations, custom properties, comments, ...):
+ *   identical declarations have the same key
+ * - the tokens of the default values of the shorthand properties: each value is parsed once, the tokens are cloned
+ *
+ * @internal
+ */
+export class DeclarationMemo {
+    /**
+     * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
+     * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
+     */
+    static readonly shape: DeclarationMemo = new DeclarationMemo();
+
+    /**
+     * key by structure. same equality as the structural signature: 0 and -0 are equal
+     */
+    private readonly keys: StructuralMemo<string> = new StructuralMemo(true);
+
+    /**
+     * parsed values: detached tokens that are cloned, never attached to the tree
+     */
+    private readonly parsed: Map<string, Token[]> = new Map();
+
+    /**
+     * tokens of a value, see {@link parseString}. the value is parsed once, the tokens are cloned
+     * @param arena
+     * @param value
+     */
+    parse(arena: AstArena, value: string): Token[] {
+        let template: Token[] | undefined = this.parsed.get(value);
+
+        if (template === undefined) {
+            template = parseString(arena, value);
+            this.parsed.set(value, template);
+        }
+
+        const tokens: Token[] = new Array(template.length);
+
+        for (let i = 0; i < template.length; i++) {
+            tokens[i] = arena.clone(template[i], true);
+        }
+
+        return tokens;
+    }
+
+    /**
+     * unique key of the structure of a node (type, name, values, tokens and children). identical nodes have the same key
+     * @param arena
+     * @param node
+     */
+    key(arena: AstArena, node: AstNode): string {
+        const slot: number = this.keys.token(arena, node);
+        let key: string | undefined = this.keys.get(slot);
+
+        if (key === undefined) {
+            // not a property name
+            key = "\0" + slot;
+            this.keys.set(slot, key);
+        }
+
+        return key;
+    }
+}
 
 /**
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
@@ -42,14 +109,21 @@ export class PropertyList {
     protected arena: AstArena;
 
     /**
+     * keys shared by the lists that use the same arena
+     */
+    protected memo: DeclarationMemo;
+
+    /**
      *
      * @param arena
      * @param options
+     * @param memo keys shared by the lists that use the same arena
      */
-    constructor(arena: AstArena, options: PropertyListOptions = {}) {
+    constructor(arena: AstArena, options: PropertyListOptions = {}, memo: DeclarationMemo | null = null) {
         this.arena = arena;
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
+        this.memo = memo ?? new DeclarationMemo();
     }
 
     /**
@@ -81,7 +155,7 @@ export class PropertyList {
 
         // do not compute shorthand for invalid declarations
         if (name == null) {
-            this.declarations.set(nodeHash(arena, declaration), declaration);
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
             return this;
         }
         // @functiom / result
@@ -100,7 +174,7 @@ export class PropertyList {
                 ? this.options.removeDuplicateDeclarations.includes(name)
                 : !this.options.removeDuplicateDeclarations)
         ) {
-            const key: string = nodeHash(arena, declaration);
+            const key: string = this.memo.key(arena, declaration);
 
             if (this.declarations.has(key)) {
                 this.declarations.delete(key);
@@ -128,7 +202,7 @@ export class PropertyList {
 
         // do not compute shorthand for invalid declarations
         if (!(arena.flags[declaration] & EnumAstNodeStatus.Validated)) {
-            this.declarations.set(nodeHash(arena, declaration), declaration);
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
             return this;
         }
 
@@ -186,14 +260,14 @@ export class PropertyList {
                     this.declarations.set(
                         mapName,
                         // @ts-ignore
-                        new PropertyMap(arena, <ShorthandMapType>config.map[mapName]),
+                        new PropertyMap(arena, <ShorthandMapType>config.map[mapName], this.memo),
                     );
                 }
 
                 owner = this.declarations.get(mapName) as PropertyMap;
             } else if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]));
+                this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo));
             }
 
             if (owner == this) {
@@ -204,7 +278,7 @@ export class PropertyList {
                     (owner as PropertyMap).declarations.set(
                         shorthand,
                         // @ts-ignore
-                        new PropertyMap(arena, <ShorthandMapType>config.map[shorthand]),
+                        new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo),
                     );
                 }
 
@@ -343,7 +417,8 @@ export class PropertyList {
                     value.value instanceof PropertyMap
                 ) {
                     if (value.value instanceof PropertySet || value.value instanceof PropertyMap) {
-                        iterators.unshift(iterator);
+                        // stack of the parent iterators
+                        iterators.push(iterator);
 
                         // @ts-ignore
                         iterator = value.value[Symbol.iterator]();
@@ -351,7 +426,7 @@ export class PropertyList {
                     }
 
                     if (value.done && iterators.length > 0) {
-                        iterator = <IterableIterator<AstNode | PropertySet | PropertyMap>>iterators.shift();
+                        iterator = <IterableIterator<AstNode | PropertySet | PropertyMap>>iterators.pop();
                         value = iterator.next();
                     }
                 }

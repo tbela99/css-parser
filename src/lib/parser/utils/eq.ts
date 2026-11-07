@@ -1,5 +1,4 @@
 import type { AstArena } from "../../ast/arena.ts";
-import { nodeSignature } from "./hash.ts";
 
 /**
  *
@@ -55,11 +54,62 @@ export function eq(a: any, b: any): boolean {
 }
 
 /**
- * structural equality of two tokens (source location is ignored)
+ * structural equality of two tokens (source location is ignored): same type, name, values, tokens and children.
+ * same result as comparing their {@link nodeSignature}
  * @param arena
  * @param a
  * @param b
  */
 export function eqToken(arena: AstArena, a: number, b: number): boolean {
-    return a == b || nodeSignature(arena, a) == nodeSignature(arena, b);
+    if (a == b) {
+        return true;
+    }
+
+    if (
+        arena.dataTypes[a] != arena.dataTypes[b] ||
+        arena.name[a] != arena.name[b] ||
+        arena.stringValue[a] != arena.stringValue[b] ||
+        arena.unit[a] != arena.unit[b] ||
+        arena.colorType[a] != arena.colorType[b]
+    ) {
+        return false;
+    }
+
+    const x: number = arena.numericValue[a];
+    const y: number = arena.numericValue[b];
+
+    // NaN values are equal
+    if (x !== y && (x === x || y === y)) {
+        return false;
+    }
+
+    let ta: number = arena.firstToken[a];
+    let tb: number = arena.firstToken[b];
+
+    while (ta != 0 && tb != 0) {
+        if (!eqToken(arena, ta, tb)) {
+            return false;
+        }
+
+        ta = arena.nextSibling[ta];
+        tb = arena.nextSibling[tb];
+    }
+
+    if (ta != tb) {
+        return false;
+    }
+
+    ta = arena.firstChild[a];
+    tb = arena.firstChild[b];
+
+    while (ta != 0 && tb != 0) {
+        if (!eqToken(arena, ta, tb)) {
+            return false;
+        }
+
+        ta = arena.nextSibling[ta];
+        tb = arena.nextSibling[tb];
+    }
+
+    return ta == tb;
 }

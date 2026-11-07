@@ -1,4 +1,4 @@
-import { PropertyList } from "../../parser/declaration/list.ts";
+import { DeclarationMemo, PropertyList } from "../../parser/declaration/list.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
@@ -26,12 +26,22 @@ export class ComputeShorthandFeature {
         }
     }
 
-    run(arena: AstArena, ast: AstRule | AstAtRule, options: PropertyListOptions): AstNode | null {
+    run(
+        arena: AstArena,
+        ast: AstRule | AstAtRule,
+        options: PropertyListOptions,
+        _parent?: AstNode,
+        context?: {
+            [key: string]: any;
+        },
+    ): AstNode | null {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;
         }
 
-        const list: PropertyList = new PropertyList(arena, options);
+        // the keys of the declarations are shared by the rules of the minification
+        const memo: DeclarationMemo | null = context == null ? null : (context.declarations ??= new DeclarationMemo());
+        const list: PropertyList = new PropertyList(arena, options, memo);
         let doNotSort: boolean = false;
         let hasDeclarations: boolean = false;
 

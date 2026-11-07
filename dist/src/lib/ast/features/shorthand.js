@@ -5,7 +5,7 @@
 	Version: 2.0.0-alpha.1
 	License: MIT
  */
-import { PropertyList } from '../../parser/declaration/list.js';
+import { DeclarationMemo, PropertyList } from '../../parser/declaration/list.js';
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { FeatureWalkMode } from './type.js';
 
@@ -27,11 +27,13 @@ class ComputeShorthandFeature {
             options.features.push(new ComputeShorthandFeature(options));
         }
     }
-    run(arena, ast, options) {
+    run(arena, ast, options, _parent, context) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;
         }
-        const list = new PropertyList(arena, options);
+        // the keys of the declarations are shared by the rules of the minification
+        const memo = context == null ? null : (context.declarations ??= new DeclarationMemo());
+        const list = new PropertyList(arena, options, memo);
         let doNotSort = false;
         let hasDeclarations = false;
         if (arena.dataTypes[ast] == EnumToken.AtRuleNodeType) {

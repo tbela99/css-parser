@@ -168,11 +168,14 @@ function createCommentNode(arena: AstArena, token: Token): AstNode {
 /**
  * initial arena capacity: one node for every 4 bytes of css. the statement tokens that are not attached to the tree
  * are recycled, so a parse + minify allocates 0.07 to 0.22 node per byte (up to 0.5 for keyframes heavy stylesheets
- * or when nesting rules are expanded): the arena seldom grows
+ * or when nesting rules are expanded): the arena seldom grows. the length of a stream is unknown: 4096 nodes
  * @param tokenizer
  */
 function arenaCapacity(tokenizer: Tokenizer): number {
-    return Math.min(1 << 25, Math.max(4096, Math.ceil(tokenizer.streamLength / 4) + 1024));
+    const length: number = tokenizer.streamLength;
+
+    // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
+    return length == 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
 }
 
 /**

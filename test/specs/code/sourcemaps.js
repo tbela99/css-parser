@@ -70,4 +70,36 @@ button {
             });
         });
     });
+
+    describe("sourcemap with identical values", function () {
+        // identical declaration values are rendered once: each declaration must still be mapped to its own location
+        const input = `@page :first {
+  margin: 1cm;
+  color: rgb(255 0 0);
+}
+.s {
+
+width: 10px;
+}
+@page :left {
+  margin: 1cm;
+  color: rgb(255 0 0);
+}
+`;
+
+        it("identical values are mapped to their own location #1", function () {
+            const result = transformSync({ input, sourcemap: true, beautify: true, src: "in.css" });
+
+            expect(result.code).equals(
+                "@page :first {\n margin: 1cm;\n color: red\n}\n.s {\n width: 10px\n}\n@page :left {\n margin: 1cm;\n color: red\n}",
+            );
+
+            // first occurrences
+            expect(result.map.find(2, 2)?.map((p) => p.slice(0, 3))).deep.equals([["in.css", 2, 3]]);
+            expect(result.map.find(3, 2)?.map((p) => p.slice(0, 3))).deep.equals([["in.css", 3, 3]]);
+            // second occurrences
+            expect(result.map.find(9, 2)?.map((p) => p.slice(0, 3))).deep.equals([["in.css", 10, 3]]);
+            expect(result.map.find(10, 2)?.map((p) => p.slice(0, 3))).deep.equals([["in.css", 11, 3]]);
+        });
+    });
 }

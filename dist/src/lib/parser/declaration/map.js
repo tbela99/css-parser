@@ -57,7 +57,17 @@ class PropertyMap {
      * longhand property name of the matched tokens
      */
     propertyNames = new Map();
-    constructor(arena, config) {
+    /**
+     * results shared by the lists of a minification: the default values are parsed once
+     */
+    memo;
+    /**
+     * @param arena
+     * @param config
+     * @param memo results shared by the lists of a minification
+     */
+    constructor(arena, config, memo = null) {
+        this.memo = memo;
         const values = Object.values(config.properties);
         this.arena = arena;
         this.requiredCount =
@@ -66,6 +76,13 @@ class PropertyMap {
         this.config = config;
         this.declarations = new Map();
         this.pattern = config.pattern.split(/\s/);
+    }
+    /**
+     * tokens of a value (default values of the properties, ...)
+     * @param value
+     */
+    parse(value) {
+        return this.memo == null ? parseString(this.arena, value) : this.memo.parse(this.arena, value);
     }
     add(declaration) {
         const arena = this.arena;
@@ -139,7 +156,7 @@ class PropertyMap {
                         }
                         // default
                         if (props.default.length > 0) {
-                            const defaults = parseString(arena, props.default[0]);
+                            const defaults = this.parse(props.default[0]);
                             if (!(property in tokens)) {
                                 tokens[property] = [[...defaults]];
                             }
@@ -236,7 +253,7 @@ class PropertyMap {
                                     }
                                 }
                                 if (mappedValues.length == 0) {
-                                    mappedValues.push(...parseString(arena, value.config.properties[key].default[0]));
+                                    mappedValues.push(...this.parse(value.config.properties[key].default[0]));
                                 }
                                 arena.setTokenList(mapped[key], mappedValues);
                             }
@@ -376,7 +393,7 @@ class PropertyMap {
                     }
                 }
                 if (filtered.length == 0 && this.config.default.length > 0) {
-                    filtered.push(arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, parseString(arena, this.config.default[0]), null, null));
+                    filtered.push(arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, this.parse(this.config.default[0]), null, null));
                     if (isImportant) {
                         arena.appendToken(filtered[0], arena.createToken(EnumToken.ImportantTokenType));
                     }
@@ -395,12 +412,12 @@ class PropertyMap {
                 const declarationValues = arena.tokens(declaration);
                 // @ts-ignore
                 for (const [key, val] of Object.entries(config.mapping)) {
-                    const keys = parseString(arena, key);
+                    const keys = this.parse(key);
                     if (keys.length != declarationValues.length) {
                         continue;
                     }
                     if (keys.every((k, index) => eqToken(arena, k, declarationValues[index]))) {
-                        arena.setTokenList(declaration, parseString(arena, val));
+                        arena.setTokenList(declaration, this.parse(val));
                         break;
                     }
                 }
@@ -622,7 +639,7 @@ class PropertyMap {
                                         if (arena.dataTypes[values[i]] == EnumToken.IdenTokenType &&
                                             // @ts-expect-error
                                             arena.strings[arena.stringValue[values[i]]] in props.mapping) {
-                                            values.splice(i, 1, ...parseString(arena, 
+                                            values.splice(i, 1, ...this.parse(
                                             // @ts-ignore
                                             props.mapping[arena.strings[arena.stringValue[values[i]]]]));
                                         }
@@ -653,7 +670,7 @@ class PropertyMap {
                         acc.push(configToken(arena, separator));
                     }
                     if (curr.length == 0 && this.config.default.length > 0) {
-                        curr.push(...parseString(arena, this.config.default[0]).reduce((acc, curr) => {
+                        curr.push(...this.parse(this.config.default[0]).reduce((acc, curr) => {
                             if (acc.length > 0) {
                                 acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
                             }
@@ -685,7 +702,7 @@ class PropertyMap {
                     arena.stringValue[values[0]] != 0 &&
                     this.config.default.includes(arena.strings[arena.stringValue[values[0]]].toLowerCase()) &&
                     this.config.default[0] != arena.strings[arena.stringValue[values[0]]].toLowerCase()) {
-                    values = parseString(arena, this.config.default[0]);
+                    values = this.parse(this.config.default[0]);
                 }
                 iterable = [
                     arena.createDeclaration(EnumToken.DeclarationNodeType, this.config.shorthand, values, null, null),

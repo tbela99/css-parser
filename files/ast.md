@@ -142,7 +142,8 @@ Declarations can also be parsed with [parseDeclarations()](../docs/functions/nod
 - `arena.recycle(n)`: reuse the id of a detached leaf node that is no longer referenced (the parser recycles the tokens it does not attach to the tree)
 - `arena.clone(n, deep)`: clone a node, see [cloneNode()](../docs/functions/node.cloneNode.html)
 - `arena.import(otherArena, n)`: copy a node allocated in another arena
-- `arena.compact(errors?)`: drop the nodes and tokens that are not reachable from the root and renumber the ids in document order.
+- `arena.compact(errors?)`: drop the nodes and tokens that are not reachable from the root and renumber the ids in document order
+  (see [Arena Memory](./arena.md)).
   The library never compacts the arena by itself: detached nodes and the tokens allocated while rendering stay allocated.
   Call `compact()` to reclaim their memory, for example before sending the arena to a worker. The ids obtained before the
   call are no longer valid
@@ -687,4 +688,4 @@ button {
 ```
 
 ------
-[← Prefix Removal](./prefix-removal.md) | [Utility Functions →](./utilities.md)
+[← Prefix Removal](./prefix-removal.md) | [Arena Memory →](./arena.md)

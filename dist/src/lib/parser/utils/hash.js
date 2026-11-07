@@ -42,37 +42,6 @@ function hashId(input, length = 6) {
     return chars.join("");
 }
 /**
- * structural signature of a node or a token: type, name, values, tokens and children
- * @param arena
- * @param id
- */
-function nodeSignature(arena, id) {
-    let result = `${arena.dataTypes[id]}:${arena.name[id]}:${arena.stringValue[id]}:${arena.numericValue[id]}:${arena.unit[id]}:${arena.colorType[id]}`;
-    if (arena.firstToken[id] != 0) {
-        result += "(";
-        for (let token = arena.firstToken[id]; token != 0; token = arena.nextSibling[token]) {
-            result += nodeSignature(arena, token) + ",";
-        }
-        result += ")";
-    }
-    if (arena.firstChild[id] != 0) {
-        result += "{";
-        for (let child = arena.firstChild[id]; child != 0; child = arena.nextSibling[child]) {
-            result += nodeSignature(arena, child) + ",";
-        }
-        result += "}";
-    }
-    return result;
-}
-/**
- * hash of a node or a token content
- * @param arena
- * @param id
- */
-function nodeHash(arena, id) {
-    return hashCode(nodeSignature(arena, id)).toString(16);
-}
-/**
  * convert input to hex
  * @param input
  * @param length
@@ -147,4 +116,4 @@ function syncHash(input, length = 6, algo) {
     return hashId(input, length);
 }
 
-export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, nodeHash, nodeSignature, syncHash };
+export { DIGITS, FIRST_ALPHABET, FULL_ALPHABET, LOWER, hash, hashAlgorithms, hashId, syncHash };

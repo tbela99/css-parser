@@ -11,6 +11,10 @@ import { filterValues, renderValue } from '../../printer/render.js';
 import { minifyTransformFunctions, eqMatrix } from '../transform/minify.js';
 import { FeatureWalkMode } from './type.js';
 
+/**
+ * transform property and its prefixed versions
+ */
+const transformProperty = /^(-[a-z]+-)?transform$/;
 class TransformCssFeature {
     accept = new Set([
         EnumToken.RuleNodeType,
@@ -40,7 +44,7 @@ class TransformCssFeature {
                 continue;
             }
             if (arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
-                !arena.strings[arena.name[node]].match(/^(-[a-z]+-)?transform$/)) {
+                !transformProperty.test(arena.strings[arena.name[node]])) {
                 continue;
             }
             const children = [];

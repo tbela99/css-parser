@@ -11,23 +11,138 @@ import { EnumToken, ColorType, EnumAstNodeStatus } from '../ast/types.js';
 import { expand } from '../ast/expand.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
 import { pseudoElements, anglePrecision, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
-import { minifyNumber, toPrecisionAngle, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace, toPrecisionValue } from '../syntax/syntax.js';
+import { minifyNumber, toPrecisionAngle, toPrecisionValue, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
 import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
 import { TokenField } from '../ast/arena.js';
+import { StructuralMemo } from '../ast/fingerprint.js';
 
 /**
- * render ast
- * @param arena
- * @param data node id
- * @param options
- * @param mapping
- * @private
+ * Rendered strings shared by the renderer.
+ *
+ * Identical declarations are very common (`display: block`, `color: #fff`, `width: 10px`, ...): a declaration that has
+ * the same name and the same value tokens as a declaration that has already been rendered reuses the rendered string.
+ * The same applies to the constructs of the values: colors, functions, parentheses, binary expressions, ... The
+ * individual tokens (identifiers, numbers, dimensions, ...) are not memoized: they are rendered when the declaration
+ * or the construct that contains them is rendered for the first time.
+ *
+ * Rendering only depends on the token structure and on the render options: a memo must only be shared by renders that
+ * use the same options.
+ *
+ * The source map locations are not memoized: they are computed for every node from the rendered string and the location
+ * of the node.
+ *
+ * @internal
  */
-function doRender(arena, data, options = {}, mapping) {
+class RenderMemo {
+    /**
+     * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
+     * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
+     */
+    static shape = new RenderMemo();
+    /**
+     * rendered declarations (`name:value`), by name and value tokens
+     */
+    declarations = new StructuralMemo();
+    /**
+     * rendered constructs: colors and tokens with sub tokens (functions, parentheses, binary expressions, ...)
+     */
+    constructs = new StructuralMemo();
+    /**
+     * cleared memos, reused by the next renders: their buffers are not allocated again
+     */
+    static free = [];
+    /**
+     * a cleared memo
+     */
+    static acquire() {
+        return RenderMemo.free.pop() ?? new RenderMemo();
+    }
+    /**
+     * clear a memo that is no longer used and keep it for the next renders. the large memos (more than 4 MB) are not
+     * kept: they are reclaimed by the garbage collector
+     * @param memo
+     */
+    static release(memo) {
+        if (RenderMemo.free.length < 4 && memo.declarations.footprint + memo.constructs.footprint <= 1 << 20) {
+            memo.declarations.clear();
+            memo.constructs.clear();
+            RenderMemo.free.push(memo);
+        }
+    }
+}
+/**
+ * Render state shared by the nodes and the tokens of a render
+ *
+ * @internal
+ */
+class RenderCache {
+    memo;
+    options;
+    /**
+     * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
+     * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
+     */
+    static shape = new RenderCache(new RenderMemo(), {});
+    /**
+     * resolved source file names (source maps)
+     */
+    paths = Object.create(null);
+    /**
+     * @param memo rendered values
+     * @param options options the memo is valid for
+     */
+    constructor(memo, options) {
+        this.memo = memo;
+        this.options = options;
+    }
+}
+/**
+ * render memo of the cache, if the tokens are rendered with the options the memo was created for. the memo is not used
+ * when a token is rendered with other options (a copy of the options, the default options, ...)
+ * @param cache
+ * @param options
+ */
+function getRenderMemo(cache, options) {
+    return cache instanceof RenderCache && cache.options === options ? cache.memo : null;
+}
+/**
+ * legacy color functions: comma separated values and an alias with the `a` suffix
+ */
+const legacyColorFunctions = new Set(["rgb", "rgba", "hsl", "hsla"]);
+/**
+ * color functions that accept an alpha component
+ */
+const alphaColorFunctions = new Set(["rgb", "rgba", "hsl", "hsla", "hwb", "oklab", "oklch", "lab", "lch"]);
+/**
+ * color function value ending with a separator
+ */
+const trailingSeparator = /[,/]\s*$/;
+/**
+ * candidate angle units, in the order they are tested
+ */
+const angleUnits = ["deg", "turn", "rad", "grad"];
+/**
+ * record a source id
+ * @param sourcemaps
+ * @param srcId
+ */
+function addSource(sourcemaps, srcId) {
+    if (!sourcemaps.sourceIds.has(srcId)) {
+        sourcemaps.sourceIds.add(srcId);
+        sourcemaps.sources.push(srcId);
+    }
+}
+/**
+ * copy of the options with the defaults of the missing options
+ * @param options
+ *
+ * @internal
+ */
+function resolveRenderOptions(options) {
     const minify = options.minify ?? true;
     const beautify = options.beautify ?? !minify;
     // a copy of the options (a spread into an empty object is a fast clone), then the defaults of the missing
@@ -63,6 +178,99 @@ function doRender(arena, data, options = {}, mapping) {
     if (!("preserveLicense" in options)) {
         options.preserveLicense = false;
     }
+    return options;
+}
+/**
+ * Render nodes with the same options: the options are resolved once and identical values are rendered once.
+ * Same output as {@link doRender}, used by the minifier to compare the size of the nodes
+ *
+ * @internal
+ */
+class NodeRenderer {
+    /**
+     * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
+     * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
+     */
+    static shape = new NodeRenderer({});
+    /**
+     * options
+     */
+    options;
+    /**
+     * resolved options
+     */
+    resolved;
+    /**
+     * render state. the memo keys contain interned string ids: the memo is valid for one arena
+     */
+    cache;
+    /**
+     * errors
+     */
+    errors = [];
+    /**
+     * token reducer, bound to an arena
+     */
+    reducer = null;
+    /**
+     * arena of the reducer
+     */
+    arena = null;
+    /**
+     * indentation by level
+     */
+    indents = [];
+    /**
+     * output location, not used: there is no source map
+     */
+    location = { srcId: 0, sta: 0, end: 0 };
+    /**
+     * the nodes are rendered without doRender(): no nesting expansion, no parents, no source map
+     */
+    direct;
+    /**
+     * @param options render options
+     */
+    constructor(options) {
+        this.options = options;
+        this.resolved = resolveRenderOptions(options);
+        this.cache = new RenderCache(new RenderMemo(), this.resolved);
+        this.direct =
+            !this.resolved.expandNestingRules &&
+                !this.resolved.withParents &&
+                !this.resolved.sourcemap &&
+                this.resolved.output == null;
+    }
+    /**
+     * render a node
+     * @param arena
+     * @param node
+     */
+    render(arena, node) {
+        if (this.arena !== arena) {
+            if (this.arena != null) {
+                this.cache = new RenderCache(new RenderMemo(), this.resolved);
+            }
+            this.arena = arena;
+            this.reducer = createReducer(arena, this.resolved, this.cache);
+        }
+        if (!this.direct) {
+            return doRender(arena, node, this.options, null, this.cache.memo).code;
+        }
+        return renderAstNode(arena, node, this.resolved, null, this.location, null, this.errors, this.reducer, this.cache, 0, this.indents);
+    }
+}
+/**
+ * render ast
+ * @param arena
+ * @param data node id
+ * @param options
+ * @param mapping
+ * @param memo rendered values shared with other renders that use the same options (see {@link NodeRenderer})
+ * @private
+ */
+function doRender(arena, data, options = {}, mapping, memo) {
+    options = resolveRenderOptions(options);
     const expandNesting = options.expandNestingRules &&
         [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(arena.dataTypes[data]) &&
         (arena.flags[data] & EnumAstNodeStatus.HasChildren) != 0;
@@ -91,8 +299,13 @@ function doRender(arena, data, options = {}, mapping) {
     const startTime = performance.now();
     const errors = [];
     const sourcemap = options.sourcemap ? new SourceMap() : null;
-    const sourcemaps = options.sourcemap ? { sources: [], maps: [] } : null;
-    const cache = Object.create(null);
+    const sourcemaps = options.sourcemap
+        ? { sources: [], sourceIds: new Set(), maps: [] }
+        : null;
+    // identical values are rendered once. the memo is valid for these options only. a memo that is not provided is
+    // reused by the next renders
+    const ownMemo = memo == null;
+    const cache = new RenderCache(memo ?? RenderMemo.acquire(), options);
     const sourceLocation = {
         end: 0,
     };
@@ -126,6 +339,9 @@ function doRender(arena, data, options = {}, mapping) {
             total: `${(performance.now() - startTime).toFixed(2)}ms`,
         },
     };
+    if (ownMemo) {
+        RenderMemo.release(cache.memo);
+    }
     if (sheet != 0) {
         // drop the temporary stylesheet. the tokens allocated while rendering (color conversion, gradients, ...)
         // are not attached to the tree either: the memory is not reclaimed, the ids are never reused
@@ -168,12 +384,15 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
         move(sourceLocation, linesMap, str, 0, offset + 1);
     }
     if (arena.flags[node] & EnumAstNodeStatus.HasLocation) {
-        const source = options.sourcesMap.get(arena.getSource(node));
+        let srcId = arena.getSource(node);
+        const source = options.sourcesMap.get(srcId);
         const inputSourceMap = source.getInputSourceMap();
         const offsets = source.getOffsets(arena.getSpanStart(node));
-        const [newLine, newColumn] = linesMap.getOffsets(sourceLocation.end);
+        // generated position, see LineMap.getOffsets()
+        const line = linesMap.search(sourceLocation.end);
+        const newLine = line + 1;
+        const newColumn = sourceLocation.end - linesMap.lineStarts[line] + (line == 0 ? 1 : 0);
         let records = null;
-        let srcId = arena.getSource(node);
         let sourceFileName = source.getFileName() || null;
         let sourceContent; // = (source.getContent() as string) || null;
         if (inputSourceMap != null && (records = inputSourceMap.find(offsets[0], offsets[1])) != null) {
@@ -188,16 +407,16 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
                 offsets[1] = record[2];
                 sourceContent = record[3] || null;
                 if (sourceFileName != null && options.output != null && !sourceFileName.startsWith("data:")) {
-                    if (cache[sourceFileName] == null) {
+                    if (cache.paths[sourceFileName] == null) {
                         const absolute = options.resolve(dirname(options.output), options.cwd)
                             .absolute;
                         const absoluteSourcePath = options.resolve(dirname(options.src || ""), options.cwd).absolute;
                         // resolution is relative to the source file
                         const absoluteSourceFileName = options.resolve(sourceFileName, absoluteSourcePath)
                             .absolute;
-                        cache[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                        cache.paths[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
                     }
-                    sourceFileName = cache[sourceFileName];
+                    sourceFileName = cache.paths[sourceFileName];
                 }
                 for (const [id, file] of options.sourcesMap.entries()) {
                     if (file.getFileName() === sourceFileName) {
@@ -215,9 +434,7 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
                     newId = source.id;
                 }
                 srcId = newId;
-                if (!sourcemaps.sources.includes(srcId)) {
-                    sourcemaps.sources.push(srcId);
-                }
+                addSource(sourcemaps, srcId);
                 sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
             }
         }
@@ -232,9 +449,7 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
             //     }
             //     sourceFileName = cache[sourceFileName] as string;
             // }
-            if (!sourcemaps.sources.includes(srcId)) {
-                sourcemaps.sources.push(srcId);
-            }
+            addSource(sourcemaps, srcId);
             sourcemaps.maps.push([newLine, newColumn, srcId, offsets[0], offsets[1]]);
         }
     }
@@ -249,14 +464,12 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
  * @param end
  */
 function move(sourceLocation, linesMap, str, start, end) {
+    const j = end ?? str.length;
     let i = start ?? 0;
-    let j = end ?? str.length;
     let codepoint;
-    let char;
     for (; i < j; i++) {
-        char = str.charAt(i);
-        codepoint = char.charCodeAt(0);
-        sourceLocation.end += char.length;
+        codepoint = str.charCodeAt(i);
+        sourceLocation.end++;
         if (codepoint == 0xa || // \n
             codepoint == 0xb || // \v
             codepoint == 0xc || // \f
@@ -350,8 +563,11 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             let node;
             let nodeType;
             let recordDeclarationSourceMap = typ == EnumToken.AtRuleNodeType;
-            // rendering of the last child, appended to the children at the end
+            // rendering of the last child, without its trailing semicolon, appended to the children when the next child
+            // is rendered. the trailing semicolon of the last child is dropped: it is known from the type of the child,
+            // the rendered strings are not read (reading a concatenated string flattens it)
             let last = "";
+            let semicolon = false;
             for (node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
                 nodeType = arena.dataTypes[node];
                 if (nodeType == EnumToken.CommentNodeType) {
@@ -362,15 +578,18 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                             : comment;
                 }
                 else if (nodeType == EnumToken.DeclarationNodeType) {
-                    str = `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()};`;
+                    // the semicolon is not part of the rendered declaration
+                    str = renderDeclaration(arena, node, options, cache, reducer);
                 }
                 else {
                     str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
                     if (str === "") {
                         continue;
                     }
-                    children += last;
-                    last = str;
+                    children += semicolon ? last + ";" : last;
+                    // at-rules without a block ('@layer name;') end with a semicolon
+                    semicolon = endsWithSemicolon(arena, node, str);
+                    last = semicolon ? str.slice(0, -1) : str;
                     str = "";
                     continue;
                 }
@@ -378,9 +597,17 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                     continue;
                 }
                 str = options.newLine + indentSub + str;
-                children += last;
-                last = str;
-                if (sourcemaps != null && str !== "") {
+                children += semicolon ? last + ";" : last;
+                if (nodeType == EnumToken.DeclarationNodeType) {
+                    last = str;
+                    semicolon = true;
+                }
+                else {
+                    // comments are flat strings
+                    semicolon = str.charCodeAt(str.length - 1) == 0x3b;
+                    last = semicolon ? str.slice(0, -1) : str;
+                }
+                if (sourcemaps != null) {
                     if (nodeType == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
@@ -393,12 +620,14 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                     else {
                         move(sourceLocation, linesMap, str);
                     }
+                    if (nodeType == EnumToken.DeclarationNodeType) {
+                        // the semicolon
+                        sourceLocation.end++;
+                    }
                 }
             }
-            // the semicolon that ends the last child is removed. only the last child is read: the string of the
-            // previous children is not flattened
-            if (last.endsWith(";")) {
-                last = last.slice(0, -1);
+            // the semicolon that ends the last child is removed
+            if (semicolon) {
                 sourceLocation.end--;
             }
             children += last;
@@ -419,12 +648,56 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             return "";
     }
 }
+/**
+ * true if a rendered child node ends with a semicolon
+ * @param arena
+ * @param node child node
+ * @param rendered rendered child node, not empty
+ */
+function endsWithSemicolon(arena, node, rendered) {
+    switch (arena.dataTypes[node]) {
+        case EnumToken.AtRuleNodeType:
+        case EnumToken.KeyframesAtRuleNodeType:
+            // '@rule prelude;' or '@rule prelude { ... }'
+            return !(arena.flags[node] & EnumAstNodeStatus.HasChildren);
+        case EnumToken.RuleNodeType:
+        case EnumToken.KeyframesRuleNodeType:
+            // '... }'
+            return false;
+        default:
+            // comments: flat strings
+            return rendered.charCodeAt(rendered.length - 1) == 0x3b;
+    }
+}
 function renderTokenList(tokens, reducer) {
     let result = "";
     for (const token of tokens) {
         result = reducer(result, token);
     }
     return result;
+}
+/**
+ * render a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
+ * tokens) are rendered once per render
+ * @param arena
+ * @param node declaration
+ * @param options
+ * @param cache
+ * @param reducer
+ */
+function renderDeclaration(arena, node, options, cache, reducer) {
+    const memo = getRenderMemo(cache, options);
+    if (memo == null) {
+        return `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+    }
+    // the name is part of the key
+    const slot = memo.declarations.list(arena, arena.firstToken[node], arena.name[node]);
+    let rendered = memo.declarations.get(slot);
+    if (rendered === undefined) {
+        rendered = `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+        memo.declarations.set(slot, rendered);
+    }
+    return rendered;
 }
 /**
  * render the value tokens of a declaration with the reducer. with minifyValues, the whitespace that is not needed is
@@ -564,7 +837,79 @@ function renderField(arena, token, field, options, cache, reducer, errors) {
     return list == null ? "" : renderList(arena, arena.firstToken[list], options, cache, reducer);
 }
 /**
- * render ast token
+ * render a color token
+ * @param arena
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
+function renderColor(arena, token, options, cache, reducer, errors) {
+    if (options.convertColor !== false) {
+        const value = convertColor(arena, token, typeof options.convertColor === "boolean"
+            ? ColorType.HEX
+            : (ColorType[ColorType[options.convertColor ?? "HEX"]
+                ?.toUpperCase?.()
+                .replaceAll?.("-", "_")] ?? ColorType.HEX));
+        if (value != null) {
+            token = value;
+        }
+        if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+            return reduceHexValue(arena.strings[arena.stringValue[token]]);
+        }
+    }
+    if (arena.colorType[token] === ColorType.SYS ||
+        arena.colorType[token] === ColorType.DPSYS ||
+        arena.colorType[token] === ColorType.NON_STD) {
+        return arena.strings[arena.stringValue[token]];
+    }
+    if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+        return arena.strings[arena.stringValue[token]];
+    }
+    if (arena.firstToken[token] == 0) {
+        // rendered like a function (no argument)
+        return ((arena.strings[arena.stringValue[token]] ?? "") +
+            "(" +
+            renderReduced(arena, arena.firstToken[token], options, cache, reducer) +
+            ")");
+    }
+    const fnName = arena.strings[arena.stringValue[token]];
+    const count = arena.tokenCount(token);
+    const isLegacy = legacyColorFunctions.has(fnName);
+    const hasAlpha = alphaColorFunctions.has(fnName);
+    const useAlpha = (hasAlpha && count == (isLegacy ? 7 : 4)) || ("color" == fnName && count == 5);
+    let result = "";
+    let index = 0;
+    for (let curr = arena.firstToken[token]; curr != 0; curr = arena.nextSibling[curr], index++) {
+        if (trailingSeparator.test(result)) {
+            if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+                result = result.trimEnd();
+                continue;
+            }
+            result = result.trimStart() + renderValue(arena, curr, options, cache);
+            continue;
+        }
+        if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
+            result = result.trimEnd() + " ";
+        }
+        else if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+            result = result.trimEnd() + " ";
+        }
+        else if (arena.dataTypes[curr] == EnumToken.CommaTokenType ||
+            (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
+            result = result.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
+        }
+        else {
+            result =
+                result.trimEnd() + (useAlpha && index == count - 1 ? "/" : " ") + renderValue(arena, curr, options, cache);
+        }
+    }
+    return (hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) + "(" + result.trimStart() + ")";
+}
+/**
+ * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
+ * expressions, ...) are rendered once per render, see {@link RenderMemo}
  * @param token
  * @param options
  * @param cache
@@ -573,6 +918,32 @@ function renderField(arena, token, field, options, cache, reducer, errors) {
  * @private
  */
 function renderValue(arena, token, options = defaultRenderOptions, cache = defaultCache, reducer, errors) {
+    if (arena.dataTypes[token] == EnumToken.ColorTokenType ||
+        arena.firstToken[token] != 0 ||
+        arena.firstChild[token] != 0) {
+        const memo = getRenderMemo(cache, options);
+        if (memo != null) {
+            const slot = memo.constructs.token(arena, token);
+            let rendered = memo.constructs.get(slot);
+            if (rendered === undefined) {
+                rendered = renderToken(arena, token, options, cache, reducer);
+                memo.constructs.set(slot, rendered);
+            }
+            return rendered;
+        }
+    }
+    return renderToken(arena, token, options, cache, reducer);
+}
+/**
+ * render ast token, see {@link renderValue}
+ * @param arena
+ * @param token
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param errors
+ */
+function renderToken(arena, token, options, cache, reducer, errors) {
     if (arena.dataTypes[token] === EnumToken.WhenElseFunctionTokenType &&
         equalsIgnoreCase(arena.strings[arena.stringValue[token]], "supports")) {
         options = { ...options, minifyValues: false, minify: false, convertColor: false };
@@ -652,97 +1023,27 @@ function renderValue(arena, token, options = defaultRenderOptions, cache = defau
             return "/";
         case EnumToken.WrappedValuesTokenType:
             return "{" + renderList(arena, arena.firstToken[token], options, cache) + "}";
-        case EnumToken.ColorTokenType:
+        case EnumToken.ColorTokenType: {
             if (arena.colorType[token] == ColorType.LIGHT_DARK ||
                 (arena.firstToken[token] != 0 && options.convertColor === false && arena.tokenCount(token) == 2)) {
                 let result = "";
-                for (const curr of arena.tokens(token)) {
+                for (let curr = arena.firstToken[token]; curr != 0; curr = arena.nextSibling[curr]) {
                     if (arena.dataTypes[curr] === EnumToken.IdenTokenType) {
+                        // the token is updated in place
                         parseColor(arena, curr);
                     }
                     result += renderValue(arena, curr, options, cache);
                 }
-                return (arena.strings[arena.stringValue[token]] +
-                    "(" +
-                    result +
-                    ")");
+                return arena.strings[arena.stringValue[token]] + "(" + result + ")";
             }
-            if (options.convertColor !== false) {
-                const value = convertColor(arena, token, typeof options.convertColor === "boolean"
-                    ? ColorType.HEX
-                    : (ColorType[ColorType[options.convertColor ?? "HEX"]
-                        ?.toUpperCase?.()
-                        .replaceAll?.("-", "_")] ?? ColorType.HEX));
-                if (value != null) {
-                    token = value;
-                }
-                if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
-                    return reduceHexValue(arena.strings[arena.stringValue[token]]);
-                }
-            }
-            if (arena.colorType[token] === ColorType.SYS ||
-                arena.colorType[token] === ColorType.DPSYS ||
-                arena.colorType[token] === ColorType.NON_STD) {
-                return arena.strings[arena.stringValue[token]];
-            }
-            if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
-                return arena.strings[arena.stringValue[token]];
-            }
-            if (arena.firstToken[token] != 0) {
-                const fnName = arena.strings[arena.stringValue[token]];
-                const chi = arena.tokens(token);
-                const isLegacy = ["rgb", "rgba", "hsl", "hsla"].includes(fnName);
-                const hasAlpha = [
-                    "rgb",
-                    "rgba",
-                    "hsl",
-                    "hsla",
-                    "hwb",
-                    "oklab",
-                    "oklch",
-                    "lab",
-                    "lch",
-                ].includes(fnName);
-                const useAlpha = (hasAlpha && chi.length == (isLegacy ? 7 : 4)) || ("color" == fnName && chi.length == 5);
-                let result = "";
-                for (let index = 0; index < chi.length; index++) {
-                    const curr = chi[index];
-                    if (/[,/]\s*$/.test(result)) {
-                        if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                            result = result.trimEnd();
-                            continue;
-                        }
-                        result = result.trimStart() + renderValue(arena, curr, options, cache);
-                        continue;
-                    }
-                    if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
-                        result = result.trimEnd() + " ";
-                    }
-                    else if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
-                        result = result.trimEnd() + " ";
-                    }
-                    else if (arena.dataTypes[curr] == EnumToken.CommaTokenType ||
-                        (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
-                        result = result.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
-                    }
-                    else {
-                        result =
-                            result.trimEnd() +
-                                (useAlpha && index == chi.length - 1 ? "/" : " ") +
-                                renderValue(arena, curr, options, cache);
-                    }
-                }
-                return ((hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) +
-                    "(" +
-                    result.trimStart() +
-                    ")");
-            }
+            return renderColor(arena, token, options, cache, reducer);
+        }
         case EnumToken.UrlFunctionTokenType:
             if (options.minifyValues && arena.dataTypes[token] === EnumToken.UrlFunctionTokenType) {
                 if (arena.typeOf(arena.firstToken[token]) === EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
-                for (const child of arena.tokens(token)) {
+                for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
                     if (arena.dataTypes[child] === EnumToken.StringTokenType) {
                         const val = arena.strings[arena.stringValue[child]];
                         if (val.slice(1, 5) !== "data:" && urlTokenMatcher.test(val)) {
@@ -1198,17 +1499,21 @@ function renderValue(arena, token, options = defaultRenderOptions, cache = defau
         case EnumToken.GeneralEnclosedFunctionTokenType:
         case EnumToken.CustomFunctionTokenType:
         case EnumToken.WildCardFunctionTokenType:
-            if (arena.dataTypes[token] == EnumToken.MathFunctionTokenType &&
-                arena.tokenCount(token) == 1 &&
-                ![EnumToken.BinaryExpressionTokenType, EnumToken.FractionTokenType, EnumToken.IdenTokenType].includes(arena.dataTypes[arena.firstToken[token]]) &&
-                !arena.hasFraction(arena.firstToken[token])) {
-                return (arena.strings[arena.stringValue[token]] +
-                    "(" +
-                    renderTokenList(arena.tokens(token), (acc, curr) => acc +
-                        renderValue(arena, curr, arena.dataTypes[token] == EnumToken.FunctionTokenType ? { minify: false } : options, cache, 
+            if (arena.dataTypes[token] == EnumToken.MathFunctionTokenType && arena.tokenCount(token) == 1) {
+                // a single argument
+                const first = arena.firstToken[token];
+                const firstType = arena.dataTypes[first];
+                if (firstType != EnumToken.BinaryExpressionTokenType &&
+                    firstType != EnumToken.FractionTokenType &&
+                    firstType != EnumToken.IdenTokenType &&
+                    !arena.hasFraction(first)) {
+                    return (arena.strings[arena.stringValue[token]] +
+                        "(" +
+                        renderValue(arena, first, options, cache, 
                         // the reducer renders with the options of this token
-                        (reducer ??= createReducer(arena, options, cache)))) +
-                    ")");
+                        (reducer ??= createReducer(arena, options, cache))) +
+                        ")");
+                }
             }
             return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderReduced(arena, arena.firstToken[token], options, cache, reducer) + ")";
         case EnumToken.BlockStartTokenType:
@@ -1286,7 +1591,7 @@ function renderValue(arena, token, options = defaultRenderOptions, cache = defau
                 const angle = getAngle(arena, token);
                 let v;
                 let value = val + unit;
-                for (const u of ["deg", "turn", "rad", "grad"]) {
+                for (const u of angleUnits) {
                     if (arena.strings[arena.unit[token]] == u) {
                         continue;
                     }
@@ -1510,4 +1815,4 @@ function filterValues(arena, values) {
     return values;
 }
 
-export { doRender, filterValues, move, renderValue };
+export { NodeRenderer, RenderMemo, doRender, filterValues, move, renderValue };

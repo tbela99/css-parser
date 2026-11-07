@@ -1692,6 +1692,47 @@ export function length2Px(arena: AstArena, value: Token): number | null {
  */
 
 export function minifyNumber(val: string | number): string {
+    if (typeof val != "number") {
+        return minifyNumberValue(val);
+    }
+
+    // the same numbers are rendered many times (0, 1, .5, 100, ...): the result only depends on the number
+    let result: string | undefined = minifiedNumbers.get(val);
+
+    if (result === undefined) {
+        result = minifyNumberValue(val);
+
+        if (minifiedNumbers.size >= minifiedNumbersSize) {
+            minifiedNumbers.clear();
+        }
+
+        // 0 and -0 share the same key: both are minified to "0"
+        minifiedNumbers.set(val, result);
+    }
+
+    return result;
+}
+
+/**
+ * minified numbers, see {@link minifyNumber}
+ */
+const minifiedNumbers: Map<number, string> = new Map();
+
+/**
+ * maximum number of minified numbers kept
+ */
+const minifiedNumbersSize: number = 4096;
+
+/**
+ * 10 ** colorPrecision, see {@link toPrecisionValue}
+ */
+const colorPrecisionFactor: number = Math.pow(10, colorPrecision);
+
+/**
+ * minify a number, see {@link minifyNumber}
+ * @param val
+ */
+function minifyNumberValue(val: string | number): string {
     val = String(toPrecisionValue(val));
 
     if (val === "0") {
@@ -1716,7 +1757,7 @@ export function minifyNumber(val: string | number): string {
 }
 
 export function toPrecisionValue(value: number | string, precision: number = colorPrecision): number {
-    const div: number = Math.pow(10, precision);
+    const div: number = precision === colorPrecision ? colorPrecisionFactor : Math.pow(10, precision);
     // @ts-ignore
     value = Math.round(value * div) / div;
 

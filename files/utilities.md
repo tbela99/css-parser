@@ -174,4 +174,4 @@ console.debug(result.arena.toObject(values[1])); // second rule
 ```
 
 ------
-[← Ast Manipulation](./ast.md) | [Node Module →](../docs/modules/node.html)
+[← Arena Memory](./arena.md) | [Node Module →](../docs/modules/node.html)
