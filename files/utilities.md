@@ -65,40 +65,39 @@ const clonedAst = result.arena.clone(result.ast, true);
 ```
 
 
-### replaceNode()
+### Replacing AST nodes
 
-The function [replaceNode()](../functions/node.replaceNode.html) replaces an ast node in its parent with one or more nodes.
+`arena.replaceChild()` replaces an AST node in its parent with one or more node IDs.
 
 ```ts
-import {parse, replaceNode, render} from '@tbela99/css-parser';
+import {parse, render} from '@tbela99/css-parser';
 
 const result = await parse(`.foo { color: red } .bar { color: blue }`);
 const arena = result.arena;
 const [foo, bar] = arena.children(result.ast);
 
-replaceNode(arena, foo, arena.clone(bar, true));
+arena.replaceChild(foo, arena.clone(bar, true));
 
 console.debug(render(arena, result.ast).code); // .bar{color:blue}.bar{color:blue}
 ```
 
-### replaceNodeOrValue()
+### Replacing value tokens
 
-The function [replaceNodeOrValue()](../functions/node.replaceNodeOrValue.html) replaces a value token in its parent token or in the values of an ast node
-(the parent is `arena.getValueParent(target)`). Throws an error if the target token is detached.
+`arena.replaceToken()` replaces a value token in its parent token list with one or more token IDs.
 
 ```ts
-replaceNodeOrValue(arena: AstArena, target: Token, replacement: Token | Token[]);
+arena.replaceToken(target: Token, ...replacement: Token[]): void;
 ```
 
 ```ts
-import {parse, replaceNodeOrValue, render, EnumToken} from '@tbela99/css-parser';
+import {parse, render, EnumToken} from '@tbela99/css-parser';
 
 const result = await parse(`.foo { width: calc(1px + 2px) }`);
 const arena = result.arena;
 const declaration = arena.getFirstChild(arena.getFirstChild(result.ast));
 
 // replace the first value token
-replaceNodeOrValue(arena, arena.getFirstToken(declaration), arena.createToken(EnumToken.LengthTokenType, 3, 'px'));
+arena.replaceToken(arena.getFirstToken(declaration), arena.createToken(EnumToken.LengthTokenType, 3, 'px'));
 
 console.debug(render(arena, result.ast).code); // .foo{width:3px}
 ```

@@ -77,7 +77,7 @@ import { matchAtRuleImportSyntax } from "./utils/at-rule-import.ts";
 import type { ValidationMatch } from "../validation/types.d.ts";
 import { matchAtRuleWhenElseSyntax } from "./utils/at-rule-when-else.ts";
 import { parseAtRuleSupportSyntax } from "./utils/at-rule-support.ts";
-import { replaceNode, replaceNodeOrValue, trimWhiteSpaceTokens } from "./utils/token.ts";
+import { trimWhiteSpaceTokens } from "./utils/token.ts";
 import { parseAtRuleContainerQueryList } from "./utils/at-rule-container.ts";
 import { parseMediaqueryList } from "./utils/at-rule-media.ts";
 import { matchAtRuleSyntax } from "./utils/at-rule.ts";
@@ -1209,9 +1209,9 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         // the object view of the node
                     } else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
-                            replaceNode(arena, node, replacement as AstNode | AstNode[]);
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement as AstNode[] : [replacement as AstNode]));
                         } else {
-                            replaceNodeOrValue(arena, node, replacement as Token | Token[]);
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement as Token[] : [replacement as Token]));
                         }
                     } else {
                         errors.push({
@@ -1746,11 +1746,10 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                         (arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                         arena.strings[arena.stringValue[value]] in importedCssVariables
                     ) {
-                        replaceNodeOrValue(
-                            arena,
+                        arena.replaceToken(
                             value,
-                            arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token: Token) =>
-                                arena.clone(token, true),
+                            ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map(
+                                (token: Token) => arena.clone(token, true),
                             ),
                         );
                     }
@@ -2409,9 +2408,9 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         // the object view of the node
                     } else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
-                            replaceNode(arena, node, replacement as AstNode | AstNode[]);
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement as AstNode[] : [replacement as AstNode]));
                         } else {
-                            replaceNodeOrValue(arena, node, replacement as Token | Token[]);
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement as Token[] : [replacement as Token]));
                         }
                     } else {
                         errors.push({
@@ -3099,11 +3098,10 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                         (arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                         arena.strings[arena.stringValue[value]] in importedCssVariables
                     ) {
-                        replaceNodeOrValue(
-                            arena,
+                        arena.replaceToken(
                             value,
-                            arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token: Token) =>
-                                arena.clone(token, true),
+                            ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map(
+                                (token: Token) => arena.clone(token, true),
                             ),
                         );
                     }

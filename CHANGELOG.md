@@ -23,7 +23,8 @@ see the [migration guide](./files/migration.md)
 - [x] visitors are called with the arena and the node id: `handler(arena, id)` instead of `handler(node, arena, parent, root)`. they return nothing to keep the node, or an object (an object view or a plain object) or a node id, or an array of objects and node ids, to replace it
 - [x] `arena.toObject(id)` returns an object view of the node (`AstArenaNode`) instead of a plain copy: its properties (`typ`, `nam`, `sel`, `val`, `chi`, `tokens`, `unit`, `kin`, `l`, `r`, `op`, `loc`, `state`, `errors`, `parent`, ...) are getters and setters that read and write the arena, the view only holds the arena (`ARENA`) and the node id (`ARENAID`, keyed symbols). `arena.toPlainObject(id)` (and `view.toJSON()`, `JSON.stringify(view)`) returns the plain copy. `arena.fromObject()` imports views: importing a view of the same arena is a noop, the views of another arena are copied
 - [x] the css module variables (`result.cssModuleVariables`) are object views of the variable nodes
-- [x] `replaceNodeOrValue(arena, node, replacement)`: the `parent` argument is removed (it is `arena.getValueParent(node)`)
+- [x] removed `replaceNodeOrValue()`; use `arena.replaceToken(id, ...tokens)` for value token replacement
+- [x] removed `replaceNode()`; use `arena.replaceChild(id, ...nodes)` to replace AST nodes
 - [x] removed `cloneNode()` and `cloneValue()`: use `arena.clone(id, deep?, cloneMap?)`
 - [x] removed `expand()`: use `arena.expand(node)`
 - [x] removed `getNodeProperty()` and `setNodeProperty()`: use the arena methods (`arena.getState()`, `arena.setState()`, `arena.getErrors()`, ...) or the object view properties (`arena.toObject(id).state = ...`)

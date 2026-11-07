@@ -10,7 +10,6 @@ import { EnumToken } from "../types.ts";
 import { renderValue } from "../../printer/render.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
-import { replaceNode, replaceNodeOrValue } from "../../parser/utils/token.ts";
 import { trimArray } from "../../validation/match.ts";
 import { eqToken } from "../../parser/utils/eq.ts";
 import { type AstArena, TokenField } from "../arena.ts";
@@ -146,10 +145,9 @@ function substituteIfElseNode(
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
                 equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])
             ) {
-                replaceNodeOrValue(
-                    arena,
+                arena.replaceToken(
                     mapped(targetWrapper) as Token,
-                    conditionValue(arena, elseCondition, nodeMap),
+                    ...conditionValue(arena, elseCondition, nodeMap),
                 );
 
                 if (targetParentWrapper != declaration) {
@@ -173,10 +171,9 @@ function substituteIfElseNode(
                                         );
 
                                         if (left != null && leftSide != null && eqToken(arena, left, leftSide)) {
-                                            replaceNodeOrValue(
-                                                arena,
+                                            arena.replaceToken(
                                                 mapped(siblings[i]) as Token,
-                                                conditionValue(arena, arena.field(child, TokenField.R), nodeMap),
+                                                ...conditionValue(arena, arena.field(child, TokenField.R), nodeMap),
                                             );
 
                                             cache.add(arena.field(child, TokenField.L));
@@ -194,11 +191,7 @@ function substituteIfElseNode(
 
         clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
-        replaceNodeOrValue(
-            arena,
-            mapped(targetWrapper) as Token,
-            mapped(arena.field(node, TokenField.L)) as Token,
-        );
+        arena.replaceToken(mapped(targetWrapper) as Token, mapped(arena.field(node, TokenField.L)) as Token);
         result.push(clonedDeclaration);
     } else if (arena.dataTypes[node] === EnumToken.IfConditionTokenType) {
         const left: Token | null = conditionLeft(arena, node);
@@ -212,10 +205,9 @@ function substituteIfElseNode(
         if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
-            replaceNodeOrValue(
-                arena,
+            arena.replaceToken(
                 mapped(targetWrapper == declaration ? node : targetWrapper) as Token,
-                conditionValue(arena, node, nodeMap),
+                ...conditionValue(arena, node, nodeMap),
             );
 
             result.push(clonedDeclaration);
@@ -241,11 +233,7 @@ function substituteIfElseNode(
 
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
-            replaceNodeOrValue(
-                arena,
-                mapped(node) as Token,
-                conditionValue(arena, node, nodeMap),
-            );
+            arena.replaceToken(mapped(node) as Token, ...conditionValue(arena, node, nodeMap));
 
             // inlined: arena.appendChildren(atRule, clonedDeclaration)
             arena.appendChildList(atRule, [clonedDeclaration]);
@@ -260,10 +248,9 @@ function substituteIfElseNode(
             const isWildCard: boolean =
                 targetWrapper != declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
 
-            replaceNodeOrValue(
-                arena,
+            arena.replaceToken(
                 mapped(isWildCard ? targetWrapper : node) as Token,
-                conditionValue(arena, node, nodeMap),
+                ...conditionValue(arena, node, nodeMap),
             );
 
             // inlined: arena.appendChildren(atRule, clonedDeclaration)
@@ -346,7 +333,7 @@ function processNode(
     }
 
     if (result.length > 0 && arena.parents[declarationNode] != 0) {
-        replaceNode(arena, declarationNode, result);
+        arena.replaceChild(declarationNode, ...result);
 
         if (!result.includes(declarationNode)) {
             arena.detach(declarationNode);

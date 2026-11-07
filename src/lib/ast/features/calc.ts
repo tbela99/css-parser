@@ -5,7 +5,6 @@ import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
-import { replaceNodeOrValue } from "../../parser/utils/token.ts";
 import type { AstArena } from "../arena.ts";
 import { ValueWalker } from "../walk.ts";
 
@@ -59,7 +58,9 @@ export class ComputeCalcExpressionFeature {
                     const result: Token[] = evaluate(arena, [value]);
 
                     try {
-                        replaceNodeOrValue(arena, value, result);
+                        if (result.length > 0) {
+                            arena.replaceToken(value, ...result);
+                        }
                     } catch (e) {}
                     continue;
                 }

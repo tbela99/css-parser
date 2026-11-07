@@ -23,7 +23,7 @@ import { ValidationSyntaxGroupEnum } from '../validation/parser/typedef.js';
 import { matchAtRuleImportSyntax } from './utils/at-rule-import.js';
 import { matchAtRuleWhenElseSyntax } from './utils/at-rule-when-else.js';
 import { parseAtRuleSupportSyntax } from './utils/at-rule-support.js';
-import { replaceNode, replaceNodeOrValue, trimWhiteSpaceTokens } from './utils/token.js';
+import { trimWhiteSpaceTokens } from './utils/token.js';
 import { parseAtRuleContainerQueryList } from './utils/at-rule-container.js';
 import { parseMediaqueryList } from './utils/at-rule-media.js';
 import { matchAtRuleSyntax } from './utils/at-rule.js';
@@ -915,10 +915,10 @@ function doParseSync(tokenizer, options = {}) {
                     if (replacement == node) ;
                     else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
-                            replaceNode(arena, node, replacement);
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                         }
                         else {
-                            replaceNodeOrValue(arena, node, replacement);
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                         }
                     }
                     else {
@@ -1354,7 +1354,7 @@ function doParseSync(tokenizer, options = {}) {
                     }
                     else if ((arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                         arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                        replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                        arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                     }
                 }
             }
@@ -1877,10 +1877,10 @@ async function doParse(iter, options = {}) {
                     if (replacement == node) ;
                     else if (replacement != null) {
                         if (arena.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) {
-                            replaceNode(arena, node, replacement);
+                            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                         }
                         else {
-                            replaceNodeOrValue(arena, node, replacement);
+                            arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                         }
                     }
                     else {
@@ -2421,7 +2421,7 @@ async function doParse(iter, options = {}) {
                     }
                     else if ((arena.dataTypes[value] == EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                         arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                        replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                        arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                     }
                 }
             }

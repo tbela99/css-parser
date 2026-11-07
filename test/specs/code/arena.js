@@ -3,7 +3,6 @@ import { Arena, AstArena, TokenField, arenaColumns } from "../../../dist/src/lib
 import { ARENA, ARENAID, AstArenaNode } from "../../../dist/src/lib/ast/arena-node.js";
 import { parseDeclarations, parseString } from "../../../dist/src/lib/parser/parse.js";
 import { renderValue as renderToken } from "../../../dist/src/lib/printer/render.js";
-import { replaceNode } from "../../../dist/src/lib/parser/utils/token.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("ast arena", function () {
@@ -372,13 +371,13 @@ h1 { font-size: 2em }
             expect(other.arena.getName(other.nodes[0])).equals("color");
         });
 
-        it("replaceNode() and release() #13", async function () {
+        it("replaceChild() and release() #13", async function () {
             const result = await parse(".a{color:red}.b{color:blue}", { minify: false });
             const arena = result.arena;
             const [a, b] = arena.children(result.ast);
             const clone = arena.clone(b, true);
 
-            replaceNode(arena, a, clone);
+            arena.replaceChild(a, clone);
             expect(arena.children(result.ast)).deep.equals([clone, b]);
             expect(arena.parents[a]).equals(0);
 
@@ -494,7 +493,9 @@ h1 { font-size: 2em }
             arena.appendTokens(declaration, arena.createToken(EnumToken.WhitespaceTokenType), px);
             expect(arena.tokens(declaration)).deep.equals([calc, arena.nextSibling[calc], px]);
             expect(arena.tokenCount(declaration)).equals(3);
-            arena.replaceToken(calc, arena.createToken(EnumToken.IdenTokenType, "auto"));
+            const replacement = arena.createToken(EnumToken.IdenTokenType, "auto");
+
+            arena.replaceToken(calc, replacement);
             expect(arena.parents[calc]).equals(0);
             expect(render(arena, declaration).code).equals("width:auto 3px");
         });

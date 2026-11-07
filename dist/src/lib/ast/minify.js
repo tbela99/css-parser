@@ -13,7 +13,6 @@ import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/synta
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
 import { combinators } from '../syntax/constants.js';
-import { replaceNode } from '../parser/utils/token.js';
 import { parseString } from '../parser/parse.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { ValueWalker } from './walk.js';
@@ -94,7 +93,7 @@ function minify(arena, ast, options = {}, recursive = false, errors, nestingCont
                 (!Array.isArray(replacement) || replacement.length > 0) &&
                 replacement != node &&
                 arena.parents[node] != 0) {
-                replaceNode(arena, node, replacement);
+                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
             }
             if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
                 for (let child = arena.firstChild[replacement]; child != 0; child = arena.nextSibling[child]) {

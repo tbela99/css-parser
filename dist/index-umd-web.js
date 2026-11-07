@@ -22864,104 +22864,6 @@
         }
     }
 
-    const trimTokenSpace = new Set([
-        exports.EnumToken.CommaTokenType,
-        exports.EnumToken.DelimTokenType,
-        exports.EnumToken.GtTokenType,
-        exports.EnumToken.GteTokenType,
-        exports.EnumToken.LtTokenType,
-        exports.EnumToken.LteTokenType,
-        exports.EnumToken.ChildCombinatorTokenType,
-        exports.EnumToken.PipeTokenType,
-        exports.EnumToken.ColonTokenType,
-    ]);
-    const trimSpaceAfter = new Set([
-        ...tokensfuncSet.values(),
-        exports.EnumToken.ChildCombinatorTokenType,
-        exports.EnumToken.SupportsQueryConditionTokenType,
-        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
-        exports.EnumToken.CommaTokenType,
-        exports.EnumToken.PipeTokenType,
-    ]);
-    /**
-     * Replace a value token in its parent (token list of a node, function arguments or structured token field). the
-     * parent is `arena.getValueParent(node)`
-     * @param arena
-     * @param node token id
-     * @param replacement token id(s)
-     * @throws TypeError replacement is null
-     * @throws ReferenceError the token is detached
-     */
-    function replaceNodeOrValue(arena, node, replacement) {
-        if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-            throw new TypeError(`replacement is null`);
-        }
-        if (arena.parents[node] == 0) {
-            throw new ReferenceError("Node not found");
-        }
-        if (Array.isArray(replacement)) {
-            arena.replaceToken(node, ...replacement);
-        }
-        else {
-            arena.replaceToken(node, replacement);
-        }
-        return true;
-    }
-    /**
-     * Replace an ast node in its parent
-     * @param arena
-     * @param node node id
-     * @param replacement node ids
-     * @throws TypeError replacement is null
-     * @throws ReferenceError node has no parent
-     */
-    function replaceNode(arena, node, replacement) {
-        if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-            throw new TypeError(`replacement is null`);
-        }
-        if (arena.parents[node] == 0) {
-            throw new ReferenceError("Node not found");
-        }
-        arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
-    }
-    /**
-     * remove leading, trailing and redundant whitespace tokens (in place)
-     * @param arena
-     * @param tokens
-     */
-    function trimWhiteSpaceTokens(arena, tokens) {
-        let i = 0;
-        if (tokens.length > 0 && arena.dataTypes[tokens[0]] === exports.EnumToken.WhitespaceTokenType) {
-            tokens.shift();
-        }
-        if (tokens.length > 0 && arena.dataTypes[tokens[tokens.length - 1]] === exports.EnumToken.WhitespaceTokenType) {
-            tokens.pop();
-        }
-        if (tokens.length === 1) {
-            if (arena.dataTypes[tokens[0]] === exports.EnumToken.WhitespaceTokenType) {
-                tokens.length = 0;
-            }
-            return tokens;
-        }
-        for (; i < tokens.length; i++) {
-            if (trimTokenSpace.has(arena.dataTypes[tokens[i]])) {
-                if (i + 1 < tokens.length && arena.dataTypes[tokens[i + 1]] === exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(i + 1, 1);
-                }
-                if (i > 0 && arena.dataTypes[tokens[i - 1]] === exports.EnumToken.WhitespaceTokenType) {
-                    tokens.splice(--i, 1);
-                    continue;
-                }
-            }
-            if (trimSpaceAfter.has(arena.dataTypes[tokens[i]]) &&
-                i + 1 < tokens.length &&
-                arena.dataTypes[tokens[i + 1]] === exports.EnumToken.WhitespaceTokenType) {
-                tokens.splice(i + 1, 1);
-            }
-        }
-        return tokens;
-    }
-
     class ComputeCalcExpressionFeature {
         accept = new Set([exports.EnumToken.RuleNodeType, exports.EnumToken.AtRuleNodeType]);
         get ordering() {
@@ -23000,7 +22902,9 @@
                     if (typ == exports.EnumToken.BinaryExpressionTokenType) {
                         const result = evaluate(arena, [value]);
                         try {
-                            replaceNodeOrValue(arena, value, result);
+                            if (result.length > 0) {
+                                arena.replaceToken(value, ...result);
+                            }
                         }
                         catch (e) { }
                         continue;
@@ -24301,7 +24205,7 @@
                 if (target != null &&
                     arena.dataTypes[target] === exports.EnumToken.IdenTokenType &&
                     equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])) {
-                    replaceNodeOrValue(arena, mapped(targetWrapper), conditionValue(arena, elseCondition, nodeMap));
+                    arena.replaceToken(mapped(targetWrapper), ...conditionValue(arena, elseCondition, nodeMap));
                     if (targetParentWrapper != declaration) {
                         const siblings = arena.tokens(targetParentWrapper);
                         let index = siblings.indexOf(targetWrapper);
@@ -24316,7 +24220,7 @@
                                         if (arena.dataTypes[child] === exports.EnumToken.IfElseConditionTokenType) {
                                             const leftSide = conditionLeft(arena, arena.field(child, exports.TokenField.L));
                                             if (left != null && leftSide != null && eqToken(arena, left, leftSide)) {
-                                                replaceNodeOrValue(arena, mapped(siblings[i]), conditionValue(arena, arena.field(child, exports.TokenField.R), nodeMap));
+                                                arena.replaceToken(mapped(siblings[i]), ...conditionValue(arena, arena.field(child, exports.TokenField.R), nodeMap));
                                                 cache.add(arena.field(child, exports.TokenField.L));
                                             }
                                         }
@@ -24329,7 +24233,7 @@
             }
             result.push(clonedDeclaration);
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-            replaceNodeOrValue(arena, mapped(targetWrapper), mapped(arena.field(node, exports.TokenField.L)));
+            arena.replaceToken(mapped(targetWrapper), mapped(arena.field(node, exports.TokenField.L)));
             result.push(clonedDeclaration);
         }
         else if (arena.dataTypes[node] === exports.EnumToken.IfConditionTokenType) {
@@ -24340,7 +24244,7 @@
             const leftType = arena.dataTypes[left];
             if (leftType === exports.EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
                 clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-                replaceNodeOrValue(arena, mapped(targetWrapper == declaration ? node : targetWrapper), conditionValue(arena, node, nodeMap));
+                arena.replaceToken(mapped(targetWrapper == declaration ? node : targetWrapper), ...conditionValue(arena, node, nodeMap));
                 result.push(clonedDeclaration);
             }
             else if (leftType === exports.EnumToken.WhenElseFunctionTokenType) {
@@ -24353,7 +24257,7 @@
                     convertColor: minify,
                 });
                 clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-                replaceNodeOrValue(arena, mapped(node), conditionValue(arena, node, nodeMap));
+                arena.replaceToken(mapped(node), ...conditionValue(arena, node, nodeMap));
                 // inlined: arena.appendChildren(atRule, clonedDeclaration)
                 arena.appendChildList(atRule, [clonedDeclaration]);
                 result.push(atRule);
@@ -24363,7 +24267,7 @@
                 const atRule = createAtRule(arena, declaration, parent, "container", [arena.clone(left, true)]);
                 clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
                 const isWildCard = targetWrapper != declaration && arena.dataTypes[targetWrapper] === exports.EnumToken.WildCardFunctionTokenType;
-                replaceNodeOrValue(arena, mapped(isWildCard ? targetWrapper : node), conditionValue(arena, node, nodeMap));
+                arena.replaceToken(mapped(isWildCard ? targetWrapper : node), ...conditionValue(arena, node, nodeMap));
                 // inlined: arena.appendChildren(atRule, clonedDeclaration)
                 arena.appendChildList(atRule, [clonedDeclaration]);
                 result.push(atRule);
@@ -24416,7 +24320,7 @@
             }
         }
         if (result.length > 0 && arena.parents[declarationNode] != 0) {
-            replaceNode(arena, declarationNode, result);
+            arena.replaceChild(declarationNode, ...result);
             if (!result.includes(declarationNode)) {
                 arena.detach(declarationNode);
             }
@@ -24529,7 +24433,7 @@
                     (!Array.isArray(replacement) || replacement.length > 0) &&
                     replacement != node &&
                     arena.parents[node] != 0) {
-                    replaceNode(arena, node, replacement);
+                    arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                 }
                 if (!Array.isArray(replacement) && arena.flags[replacement] & exports.EnumAstNodeStatus.HasChildren) {
                     for (let child = arena.firstChild[replacement]; child != 0; child = arena.nextSibling[child]) {
@@ -34461,6 +34365,63 @@
         return { success, errors };
     }
 
+    const trimTokenSpace = new Set([
+        exports.EnumToken.CommaTokenType,
+        exports.EnumToken.DelimTokenType,
+        exports.EnumToken.GtTokenType,
+        exports.EnumToken.GteTokenType,
+        exports.EnumToken.LtTokenType,
+        exports.EnumToken.LteTokenType,
+        exports.EnumToken.ChildCombinatorTokenType,
+        exports.EnumToken.PipeTokenType,
+        exports.EnumToken.ColonTokenType,
+    ]);
+    const trimSpaceAfter = new Set([
+        ...tokensfuncSet.values(),
+        exports.EnumToken.ChildCombinatorTokenType,
+        exports.EnumToken.SupportsQueryConditionTokenType,
+        exports.EnumToken.SupportsQueryUnaryConditionTokenType,
+        exports.EnumToken.CommaTokenType,
+        exports.EnumToken.PipeTokenType,
+    ]);
+    /**
+     * remove leading, trailing and redundant whitespace tokens (in place)
+     * @param arena
+     * @param tokens
+     */
+    function trimWhiteSpaceTokens(arena, tokens) {
+        let i = 0;
+        if (tokens.length > 0 && arena.dataTypes[tokens[0]] === exports.EnumToken.WhitespaceTokenType) {
+            tokens.shift();
+        }
+        if (tokens.length > 0 && arena.dataTypes[tokens[tokens.length - 1]] === exports.EnumToken.WhitespaceTokenType) {
+            tokens.pop();
+        }
+        if (tokens.length === 1) {
+            if (arena.dataTypes[tokens[0]] === exports.EnumToken.WhitespaceTokenType) {
+                tokens.length = 0;
+            }
+            return tokens;
+        }
+        for (; i < tokens.length; i++) {
+            if (trimTokenSpace.has(arena.dataTypes[tokens[i]])) {
+                if (i + 1 < tokens.length && arena.dataTypes[tokens[i + 1]] === exports.EnumToken.WhitespaceTokenType) {
+                    tokens.splice(i + 1, 1);
+                }
+                if (i > 0 && arena.dataTypes[tokens[i - 1]] === exports.EnumToken.WhitespaceTokenType) {
+                    tokens.splice(--i, 1);
+                    continue;
+                }
+            }
+            if (trimSpaceAfter.has(arena.dataTypes[tokens[i]]) &&
+                i + 1 < tokens.length &&
+                arena.dataTypes[tokens[i + 1]] === exports.EnumToken.WhitespaceTokenType) {
+                tokens.splice(i + 1, 1);
+            }
+        }
+        return tokens;
+    }
+
     function parseAtRuleContainerQueryList(arena, stream, context, options = {}) {
         let matchCount = 0;
         const errors = [];
@@ -35827,10 +35788,10 @@
                         if (replacement == node) ;
                         else if (replacement != null) {
                             if (arena.flags[node] & (exports.EnumAstNodeStatus.HasChildren | exports.EnumAstNodeStatus.HasValues)) {
-                                replaceNode(arena, node, replacement);
+                                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                             }
                             else {
-                                replaceNodeOrValue(arena, node, replacement);
+                                arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                             }
                         }
                         else {
@@ -36266,7 +36227,7 @@
                         }
                         else if ((arena.dataTypes[value] == exports.EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                             arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                            replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                            arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                         }
                     }
                 }
@@ -36789,10 +36750,10 @@
                         if (replacement == node) ;
                         else if (replacement != null) {
                             if (arena.flags[node] & (exports.EnumAstNodeStatus.HasChildren | exports.EnumAstNodeStatus.HasValues)) {
-                                replaceNode(arena, node, replacement);
+                                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                             }
                             else {
-                                replaceNodeOrValue(arena, node, replacement);
+                                arena.replaceToken(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
                             }
                         }
                         else {
@@ -37333,7 +37294,7 @@
                         }
                         else if ((arena.dataTypes[value] == exports.EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                             arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                            replaceNodeOrValue(arena, value, arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                            arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
                         }
                     }
                 }
@@ -39157,8 +39118,6 @@
     exports.parseSyntax = parseSyntax;
     exports.render = render;
     exports.renderToken = renderValue;
-    exports.replaceNode = replaceNode;
-    exports.replaceNodeOrValue = replaceNodeOrValue;
     exports.resolve = resolve;
     exports.transform = transform;
     exports.transformSync = transformSync;

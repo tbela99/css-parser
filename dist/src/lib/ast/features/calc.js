@@ -10,7 +10,6 @@ import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { evaluate } from '../math/expression.js';
 import { FeatureWalkMode } from './type.js';
 import { tokensfuncSet, mathFuncs } from '../../syntax/constants.js';
-import { replaceNodeOrValue } from '../../parser/utils/token.js';
 import { ValueWalker } from '../walk.js';
 
 class ComputeCalcExpressionFeature {
@@ -51,7 +50,9 @@ class ComputeCalcExpressionFeature {
                 if (typ == EnumToken.BinaryExpressionTokenType) {
                     const result = evaluate(arena, [value]);
                     try {
-                        replaceNodeOrValue(arena, value, result);
+                        if (result.length > 0) {
+                            arena.replaceToken(value, ...result);
+                        }
                     }
                     catch (e) { }
                     continue;

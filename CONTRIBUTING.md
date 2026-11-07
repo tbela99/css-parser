@@ -29,7 +29,7 @@ Use a current Node.js release compatible with the project dependencies.
 
 ## Update generated configuration
 
-The repository includes scripts for refreshing generated CSS property and syntax data. Run them from the project root:
+The repository includes scripts for refreshing generated CSS shorthand properties and syntax data. Run them from the project root:
 
 ```sh
 npm run config-update

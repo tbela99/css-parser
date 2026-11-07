@@ -4,15 +4,13 @@
 
 # css-parser
 
-> [!CAUTION] 
-> This new experimental version of the library aim to improve performance and memory usage. It does not intend to be backward compatible with the current 1.x branch.
+A zero-allocation, high-performance CSS processing engine for Node.js and the browser, combining parsing, validation, transformation, minification, and AST-based tooling in a single solution.
 
-> [!IMPORTANT] 
-> This branch is a work in progress and it might contain bugs.
-
-An all-in-one CSS parsing solution for Node.js and the browser, covering parsing, validation, transformation, minification, and AST-based tooling.
-
-The library always fully parses the stylesheet into a structured AST, and token values are exposed as typed data so custom transforms, plugins, and analysis can work with reliable, semantic input instead of raw strings.
+Every stylesheet is fully parsed into a structured AST, with token values represented as typed data. This provides a reliable semantic foundation for custom transformations, plugin development, and advanced stylesheet analysis without relying on raw string manipulation.
+ 
+> [!NOTE]
+> Version 2.0 has been rewritten to use arena memory for AST nodes and tokens, improving memory usage and performance. On the Tailwind CSS parsing and validation workload, runtime is 42% faster than v1.8.2 while using 60% less memory.<br>
+This major release also introduces breaking changes and removes deprecated features. See the [migration guide](https://tbela99.github.io/css-parser/docs/documents/Guide.Migration.html) for details.
 
 ## Installation
 
@@ -115,7 +113,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 147.37 ms          | 356.65 ms                 |
+| Time                  | 128.67 ms          | 268.86 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 ## Playground

@@ -26,7 +26,6 @@ export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
 export { Arena, AstArena, TokenField, arenaColumns } from './lib/ast/arena.js';
 export { ARENA, ARENAID, AstArenaNode } from './lib/ast/arena-node.js';
-export { replaceNode, replaceNodeOrValue } from './lib/parser/utils/token.js';
 export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
 export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { parseSyntax } from './lib/validation/parser/parse.js';

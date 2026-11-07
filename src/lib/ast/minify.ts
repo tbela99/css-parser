@@ -20,7 +20,6 @@ import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/synta
 import { FeatureWalkMode } from "./features/type.ts";
 import { trimArray } from "../validation/match.ts";
 import { combinators } from "../syntax/constants.ts";
-import { replaceNode } from "../parser/utils/token.ts";
 import { parseString } from "../parser/parse.ts";
 import { equalsIgnoreCase } from "../parser/utils/text.ts";
 import { ValueWalker } from "./walk.ts";
@@ -159,7 +158,7 @@ export function minify(
                 replacement != node &&
                 arena.parents[node] != 0
             ) {
-                replaceNode(arena, node, replacement);
+                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
             }
 
             if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {

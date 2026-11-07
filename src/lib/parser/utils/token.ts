@@ -1,4 +1,3 @@
-import type { AstNode } from "../../../@types/ast.d.ts";
 import type { Token } from "../../../@types/token.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { tokensfuncSet } from "../../syntax/constants.ts";
@@ -23,53 +22,6 @@ const trimSpaceAfter: Set<EnumToken> = new Set([
     EnumToken.CommaTokenType,
     EnumToken.PipeTokenType,
 ]);
-
-/**
- * Replace a value token in its parent (token list of a node, function arguments or structured token field). the
- * parent is `arena.getValueParent(node)`
- * @param arena
- * @param node token id
- * @param replacement token id(s)
- * @throws TypeError replacement is null
- * @throws ReferenceError the token is detached
- */
-export function replaceNodeOrValue(arena: AstArena, node: Token, replacement: Token | Token[]): boolean {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-
-    if (arena.parents[node] == 0) {
-        throw new ReferenceError("Node not found");
-    }
-
-    if (Array.isArray(replacement)) {
-        arena.replaceToken(node, ...replacement);
-    } else {
-        arena.replaceToken(node, replacement);
-    }
-
-    return true;
-}
-
-/**
- * Replace an ast node in its parent
- * @param arena
- * @param node node id
- * @param replacement node ids
- * @throws TypeError replacement is null
- * @throws ReferenceError node has no parent
- */
-export function replaceNode(arena: AstArena, node: AstNode, replacement: AstNode | AstNode[]): void {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-
-    if (arena.parents[node] == 0) {
-        throw new ReferenceError("Node not found");
-    }
-
-    arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
-}
 
 /**
  * remove leading, trailing and redundant whitespace tokens (in place)

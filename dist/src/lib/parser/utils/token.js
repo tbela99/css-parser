@@ -28,47 +28,6 @@ const trimSpaceAfter = new Set([
     EnumToken.PipeTokenType,
 ]);
 /**
- * Replace a value token in its parent (token list of a node, function arguments or structured token field). the
- * parent is `arena.getValueParent(node)`
- * @param arena
- * @param node token id
- * @param replacement token id(s)
- * @throws TypeError replacement is null
- * @throws ReferenceError the token is detached
- */
-function replaceNodeOrValue(arena, node, replacement) {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-    if (arena.parents[node] == 0) {
-        throw new ReferenceError("Node not found");
-    }
-    if (Array.isArray(replacement)) {
-        arena.replaceToken(node, ...replacement);
-    }
-    else {
-        arena.replaceToken(node, replacement);
-    }
-    return true;
-}
-/**
- * Replace an ast node in its parent
- * @param arena
- * @param node node id
- * @param replacement node ids
- * @throws TypeError replacement is null
- * @throws ReferenceError node has no parent
- */
-function replaceNode(arena, node, replacement) {
-    if (replacement == null || (Array.isArray(replacement) && replacement.length === 0)) {
-        throw new TypeError(`replacement is null`);
-    }
-    if (arena.parents[node] == 0) {
-        throw new ReferenceError("Node not found");
-    }
-    arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
-}
-/**
  * remove leading, trailing and redundant whitespace tokens (in place)
  * @param arena
  * @param tokens
@@ -106,4 +65,4 @@ function trimWhiteSpaceTokens(arena, tokens) {
     return tokens;
 }
 
-export { replaceNode, replaceNodeOrValue, trimWhiteSpaceTokens };
+export { trimWhiteSpaceTokens };

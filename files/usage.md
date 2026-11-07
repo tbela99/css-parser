@@ -5,7 +5,7 @@ category: Guides
 ---
 
 ## Main function differences
-The library provides **synchronous** and **asynchronous** functions for parsing, analyzing, and transforming CSS.
+The library offers two variants—synchronous and asynchronous functions—for parsing, analyzing, and transforming CSS.
 
 The **synchronous API** is marginally faster than the asynchronous API, but it comes with some limitations. See the [details below](#difference-between-sync-and-async-apis).
 
@@ -448,7 +448,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,728 bytes    | 1,633,188 bytes           |
-| Time                  | 205.91 ms          | 471.89 ms                 |
+| Time                  | 128.67 ms          | 268.86 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 

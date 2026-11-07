@@ -51,7 +51,6 @@ export { Arena, AstArena, TokenField, arenaColumns } from "./lib/ast/arena.ts";
 export type { ArenaProperties, ArenaTransferables } from "./lib/ast/arena.ts";
 export { AstArenaNode, ARENAID, ARENA } from "./lib/ast/arena-node.ts";
 export type { AstArenaNodeInput } from "./lib/ast/arena-node.ts";
-export { replaceNodeOrValue, replaceNode } from "./lib/parser/utils/token.ts";
 export { PropertyList } from "./lib/parser/declaration/list.ts";
 export {
     EnumToken,

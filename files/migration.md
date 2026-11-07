@@ -19,8 +19,8 @@ methods of the arena. This page lists every breaking change and how to update th
 | [visitors](#visitors) | `handler(node, ...)` | `handler(arena, id)` |
 | [traversal](#traversal-and-search) | `walk(ast)`, `walkValues(tokens)`, `find(ast, matcher)`, ... functions | `arena.walk(id)`, `arena.walkValues(tokens)`, `arena.find(id, matcher)`, ... methods returning ids |
 | [callbacks](#callbacks) | filters and matchers called with the node | called with `(arena, id)` |
-| [removed functions](#removed-functions) | `parseFile()`, `transformFile()`, `cloneNode()`, `cloneValue()`, `expand()`, `getNodeProperty()`, `setNodeProperty()` | `parse({file})`, `transform({file})`, `arena.clone()`, `arena.expand()`, arena methods |
-| [replaceNodeOrValue()](#replacenodeorvalue) | `replaceNodeOrValue(parent, node, replacement)` | `replaceNodeOrValue(arena, node, replacement)` |
+| [removed functions](#removed-functions) | `parseFile()`, `transformFile()`, `cloneNode()`, `cloneValue()`, `expand()`, `replaceNode()`, `getNodeProperty()`, `setNodeProperty()` | `parse({file})`, `transform({file})`, `arena.clone()`, `arena.expand()`, `arena.replaceChild()`, other arena methods |
+| [value token replacement](#value-token-replacement) | `replaceNodeOrValue(parent, node, replacement)` | `arena.replaceToken(node, ...replacementTokens)` |
 | [enums](#enums) | `ValidationLevel`, `EnumToken.Invalid*` | removed, `EnumToken` renumbered from 1 |
 | [types](#types) | `WalkResult`, `WalkAttributesResult`, `TokenSearchResult`, `AstInvalid*`, ... | removed or changed |
 | [memory](#memory) | garbage collected node objects | the arena keeps the detached nodes until it is compacted |
@@ -226,16 +226,13 @@ A callback that does not capture variables can be declared once, outside the loo
 | `getNodeProperty(node, key)`, `setNodeProperty(node, key, value)` | `arena.getState()`, `arena.setState()`, `arena.getErrors()`, `arena.setErrors()`, `arena.getLocation()`, `arena.setLocation()`, ... or the view properties: `arena.toObject(id).state = EnumAstNodeStatus.ValidationFailed` |
 | `arena.rewind()` | `arena.mark()`, `arena.release()`, `arena.trim()`, see [Memory](#memory) |
 
-### replaceNodeOrValue()
+### Value token replacement
 
-The `parent` argument is removed: the parent is read from the arena (`arena.getValueParent(node)`).
+`replaceNodeOrValue()` has been removed. Use `arena.replaceToken()` to replace a token in its current parent list with one or more token IDs; the parent is inferred from the token's arena links.
 
 ```ts
-// before (2.0 alphas)
-replaceNodeOrValue(arena, declaration, token, replacement);
-
-// after
-replaceNodeOrValue(arena, token, replacement);
+arena.replaceToken(token, replacement);
+arena.replaceToken(token, firstReplacement, secondReplacement);
 ```
 
 ### Enums
