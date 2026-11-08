@@ -764,7 +764,7 @@
                         console.error({ transformResult });
 
                         mapping.value = transformResult.mapping ? JSON.stringify(transformResult.mapping, null, 1) : "";
-                        ast.value = JSON.stringify(transformResult.ast, null, 1);
+                        ast.value = JSON.stringify(transformResult.arena.toObject(transformResult.arena.root), null, 1);
 
                         errors.value =
                             transformResult.errors.length === 0 ? "" : JSON.stringify(transformResult.errors, null, 1);
@@ -804,15 +804,21 @@
                                 "",
                             );
 
-                        buildTree(tree, transformResult.ast, {
-                            rootName: EnumToken[transformResult.ast.typ],
+                            console.error(transformResult.arena);
+
+                            const rootNode = transformResult.arena.toPlainObject(transformResult.arena.root);
+                            console.error({ rootNode });
+
+                        buildTree(tree, rootNode, {
+                            rootName: EnumToken[rootNode.typ],
+                            exclude: ['typ','state', 'raw', 'optimized', 'tokens', 'loc'],
                             transform: (name, value, object) =>
                                 Array.isArray(object)
                                     ? {
                                           name: name + " [" + EnumToken[value.typ] + "]",
                                           value,
                                       }
-                                    : { name, value },
+                                    : { name, value: name == 'typ' ? EnumToken[value] : value },
                         });
                     });
                 }

@@ -108,8 +108,11 @@ function createTreeDom(obj, key, options) {
         const child = obj[key];
 
         const childTypeof = typeof child;
-
         const {name, value} = options?.transform(key, child, obj) ?? {name: key, value: child};
+
+        if (options?.exclude?.includes(name)) {
+            continue;
+        }
 
         if (childTypeof === "object" && child != null) {
 
