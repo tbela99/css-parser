@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0-alpha.1
+	Version: 2.0.1
 	License: MIT
  */
 import { getAngle, convertColor } from '../syntax/color/color.js';
@@ -17,7 +17,7 @@ import { LineMap } from '../parser/linesmap.js';
 import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
 import { TokenField } from '../ast/arena.js';
-import { StructuralMemo } from '../ast/fingerprint.js';
+import { StructuralMemo } from '../ast/cache.js';
 
 /**
  * Rendered strings shared by the renderer.
