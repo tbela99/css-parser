@@ -55,7 +55,7 @@ const patches: PatchSyntax = (await fetch(
 
 const json = {
     declarations: await parseDeclarationsSyntax(),
-    functions: await parseFunctionsSyntax(),
+    // functions: await parseFunctionsSyntax(),
     syntaxes: await parseAllSyntaxes(),
     selectors: await parseSelectorsSyntax(),
     atRules: await parseAtRulesSyntax(),
