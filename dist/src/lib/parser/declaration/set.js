@@ -7,7 +7,7 @@
  */
 import { numericTokenTypes } from '../../ast/arena.js';
 import { eqToken } from '../utils/eq.js';
-import { EnumToken } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { isLength } from '../../syntax/syntax.js';
 
 function dedup(arena, values) {
@@ -144,6 +144,11 @@ class PropertySet {
         let iterator;
         const arena = this.arena;
         const declarations = this.declarations;
+        // the !important declarations are not merged: `column-gap: 16px !important; row-gap: 40px !important`
+        if (!declarations.has(this.config.shorthand) &&
+            [...declarations.values()].some((declaration) => arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration)) {
+            return [...declarations.values()][Symbol.iterator]();
+        }
         if (declarations.size < this.config.properties.length) {
             const values = [...declarations.values()];
             if (this.isShortHand()) {

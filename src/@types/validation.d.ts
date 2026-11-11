@@ -10,7 +10,7 @@ import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../lib/validation/p
  */
 export declare interface ValidationSyntaxNode {
     /**
-     * mdn data syntax
+     * webref syntax
      */
     syntax: string;
     /**

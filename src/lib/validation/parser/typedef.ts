@@ -81,6 +81,10 @@ export enum ValidationSyntaxGroupEnum {
     Declarations = "declarations",
     Functions = "functions",
     Syntaxes = "syntaxes",
+    /**
+     * value types, keyed by their name without the angle brackets (`color` for `<color>`). referenced as {@link Syntaxes}
+     */
+    Types = "types",
     Selectors = "selectors",
     AtRules = "atRules",
     Units = "units",

@@ -780,28 +780,23 @@ transform: translate3d(0, 100%, 0);
                 removeDuplicateDeclarations: ['transform']
             }).then((result) => expect(result.code).equals(`@-webkit-keyframes slideOutUp {
  0% {
-  -webkit-transform: none;
   transform: none
  }
  to {
   visibility: hidden;
-  -webkit-transform: translateY(-100%);
   transform: translateY(-100%)
  }
 }
 @keyframes slideOutUp {
  0% {
-  -webkit-transform: none;
   transform: none
  }
  to {
   visibility: hidden;
-  -webkit-transform: translateY(-100%);
   transform: translateY(-100%)
  }
 }
 .animate__slideOutUp {
- -webkit-animation-name: slideOutUp;
  animation-name: slideOutUp
 }`));
         });

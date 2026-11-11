@@ -12,6 +12,7 @@ import {
     timingFunc,
     transformFunctions,
     urlFunc,
+    validationUnits,
     whenElseFunc,
     wildCardFuncs,
 } from "../syntax/constants.ts";
@@ -299,6 +300,20 @@ assignTokenMap(resolutionUnits, EnumToken.ResolutionTokenType);
 assignTokenMap(angleUnits, EnumToken.AngleTokenType);
 assignTokenMap(timeUnits, EnumToken.TimeTokenType);
 assignTokenMap(frequencyUnits, EnumToken.FrequencyTokenType);
+
+// the units of the other dimensions are rendered in their canonical spelling: `6DB` is rendered `6dB`
+for (const unit of validationUnits) {
+    let items: Map<EnumToken, string> | undefined = itemTable.get(unit, 0, unit.length);
+
+    if (items == null) {
+        items = new Map();
+        itemTable.set(unit.toLowerCase(), items);
+    }
+
+    if (!items.has(EnumToken.DimensionTokenType)) {
+        items.set(EnumToken.DimensionTokenType, unit);
+    }
+}
 assignTokenMap(pseudoElements, EnumToken.PseudoElementTokenType);
 assignTokenMap(containerFunc, EnumToken.ContainerFunctionTokenDefType, "(");
 assignTokenMap(urlFunc, EnumToken.UrlFunctionTokenDefType, "(");
@@ -332,6 +347,7 @@ export const hintsEnum = new Set([
 
 export const enum TokenMap {
     EXCLAMATION = 33, // '!', EXCLAMATION
+    QUESTION = 63, // '?', QUESTION MARK
     SLASH = 47, // '/'
     LOWERTHAN = 60, // '<', LESS THAN
     HASH = 35, // '#', HASH
@@ -405,6 +421,40 @@ function findItem(type: EnumToken, parseInfo: ParseInfo, start: number, end: num
     }
 
     return itemTable.get(parseInfo.stream, start, end)?.get(type) ?? null;
+}
+
+/**
+ * true if the character is a hexadecimal digit
+ * @param codepoint
+ */
+function isHexDigit(codepoint: number): boolean {
+    return (
+        (codepoint >= 0x30 && codepoint <= 0x39) ||
+        (codepoint >= 0x41 && codepoint <= 0x46) ||
+        (codepoint >= 0x61 && codepoint <= 0x66)
+    );
+}
+
+/**
+ * true if the character may follow a numeric token: the end of the stream, a whitespace, `)`, `;`, `!`
+ * (`0!important`), `}`, `/`, `*`, `,`, and `+` after a dimension (`2n+1`)
+ * @param codepoint
+ * @param isDimension
+ */
+function isNumericTokenEnd(codepoint: number, isDimension: boolean): boolean {
+    return (
+        // eof
+        codepoint != codepoint ||
+        isWhiteSpace(codepoint) ||
+        codepoint == TokenMap.RIGHT_PARENTHESIS ||
+        codepoint == TokenMap.SEMICOLON ||
+        codepoint == TokenMap.EXCLAMATION ||
+        codepoint == TokenMap.RIGHT_BRACE ||
+        codepoint == TokenMap.SLASH ||
+        codepoint == TokenMap.STAR ||
+        codepoint == TokenMap.COMMA ||
+        (isDimension && codepoint == TokenMap.PLUS)
+    );
 }
 
 /**
@@ -737,309 +787,177 @@ export class Tokenizer {
     }
 
     /**
-     * consume number, dimension, or percentage
+     * consume a unicode range: `U+` followed by one to six hexadecimal digits or `?` (the `?` are the last
+     * characters), optionally followed by `-` and one to six hexadecimal digits: `U+0025-00FF`, `U+4??`.
+     * the range is followed by the end of the stream, a whitespace, `,`, `;`, `}`, `)` or `!`: `u+a{` is a selector
      * @param parseInfo
-     * @returns
+     * @returns the length of the token, 0 if it is not a unicode range
+     */
+    consumeUnicodeRangeToken(parseInfo: ParseInfo): number {
+        const stream: string = parseInfo.stream;
+        const start: number = parseInfo.currentPosition - parseInfo.offset;
+        let position: number = start + 2;
+        let count: number = 0;
+        let wildcards: number = 0;
+        let codepoint: number;
+
+        if (stream.charCodeAt(start + 1) != TokenMap.PLUS) {
+            return 0;
+        }
+
+        while (count < 6) {
+            codepoint = stream.charCodeAt(position);
+
+            if (wildcards == 0 && isHexDigit(codepoint)) {
+                count++;
+                position++;
+            } else if (codepoint == TokenMap.QUESTION) {
+                wildcards++;
+                count++;
+                position++;
+            } else {
+                break;
+            }
+        }
+
+        if (count == 0) {
+            return 0;
+        }
+
+        // the end of the range
+        if (
+            wildcards == 0 &&
+            stream.charCodeAt(position) == TokenMap.MINUS &&
+            isHexDigit(stream.charCodeAt(position + 1))
+        ) {
+            position++;
+            count = 0;
+
+            while (count < 6 && isHexDigit(stream.charCodeAt(position))) {
+                count++;
+                position++;
+            }
+        }
+
+        codepoint = stream.charCodeAt(position);
+
+        if (
+            // eof
+            codepoint != codepoint ||
+            isWhiteSpace(codepoint) ||
+            codepoint == TokenMap.COMMA ||
+            codepoint == TokenMap.SEMICOLON ||
+            codepoint == TokenMap.RIGHT_BRACE ||
+            codepoint == TokenMap.RIGHT_PARENTHESIS ||
+            codepoint == TokenMap.EXCLAMATION
+        ) {
+            return position - start;
+        }
+
+        return 0;
+    }
+
+    /**
+     * consume number, dimension, or percentage. the number is `[+-]? digits? [. digits]? [(e|E) [+-]? digits]?`:
+     * `1.5e2`, `1e-3`, `.5e1`. the exponent requires a digit: `2em` is the number `2` and the unit `em`.
+     * the token is followed by the end of the stream, a whitespace, `)`, `;`, `!`, `}`, `/`, `*`, `,` (and `+` after
+     * a dimension: `2n+1`): otherwise it is not a numeric token
+     * @param parseInfo
+     * @returns the length of the token, 0 if it is not a numeric token
      */
     consumeNumericToken(parseInfo: ParseInfo): number {
-        let position: number = parseInfo.currentPosition - parseInfo.offset;
-        let offset: number = position;
+        const stream: string = parseInfo.stream;
+        const offset: number = parseInfo.currentPosition - parseInfo.offset;
+        let position: number = offset;
         let hasDigits: boolean = false;
-        let hasLetter: boolean = false;
-        let hasPercent: boolean = false;
-
-        let codepoint: number = parseInfo.stream.charCodeAt(position) as number;
+        let codepoint: number = stream.charCodeAt(position);
 
         this.slice = null;
         this.hint = null;
 
         // '+' '-'
-        if (codepoint == 0x2b || codepoint == 0x2d) {
+        if (codepoint == TokenMap.PLUS || codepoint == TokenMap.MINUS) {
             position++;
         }
 
-        // consume digits
-        while (position < parseInfo.stream.length) {
-            codepoint = parseInfo.stream.charCodeAt(position) as number;
-
-            if (isDigit(codepoint)) {
-                hasDigits = true;
-                position++;
-                continue;
-            }
-
-            // '.' 'E' 'e'
-            if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
-                position++;
-                break;
-            }
-
-            if (
-                isWhiteSpace(codepoint) ||
-                codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                codepoint == TokenMap.SEMICOLON ||
-                codepoint == TokenMap.RIGHT_BRACE ||
-                codepoint == TokenMap.SLASH ||
-                codepoint == TokenMap.STAR ||
-                codepoint == TokenMap.COMMA
-            ) {
-                return !hasDigits ? 0 : position - offset;
-            }
-
-            if (codepoint == TokenMap.PERCENTAGE) {
-                hasPercent = true;
-                break;
-            }
-
-            if (isLetter(codepoint)) {
-                hasLetter = true;
-                break;
-            }
-
-            // dashed ident as unit
-            if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                hasLetter = true;
-                break;
-            }
-
-            return 0;
+        // integer part
+        while (isDigit(stream.charCodeAt(position))) {
+            position++;
+            hasDigits = true;
         }
 
-        if (!hasLetter && !hasPercent) {
-            // '.'
-            if (codepoint == 0x2e) {
-                codepoint = parseInfo.stream.charCodeAt(position) as number;
+        // decimal part
+        if (stream.charCodeAt(position) == TokenMap.DOT && isDigit(stream.charCodeAt(position + 1))) {
+            position++;
 
-                if (codepoint != codepoint) {
-                    return !hasDigits ? 0 : position - offset;
-                }
-
-                if (
-                    isWhiteSpace(codepoint) ||
-                    codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                    codepoint == TokenMap.SEMICOLON ||
-                    codepoint == TokenMap.RIGHT_BRACE ||
-                    codepoint == TokenMap.SLASH ||
-                    codepoint == TokenMap.STAR ||
-                    codepoint == TokenMap.COMMA
-                ) {
-                    return !hasDigits ? 0 : position - offset;
-                }
-
-                if (!isDigit(codepoint)) {
-                    if (!hasDigits) {
-                        return 0;
-                    }
-
-                    if (codepoint == TokenMap.PERCENTAGE) {
-                        hasPercent = true;
-                    } else if (isLetter(codepoint)) {
-                        hasLetter = true;
-                    }
-                    // custom ident as unit
-                    else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                        hasLetter = true;
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    position++;
-                    hasDigits = true;
-                }
+            while (isDigit(stream.charCodeAt(position))) {
+                position++;
             }
 
-            if (!hasLetter && !hasPercent) {
-                while (position + 1 <= parseInfo.stream.length) {
-                    codepoint = parseInfo.stream.charCodeAt(position) as number;
-
-                    if (isDigit(codepoint)) {
-                        position++;
-                        continue;
-                    }
-
-                    if (!hasDigits) {
-                        return 0;
-                    }
-
-                    // 'E' 'e'
-                    if (codepoint == 0x45 || codepoint == 0x65) {
-                        position++;
-                        break;
-                    }
-
-                    if (
-                        isWhiteSpace(codepoint) ||
-                        codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                        codepoint == TokenMap.SEMICOLON ||
-                        codepoint == TokenMap.RIGHT_BRACE ||
-                        codepoint == TokenMap.SLASH ||
-                        codepoint == TokenMap.STAR ||
-                        codepoint == TokenMap.COMMA
-                    ) {
-                        return position - offset;
-                    }
-
-                    if (isLetter(codepoint)) {
-                        hasLetter = true;
-                        break;
-                    } else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                        hasLetter = true;
-                        break;
-                    }
-
-                    if (codepoint == TokenMap.PERCENTAGE) {
-                        hasPercent = true;
-                        break;
-                    }
-
-                    return 0;
-                }
-                // 'E' 'e' - 'em'
-                if ((codepoint == 0x45 || codepoint == 0x65) && hasDigits && !hasLetter && !hasPercent) {
-                    if (isLetter(parseInfo.stream.charCodeAt(position) as number)) {
-                        hasLetter = true;
-                    }
-                }
-
-                if (!hasLetter && !hasPercent) {
-                    // 'E' 'e'
-                    if (codepoint == 0x45 || codepoint == 0x65) {
-                        codepoint = parseInfo.stream.charCodeAt(position + 1) as number;
-
-                        // '+' '-'
-                        if (codepoint == 0x2b || codepoint == 0x2d) {
-                            position++;
-                        }
-
-                        codepoint = position = parseInfo.stream.charCodeAt(position + 1) as number;
-
-                        if (!isDigit(codepoint)) {
-                            if (!hasDigits) {
-                                return 0;
-                            }
-                            if (isLetter(codepoint)) {
-                                hasLetter = true;
-                            } else if (codepoint == TokenMap.PERCENTAGE) {
-                                hasPercent = true;
-                            } else {
-                                return 0;
-                            }
-                        }
-                    }
-
-                    if (!hasLetter && !hasPercent) {
-                        while (++position < parseInfo.stream.length) {
-                            codepoint = parseInfo.stream.charCodeAt(position) as number;
-
-                            // eof
-                            if (codepoint != codepoint) {
-                                break;
-                            }
-
-                            if (isDigit(codepoint)) {
-                                position++;
-                                continue;
-                            }
-
-                            if (!hasDigits) {
-                                return 0;
-                            }
-
-                            if (
-                                isWhiteSpace(codepoint) ||
-                                codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                                codepoint == TokenMap.SEMICOLON ||
-                                codepoint == TokenMap.RIGHT_BRACE ||
-                                codepoint == TokenMap.SLASH ||
-                                codepoint == TokenMap.STAR ||
-                                codepoint == TokenMap.COMMA
-                            ) {
-                                return position - offset;
-                            } else if (isLetter(codepoint)) {
-                                hasLetter = true;
-                                break;
-                            }
-                            // custom ident as unit
-                            else if (codepoint == 0x2d && parseInfo.stream.charCodeAt(position + 1) == 0x2d) {
-                                hasLetter = true;
-                                break;
-                            } else if (codepoint == TokenMap.PERCENTAGE) {
-                                hasPercent = true;
-                                break;
-                            } else {
-                                return 0;
-                            }
-                        }
-
-                        if (!hasLetter && !hasPercent) {
-                            return position - offset;
-                        }
-                    }
-                }
-            }
+            hasDigits = true;
         }
 
         if (!hasDigits) {
             return 0;
         }
 
-        if (hasPercent) {
-            const slice = position;
+        // exponent: 'E' 'e', followed by a digit or a sign and a digit
+        codepoint = stream.charCodeAt(position);
 
-            codepoint = parseInfo.stream.charCodeAt(++position) as number;
+        if (codepoint == 0x45 || codepoint == 0x65) {
+            let k: number = position + 1;
 
-            if (
-                codepoint != codepoint ||
-                isWhiteSpace(codepoint) ||
-                codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                codepoint == TokenMap.SEMICOLON ||
-                codepoint == TokenMap.RIGHT_BRACE ||
-                codepoint == TokenMap.SLASH ||
-                codepoint == TokenMap.STAR ||
-                codepoint == TokenMap.COMMA
-            ) {
-                this.slice = slice;
-                this.hint = EnumToken.PercentageTokenType;
-                return position - offset;
+            if (stream.charCodeAt(k) == TokenMap.PLUS || stream.charCodeAt(k) == TokenMap.MINUS) {
+                k++;
             }
 
-            return 0;
+            if (isDigit(stream.charCodeAt(k))) {
+                position = k;
+
+                while (isDigit(stream.charCodeAt(position))) {
+                    position++;
+                }
+            }
         }
 
-        if (hasLetter) {
-            codepoint = parseInfo.stream.charCodeAt(position - 1) as number;
+        codepoint = stream.charCodeAt(position);
 
-            // 'E' 'e'
-            const slice = codepoint == 0x45 || codepoint == 0x65 ? position - 1 : position;
+        // percentage
+        if (codepoint == TokenMap.PERCENTAGE) {
+            const slice: number = position;
 
-            while (position + 1 <= parseInfo.stream.length) {
-                codepoint = parseInfo.stream.charCodeAt(++position) as number;
+            if (!isNumericTokenEnd(stream.charCodeAt(++position), false)) {
+                return 0;
+            }
 
-                if (!isLetter(codepoint) && codepoint != 0x2d) {
+            this.slice = slice;
+            this.hint = EnumToken.PercentageTokenType;
+            return position - offset;
+        }
+
+        // dimension: a unit, or a dashed ident (user defined unit)
+        if (isLetter(codepoint) || (codepoint == TokenMap.MINUS && stream.charCodeAt(position + 1) == TokenMap.MINUS)) {
+            const slice: number = position;
+
+            while (position < stream.length) {
+                codepoint = stream.charCodeAt(++position);
+
+                if (!isLetter(codepoint) && codepoint != TokenMap.MINUS) {
                     break;
                 }
             }
 
-            if (
-                codepoint != codepoint ||
-                isWhiteSpace(codepoint) ||
-                codepoint == TokenMap.RIGHT_PARENTHESIS ||
-                codepoint == TokenMap.SEMICOLON ||
-                codepoint == TokenMap.RIGHT_BRACE ||
-                codepoint == TokenMap.PLUS ||
-                codepoint == TokenMap.SLASH ||
-                codepoint == TokenMap.STAR ||
-                codepoint == TokenMap.COMMA
-            ) {
-                this.slice = slice;
-                this.hint = getSymbolHint(parseInfo, slice, position) ?? EnumToken.DimensionTokenType;
-                return position - offset;
+            if (!isNumericTokenEnd(stream.charCodeAt(position), true)) {
+                return 0;
             }
 
-            return 0;
+            this.slice = slice;
+            this.hint = getSymbolHint(parseInfo, slice, position) ?? EnumToken.DimensionTokenType;
+            return position - offset;
         }
 
-        return 0;
+        // number
+        return isNumericTokenEnd(codepoint, false) ? position - offset : 0;
     }
 
     /**
@@ -1358,10 +1276,20 @@ export class Tokenizer {
                 // the number is read from the source below. the whitespace is rendered as a single space: the text
                 // is not kept
             } else if (!isHint) {
-                val = parseInfo.stream.slice(
-                    (slice as number) ?? parseInfo.position - parseInfo.offset,
-                    parseInfo.currentPosition - parseInfo.offset,
-                );
+                // the canonical spelling of a known unit: `6DB` is rendered `6dB`
+                val =
+                    (hint == EnumToken.DimensionTokenType
+                        ? findItem(
+                              EnumToken.DimensionTokenType,
+                              parseInfo,
+                              (slice as number) ?? parseInfo.position - parseInfo.offset,
+                              parseInfo.currentPosition - parseInfo.offset,
+                          )
+                        : null) ??
+                    parseInfo.stream.slice(
+                        (slice as number) ?? parseInfo.position - parseInfo.offset,
+                        parseInfo.currentPosition - parseInfo.offset,
+                    );
             }
 
             if (this.decodeString) {
@@ -1430,13 +1358,18 @@ export class Tokenizer {
     }
 
     /**
-     *
+     * true if the text of the token being read equals the input, ignoring the case. the token text starts at
+     * parseInfo.position: `0!important` is the number `0` followed by `!important`
      * @param parseInfo
      * @param input
      * @returns
      */
     equalsIgnoreCase(parseInfo: ParseInfo, input: string): boolean {
-        let position: number = parseInfo.currentPosition - parseInfo.offset;
+        let position: number = parseInfo.position - parseInfo.offset;
+
+        if (parseInfo.currentPosition - parseInfo.position != input.length) {
+            return false;
+        }
 
         let ca: number;
         let cb: number;
@@ -1761,6 +1694,16 @@ export class Tokenizer {
             }
 
             if (parseInfo.position == parseInfo.currentPosition) {
+                // `U+0025-00FF`
+                if (charCode == 0x55 || charCode == 0x75) {
+                    tokensCount = this.consumeUnicodeRangeToken(parseInfo);
+
+                    if (tokensCount > 0) {
+                        this.skip(parseInfo, tokensCount);
+                        return this.makeToken(parseInfo, EnumToken.UniCodeRange);
+                    }
+                }
+
                 if (
                     charCode == TokenMap.MINUS ||
                     charCode == TokenMap.PLUS ||

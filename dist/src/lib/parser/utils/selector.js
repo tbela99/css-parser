@@ -8,7 +8,7 @@
 import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { renderValue } from '../../printer/render.js';
 import { pseudoElements, tokensfuncDefMap, combinators } from '../../syntax/constants.js';
-import { isHash } from '../../syntax/syntax.js';
+import { isHash, isIdent } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
 import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
@@ -147,6 +147,41 @@ function minifyNthExpression(arena, func) {
     arena.setTokenList(func, chi);
 }
 /**
+ * split the unicode ranges of a selector: `u+a` is the element `u` followed by the element `a`, not a unicode range
+ * @param arena
+ * @param tokens
+ */
+function splitUnicodeRanges(arena, tokens) {
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (arena.dataTypes[token] === EnumToken.UniCodeRange) {
+            const text = arena.strings[arena.stringValue[token]];
+            const rest = text.slice(2);
+            const split = [
+                arena.createToken(EnumToken.IdenTokenType, text.charAt(0)),
+                arena.createToken(EnumToken.Plus, "+"),
+                arena.createToken(isIdent(rest) ? EnumToken.IdenTokenType : EnumToken.LiteralTokenType, rest),
+            ];
+            for (const t of split) {
+                arena.copyLocation(t, token);
+            }
+            tokens.splice(i, 1, ...split);
+            i += split.length - 1;
+        }
+        else if (arena.firstToken[token] != 0) {
+            // `:is(u+a)`
+            const children = arena.tokens(token);
+            if (children.some((child) => arena.dataTypes[child] === EnumToken.UniCodeRange || arena.firstToken[child] != 0)) {
+                const length = children.length;
+                splitUnicodeRanges(arena, children);
+                if (children.length != length) {
+                    arena.setTokenList(token, children);
+                }
+            }
+        }
+    }
+}
+/**
  * parse selector
  * @param arena
  * @param tokens
@@ -156,6 +191,7 @@ function minifyNthExpression(arena, func) {
  */
 function parseSelector(arena, tokens, context, options, errors) {
     const contextType = context == null ? null : arena.dataTypes[context];
+    splitUnicodeRanges(arena, tokens);
     if (contextType === EnumToken.KeyframesAtRuleNodeType) {
         const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
         const parts = splitTokenList(arena, tokens);

@@ -186,7 +186,7 @@ content: '\\21 now\\21';
                 nestingRules: false,
             }).then((result) =>
                 expect(result.code).equals(
-                    `:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`,
+                    `:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){filter:none}`,
                 ),
             );
         });

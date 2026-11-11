@@ -1,5 +1,17 @@
 {
   "atrules": {
+    "@layer": {
+      "comment": "webref defines two at-rule forms: @layer <layer-name>? { <rule-list> } | @layer <layer-name>#;",
+      "syntax": "@layer [ <layer-name># | <layer-name>?  {\n  <stylesheet>\n} ]"
+    },
+    "@document": {
+      "comment": "not defined by webref",
+      "syntax": "@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}"
+    },
+    "@starting-style": {
+      "comment": "not defined by webref",
+      "syntax": "@starting-style {\n  <declaration-list> | <group-rule-body>\n}"
+    },
     "@charset": {
     "syntax": "@charset \"<charset>\";"
   },
@@ -72,11 +84,9 @@
     "@bottom-right-corner": {
       "syntax": " @bottom-right-corner { <declaration-list> }"
     },
-    "@function": {
-      "syntax": " @function <dashed-function> <function-parameter>#?) [returns <css-type>]? { <declaration-rule-list> }"
-    },
     "@mixin": {
-      "syntax": " @mixin [<dashed-function> <function-parameter>#? ) | <ident-token> ]{<block-contents>}"
+      "comment": "a mixin may have no parameters: @mixin --name { ... }",
+      "syntax": "@mixin [ <function-token> <function-parameter>#? ) | <dashed-ident> ] { <block-contents> }"
     },
     "@apply": {
       "syntax": " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
@@ -145,10 +155,23 @@
       "syntax": " @right-bottom { <declaration-list> }"
     },
     "@value": {
-      "syntax": "@value [<declaration> && [ <ident># from <ident> ]]"
+      "comment": "css modules: variable declaration, or variables imported from an alias",
+      "syntax": "@value [ <declaration> | [ <ident># from <ident> ] ]"
     }
   },
   "properties": {
+    "-ms-filter": {
+      "comment": "not defined by webref, it would be validated as filter",
+      "syntax": "<string>"
+    },
+    "clip": {
+      "comment": "extend with the legacy syntax: the arguments may be separated by spaces",
+      "syntax": "| rect( <top> <right> <bottom> <left> )"
+    },
+    "-webkit-background-clip": {
+      "comment": "webref (compat) reports <visual-box>#, the text value is widely supported",
+      "syntax": "[ <visual-box> | border | padding | content | text ]#"
+    },
     "-ms-overflow-style": {
       "syntax": "auto | none | scrollbar | -ms-autohiding-scrollbar"
     },
@@ -209,6 +232,22 @@
     }
   },
   "selectors": {
+    ":nth-child()": {
+      "comment": "replace the webref prose syntax",
+      "syntax": ":nth-child( <an+b> [ of <complex-selector-list> ]? )"
+    },
+    ":nth-last-child()": {
+      "comment": "replace the webref prose syntax",
+      "syntax": ":nth-last-child( <an+b> [ of <complex-selector-list> ]? )"
+    },
+    ":nth-of-type()": {
+      "comment": "replace the webref prose syntax",
+      "syntax": ":nth-of-type( <an+b> )"
+    },
+    ":nth-last-of-type()": {
+      "comment": "replace the webref prose syntax",
+      "syntax": ":nth-last-of-type( <an+b> )"
+    },
     ":global": {
       "syntax": ":global"
     },
@@ -220,9 +259,135 @@
     },
     ":local()": {
       "syntax": ":local( <forgiving-selector-list> )"
+    },
+    "::slotted()": {
+      "syntax": "::slotted( <compound-selector> )"
+    },
+    "::view-transition-group()": {
+      "syntax": "::view-transition-group([ '*' | <custom-ident> ])"
+    },
+    "::view-transition-image-pair()": {
+      "syntax": "::view-transition-image-pair([ '*' | <custom-ident> ])"
+    },
+    "::view-transition-new()": {
+      "syntax": "::view-transition-new([ '*' | <custom-ident> ])"
+    },
+    "::view-transition-old()": {
+      "syntax": "::view-transition-old([ '*' | <custom-ident> ])"
+    },
+    ":active-view-transition-type()": {
+      "syntax": ":active-view-transition-type( <custom-ident># )"
+    },
+    ":dir()": {
+      "syntax": ":dir( [ ltr | rtl ] )"
+    },
+    ":has()": {
+      "syntax": ":has( <forgiving-relative-selector-list> )"
+    },
+    ":host()": {
+      "syntax": ":host( <compound-selector> )"
+    },
+    ":host-context()": {
+      "syntax": ":host-context( <compound-selector> )"
+    },
+    ":is()": {
+      "syntax": ":is( <forgiving-selector-list> )"
+    },
+    ":lang()": {
+      "syntax": ":lang( <language-code> )"
+    },
+    ":not()": {
+      "syntax": ":not( <complex-selector-list> )"
+    },
+    ":where()": {
+      "syntax": ":where( <complex-selector-list> )"
+    },
+    ":-webkit-any()": {
+      "comment": "not defined by webref",
+      "syntax": ":-webkit-any( <forgiving-selector-list> )"
+    },
+    ":-webkit-any-link": {
+      "comment": "not defined by webref",
+      "syntax": ":-webkit-any-link"
     }
   },
   "types": {
+    "cursor-predefined": {
+      "comment": "extend with the non standard values",
+      "syntax": "| hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out"
+    },
+    "paint": {
+      "comment": "SVG 2 <paint> used by fill and stroke. webref reports the css-fill-stroke-3 definition (none | <image> | <svg-paint>)",
+      "syntax": "none | <color> | <url> [ none | <color> ]? | context-fill | context-stroke"
+    },
+    "family-name": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<string> | <custom-ident>+"
+    },
+    "media-query-list": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<media-query>#"
+    },
+    "view-transition-type": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<custom-ident>"
+    },
+    "animation-action": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "none | play | play-once | play-forwards | play-backwards | pause | reset | replay"
+    },
+    "font-src-list": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<font-src>#"
+    },
+    "generic-complete": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "serif | sans-serif | system-ui | cursive | fantasy | math | monospace"
+    },
+    "generic-incomplete": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "ui-serif | ui-sans-serif | ui-monospace | ui-rounded"
+    },
+    "id": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<id-selector>"
+    },
+    "level": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<integer>"
+    },
+    "size-keyword": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "auto | <intrinsic-size-keyword> | stretch"
+    },
+    "supports-condition-name": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<extension-name>"
+    },
+    "target-name": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<string>"
+    },
+    "timeline-range-center-subject": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "source | target"
+    },
+    "timeline-range-name": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "cover | contain | entry | exit | entry-crossing | exit-crossing"
+    },
+    "url-set": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<image-set()>"
+    },
+    "voice-family-name": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<string> | <custom-ident>+"
+    },
+    "whole-value": {
+      "comment": "webref only provides a prose definition",
+      "syntax": "<declaration-value>"
+    },
     "alpha-value": {
       "syntax": "<number> | <percentage> | none"
     },
@@ -854,6 +1019,182 @@
           "status": "obsolete"
         }
       }
+    }
+  },
+  "units": {
+    "Hz": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "Q": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "cap": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "ch": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "cm": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dB": {
+      "comment": "css-speech <decibel>: webref only provides a prose definition"
+    },
+    "deg": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dpcm": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dpi": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dppx": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvb": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvi": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvmax": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvmin": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "dvw": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "em": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "ex": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "fr": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "grad": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "ic": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "in": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "kHz": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvb": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvi": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvmax": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvmin": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "lvw": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "mm": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "ms": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "pc": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "pt": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "px": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rad": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rcap": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rch": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rem": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rex": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "ric": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "rlh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "s": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "st": {
+      "comment": "css-speech <semitones>: webref only provides a prose definition"
+    },
+    "svb": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "svh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "svi": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "svmax": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "svmin": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "svw": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "turn": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vb": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vh": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vi": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vmax": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vmin": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "vw": {
+      "comment": "units are not listed by @webref/css"
+    },
+    "x": {
+      "comment": "units are not listed by @webref/css"
     }
   },
   "skipped": [

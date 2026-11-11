@@ -92,6 +92,24 @@ export class DeclarationMemo {
 }
 
 /**
+ * true if the value of a declaration contains var(), env() or if()
+ * @param arena
+ * @param declaration
+ */
+function hasWildCardFunction(arena: AstArena, declaration: AstNode): boolean {
+    for (const token of arena.tokens(declaration)) {
+        if (
+            arena.dataTypes[token] === EnumToken.WildCardFunctionTokenType ||
+            arena.dataTypes[token] === EnumToken.WildCardFunctionTokenDefType
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 export class PropertyList {
@@ -231,6 +249,17 @@ export class PropertyList {
             shortHandType = "single";
             // @ts-ignore
             shorthand = <string>config.property[propertyName];
+        }
+
+        // the value of a shorthand that contains var(), env() or if() cannot be expanded: the longhands that follow
+        // it are not merged into it. `background: var(--bg); background-clip: text`
+        if (
+            shorthand === name &&
+            (shortHandType! == "map" || shortHandType! == "set") &&
+            hasWildCardFunction(arena, declaration)
+        ) {
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
+            return this;
         }
 
         if (this.declarations.has(shorthand)) {

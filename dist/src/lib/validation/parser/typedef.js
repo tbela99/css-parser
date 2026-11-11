@@ -89,6 +89,10 @@ var ValidationSyntaxGroupEnum;
     ValidationSyntaxGroupEnum["Declarations"] = "declarations";
     ValidationSyntaxGroupEnum["Functions"] = "functions";
     ValidationSyntaxGroupEnum["Syntaxes"] = "syntaxes";
+    /**
+     * value types, keyed by their name without the angle brackets (`color` for `<color>`). referenced as {@link Syntaxes}
+     */
+    ValidationSyntaxGroupEnum["Types"] = "types";
     ValidationSyntaxGroupEnum["Selectors"] = "selectors";
     ValidationSyntaxGroupEnum["AtRules"] = "atRules";
     ValidationSyntaxGroupEnum["Units"] = "units";

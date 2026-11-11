@@ -3,7 +3,7 @@ import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { renderValue } from "../../printer/render.ts";
 import { combinators, pseudoElements, tokensfuncDefMap } from "../../syntax/constants.ts";
-import { isHash } from "../../syntax/syntax.ts";
+import { isHash, isIdent } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
 
@@ -176,6 +176,47 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
 }
 
 /**
+ * split the unicode ranges of a selector: `u+a` is the element `u` followed by the element `a`, not a unicode range
+ * @param arena
+ * @param tokens
+ */
+function splitUnicodeRanges(arena: AstArena, tokens: Token[]): void {
+    for (let i = 0; i < tokens.length; i++) {
+        const token: Token = tokens[i];
+
+        if (arena.dataTypes[token] === EnumToken.UniCodeRange) {
+            const text: string = arena.strings[arena.stringValue[token]];
+            const rest: string = text.slice(2);
+            const split: Token[] = [
+                arena.createToken(EnumToken.IdenTokenType, text.charAt(0)),
+                arena.createToken(EnumToken.Plus, "+"),
+                arena.createToken(isIdent(rest) ? EnumToken.IdenTokenType : EnumToken.LiteralTokenType, rest),
+            ];
+
+            for (const t of split) {
+                arena.copyLocation(t, token);
+            }
+
+            tokens.splice(i, 1, ...split);
+            i += split.length - 1;
+        } else if (arena.firstToken[token] != 0) {
+            // `:is(u+a)`
+            const children: Token[] = arena.tokens(token);
+
+            if (children.some((child: Token) => arena.dataTypes[child] === EnumToken.UniCodeRange || arena.firstToken[child] != 0)) {
+                const length: number = children.length;
+
+                splitUnicodeRanges(arena, children);
+
+                if (children.length != length) {
+                    arena.setTokenList(token, children);
+                }
+            }
+        }
+    }
+}
+
+/**
  * parse selector
  * @param arena
  * @param tokens
@@ -192,6 +233,8 @@ export function parseSelector(
     errors: ErrorDescription[],
 ): AstRule | AstKeyframesRule {
     const contextType: EnumToken | null = context == null ? null : arena.dataTypes[context];
+
+    splitUnicodeRanges(arena, tokens);
 
     if (contextType === EnumToken.KeyframesAtRuleNodeType) {
         const result = matchAllSyntaxes(

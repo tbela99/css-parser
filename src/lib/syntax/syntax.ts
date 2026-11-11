@@ -34,7 +34,6 @@ export const timeUnits: Array<string> = ["ms", "s"];
 export const angleUnits: Array<string> = ["rad", "turn", "deg", "grad"];
 export const resolutionUnits: Array<string> = ["dpi", "dpcm", "dppx", "x"];
 export const dimensionUnits: Array<string> = [
-    "Q",
     "cap",
     "ch",
     "cm",
@@ -59,16 +58,23 @@ export const dimensionUnits: Array<string> = [
     "lvh",
     "lvi",
     "lvmax",
+    "lvmin",
     "lvw",
     "mm",
     "pc",
     "pt",
     "px",
+    "Q",
+    "rcap",
+    "rch",
     "rem",
+    "rex",
+    "ric",
     "rlh",
     "svb",
     "svh",
     "svi",
+    "svmax",
     "svmin",
     "svw",
     "vb",
@@ -509,15 +515,88 @@ export const pseudoAliasMap: Record<string, string> = {
 //     "-moz-alt-content",
 // ]);
 
-// renamed standard properties
-export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
+// renamed standard properties: the legacy name aliases of webref (see scripts/webref.ts), updated manually
+export const renamedStandardProperties = new Map([
+    ["-webkit-align-content", "align-content"],
+    ["-webkit-align-items", "align-items"],
+    ["-webkit-align-self", "align-self"],
+    ["-webkit-animation", "animation"],
+    ["-webkit-animation-delay", "animation-delay"],
+    ["-webkit-animation-direction", "animation-direction"],
+    ["-webkit-animation-duration", "animation-duration"],
+    ["-webkit-animation-fill-mode", "animation-fill-mode"],
+    ["-webkit-animation-iteration-count", "animation-iteration-count"],
+    ["-webkit-animation-name", "animation-name"],
+    ["-webkit-animation-play-state", "animation-play-state"],
+    ["-webkit-animation-timing-function", "animation-timing-function"],
+    ["-webkit-backface-visibility", "backface-visibility"],
+    ["-webkit-background-origin", "background-origin"],
+    ["-webkit-background-size", "background-size"],
+    ["-webkit-border-bottom-left-radius", "border-bottom-left-radius"],
+    ["-webkit-border-bottom-right-radius", "border-bottom-right-radius"],
+    ["-webkit-border-radius", "border-radius"],
+    ["-webkit-border-top-left-radius", "border-top-left-radius"],
+    ["-webkit-border-top-right-radius", "border-top-right-radius"],
+    ["-webkit-box-shadow", "box-shadow"],
+    ["-webkit-box-sizing", "box-sizing"],
+    ["-webkit-filter", "filter"],
+    ["-webkit-flex", "flex"],
+    ["-webkit-flex-basis", "flex-basis"],
+    ["-webkit-flex-direction", "flex-direction"],
+    ["-webkit-flex-flow", "flex-flow"],
+    ["-webkit-flex-grow", "flex-grow"],
+    ["-webkit-flex-shrink", "flex-shrink"],
+    ["-webkit-flex-wrap", "flex-wrap"],
+    ["-webkit-justify-content", "justify-content"],
+    ["-webkit-mask", "mask"],
+    ["-webkit-mask-box-image-outset", "mask-border-outset"],
+    ["-webkit-mask-box-image-repeat", "mask-border-repeat"],
+    ["-webkit-mask-box-image-slice", "mask-border-slice"],
+    ["-webkit-mask-box-image-source", "mask-border-source"],
+    ["-webkit-mask-box-image-width", "mask-border-width"],
+    ["-webkit-mask-clip", "mask-clip"],
+    ["-webkit-mask-composite", "mask-composite"],
+    ["-webkit-mask-image", "mask-image"],
+    ["-webkit-mask-origin", "mask-origin"],
+    ["-webkit-mask-position", "mask-position"],
+    ["-webkit-mask-repeat", "mask-repeat"],
+    ["-webkit-mask-size", "mask-size"],
+    ["-webkit-order", "order"],
+    ["-webkit-perspective", "perspective"],
+    ["-webkit-perspective-origin", "perspective-origin"],
+    ["-webkit-text-size-adjust", "text-size-adjust"],
+    ["-webkit-transform", "transform"],
+    ["-webkit-transform-origin", "transform-origin"],
+    ["-webkit-transform-style", "transform-style"],
+    ["-webkit-transition", "transition"],
+    ["-webkit-transition-delay", "transition-delay"],
+    ["-webkit-transition-duration", "transition-duration"],
+    ["-webkit-transition-property", "transition-property"],
+    ["-webkit-transition-timing-function", "transition-timing-function"],
+    ["color-adjust", "print-color-adjust"],
+    ["font-stretch", "font-width"],
+    ["grid-column-gap", "column-gap"],
+    ["grid-gap", "gap"],
+    ["grid-row-gap", "row-gap"],
+    ["word-wrap", "overflow-wrap"],
+]);
+
+/**
+ * the units of each dimension, lower case: the units are case-insensitive (`Q`, `Hz`, `kHz`)
+ */
+const lengthUnitSet: Set<string> = new Set(dimensionUnits.map((unit: string) => unit.toLowerCase()));
+const resolutionUnitSet: Set<string> = new Set(resolutionUnits.map((unit: string) => unit.toLowerCase()));
+const angleUnitSet: Set<string> = new Set(angleUnits.map((unit: string) => unit.toLowerCase()));
+const timeUnitSet: Set<string> = new Set(timeUnits.map((unit: string) => unit.toLowerCase()));
+const frequencyUnitSet: Set<string> = new Set(frequencyUnits.map((unit: string) => unit.toLowerCase()));
+const flexUnitSet: Set<string> = new Set(flexUnits.map((unit: string) => unit.toLowerCase()));
 
 /**
  * true if the unit is a length unit
  * @param unit
  */
 export function isLengthUnit(unit: string): boolean {
-    return dimensionUnits.includes(unit.toLowerCase());
+    return lengthUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -525,7 +604,7 @@ export function isLengthUnit(unit: string): boolean {
  * @param unit
  */
 export function isResolutionUnit(unit: string): boolean {
-    return resolutionUnits.includes(unit.toLowerCase());
+    return resolutionUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -533,7 +612,7 @@ export function isResolutionUnit(unit: string): boolean {
  * @param unit
  */
 export function isAngleUnit(unit: string): boolean {
-    return angleUnits.includes(unit.toLowerCase());
+    return angleUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -541,7 +620,7 @@ export function isAngleUnit(unit: string): boolean {
  * @param unit
  */
 export function isTimeUnit(unit: string): boolean {
-    return timeUnits.includes(unit.toLowerCase());
+    return timeUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -549,7 +628,7 @@ export function isTimeUnit(unit: string): boolean {
  * @param unit
  */
 export function isFrequencyUnit(unit: string): boolean {
-    return frequencyUnits.includes(unit.toLowerCase());
+    return frequencyUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -557,7 +636,7 @@ export function isFrequencyUnit(unit: string): boolean {
  * @param unit
  */
 export function isFlexUnit(unit: string): boolean {
-    return "fr" == unit.toLowerCase();
+    return flexUnitSet.has(unit.toLowerCase());
 }
 
 export function isLength(arena: AstArena, dimension: Token): boolean {
@@ -1671,23 +1750,27 @@ export function length2Px(arena: AstArena, value: Token): number | null {
     if (arena.dataTypes[value] == EnumToken.NumberTokenType) {
         result = val;
     } else {
-        switch (arena.strings[arena.unit[value]]) {
+        // the absolute length units: 1in = 2.54cm = 96px. the units are case-insensitive
+        switch (arena.strings[arena.unit[value]]?.toLowerCase()) {
             case "cm":
-                result = val * 37.8;
+                result = (val * 96) / 2.54;
                 break;
             case "mm":
-                result = val * 3.78;
+                result = (val * 96) / 25.4;
                 break;
-            case "Q":
-                result = (val * 37.8) / 40;
+            case "q":
+                // 1Q = 1/40cm
+                result = (val * 96) / 101.6;
                 break;
             case "in":
-                result = val / 96;
+                result = val * 96;
                 break;
             case "pc":
-                result = val / 16;
+                // 1pc = 1/6in
+                result = val * 16;
                 break;
             case "pt":
+                // 1pt = 1/72in
                 result = (val * 4) / 3;
                 break;
             case "px":

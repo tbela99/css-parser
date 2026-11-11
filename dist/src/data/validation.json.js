@@ -10,7 +10,10 @@ var atRules = {
 		syntax: "@annotation { <declaration-list> }"
 	},
 	"@apply": {
-		syntax: "@apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
+		syntax: " @apply [ <dashed-ident> | <dashed-function> ] [ { <declaration-list> } ]?;"
+	},
+	"@bottom-center": {
+		syntax: "@bottom-center { <declaration-list> };"
 	},
 	"@bottom-left": {
 		syntax: " @bottom-left { <declaration-list> }"
@@ -39,10 +42,11 @@ var atRules = {
 		}
 	},
 	"@container": {
-		syntax: "@container <container-query-list> { <rule-list> }",
+		syntax: "@container <container-condition># { <rule-list> }",
 		descriptors: {
 			"aspect-ratio": "<ratio>",
 			"block-size": "<length>",
+			fallback: "none | [ [<dashed-ident> || <try-tactic>] | <position-area-query> ]",
 			height: "<length>",
 			"inline-size": "<length>",
 			orientation: "portrait | landscape",
@@ -54,7 +58,7 @@ var atRules = {
 		}
 	},
 	"@contents": {
-		syntax: "@contents [ { <declaration-list> } ]?"
+		syntax: " @contents [ { <declaration-list> } ]?;"
 	},
 	"@counter-style": {
 		syntax: "@counter-style <counter-style-name> { <declaration-list> }",
@@ -74,25 +78,37 @@ var atRules = {
 	"@custom-media": {
 		syntax: " @custom-media <extension-name> [<media-query-list> | true | false ];"
 	},
+	"@custom-selector": {
+		syntax: "@custom-selector <custom-selector> <selector-list> ;"
+	},
+	"@document": {
+		syntax: "@document [ <url> | url-prefix(<string>) | domain(<string>) | media-document(<string>) | regexp(<string>) ]# {\n  <group-rule-body>\n}"
+	},
 	"@else": {
-		syntax: "@else <boolean-condition>? { <rule-list> }"
+		syntax: " @else <when-condition>? {\n <group-rule-body>\n}"
 	},
 	"@font-face": {
 		syntax: "@font-face { <declaration-list> }",
 		descriptors: {
-			"ascent-override": "normal | <percentage [0,∞]>",
-			"descent-override": "normal | <percentage [0,∞]>",
+			"ascent-override": "[ normal | <percentage [0,∞]> ]{1,2}",
+			"descent-override": "[ normal | <percentage [0,∞]> ]{1,2}",
 			"font-display": "auto | block | swap | fallback | optional",
 			"font-family": "<font-family-name>",
 			"font-feature-settings": "normal | <feature-tag-value>#",
 			"font-language-override": "normal | <string>",
 			"font-named-instance": "auto | <string>",
+			"font-size": "auto | [<number>]{1,2}",
 			"font-style": "auto | normal | italic | left | right | oblique [ <angle [-90deg,90deg]>{1,2} ]?",
 			"font-variation-settings": "normal | [ <string> <number>]#",
 			"font-weight": "auto | <font-weight-absolute>{1,2}",
 			"font-width": "auto | <'font-width'>{1,2}",
-			"line-gap-override": "normal | <percentage [0,∞]>",
+			"line-gap-override": "[ normal | <percentage [0,∞]> ]{1,2}",
+			"size-adjust": "<percentage [0,∞]>",
 			src: "<font-src-list>",
+			"subscript-position-override": "[ normal | from-font | <percentage> ]{1,2}",
+			"subscript-size-override": "[ normal | from-font | <percentage [0,∞]> ]{1,2}",
+			"superscript-position-override": "[ normal | from-font | <percentage> ]{1,2}",
+			"superscript-size-override": "[ normal | from-font | <percentage [0,∞]> ]{1,2}",
 			"unicode-range": "<unicode-range-token>#"
 		}
 	},
@@ -118,7 +134,7 @@ var atRules = {
 		}
 	},
 	"@function": {
-		syntax: "@function <function-token> <function-parameter>#? ,? ) [ returns <css-type> ]? { <declaration-rule-list> } <function-parameter>Info about the '<function-parameter>' reference.#typedef-function-parameterReferenced in:2.1. The @function Rule (2) 2.1.1. The Function Prelude 5.1. The @mixin rule 5.1.1. The Mixin Prelude Possible linking",
+		syntax: "@function <function-token> <function-parameter>#? ) [ returns <css-type> ]? { <declaration-rule-list> }",
 		descriptors: {
 			result: "<declaration-value>?"
 		}
@@ -127,13 +143,13 @@ var atRules = {
 		syntax: " @historical-forms { <declaration-list> }"
 	},
 	"@import": {
-		syntax: "@import [ <url> | <string> ] [[ layer | layer( <layer-name> ) ] || [ scope | scope( <scope-start> | <scope-boundaries> ) ] || <supports-import-condition>]? <media-import-condition> ; <supports-import-condition>Info about the '<supports-import-condition>' reference.#typedef-supports-import-conditionReferenced in:2. Importing Style Sheets: the @import rule (2) Possible linking"
+		syntax: "@import [ <url> | <string> ] [[ layer | layer( <layer-name> ) ] || [ scope | scope( <scope-start> | <scope-boundaries> ) ] || <supports-import-condition>]? <media-import-condition> ;"
 	},
 	"@keyframes": {
 		syntax: "@keyframes <keyframes-name> { <qualified-rule-list> }"
 	},
 	"@layer": {
-		syntax: "@layer <layer-name>? { <rule-list> } | @layer <layer-name>#;"
+		syntax: "@layer [ <layer-name># | <layer-name>?  {\n  <stylesheet>\n} ]"
 	},
 	"@left-bottom": {
 		syntax: " @left-bottom { <declaration-list> }"
@@ -144,14 +160,17 @@ var atRules = {
 	"@left-top": {
 		syntax: " @left-top { <declaration-list> }"
 	},
+	"@location": {
+		syntax: "<location-rule>"
+	},
 	"@media": {
 		syntax: "@media <media-query-list> { <rule-list> }"
 	},
 	"@mixin": {
-		syntax: "@mixin [<function-token> <function-parameter>#? ,? ) | <ident-token> ] { <block-contents> }"
+		syntax: "@mixin [ <function-token> <function-parameter>#? ) | <dashed-ident> ] { <block-contents> }"
 	},
 	"@namespace": {
-		syntax: "@namespace <namespace-prefix>? [ <string> | <url> ] ; <namespace-prefix>Info about the '<namespace-prefix>' reference.#typedef-namespace-prefixReferenced in:2.1. Syntax Possible linking"
+		syntax: "@namespace <namespace-prefix>? [ <string> | <url> ] ;"
 	},
 	"@navigation": {
 		syntax: "@navigation <navigation-condition> { <rule-list> }"
@@ -160,7 +179,7 @@ var atRules = {
 		syntax: "@ornaments { <declaration-list> }"
 	},
 	"@page": {
-		syntax: "@page <page-selector-list>? { <declaration-rule-list> } <page-selector-list>Info about the '<page-selector-list>' reference.#typedef-page-selector-listReferenced in:4.3. @page rule grammar (2) Possible linking",
+		syntax: "@page <page-selector-list>? { <declaration-rule-list> }",
 		descriptors: {
 			bleed: "auto | <length>",
 			marks: "none | [ crop || cross ]",
@@ -214,7 +233,7 @@ var atRules = {
 		syntax: "@private { <declaration-rule-list> }"
 	},
 	"@property": {
-		syntax: "@property <custom-property-name># { <declaration-list> } | @property <custom-property-name> <css-type>? [: <declaration-value>? ]? ;",
+		syntax: "@property <custom-property-name># { <declaration-list> }",
 		descriptors: {
 			syntax: "<string>",
 			inherits: "true | false",
@@ -233,8 +252,14 @@ var atRules = {
 	"@scope": {
 		syntax: "@scope <scope-boundaries>? { <block-contents> }"
 	},
+	"@starting-style": {
+		syntax: "@starting-style {\n  <declaration-list> | <group-rule-body>\n}"
+	},
 	"@styleset": {
 		syntax: "@styleset { <declaration-list> }"
+	},
+	"@stylistic": {
+		syntax: "@stylistic { <declaration-list> }"
 	},
 	"@supports": {
 		syntax: "@supports <supports-condition> { <rule-list> }"
@@ -261,7 +286,7 @@ var atRules = {
 		syntax: " @top-right-corner { <declaration-list> }"
 	},
 	"@value": {
-		syntax: "@value [<declaration> && [ <ident># from <ident> ]]"
+		syntax: "@value [ <declaration> | [ <ident># from <ident> ] ]"
 	},
 	"@view-transition": {
 		syntax: "@view-transition { <declaration-list> }",
@@ -271,7 +296,7 @@ var atRules = {
 		}
 	},
 	"@when": {
-		syntax: "@when <boolean-condition> { <rule-list> }"
+		syntax: " @when <when-condition> {\n <group-rule-body>\n}"
 	}
 };
 var declarations = {
@@ -301,6 +326,9 @@ var declarations = {
 	},
 	"-moz-user-select": {
 		syntax: "none | text | all | -moz-none | auto"
+	},
+	"-ms-filter": {
+		syntax: "<string>"
 	},
 	"-ms-flex-align": {
 		syntax: "start | end | center | baseline | stretch"
@@ -345,7 +373,7 @@ var declarations = {
 		syntax: "none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
 	},
 	"-webkit-background-clip": {
-		syntax: "[ <visual-box> | border | padding | content | text ]#"
+		syntax: " [ <visual-box> | border | padding | content | text ]#"
 	},
 	"-webkit-column-break-after": {
 		syntax: "always | auto | avoid"
@@ -390,7 +418,7 @@ var declarations = {
 		syntax: "none | element | auto"
 	},
 	"-webkit-user-select": {
-		syntax: "auto | none | text | all"
+		syntax: "auto | text | none | contain | all"
 	},
 	"accent-color": {
 		syntax: "auto | <color>"
@@ -402,10 +430,10 @@ var declarations = {
 		syntax: "normal | stretch | <baseline-position> | <overflow-position>? <self-position>"
 	},
 	"align-self": {
-		syntax: "auto | <overflow-position>? [ normal | <self-position> ]| stretch | <baseline-position>"
+		syntax: "auto | <overflow-position>? [ normal | <self-position> ]| stretch | <baseline-position> | anchor-center"
 	},
 	"alignment-baseline": {
-		syntax: " auto | baseline | before-edge | text-before-edge | middle | central | after-edge | text-after-edge | ideographic | alphabetic | hanging | mathematical"
+		syntax: "baseline | <baseline-metric>"
 	},
 	all: {
 		syntax: "initial | inherit | unset | revert | revert-layer | revert-rule"
@@ -483,10 +511,10 @@ var declarations = {
 		syntax: "visible | hidden"
 	},
 	background: {
-		syntax: "[<'background-color'> || <'background-image'> || <'background-repeat'> || <'background-attachment'> || <'background-position'>] | inherit"
+		syntax: "<bg-layer>#? , <final-bg-layer>"
 	},
 	"background-attachment": {
-		syntax: "scroll | fixed | inherit"
+		syntax: "<attachment>#"
 	},
 	"background-blend-mode": {
 		syntax: "<'mix-blend-mode'>#"
@@ -495,16 +523,16 @@ var declarations = {
 		syntax: "<bg-clip>#"
 	},
 	"background-color": {
-		syntax: "<color> | transparent | inherit"
+		syntax: "<color>"
 	},
 	"background-image": {
-		syntax: "<uri> | none | inherit"
+		syntax: "<bg-image>#"
 	},
 	"background-origin": {
 		syntax: "<visual-box>#"
 	},
 	"background-position": {
-		syntax: "[ [ <percentage> | <length> | left | center | right ] [ <percentage> | <length> | top | center | bottom ]? ] | [ [ left | center | right ] || [ top | center | bottom ] ] | inherit"
+		syntax: "<bg-position>#"
 	},
 	"background-position-block": {
 		syntax: "[ center | [ [ start | end ]? <length-percentage>? ]! ]#"
@@ -519,7 +547,7 @@ var declarations = {
 		syntax: "[ center | [ [ top | bottom | y-start | y-end ]? <length-percentage>? ]! ]#"
 	},
 	"background-repeat": {
-		syntax: "repeat | repeat-x | repeat-y | no-repeat | inherit"
+		syntax: "<repeat-style>#"
 	},
 	"background-repeat-block": {
 		syntax: "<repetition>#"
@@ -540,7 +568,7 @@ var declarations = {
 		syntax: "<bg-layer>#"
 	},
 	"baseline-shift": {
-		syntax: " baseline | sub | super | <svg-length>"
+		syntax: "<length-percentage> | sub | super | top | center | bottom"
 	},
 	"baseline-source": {
 		syntax: "auto | first | last"
@@ -552,7 +580,7 @@ var declarations = {
 		syntax: "no-ellipsis | ellipsis | <string>"
 	},
 	"block-size": {
-		syntax: "auto | <box-size>"
+		syntax: "auto | <box-size> | <anchor-size()>"
 	},
 	"block-step": {
 		syntax: "<'block-step-size'> || <'block-step-insert'> || <'block-step-align'> || <'block-step-round'>"
@@ -579,7 +607,7 @@ var declarations = {
 		syntax: "open | closed"
 	},
 	border: {
-		syntax: "[ <border-width> || <border-style> || <'border-top-color'> ] | inherit"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-block": {
 		syntax: "<'border-block-start'>"
@@ -591,40 +619,40 @@ var declarations = {
 		syntax: "<'border-top-color'>{1,2}"
 	},
 	"border-block-end": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-block-end-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-block-end-color": {
-		syntax: "<'border-top-color'>"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-block-end-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-block-end-style": {
-		syntax: "<'border-top-style'>"
+		syntax: "<line-style>"
 	},
 	"border-block-end-width": {
-		syntax: "<'border-top-width'>"
+		syntax: "<line-width>"
 	},
 	"border-block-start": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-block-start-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-block-start-color": {
-		syntax: "<'border-top-color'>"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-block-start-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-block-start-style": {
-		syntax: "<'border-top-style'>"
+		syntax: "<line-style>"
 	},
 	"border-block-start-width": {
-		syntax: "<'border-top-width'>"
+		syntax: "<line-width>"
 	},
 	"border-block-style": {
 		syntax: "<'border-top-style'>{1,2}"
@@ -633,13 +661,13 @@ var declarations = {
 		syntax: "<'border-top-width'>{1,2}"
 	},
 	"border-bottom": {
-		syntax: "[ <border-width> || <border-style> || <'border-top-color'> ] | inherit"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-bottom-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-bottom-color": {
-		syntax: "<color> | transparent | inherit"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-bottom-left-radius": {
 		syntax: "<border-radius>"
@@ -651,10 +679,10 @@ var declarations = {
 		syntax: "<border-radius>"
 	},
 	"border-bottom-style": {
-		syntax: "<border-style> | inherit"
+		syntax: "<line-style>"
 	},
 	"border-bottom-width": {
-		syntax: "<border-width> | inherit"
+		syntax: "<line-width>"
 	},
 	"border-boundary": {
 		syntax: "none | parent | display"
@@ -663,16 +691,16 @@ var declarations = {
 		syntax: "<'border-top-clip'>"
 	},
 	"border-collapse": {
-		syntax: "collapse | separate | inherit"
+		syntax: "separate | collapse"
 	},
 	"border-color": {
-		syntax: "[ <color> | transparent ]{1,4} | inherit"
+		syntax: "[ <color> | <image-1D> ]{1,4}"
 	},
 	"border-end-end-radius": {
-		syntax: "<'border-top-left-radius'>"
+		syntax: "<border-radius>"
 	},
 	"border-end-start-radius": {
-		syntax: "<'border-top-left-radius'>"
+		syntax: "<border-radius>"
 	},
 	"border-image": {
 		syntax: "<'border-image-source'> || <'border-image-slice'> [ / <'border-image-width'> | / <'border-image-width'>? / <'border-image-outset'> ]? || <'border-image-repeat'>"
@@ -702,40 +730,40 @@ var declarations = {
 		syntax: "<'border-top-color'>{1,2}"
 	},
 	"border-inline-end": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-inline-end-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-inline-end-color": {
-		syntax: "<'border-top-color'>"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-inline-end-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-inline-end-style": {
-		syntax: "<'border-top-style'>"
+		syntax: "<line-style>"
 	},
 	"border-inline-end-width": {
-		syntax: "<'border-top-width'>"
+		syntax: "<line-width>"
 	},
 	"border-inline-start": {
-		syntax: "<'border-top-width'> || <'border-top-style'> || <color>"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-inline-start-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-inline-start-color": {
-		syntax: "<'border-top-color'>"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-inline-start-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-inline-start-style": {
-		syntax: "<'border-top-style'>"
+		syntax: "<line-style>"
 	},
 	"border-inline-start-width": {
-		syntax: "<'border-top-width'>"
+		syntax: "<line-width>"
 	},
 	"border-inline-style": {
 		syntax: "<'border-top-style'>{1,2}"
@@ -744,22 +772,22 @@ var declarations = {
 		syntax: "<'border-top-width'>{1,2}"
 	},
 	"border-left": {
-		syntax: "[ <border-width> || <border-style> || <'border-top-color'> ] | inherit"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-left-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-left-color": {
-		syntax: "<color> | transparent | inherit"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-left-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-left-style": {
-		syntax: "<border-style> | inherit"
+		syntax: "<line-style>"
 	},
 	"border-left-width": {
-		syntax: "<border-width> | inherit"
+		syntax: "<line-width>"
 	},
 	"border-limit": {
 		syntax: "all | [ sides | corners ] <length-percentage [0,∞]>? | [ top | right | bottom | left ] <length-percentage [0,∞]>"
@@ -768,46 +796,46 @@ var declarations = {
 		syntax: "<length-percentage [0,∞]>{1,4} [ / <length-percentage [0,∞]>{1,4} ]?"
 	},
 	"border-right": {
-		syntax: "[ <border-width> || <border-style> || <'border-top-color'> ] | inherit"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-right-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-right-color": {
-		syntax: "<color> | transparent | inherit"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-right-radius": {
 		syntax: "<length-percentage [0,∞]>{1,2} [ / <length-percentage [0,∞]>{1,2} ]?"
 	},
 	"border-right-style": {
-		syntax: "<border-style> | inherit"
+		syntax: "<line-style>"
 	},
 	"border-right-width": {
-		syntax: "<border-width> | inherit"
+		syntax: "<line-width>"
 	},
 	"border-shape": {
 		syntax: "none | [ <basic-shape> <geometry-box>?]{1,2}"
 	},
 	"border-spacing": {
-		syntax: "<length> <length>? | inherit"
+		syntax: "<length [0,∞]>{1,2}"
 	},
 	"border-start-end-radius": {
-		syntax: "<'border-top-left-radius'>"
+		syntax: "<border-radius>"
 	},
 	"border-start-start-radius": {
-		syntax: "<'border-top-left-radius'>"
+		syntax: "<border-radius>"
 	},
 	"border-style": {
-		syntax: "<border-style>{1,4} | inherit"
+		syntax: "<'border-top-style'>{1,4}"
 	},
 	"border-top": {
-		syntax: "[ <border-width> || <border-style> || <'border-top-color'> ] | inherit"
+		syntax: "<line-width> || <line-style> || <color>"
 	},
 	"border-top-clip": {
 		syntax: "none | [ <length-percentage [0,∞]> | <flex> ]+"
 	},
 	"border-top-color": {
-		syntax: "<color> | transparent | inherit"
+		syntax: "<color> | <image-1D>"
 	},
 	"border-top-left-radius": {
 		syntax: "<border-radius>"
@@ -819,16 +847,16 @@ var declarations = {
 		syntax: "<border-radius>"
 	},
 	"border-top-style": {
-		syntax: "<border-style> | inherit"
+		syntax: "<line-style>"
 	},
 	"border-top-width": {
-		syntax: "<border-width> | inherit"
+		syntax: "<line-width>"
 	},
 	"border-width": {
-		syntax: "<border-width>{1,4} | inherit"
+		syntax: "<'border-top-width'>{1,4}"
 	},
 	bottom: {
-		syntax: "<length> | <percentage> | auto | inherit"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"box-decoration-break": {
 		syntax: "slice | clone"
@@ -867,7 +895,7 @@ var declarations = {
 		syntax: "auto | avoid | avoid-page | avoid-column | avoid-region"
 	},
 	"caption-side": {
-		syntax: "top | bottom | inherit"
+		syntax: "top | bottom"
 	},
 	caret: {
 		syntax: "<'caret-color'> || <'caret-animation'> || <'caret-shape'>"
@@ -882,10 +910,10 @@ var declarations = {
 		syntax: "auto | bar | block | underscore"
 	},
 	clear: {
-		syntax: "none | left | right | both | inherit"
+		syntax: "inline-start | inline-end | block-start | block-end | left | right | top | bottom | both-inline | both-block | both | none"
 	},
 	clip: {
-		syntax: "<shape> | auto | inherit"
+		syntax: "rect( <top>, <right>, <bottom>, <left> ) | auto | rect( <top> <right> <bottom> <left> )"
 	},
 	"clip-path": {
 		syntax: "<clip-source> | [ <basic-shape> || <geometry-box> ] | none"
@@ -894,7 +922,7 @@ var declarations = {
 		syntax: "nonzero | evenodd"
 	},
 	color: {
-		syntax: "<color> | inherit"
+		syntax: "<color>"
 	},
 	"color-adjust": {
 		syntax: "<'print-color-adjust'>"
@@ -969,7 +997,7 @@ var declarations = {
 		syntax: "none | <integer [1,∞]> | all | auto"
 	},
 	"column-width": {
-		syntax: "auto | <box-size>"
+		syntax: "auto | <box-size> | auto | <box-size>"
 	},
 	"column-wrap": {
 		syntax: "auto | nowrap | wrap"
@@ -1008,13 +1036,13 @@ var declarations = {
 		syntax: "normal | [ [ size | inline-size ] || scroll-state ]"
 	},
 	content: {
-		syntax: "normal | none | [ <string> | <uri> | <counter> | attr(<identifier>) | open-quote | close-quote | no-open-quote | no-close-quote ]+ | inherit"
+		syntax: "normal | none | [ <content-replacement> | <content-list> ] [/ <alt-text> ]? | <element()>"
 	},
 	"content-visibility": {
 		syntax: "visible | auto | hidden"
 	},
 	"continue": {
-		syntax: "normal | discard | collapse | -webkit-legacy"
+		syntax: "normal | discard | collapse | -webkit-legacy | overflow | paginate | fragments"
 	},
 	"copy-into": {
 		syntax: "none | [ [ <custom-ident> <content-level>] [, <custom-ident> <content-level>]* ]?"
@@ -1122,25 +1150,25 @@ var declarations = {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"counter-increment": {
-		syntax: "[ <identifier> <integer>? ]+ | none | inherit"
+		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	"counter-reset": {
-		syntax: "[ <identifier> <integer>? ]+ | none | inherit"
+		syntax: "[ <counter-name> <integer>? | <reversed-counter-name> <integer>? ]+ | none"
 	},
 	"counter-set": {
 		syntax: "[ <counter-name> <integer>? ]+ | none"
 	},
 	cue: {
-		syntax: " <'cue-before'> <'cue-after'>?"
+		syntax: "<'cue-before'> <'cue-after'>?"
 	},
 	"cue-after": {
-		syntax: " <url> <decibel>? | none"
+		syntax: "<url> <decibel>? | none"
 	},
 	"cue-before": {
-		syntax: " <url> <decibel>? | none"
+		syntax: "<url> <decibel>? | none"
 	},
 	cursor: {
-		syntax: " [ [ <url> [ <x> <y> ]? , ]* [ auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | grab | grabbing | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out ] ]"
+		syntax: "[<cursor-image>,]* <cursor-predefined>"
 	},
 	cx: {
 		syntax: "<length-percentage>"
@@ -1152,19 +1180,19 @@ var declarations = {
 		syntax: "none | <string>"
 	},
 	direction: {
-		syntax: "ltr | rtl | inherit"
+		syntax: "ltr | rtl"
 	},
 	display: {
-		syntax: "inline | block | list-item | inline-block | table | inline-table | table-row-group | table-header-group | table-footer-group | table-row | table-column-group | table-column | table-cell | table-caption | none | inherit | <-non-standard-display>"
+		syntax: "[ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal> | <display-box> | <display-legacy> | grid-lanes | inline-grid-lanes | <display-outside> || [ <display-inside> | math ] | <-non-standard-display>"
 	},
 	"dominant-baseline": {
-		syntax: " auto | use-script | no-change | reset-size | ideographic | alphabetic | hanging | mathematical | central | middle | text-after-edge | text-before-edge"
+		syntax: "auto | <baseline-metric>"
 	},
 	"dynamic-range-limit": {
 		syntax: "standard | no-limit | constrained | <dynamic-range-limit-mix()>"
 	},
 	"empty-cells": {
-		syntax: "show | hide | inherit"
+		syntax: "show | hide"
 	},
 	"event-trigger": {
 		syntax: "none | [ <'event-trigger-name'> <'event-trigger-source'> ]#"
@@ -1191,7 +1219,7 @@ var declarations = {
 		syntax: "<paint>#"
 	},
 	"fill-opacity": {
-		syntax: " <number-zero-one> | <percentage>"
+		syntax: "<'opacity'>"
 	},
 	"fill-origin": {
 		syntax: "match-parent | fill-box | stroke-box | content-box | padding-box | border-box"
@@ -1239,7 +1267,7 @@ var declarations = {
 		syntax: "nowrap | [ wrap | wrap-reverse ] || balance"
 	},
 	float: {
-		syntax: "left | right | none | inherit"
+		syntax: "block-start | block-end | inline-start | inline-end | snap-block | <snap-block()> | snap-inline | <snap-inline()> | left | right | top | bottom | none | footnote"
 	},
 	"float-defer": {
 		syntax: "<integer> | last | none"
@@ -1263,10 +1291,10 @@ var declarations = {
 		syntax: "none | <custom-ident> [element | content]?"
 	},
 	font: {
-		syntax: " [ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-family-name> | <-non-standard-font> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
+		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-font-family-name> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
 	},
 	"font-family": {
-		syntax: "[ [ <family-name> | <generic-family> ] [, <family-name> | <generic-family>]* ] | inherit"
+		syntax: "[ <font-family-name> | <generic-font-family> ]#"
 	},
 	"font-feature-settings": {
 		syntax: "normal | <feature-tag-value>#"
@@ -1284,13 +1312,13 @@ var declarations = {
 		syntax: "normal | light | dark | <palette-identifier> | <palette-mix()>"
 	},
 	"font-size": {
-		syntax: "<absolute-size> | <relative-size> | <length> | <percentage> | inherit"
+		syntax: "<absolute-size> | <relative-size> | <length-percentage [0,∞]> | math"
 	},
 	"font-size-adjust": {
 		syntax: "none | [ ex-height | cap-height | ch-width | ic-width | ic-height ]? [ from-font | <number [0,∞]> ]"
 	},
 	"font-style": {
-		syntax: "normal | italic | oblique | inherit"
+		syntax: "normal | italic | left | right | oblique <angle [-90deg,90deg]>?"
 	},
 	"font-synthesis": {
 		syntax: "none | [ weight || style || small-caps || position]"
@@ -1308,7 +1336,7 @@ var declarations = {
 		syntax: "auto | none"
 	},
 	"font-variant": {
-		syntax: "normal | small-caps | inherit"
+		syntax: "normal | none | [ [ <common-lig-values> || <discretionary-lig-values> || <historical-lig-values> || <contextual-alt-values> ] || [ small-caps | all-small-caps | petite-caps | all-petite-caps | unicase | titling-caps ] || [ stylistic(<font-feature-value-name>) || historical-forms || styleset(<font-feature-value-name>#) || character-variant(<font-feature-value-name>#) || swash(<font-feature-value-name>) || ornaments(<font-feature-value-name>) || annotation(<font-feature-value-name>) ] || [ <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero ] || [ <east-asian-variant-values> || <east-asian-width-values> || ruby ] || [ sub | super ] || [ text | emoji | unicode ] ]"
 	},
 	"font-variant-alternates": {
 		syntax: "normal | [ stylistic(<font-feature-value-name>) || historical-forms || styleset(<font-feature-value-name>#) || character-variant(<font-feature-value-name>#) || swash(<font-feature-value-name>) || ornaments(<font-feature-value-name>) || annotation(<font-feature-value-name>) ]"
@@ -1335,7 +1363,7 @@ var declarations = {
 		syntax: "normal | [ <opentype-tag> <number> ]#"
 	},
 	"font-weight": {
-		syntax: "normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit"
+		syntax: "<font-weight-absolute> | bolder | lighter"
 	},
 	"font-width": {
 		syntax: "normal | <percentage [0,∞]> | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded"
@@ -1359,7 +1387,7 @@ var declarations = {
 		syntax: "<angle>"
 	},
 	"glyph-orientation-vertical": {
-		syntax: " <angle>"
+		syntax: "auto | 0deg | 90deg | 0 | 90"
 	},
 	grid: {
 		syntax: "<'grid-template'> | <'grid-template-rows'> / [ auto-flow && dense? ] <'grid-auto-columns'>? | [ auto-flow && dense? ] <'grid-auto-rows'>? / <'grid-template-columns'>"
@@ -1410,7 +1438,7 @@ var declarations = {
 		syntax: "none | [ first || [ force-end | allow-end ] || last ]"
 	},
 	height: {
-		syntax: "<length> | <percentage> | auto | inherit | stretch | <-non-standard-size>"
+		syntax: "auto | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"hyphenate-character": {
 		syntax: "auto | <string>"
@@ -1437,7 +1465,7 @@ var declarations = {
 		syntax: "from-image | none | [ <angle> || flip ]"
 	},
 	"image-rendering": {
-		syntax: "auto | optimizeQuality | optimizeSpeed | optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
+		syntax: "auto | smooth | high-quality | pixelated | crisp-edges | optimizeSpeed | optimizeQuality | <-non-standard-image-rendering>"
 	},
 	"image-resolution": {
 		syntax: "[ from-image || <resolution> ] && snap?"
@@ -1452,7 +1480,7 @@ var declarations = {
 		syntax: "none | first | all | grid | <length-percentage>"
 	},
 	"inline-size": {
-		syntax: "auto | <length-percentage>"
+		syntax: "auto | <box-size> | <anchor-size()>"
 	},
 	"inline-sizing": {
 		syntax: "normal | stretch"
@@ -1506,16 +1534,16 @@ var declarations = {
 		syntax: "normal | stretch | <baseline-position> | <overflow-position>? [ <self-position> | left | right ] | legacy | legacy && [ left | right | center ]"
 	},
 	"justify-self": {
-		syntax: "auto | <overflow-position>? [ normal | <self-position> | left | right ] | stretch | <baseline-position>"
+		syntax: "auto | <overflow-position>? [ normal | <self-position> | left | right ] | stretch | <baseline-position> | anchor-center"
 	},
 	kerning: {
 		syntax: "auto | <svg-length>"
 	},
 	left: {
-		syntax: "<length> | <percentage> | auto | inherit"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"letter-spacing": {
-		syntax: " normal | <length-percentage>"
+		syntax: "normal | <length-percentage>"
 	},
 	"lighting-color": {
 		syntax: "<color>"
@@ -1533,7 +1561,7 @@ var declarations = {
 		syntax: "match-parent | create"
 	},
 	"line-height": {
-		syntax: "normal | <number> | <length> | <percentage> | inherit"
+		syntax: "normal | <number [0,∞]> | <length-percentage [0,∞]>"
 	},
 	"line-height-step": {
 		syntax: "<length [0,∞]>"
@@ -1548,19 +1576,19 @@ var declarations = {
 		syntax: "none | <param()>#"
 	},
 	"list-style": {
-		syntax: "[ <'list-style-type'> || <'list-style-position'> || <'list-style-image'> ] | inherit"
+		syntax: "<'list-style-position'> || <'list-style-image'> || <'list-style-type'>"
 	},
 	"list-style-image": {
-		syntax: "<uri> | none | inherit"
+		syntax: "<image> | none"
 	},
 	"list-style-position": {
-		syntax: "inside | outside | inherit"
+		syntax: "inside | outside"
 	},
 	"list-style-type": {
-		syntax: "disc | circle | square | decimal | decimal-leading-zero | lower-roman | upper-roman | lower-greek | lower-latin | upper-latin | armenian | georgian | lower-alpha | upper-alpha | none | inherit"
+		syntax: "<counter-style> | <string> | none"
 	},
 	margin: {
-		syntax: "<margin-width>{1,4} | inherit"
+		syntax: "<'margin-top'>{1,4}"
 	},
 	"margin-block": {
 		syntax: "<'margin-top'>{1,2}"
@@ -1572,7 +1600,7 @@ var declarations = {
 		syntax: "<'margin-top'>"
 	},
 	"margin-bottom": {
-		syntax: "<margin-width> | inherit"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-break": {
 		syntax: "auto | keep | discard"
@@ -1587,13 +1615,13 @@ var declarations = {
 		syntax: "<'margin-top'>"
 	},
 	"margin-left": {
-		syntax: "<margin-width> | inherit"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-right": {
-		syntax: "<margin-width> | inherit"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-top": {
-		syntax: "<margin-width> | inherit"
+		syntax: "<length-percentage> | auto | <anchor-size()>"
 	},
 	"margin-trim": {
 		syntax: "none | block | [ block-start || block-end ]"
@@ -1674,13 +1702,13 @@ var declarations = {
 		syntax: "normal | compact"
 	},
 	"max-block-size": {
-		syntax: "none | <box-size>"
+		syntax: "none | <box-size> | <anchor-size()>"
 	},
 	"max-height": {
-		syntax: "<length> | <percentage> | none | inherit | stretch | <-non-standard-size>"
+		syntax: "none | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"max-inline-size": {
-		syntax: "none | <box-size>"
+		syntax: "none | <box-size> | <anchor-size()>"
 	},
 	"max-lines": {
 		syntax: "auto || <integer [1,∞]>"
@@ -1689,16 +1717,16 @@ var declarations = {
 		syntax: "<'max-width'> <'max-height'>?"
 	},
 	"max-width": {
-		syntax: "<length> | <percentage> | none | inherit | stretch | <-non-standard-size>"
+		syntax: "none | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"min-block-size": {
-		syntax: "auto | <box-size>"
+		syntax: "auto | <box-size> | <anchor-size()>"
 	},
 	"min-height": {
-		syntax: "<length> | <percentage> | inherit | stretch | <-non-standard-size>"
+		syntax: "auto | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"min-inline-size": {
-		syntax: "auto | <box-size>"
+		syntax: "auto | <box-size> | <anchor-size()>"
 	},
 	"min-intrinsic-sizing": {
 		syntax: "legacy | zero-if-scroll || zero-if-extrinsic"
@@ -1707,7 +1735,7 @@ var declarations = {
 		syntax: "<'min-width'> <'min-height'>?"
 	},
 	"min-width": {
-		syntax: "<length> | <percentage> | inherit | stretch | <-non-standard-size>"
+		syntax: "auto | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"mix-blend-mode": {
 		syntax: "<blend-mode> | plus-lighter"
@@ -1758,25 +1786,25 @@ var declarations = {
 		syntax: "<integer>"
 	},
 	orphans: {
-		syntax: "<integer> | inherit"
+		syntax: "<integer [1,∞]>"
 	},
 	outline: {
-		syntax: "[ <'outline-color'> || <'outline-style'> || <'outline-width'> ] | inherit"
+		syntax: "<'outline-width'> || <'outline-style'> || <'outline-color'>"
 	},
 	"outline-color": {
-		syntax: "<color> | invert | inherit"
+		syntax: "auto | <'border-top-color'>"
 	},
 	"outline-offset": {
 		syntax: "<length>"
 	},
 	"outline-style": {
-		syntax: "<border-style> | inherit"
+		syntax: "auto | <outline-line-style>"
 	},
 	"outline-width": {
-		syntax: "<border-width> | inherit"
+		syntax: "<line-width>"
 	},
 	overflow: {
-		syntax: "visible | hidden | scroll | auto | inherit | <-non-standard-overflow>"
+		syntax: "<'overflow-block'>{1,2} | <-non-standard-overflow>"
 	},
 	"overflow-anchor": {
 		syntax: "auto | none"
@@ -1848,7 +1876,7 @@ var declarations = {
 		syntax: "contain | none | auto | chain"
 	},
 	padding: {
-		syntax: "<padding-width>{1,4} | inherit"
+		syntax: "<'padding-top'>{1,4}"
 	},
 	"padding-block": {
 		syntax: "<'padding-top'>{1,2}"
@@ -1860,7 +1888,7 @@ var declarations = {
 		syntax: "<'padding-top'>"
 	},
 	"padding-bottom": {
-		syntax: "<padding-width> | inherit"
+		syntax: "<length-percentage [0,∞]>"
 	},
 	"padding-inline": {
 		syntax: "<'padding-top'>{1,2}"
@@ -1872,13 +1900,13 @@ var declarations = {
 		syntax: "<'padding-top'>"
 	},
 	"padding-left": {
-		syntax: "<padding-width> | inherit"
+		syntax: "<length-percentage [0,∞]>"
 	},
 	"padding-right": {
-		syntax: "<padding-width> | inherit"
+		syntax: "<length-percentage [0,∞]>"
 	},
 	"padding-top": {
-		syntax: "<padding-width> | inherit"
+		syntax: "<length-percentage [0,∞]>"
 	},
 	page: {
 		syntax: "auto | <custom-ident>"
@@ -1899,13 +1927,13 @@ var declarations = {
 		syntax: "none | <length [0,∞]>"
 	},
 	pause: {
-		syntax: " <'pause-before'> <'pause-after'>?"
+		syntax: "<'pause-before'> <'pause-after'>?"
 	},
 	"pause-after": {
-		syntax: " <time> | none | x-weak | weak | medium | strong | x-strong"
+		syntax: "<time [0s,∞]> | none | x-weak | weak | medium | strong | x-strong"
 	},
 	"pause-before": {
-		syntax: " <time> | none | x-weak | weak | medium | strong | x-strong"
+		syntax: "<time [0s,∞]> | none | x-weak | weak | medium | strong | x-strong"
 	},
 	perspective: {
 		syntax: "none | <length [0,∞]>"
@@ -1935,7 +1963,7 @@ var declarations = {
 		syntax: "[ none | <dashed-ident> ]#"
 	},
 	position: {
-		syntax: "static | relative | absolute | fixed | inherit | -webkit-sticky"
+		syntax: "static | relative | absolute | sticky | fixed | <running()> | -webkit-sticky"
 	},
 	"position-anchor": {
 		syntax: "normal | none | auto | <anchor-name> | match-parent"
@@ -1962,7 +1990,7 @@ var declarations = {
 		syntax: "economy | exact"
 	},
 	quotes: {
-		syntax: "[<string> <string>]+ | none | inherit"
+		syntax: "auto | none | bikeshed-this | [ <string> <string> ]+"
 	},
 	r: {
 		syntax: "<length-percentage>"
@@ -1980,16 +2008,16 @@ var declarations = {
 		syntax: "none | both | horizontal | vertical | block | inline"
 	},
 	rest: {
-		syntax: " <'rest-before'> <'rest-after'>?"
+		syntax: "<'rest-before'> <'rest-after'>?"
 	},
 	"rest-after": {
-		syntax: " <time> | none | x-weak | weak | medium | strong | x-strong"
+		syntax: "<time [0s,∞]> | none | x-weak | weak | medium | strong | x-strong"
 	},
 	"rest-before": {
-		syntax: " <time> | none | x-weak | weak | medium | strong | x-strong"
+		syntax: "<time [0s,∞]> | none | x-weak | weak | medium | strong | x-strong"
 	},
 	right: {
-		syntax: "<length> | <percentage> | auto | inherit"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	rotate: {
 		syntax: "none | <angle> | [ x | y | z | <number>{3} ] && <angle>"
@@ -2241,13 +2269,19 @@ var declarations = {
 		syntax: "normal | grid"
 	},
 	speak: {
-		syntax: " auto | never | always"
+		syntax: "auto | never | always"
 	},
 	"speak-as": {
 		syntax: "normal | spell-out || digits || [ literal-punctuation | no-punctuation ]"
 	},
+	"stop-color": {
+		syntax: "<'color'>"
+	},
+	"stop-opacity": {
+		syntax: "<'opacity'>"
+	},
 	"string-set": {
-		syntax: "[ <custom-ident> <content-list> ]# | none"
+		syntax: "none | [ <custom-ident> <string>+ ]#"
 	},
 	stroke: {
 		syntax: "<paint>"
@@ -2274,13 +2308,13 @@ var declarations = {
 		syntax: "none | [stretch | compress] [dashes | gaps]?"
 	},
 	"stroke-dasharray": {
-		syntax: " none | [ <svg-length>+ ]#"
+		syntax: "none | [<length-percentage> | <number>]+#"
 	},
 	"stroke-dashcorner": {
 		syntax: "none | <length>"
 	},
 	"stroke-dashoffset": {
-		syntax: " <svg-length>"
+		syntax: "<length-percentage> | <number>"
 	},
 	"stroke-image": {
 		syntax: "<paint>#"
@@ -2289,10 +2323,10 @@ var declarations = {
 		syntax: "butt | round | square"
 	},
 	"stroke-linejoin": {
-		syntax: " miter | round | bevel | arcs | crop | fallback | miter-clip"
+		syntax: "[ crop | arcs | miter ] || [ bevel | round | fallback ] | arcs | crop | fallback | miter-clip"
 	},
 	"stroke-miterlimit": {
-		syntax: " <number-one-or-greater>"
+		syntax: "<number>"
 	},
 	"stroke-opacity": {
 		syntax: "<'opacity'>"
@@ -2316,10 +2350,10 @@ var declarations = {
 		syntax: "<number [0,∞]> | <length [0,∞]>"
 	},
 	"table-layout": {
-		syntax: "auto | fixed | inherit"
+		syntax: "auto | fixed"
 	},
 	"text-align": {
-		syntax: "left | right | center | justify | inherit | <-non-standard-text-align>"
+		syntax: "start | end | left | right | center | <string> | justify | match-parent | justify-all | <-non-standard-text-align>"
 	},
 	"text-align-all": {
 		syntax: "start | end | left | right | center | <string> | justify | match-parent"
@@ -2346,7 +2380,7 @@ var declarations = {
 		syntax: "none | all | [ digits <integer [2,4]>? ]"
 	},
 	"text-decoration": {
-		syntax: "none | [ underline || overline || line-through || blink ] | inherit"
+		syntax: "<'text-decoration-line'> || <'text-decoration-thickness'> || <'text-decoration-style'> || <'text-decoration-color'>"
 	},
 	"text-decoration-color": {
 		syntax: "<color>"
@@ -2400,7 +2434,7 @@ var declarations = {
 		syntax: "none | start | end | left | right | center"
 	},
 	"text-indent": {
-		syntax: "<length> | <percentage> | inherit"
+		syntax: "[ <length-percentage> ] && hanging? && each-line?"
 	},
 	"text-justify": {
 		syntax: "[ auto | none | inter-word | inter-character | ruby ] || no-compress"
@@ -2427,7 +2461,7 @@ var declarations = {
 		syntax: "<spacing-trim> | auto"
 	},
 	"text-transform": {
-		syntax: "capitalize | uppercase | lowercase | none | inherit"
+		syntax: "none | [capitalize | uppercase | lowercase ] || full-width || full-size-kana | math-auto"
 	},
 	"text-underline-offset": {
 		syntax: "auto | <length-percentage>"
@@ -2478,7 +2512,7 @@ var declarations = {
 		syntax: "[ none | auto | [ <dashed-ident> | <scroll()> | <view()> ]+ ]#"
 	},
 	top: {
-		syntax: "<length> | <percentage> | auto | inherit"
+		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
 	"touch-action": {
 		syntax: "auto | none | [ [ pan-x | pan-left | pan-right ] || [ pan-y | pan-up | pan-down ] || pinch-zoom ] | manipulation"
@@ -2520,7 +2554,7 @@ var declarations = {
 		syntax: "none | all | <dashed-ident>#"
 	},
 	"unicode-bidi": {
-		syntax: "normal | embed | bidi-override | inherit | -moz-isolate | -moz-isolate-override | -moz-plaintext | -webkit-isolate | -webkit-isolate-override | -webkit-plaintext"
+		syntax: "normal | embed | isolate | bidi-override | isolate-override | plaintext | -moz-isolate | -moz-isolate-override | -moz-plaintext | -webkit-isolate | -webkit-isolate-override | -webkit-plaintext"
 	},
 	"user-select": {
 		syntax: "auto | text | none | contain | all"
@@ -2529,7 +2563,7 @@ var declarations = {
 		syntax: "none | non-scaling-stroke | non-scaling-size | non-rotation | fixed-position"
 	},
 	"vertical-align": {
-		syntax: "baseline | sub | super | top | text-top | middle | bottom | text-bottom | <percentage> | <length> | inherit"
+		syntax: "[ first | last] || <'alignment-baseline'> || <'baseline-shift'>"
 	},
 	"view-timeline": {
 		syntax: "[ <'view-timeline-name'> [ <'view-timeline-axis'> || <'view-timeline-inset'> ]? ]#"
@@ -2556,46 +2590,46 @@ var declarations = {
 		syntax: "none | all"
 	},
 	visibility: {
-		syntax: "visible | hidden | collapse | inherit"
+		syntax: "visible | hidden | force-hidden | collapse"
 	},
 	"voice-balance": {
-		syntax: " <number> | left | center | right | leftwards | rightwards"
+		syntax: "<number> | left | center | right | leftwards | rightwards"
 	},
 	"voice-duration": {
-		syntax: " auto | <time>"
+		syntax: "auto | <time [0s,∞]>"
 	},
 	"voice-family": {
-		syntax: " [ [ <family-name> | <generic-voice> ] , ]* [ <family-name> | <generic-voice> ] | preserve"
+		syntax: "[ <voice-family-name> | <generic-voice> ]# | preserve"
 	},
 	"voice-pitch": {
-		syntax: " <frequency> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency> | <semitones> | <percentage> ] ]"
+		syntax: "<frequency [0Hz,∞]> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency [0Hz,∞]> | <semitones> | <percentage> ] ]"
 	},
 	"voice-range": {
-		syntax: " <frequency> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency> | <semitones> | <percentage> ] ]"
+		syntax: "<frequency [0Hz,∞]> && absolute | [ [ x-low | low | medium | high | x-high ] || [ <frequency [0Hz,∞]> | <semitones> | <percentage> ] ]"
 	},
 	"voice-rate": {
-		syntax: " [ normal | x-slow | slow | medium | fast | x-fast ] || <percentage>"
+		syntax: "[ normal | x-slow | slow | medium | fast | x-fast ] || <percentage [0,∞]>"
 	},
 	"voice-stress": {
-		syntax: " normal | strong | moderate | none | reduced"
+		syntax: "normal | strong | moderate | none | reduced"
 	},
 	"voice-volume": {
-		syntax: " silent | [ [ x-soft | soft | medium | loud | x-loud ] || <decibel> ]"
+		syntax: "silent | [ [ x-soft | soft | medium | loud | x-loud ] || <decibel> ]"
 	},
 	"white-space": {
-		syntax: "normal | pre | nowrap | pre-wrap | pre-line | inherit"
+		syntax: "normal | pre | pre-wrap | pre-line | <'white-space-collapse'> || <'text-wrap-mode'> || <'white-space-trim'>"
 	},
 	"white-space-collapse": {
 		syntax: "collapse | discard | preserve | preserve-breaks | preserve-spaces | break-spaces"
 	},
 	"white-space-trim": {
-		syntax: " none | discard-before || discard-after || discard-inner"
+		syntax: "none | discard-before || discard-after || discard-inner"
 	},
 	widows: {
-		syntax: "<integer> | inherit"
+		syntax: "<integer [1,∞]>"
 	},
 	width: {
-		syntax: "<length> | <percentage> | auto | inherit | stretch | <-non-standard-size>"
+		syntax: "auto | <box-size> | <anchor-size()> | stretch | <-non-standard-size>"
 	},
 	"will-change": {
 		syntax: "auto | <animateable-feature>#"
@@ -2610,7 +2644,7 @@ var declarations = {
 		syntax: "none | [ space | ideographic-space ] && auto-phrase?"
 	},
 	"word-spacing": {
-		syntax: "normal | <length> | inherit"
+		syntax: "normal | <length-percentage>"
 	},
 	"wrap-after": {
 		syntax: "auto | avoid | avoid-line | avoid-flex | line | flex"
@@ -3247,14 +3281,8 @@ var selectors = {
 	":-webkit-any()": {
 		syntax: ":-webkit-any( <forgiving-selector-list> )"
 	},
-	"::-webkit-input-placeholder": {
-		syntax: "::-webkit-input-placeholder"
-	},
 	"::after": {
 		syntax: "::after"
-	},
-	"::attr()": {
-		syntax: "::attr()"
 	},
 	"::backdrop": {
 		syntax: "::backdrop"
@@ -3326,7 +3354,7 @@ var selectors = {
 		syntax: "::picker-icon"
 	},
 	"::picker()": {
-		syntax: "::picker( <form-control-identifier>+ ) <form-control-identifier>Info about the '<form-control-identifier>' reference.#typedef-picker-form-control-identifierReferenced in:3.1. The ::picker() pseudo-element (2) (3) Possible linking"
+		syntax: "::picker( <form-control-identifier>+ )"
 	},
 	"::placeholder": {
 		syntax: "::placeholder"
@@ -3358,6 +3386,9 @@ var selectors = {
 	"::slider-track": {
 		syntax: "::slider-track"
 	},
+	"::slotted()": {
+		syntax: "::slotted( <compound-selector> )"
+	},
 	"::spelling-error": {
 		syntax: "::spelling-error"
 	},
@@ -3376,11 +3407,26 @@ var selectors = {
 	"::view-transition": {
 		syntax: "::view-transition"
 	},
+	"::view-transition-group()": {
+		syntax: "::view-transition-group([ '*' | <custom-ident> ])"
+	},
+	"::view-transition-image-pair()": {
+		syntax: "::view-transition-image-pair([ '*' | <custom-ident> ])"
+	},
+	"::view-transition-new()": {
+		syntax: "::view-transition-new([ '*' | <custom-ident> ])"
+	},
+	"::view-transition-old()": {
+		syntax: "::view-transition-old([ '*' | <custom-ident> ])"
+	},
 	":active": {
 		syntax: ":active"
 	},
 	":active-view-transition": {
 		syntax: ":active-view-transition"
+	},
+	":active-view-transition-type()": {
+		syntax: ":active-view-transition-type( <custom-ident># )"
 	},
 	":after": {
 		syntax: ":after"
@@ -3414,6 +3460,9 @@ var selectors = {
 	},
 	":defined": {
 		syntax: ":defined"
+	},
+	":dir()": {
+		syntax: ":dir( [ ltr | rtl ] )"
 	},
 	":disabled": {
 		syntax: ":disabled"
@@ -3466,6 +3515,9 @@ var selectors = {
 	":has-slotted": {
 		syntax: ":has-slotted"
 	},
+	":has()": {
+		syntax: ":has( <forgiving-relative-selector-list> )"
+	},
 	":heading": {
 		syntax: ":heading"
 	},
@@ -3477,6 +3529,12 @@ var selectors = {
 	},
 	":host": {
 		syntax: ":host"
+	},
+	":host-context()": {
+		syntax: ":host-context( <compound-selector> )"
+	},
+	":host()": {
+		syntax: ":host( <compound-selector> )"
 	},
 	":hover": {
 		syntax: ":hover"
@@ -3495,6 +3553,12 @@ var selectors = {
 	},
 	":invalid": {
 		syntax: ":invalid"
+	},
+	":is()": {
+		syntax: ":is( <forgiving-selector-list> )"
+	},
+	":lang()": {
+		syntax: ":lang( <language-code> )"
 	},
 	":last-child": {
 		syntax: ":last-child"
@@ -3532,29 +3596,32 @@ var selectors = {
 	":navigation-source": {
 		syntax: ":navigation-source"
 	},
+	":not()": {
+		syntax: ":not( <complex-selector-list> )"
+	},
 	":nth-child()": {
-		syntax: ":nth-child(An+B [of S]? )"
+		syntax: ":nth-child( <an+b> [ of <complex-selector-list> ]? )"
 	},
 	":nth-col()": {
 		syntax: ":nth-col(An+B)"
 	},
 	":nth-last-child()": {
-		syntax: ":nth-last-child(An+B [of S]? )"
+		syntax: ":nth-last-child( <an+b> [ of <complex-selector-list> ]? )"
 	},
 	":nth-last-col()": {
 		syntax: ":nth-last-col(An+B)"
 	},
 	":nth-last-of-type()": {
-		syntax: ":nth-last-of-type(An+B)"
+		syntax: ":nth-last-of-type( <an+b> )"
 	},
 	":nth-of-page()": {
 		syntax: ":nth-of-page(n)"
 	},
 	":nth-of-type()": {
-		syntax: ":nth-of-type(An+B)"
+		syntax: ":nth-of-type( <an+b> )"
 	},
 	":nth()": {
-		syntax: ":nth()"
+		syntax: ":nth( <a-n-plus-b> [of <custom-ident>]? )"
 	},
 	":only-child": {
 		syntax: ":only-child"
@@ -3667,6 +3734,9 @@ var selectors = {
 	":volume-locked": {
 		syntax: ":volume-locked"
 	},
+	":where()": {
+		syntax: ":where( <complex-selector-list> )"
+	},
 	":xr-overlay": {
 		syntax: ":xr-overlay"
 	},
@@ -3687,9 +3757,6 @@ var selectors = {
 	}
 };
 var syntaxes = {
-	syntax: {
-		syntax: "'*' | <syntax-component> [ <syntax-combinator> <syntax-component> ]* | <syntax-string>"
-	},
 	"-legacy-gradient": {
 		syntax: "<-webkit-gradient()> | <-legacy-linear-gradient> | <-legacy-repeating-linear-gradient> | <-legacy-radial-gradient> | <-legacy-repeating-radial-gradient>"
 	},
@@ -3780,17 +3847,17 @@ var syntaxes = {
 	age: {
 		syntax: "child | young | old"
 	},
-	"alpha-value": {
-		syntax: "<number> | <percentage> | none"
-	},
 	"alpha()": {
 		syntax: " alpha([from <color>] [ / [<alpha-value> | none] ]? )"
 	},
 	"anchor-size()": {
-		syntax: "anchor-size( [ <anchor-name> || <anchor-size> ]? , <length-percentage>? ) <anchor-size>Info about the '<anchor-size>' reference.#typedef-anchor-sizeReferenced in:5.1. The anchor-size() Function (2) (3) (4) (5) (6) Possible linking"
+		syntax: "anchor-size( [ <anchor-name> || <anchor-size> ]? , <length-percentage>? )"
 	},
 	"anchor()": {
-		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? ) <anchor-side>Info about the '<anchor-side>' reference.#typedef-anchor-sideReferenced in:3.2. Anchor-relative Insets: the anchor() function (2) (3) 3.2.1. Resolution of anchor() 5.1. The anchor-size() Function Possible linking"
+		syntax: "anchor( <anchor-name>? && <anchor-side>, <length-percentage>? )"
+	},
+	"animation-action": {
+		syntax: "none | play | play-once | play-forwards | play-backwards | pause | reset | replay"
 	},
 	"asin()": {
 		syntax: "asin( <calc-sum> )"
@@ -3807,20 +3874,17 @@ var syntaxes = {
 	"attr-fallback": {
 		syntax: "<any-value>"
 	},
-	"attr-name": {
-		syntax: "<wq-name>"
-	},
 	"attr()": {
 		syntax: "attr( <attr-name> <attr-type>? , <declaration-value>?)"
 	},
-	autospace: {
-		syntax: "no-autospace | [ ideograph-alpha || ideograph-numeric || punctuation ] || [ insert | replace ]"
-	},
-	"bg-position": {
-		syntax: "<position> | <position-three>"
+	"blur()": {
+		syntax: "blur( <length>? )"
 	},
 	bottom: {
 		syntax: "<length> | auto"
+	},
+	"brightness()": {
+		syntax: "brightness( [ <number> | <percentage> ]? )"
 	},
 	"calc-interpolate()": {
 		syntax: "calc-interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? ] , <input-position>{1,2} : <calc-sum> , [ <easing-function>? , <input-position>{1,2} : <calc-sum> ]#? )"
@@ -3829,7 +3893,7 @@ var syntaxes = {
 		syntax: "calc-mix( [ <calc-sum> <percentage [0,100]>? ]# )"
 	},
 	"calc-size()": {
-		syntax: "calc-size( <calc-size-basis>, <calc-sum> ) <calc-size-basis>Info about the '<calc-size-basis>' reference.#typedef-calc-size-basisReferenced in:7. Calculating With Intrinsic Sizes: the calc-size() function (2) Possible linking"
+		syntax: "calc-size( <calc-size-basis>, <calc-sum> )"
 	},
 	"calc()": {
 		syntax: "calc( <calc-sum> )"
@@ -3837,20 +3901,14 @@ var syntaxes = {
 	"change()": {
 		syntax: "change()"
 	},
+	"circle()": {
+		syntax: "circle( <radial-size>? [ at <position> ]? )"
+	},
 	"clamp()": {
 		syntax: "clamp( [ <calc-sum> | none ], <calc-sum>, [ <calc-sum> | none ] )"
 	},
 	"click()": {
 		syntax: "click()"
-	},
-	"cmyk-component": {
-		syntax: "<number> | <percentage> | none"
-	},
-	color: {
-		syntax: "<color-base> | currentColor | <system-color> | <device-cmyk()>  | <light-dark()> | <-non-standard-color>"
-	},
-	"color-font-tech": {
-		syntax: "color-colrv0 | color-colrv1 | color-svg | color-sbix | color-cbdt"
 	},
 	"color-interpolate()": {
 		syntax: "color-interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? && <color-interpolation-method>? ] , <input-position>{1,2} : <color>, [ [ <easing-function> || <color-interpolation-method> ]?, <input-position>{1,2} : <color> ]#? )"
@@ -3861,74 +3919,41 @@ var syntaxes = {
 	"color-mix()": {
 		syntax: "color-mix( <color-interpolation-method> ,? [ <color> && <percentage [0,100]>? ]#)"
 	},
-	"color-space": {
-		syntax: "<rectangular-color-space> | <polar-color-space> | <custom-color-space>"
-	},
 	"color()": {
 		syntax: "color( [from <color>]? <colorspace-params> [ / [ <alpha-value> | none ] ]? )"
-	},
-	"colorspace-params": {
-		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
-	},
-	combinator: {
-		syntax: "'>' | '+' | '~' | [ '|' '|' ]"
-	},
-	"complex-real-selector": {
-		syntax: "<compound-selector> [ <combinator>? <compound-selector> ]*"
-	},
-	"complex-real-selector-list": {
-		syntax: "<complex-real-selector>#"
-	},
-	"complex-selector": {
-		syntax: "<complex-selector-unit> [ <combinator>? <complex-selector-unit> ]*"
-	},
-	"complex-selector-unit": {
-		syntax: "[ <compound-selector>? <pseudo-compound-selector>* ]!"
 	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
 	},
-	"compound-selector": {
-		syntax: "[ <type-selector>? <subclass-selector>* ]!"
-	},
 	"conic-gradient()": {
-		syntax: "conic-gradient()"
-	},
-	"content-list": {
-		syntax: "[ <string> | contents | <image> | <counter> | <quote> | <target> | <leader()> | <attr()> ]+"
+		syntax: "conic-gradient( [ <conic-gradient-syntax> ] )"
 	},
 	"content()": {
-		syntax: "content()"
+		syntax: "content( [ text | before | after | first-letter | marker ]? )"
 	},
 	"contrast-color()": {
 		syntax: "contrast-color( [ [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>? ] | [ <color> && [ tbd-fg | tbd-bg ] && <target-contrast>, <color># ] ] )"
 	},
-	"control-value()": {
-		syntax: "control-value( <type>? ) <type>Info about the '<type>' reference.#typedef-typeReferenced in:6. The control-value() function (2) Possible linking"
+	"contrast()": {
+		syntax: "contrast( [ <number> | <percentage> ]? )"
 	},
-	"coord-box": {
-		syntax: "content-box | padding-box | border-box | fill-box | stroke-box | view-box"
+	"control-value()": {
+		syntax: "control-value( <type>? )"
 	},
 	"cos()": {
 		syntax: "cos( <calc-sum> )"
 	},
 	"counter()": {
-		syntax: "counter(<identifier>)"
+		syntax: "counter( <counter-name>, <counter-style>? )"
 	},
 	"counters()": {
-		syntax: "counters(<identifier>, <string>)"
+		syntax: "counters( <counter-name>, <string>, <counter-style>? )"
 	},
 	"cross-fade()": {
-		syntax: "cross-fade()"
-	},
-	"cubic-bezier-easing-function": {
-		syntax: "ease | ease-in | ease-out | ease-in-out | cubic-bezier( <number [0,1]> , <number> , <number [0,1]> , <number> )"
+		syntax: "cross-fade( <cf-image># )"
 	},
 	"cubic-bezier()": {
-		syntax: "cubic-bezier()"
-	},
-	"custom-params": {
-		syntax: "<dashed-ident> [ <number> | <percentage> | none ]+"
+		syntax: "cubic-bezier( [ <number [0,1]>, <number> ]#{2} )"
 	},
 	"cycle()": {
 		syntax: "cycle( <whole-value># )"
@@ -3945,11 +3970,17 @@ var syntaxes = {
 	"device-cmyk()": {
 		syntax: "<legacy-device-cmyk-syntax> | <modern-device-cmyk-syntax>"
 	},
+	"drop-shadow()": {
+		syntax: "drop-shadow( [ <color>? && <length>{2,3} ] )"
+	},
 	"dynamic-range-limit-mix()": {
-		syntax: "dynamic-range-limit-mix()"
+		syntax: "dynamic-range-limit-mix( [ <'dynamic-range-limit'> && <percentage [0,100]> ]# )"
 	},
 	"element()": {
-		syntax: "element( <custom-ident> , [ first | start | last | first-except ]? ) | element( <id-selector> )"
+		syntax: "element( <id-selector> )"
+	},
+	"ellipse()": {
+		syntax: "ellipse( <radial-size>? [ at <position> ]? )"
 	},
 	"env()": {
 		syntax: "env( <custom-ident> <integer [0,∞]>* , <declaration-value>? )"
@@ -3957,11 +3988,20 @@ var syntaxes = {
 	"exp()": {
 		syntax: "exp( <calc-sum> )"
 	},
+	"fade()": {
+		syntax: "fade( [ <length-percentage> ] )"
+	},
+	"family-name": {
+		syntax: "<string> | <custom-ident>+"
+	},
 	"filter()": {
 		syntax: "filter( [ <image> | <string> ], <filter-value-list> )"
 	},
 	"first-valid()": {
 		syntax: "first-valid( <declaration-value># )"
+	},
+	"fit-content()": {
+		syntax: "fit-content( <length-percentage> )"
 	},
 	"focusin()": {
 		syntax: "focusin()"
@@ -3978,14 +4018,14 @@ var syntaxes = {
 	"font-feature-custom-ident-list": {
 		syntax: "<integer>+"
 	},
-	"font-features-tech": {
-		syntax: "features-opentype | features-aat | features-graphite"
-	},
 	"font-format-values": {
 		syntax: "collection | embedded-opentype | opentype | truetype | svg | woff | woff2"
 	},
 	"font-format()": {
 		syntax: "font-format(<font-format-values>)"
+	},
+	"font-src-list": {
+		syntax: "<font-src>#"
 	},
 	"font-tech-patch-values": {
 		syntax: "incremental-patch | incremental-range | incremental-auto | variations | palettes"
@@ -4002,65 +4042,59 @@ var syntaxes = {
 	"function-name": {
 		syntax: "<dashed-ident>("
 	},
-	"function-parameter": {
-		syntax: "<dashed-ident> <css-type>? [ : <default-value> ]?"
-	},
 	gender: {
 		syntax: "male | female | neutral"
 	},
-	"general-enclosed": {
-		syntax: "[ <function-token> <any-value>? ) ] | [ ( <any-value>? ) ]"
+	"generic-complete": {
+		syntax: "serif | sans-serif | system-ui | cursive | fantasy | math | monospace"
 	},
 	"generic-family": {
 		syntax: "<generic-script-specific>| <generic-complete> | <generic-incomplete> | <-non-standard-generic-family>"
 	},
+	"generic-incomplete": {
+		syntax: "ui-serif | ui-sans-serif | ui-monospace | ui-rounded"
+	},
 	"generic-script-specific": {
 		syntax: "generic(kai) | generic(fangsong) | generic(nastaliq)"
 	},
-	"generic-voice": {
-		syntax: "[ <age>? <gender> <integer>? ]"
-	},
-	gradient: {
-		syntax: "| <-legacy-gradient>"
+	"grayscale()": {
+		syntax: "grayscale( [ <number> | <percentage> ]? )"
 	},
 	"hdr-color()": {
-		syntax: "hdr-color()"
+		syntax: "color-hdr([ <color> && <number [0,∞]>? ]#{2})"
 	},
 	"hsl()": {
-		syntax: "hsl() | hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none] ]? )"
+		syntax: "[ <legacy-hsl-syntax> | <modern-hsl-syntax> ] | hsl(from <color> [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none] ]? )"
 	},
 	"hsla()": {
-		syntax: "hsla() | hsla(from <color> < [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "[ <legacy-hsla-syntax> | <modern-hsla-syntax> ] | hsla(from <color> < [ <hue> | none | h | s | l ] <relative-hsl-component>{2} [ / [ <alpha-value> | none ] ]? )"
+	},
+	"hue-rotate()": {
+		syntax: "hue-rotate( [ <angle> | <zero> ]? )"
 	},
 	"hwb()": {
-		syntax: "hwb() | hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none] ]? )"
+		syntax: "hwb([from <color>]? [<hue> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | hwb(from <color> [ <hue> | none | h | w | b ] <relative-hwb-component>{2} [ / [ <alpha-value> | none] ]? )"
 	},
 	"hypot()": {
 		syntax: "hypot( <calc-sum># )"
 	},
 	"ictcp()": {
-		syntax: "ictcp()"
+		syntax: "ictcp([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
+	},
+	id: {
+		syntax: "<id-selector>"
 	},
 	"ident()": {
 		syntax: "ident( <ident-arg>+ )"
-	},
-	"if-branch": {
-		syntax: "<if-condition> : <declaration-value>?"
-	},
-	"if-condition": {
-		syntax: "<if-test> | else"
-	},
-	"if-test": {
-		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
 	},
 	"if()": {
 		syntax: "if( [ <if-branch> ; ]* )"
 	},
 	"image-set()": {
-		syntax: "image-set( <image-set-option># ) <image-set-option>Info about the '<image-set-option>' reference.#typedef-image-set-optionReferenced in:2.4. Resolution/Type Negotiation: the image-set() notation (2) (3) (4) (5) (6) (7) (8) (9) (10) (11) (12) (13) (14) Possible linking"
+		syntax: "image-set( <image-set-option># )"
 	},
 	"image()": {
-		syntax: "image()"
+		syntax: "image( <image-tags>? [ <image-src>? , <color>? ]! )"
 	},
 	"inherit()": {
 		syntax: "inherit( <custom-property-name>, <declaration-value>? )"
@@ -4071,50 +4105,59 @@ var syntaxes = {
 	"inset-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
 	},
+	"inset()": {
+		syntax: "inset( <length-percentage>{1,4} [ round <'border-radius'> ]? )"
+	},
 	"interpolate()": {
 		syntax: "interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? ] , <input-position>{1,2} : <whole-value>, [ <easing-function>?, <input-position>{1,2} : <whole-value> ]#? ) | interpolate( <progress-source> && [ by <easing-function> ]? && <easing-function>? of <keyframes-name> )"
 	},
 	"intrinsic-size-keyword": {
 		syntax: "min-content | max-content | fit-content"
 	},
+	"invert()": {
+		syntax: "invert( [ <number> | <percentage> ]? )"
+	},
 	"jzazbz()": {
-		syntax: "jzazbz()"
+		syntax: "jzazbz([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
 	},
 	"jzczhz()": {
-		syntax: "jzczhz()"
+		syntax: "jzczhz([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<hue> | none] [ / [<alpha-value> | none] ]? )"
 	},
 	"keyframe-selectors": {
 		syntax: "<keyframe-selector>#"
 	},
+	"keypress()": {
+		syntax: "keypress( <string>? )"
+	},
 	"lab()": {
-		syntax: "lab() | lab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "lab([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | lab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"lch()": {
-		syntax: "lch() | lch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "lch([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<hue> | none] [ / [<alpha-value> | none] ]? ) | lch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
 	},
 	"leader()": {
-		syntax: "leader()"
+		syntax: "leader( <leader-type> )"
 	},
 	left: {
 		syntax: "<length> | auto"
 	},
-	"legacy-device-cmyk-syntax": {
-		syntax: "device-cmyk( <number>#{4} )"
-	},
-	"legacy-pseudo-element-selector": {
-		syntax: " ':' [before | after | first-line | first-letter]"
+	level: {
+		syntax: "<integer>"
 	},
 	"light-dark()": {
-		syntax: "light-dark()"
+		syntax: "<light-dark-color> | <light-dark-image>"
 	},
 	"linear-gradient()": {
-		syntax: "linear-gradient( [ <linear-gradient-syntax> ] ) <linear-gradient-syntax>Info about the '<linear-gradient-syntax>' reference.#typedef-linear-gradient-syntaxReferenced in:3.1.1. linear-gradient() syntax 3.3. Repeating Gradients: the repeating-linear-gradient() and repeating-radial-gradient() notations Possible linking"
+		syntax: "linear-gradient( [ <linear-gradient-syntax> ] )"
 	},
 	"linear()": {
-		syntax: "linear()"
+		syntax: "linear( [ <number> && <percentage>{0,2} ]# )"
 	},
 	"log()": {
 		syntax: "log( <calc-sum>, <calc-sum>? )"
+	},
+	"matrix()": {
+		syntax: "matrix( <number>#{6} )"
 	},
 	"matrix3d()": {
 		syntax: "matrix3d( <number>#{16} )"
@@ -4122,17 +4165,20 @@ var syntaxes = {
 	"max()": {
 		syntax: "max( <calc-sum># )"
 	},
+	"media-query-list": {
+		syntax: "<media-query>#"
+	},
 	"media()": {
 		syntax: "media( [ <mf-plain> | <mf-boolean> | <mf-range> ] )"
 	},
 	"min()": {
 		syntax: "min( <calc-sum># )"
 	},
+	"minmax()": {
+		syntax: "minmax(min, max)"
+	},
 	"mod()": {
 		syntax: "mod( <calc-sum>, <calc-sum> )"
-	},
-	"modern-device-cmyk-syntax": {
-		syntax: "device-cmyk( <cmyk-component>{4} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"named-feature()": {
 		syntax: "named-feature( <ident> )"
@@ -4144,28 +4190,31 @@ var syntaxes = {
 		syntax: "<number [0,1]>"
 	},
 	"oklab()": {
-		syntax: "oklab() | oklab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "oklab([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | oklab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	"oklch()": {
-		syntax: "oklch() | oklch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
+		syntax: "oklch([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<hue> | none] [ / [<alpha-value> | none] ]? ) | oklch(from <color> <relative-lch-component>{2} [ <hue> | none | l | c | h ] [ / [ <alpha-value> | none ] ]? )"
 	},
-	paint: {
-		syntax: "none | <color> | <url> [ none | <color> ]? | context-fill | context-stroke"
+	"opacity()": {
+		syntax: "opacity( [ <number> | <percentage> ]? )"
 	},
 	"paint()": {
-		syntax: "paint()"
+		syntax: "paint( <ident>, <declaration-value>? )"
 	},
 	"palette-mix()": {
 		syntax: "palette-mix( <color-interpolation-method>? , [ <'font-palette'> && <percentage [0,100]>? ]# )"
 	},
 	"param()": {
-		syntax: "param( <param-spec> [ ':' <declaration-value>? ]? ) <param-spec>Info about the '<param-spec>' reference.#typedef-param-specReferenced in:2.1. The param() Function (2) (3) Possible linking"
+		syntax: "param( <param-spec> , <declaration-value>? )"
+	},
+	"path()": {
+		syntax: "path( <'fill-rule'>? , <string> )"
 	},
 	"perspective()": {
 		syntax: "perspective( [ <length [0,∞]> | none ] )"
 	},
 	"pointer()": {
-		syntax: "pointer( [ <source> || <axis> ]? ) <axis>Info about the '<axis>' reference.#typedef-axisReferenced in:2.3.1. The pointer() notation (2) 2.3.2. The PointerTimeline Interface Possible linking"
+		syntax: "pointer( [ <pointer-source> || <pointer-axis> ]? )"
 	},
 	"pointerdown()": {
 		syntax: "pointerdown()"
@@ -4179,44 +4228,17 @@ var syntaxes = {
 	"pointerup()": {
 		syntax: "pointerup()"
 	},
-	position: {
-		syntax: "<position-one> | <position-two> | <position-four>"
-	},
-	"position-area": {
-		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
-	},
-	"position-four": {
-		syntax: "[ [ left | right | x-start | x-end ] <length-percentage> ] && [ [ top | bottom | y-start | y-end ] <length-percentage> ] | [ [ block-start | block-end ] <length-percentage> ] && [ [ inline-start | inline-end ] <length-percentage> ] | [ [ start | end ] <length-percentage> ]{2} "
-	},
-	"position-one": {
-		syntax: "left | center | right | top | bottom | x-start | x-end | y-start | y-end | block-start | block-end | inline-start | inline-end | <length-percentage> "
-	},
-	"position-three": {
-		syntax: "[ left | center | right ] && [ [ top | bottom ] <length-percentage> ] | [ [ left | right ] <length-percentage> ] && [ top | center | bottom ] "
-	},
-	"position-two": {
-		syntax: "[ left | center | right | x-start | x-end ] && [ top | center | bottom | y-start | y-end ] | [ left | center | right | x-start | x-end | <length-percentage> ] [ top | center | bottom | y-start | y-end | <length-percentage> ] | [ block-start | center | block-end ] && [ inline-start | center | inline-end ] | [ start | center | end ]{2} "
+	"polygon()": {
+		syntax: "polygon( <'fill-rule'>? [ round <length> ]? , [<length-percentage> <length-percentage>]# )"
 	},
 	"pow()": {
 		syntax: "pow( <calc-sum>, <calc-sum> )"
 	},
-	"predefined-rgb-params": {
-		syntax: "<predefined-rgb> [ <number> | <percentage> | none ]{3}"
-	},
 	"progress()": {
 		syntax: "progress(no-clamp? <calc-sum>, <calc-sum>, <calc-sum>)"
 	},
-	"pseudo-compound-selector": {
-		syntax: " <pseudo-element-selector> <pseudo-class-selector>*"
-	},
-	"pseudo-element-selector": {
-		syntax: "':' <pseudo-class-selector> | <legacy-pseudo-element-selector>"
-	},
-	"query-in-parens": {
-		syntax: "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
-	},
 	"radial-gradient()": {
-		syntax: "radial-gradient( [ <radial-gradient-syntax> ] ) <radial-gradient-syntax>Info about the '<radial-gradient-syntax>' reference.#typedef-radial-gradient-syntaxReferenced in:3.2.1. radial-gradient() Syntax 3.3. Repeating Gradients: the repeating-linear-gradient() and repeating-radial-gradient() notations Possible linking"
+		syntax: "radial-gradient( [ <radial-gradient-syntax> ] )"
 	},
 	"random-item()": {
 		syntax: "random-item( <random-key> , [ <declaration-value>? ]# )"
@@ -4225,7 +4247,10 @@ var syntaxes = {
 		syntax: "random( <random-key>? , <calc-sum>, <calc-sum>, <calc-sum>? )"
 	},
 	"ray()": {
-		syntax: "ray()"
+		syntax: "ray( <angle> && <ray-size>? && contain? && [at <position>]? )"
+	},
+	"rect()": {
+		syntax: "rect( [ <length-percentage> | auto ]{4} [ round <'border-radius'> ]? )"
 	},
 	"relative-hsl-component": {
 		syntax: "<number> | <percentage> | none | h | s | l | alpha"
@@ -4238,12 +4263,6 @@ var syntaxes = {
 	},
 	"relative-lch-component": {
 		syntax: "<number> | <percentage> | none | l | c | h | alpha"
-	},
-	"relative-real-selector": {
-		syntax: "<combinator>? <complex-real-selector>"
-	},
-	"relative-real-selector-list": {
-		syntax: "<relative-real-selector>#"
 	},
 	"relative-rgb-component": {
 		syntax: "<number> | <percentage> | none | r | g | b | alpha"
@@ -4261,13 +4280,16 @@ var syntaxes = {
 		syntax: "repeating-radial-gradient( [ <radial-gradient-syntax> ] )"
 	},
 	"rgb()": {
-		syntax: "rgb() | rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none] ]? )"
+		syntax: "[ <legacy-rgb-syntax> | <modern-rgb-syntax> ] | rgb(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none] ]? )"
 	},
 	"rgba()": {
-		syntax: "rgba() | rgba(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none ] ]? )"
+		syntax: "[ <legacy-rgba-syntax> | <modern-rgba-syntax> ] | rgba(from <color> <relative-rgb-component>{3} [ / [ <alpha-value> | none ] ]? )"
 	},
 	right: {
 		syntax: "<length> | auto"
+	},
+	"rotate()": {
+		syntax: "rotate( [ <angle> | <zero> ] )"
 	},
 	"rotate3d()": {
 		syntax: "rotate3d( <number> , <number> , <number> , [ <angle> | <zero> ] )"
@@ -4285,7 +4307,10 @@ var syntaxes = {
 		syntax: "round( <rounding-strategy>?, <calc-sum>, <calc-sum>? )"
 	},
 	"running()": {
-		syntax: "running()"
+		syntax: "running( <custom-ident> )"
+	},
+	"saturate()": {
+		syntax: "saturate( [ <number> | <percentage> ]? )"
 	},
 	"scale()": {
 		syntax: "scale( [ <number> | <percentage> ]#{1,2} )"
@@ -4301,12 +4326,6 @@ var syntaxes = {
 	},
 	"scaleZ()": {
 		syntax: "scaleZ( [ <number> | <percentage> ] )"
-	},
-	"scope-end": {
-		syntax: "<forgiving-selector-list>"
-	},
-	"scope-start": {
-		syntax: "<forgiving-selector-list>"
 	},
 	"scroll-state-feature": {
 		syntax: "<scroll-state-feature-plain> | <scroll-state-feature-boolean>"
@@ -4329,38 +4348,53 @@ var syntaxes = {
 	"scroll-state-feature-stuck": {
 		syntax: "stuck : [ none | top | right | bottom | left | block-start | inline-start | block-end | inline-end ]"
 	},
-	"scroll-state-in-parens": {
-		syntax: "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
-	},
-	"scroll-state-query": {
-		syntax: " not <scroll-state-in-parens> | <scroll-state-in-parens> [ [ and <scroll-state-in-parens> ]* | [ or <scroll-state-in-parens> ]* ] | <scroll-state-feature>"
-	},
 	"scroll-state()": {
 		syntax: "scroll-state( <scroll-state-query> )"
 	},
 	"scroll()": {
-		syntax: "scroll( [ <scroller> || <axis> ]? ) <axis>Info about the '<axis>' reference.#typedef-axisReferenced in:2.2.1. The scroll() notation (2) (3) (4) 2.2.2. The ScrollTimeline Interface 3.3.1. The view() notation (2) (3) 3.3.2. The ViewTimeline Interface Possible linking"
+		syntax: "scroll( [ <scroller> || <axis> ]? )"
 	},
 	"selector()": {
 		syntax: "selector( <complex-selector> )"
 	},
-	shape: {
-		syntax: "rect( <top>, <right>, <bottom>, <left> ) | rect( <top> <right> <bottom> <left> )"
+	"sepia()": {
+		syntax: "sepia( [ <number> | <percentage> ]? )"
+	},
+	"shape()": {
+		syntax: "shape( <'fill-rule'>? from <position> , <shape-command># )"
+	},
+	"sibling-count()": {
+		syntax: "sibling-count()"
+	},
+	"sibling-index()": {
+		syntax: "sibling-index()"
 	},
 	"sign()": {
-		syntax: "sign( <calc-sum> ) <calc-sum>Info about the '<calc-sum>' reference.#typedef-calc-sumReferenced in:10.1. Basic Arithmetic: calc() 10.8. Syntax (2) (3) (4) (5) (6) (7) (8) (9) (10) (11) (12) (13) (14) (15) (16) (17) (18) (19) (20) (21) (22) (23) (24) (25) (26) (27) (28) (29) (30) (31) Possible linking"
-	},
-	"simple-selector": {
-		syntax: "<type-selector> | <subclass-selector>"
-	},
-	"simple-selector-list": {
-		syntax: "<simple-selector>#"
+		syntax: "sign( <calc-sum> )"
 	},
 	"sin()": {
 		syntax: "sin( <calc-sum> )"
 	},
 	"size-feature": {
 		syntax: "<mf-plain> | <mf-boolean> | <mf-range>"
+	},
+	"size-keyword": {
+		syntax: "auto | <intrinsic-size-keyword> | stretch"
+	},
+	"skew()": {
+		syntax: "skew( [ <angle> | <zero> ] , [ <angle> | <zero> ]? )"
+	},
+	"skewX()": {
+		syntax: "skewX( [ <angle> | <zero> ] )"
+	},
+	"skewY()": {
+		syntax: "skewY( [ <angle> | <zero> ] )"
+	},
+	"snap-block()": {
+		syntax: "snap-block( <length> , [ start | end | near ]? )"
+	},
+	"snap-inline()": {
+		syntax: "snap-inline( <length> , [ left | right | near ]? )"
 	},
 	"sqrt()": {
 		syntax: "sqrt( <calc-sum> )"
@@ -4369,10 +4403,10 @@ var syntaxes = {
 		syntax: "src( <string> <url-modifier>* )"
 	},
 	"steps()": {
-		syntax: "steps()"
+		syntax: "steps( <integer>, <step-position>?)"
 	},
 	"string()": {
-		syntax: "string()"
+		syntax: "string( <custom-ident> , [ first | start | last | first-except ]? )"
 	},
 	"stripes()": {
 		syntax: "stripes( <color-stripe># )"
@@ -4380,14 +4414,1252 @@ var syntaxes = {
 	"style-condition": {
 		syntax: "not <style-in-parens> | <style-in-parens> [ [ and <style-in-parens> ]* | [ or <style-in-parens> ]* ]"
 	},
+	"style-feature-name": {
+		syntax: "<ident> |<custom-property-name>"
+	},
+	"superellipse()": {
+		syntax: "superellipse(<number> | infinity | -infinity)"
+	},
+	"supports-condition-name": {
+		syntax: "<extension-name>"
+	},
+	"supports()": {
+		syntax: "supports( <declaration> )"
+	},
+	"svg-length": {
+		syntax: "<percentage> | <length> | <number>"
+	},
+	"svg-writing-mode": {
+		syntax: "lr-tb | rl-tb | tb-rl | lr | rl | tb"
+	},
+	"symbols()": {
+		syntax: "symbols( <symbols-type>? [ <string> | <image> ]+ )"
+	},
+	"tan()": {
+		syntax: "tan( <calc-sum> )"
+	},
+	"target-counter()": {
+		syntax: "target-counter( [ <string> | <url> ] , <custom-ident> , <counter-style>? )"
+	},
+	"target-counters()": {
+		syntax: "target-counters( [ <string> | <url> ] , <custom-ident> , <string> , <counter-style>? )"
+	},
+	"target-name": {
+		syntax: "<string>"
+	},
+	"target-text()": {
+		syntax: "target-text( [ <string> | <url> ] , [ content | before | after | first-letter ]? )"
+	},
+	"timeline-range-center-subject": {
+		syntax: "source | target"
+	},
+	"timeline-range-name": {
+		syntax: "cover | contain | entry | exit | entry-crossing | exit-crossing"
+	},
+	top: {
+		syntax: "<length> | auto"
+	},
+	"transform-interpolate()": {
+		syntax: "transform-interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? ], <input-position>{1,2} : <transform-list>, [ <easing-function>?, <input-position>{1,2} : <transform-list> ]#? )"
+	},
+	"transform-mix()": {
+		syntax: "transform-mix( [ <transform-list> && <percentage [0,100]> ]# )"
+	},
+	"translate()": {
+		syntax: "translate( <length-percentage> , <length-percentage>? )"
+	},
+	"translate3d()": {
+		syntax: "translate3d( <length-percentage> , <length-percentage> , <length> )"
+	},
+	"translateX()": {
+		syntax: "translateX( <length-percentage> )"
+	},
+	"translateY()": {
+		syntax: "translateY( <length-percentage> )"
+	},
+	"translateZ()": {
+		syntax: "translateZ( <length> )"
+	},
+	"type()": {
+		syntax: "type( <syntax> )"
+	},
+	"url-modifier": {
+		syntax: "<ident> | <function-token> <any-value> )"
+	},
+	"url-pattern()": {
+		syntax: "url-pattern( <string> )"
+	},
+	"url-set": {
+		syntax: "<image-set()>"
+	},
+	"url()": {
+		syntax: "url( <string> <url-modifier>* ) | <url-token>"
+	},
+	"var()": {
+		syntax: "var( <custom-property-name> , <declaration-value>? )"
+	},
+	"view()": {
+		syntax: "view( [ <axis> || <'view-timeline-inset'> ]? )"
+	},
+	"voice-family-name": {
+		syntax: "<string> | <custom-ident>+"
+	},
+	"whole-value": {
+		syntax: "<declaration-value>"
+	},
+	x: {
+		syntax: "<number>"
+	},
+	"xywh()": {
+		syntax: "xywh( <length-percentage>{2} <length-percentage [0,∞]>{2} [ round <'border-radius'> ]? )"
+	},
+	y: {
+		syntax: "<number>"
+	}
+};
+var types = {
+	syntax: {
+		syntax: "'*' | <syntax-component> [ <syntax-combinator> <syntax-component> ]* | <syntax-string>"
+	},
+	"a-n-plus-b": {
+		syntax: "odd | even | <integer> | <n-dimension> | '+'? n | -n | <ndashdigit-dimension> | '+'? <ndashdigit-ident> | <dashndashdigit-ident> | <n-dimension> <signed-integer> | '+'? n <signed-integer> | -n <signed-integer> | <ndash-dimension> <signless-integer> | '+'? n- <signless-integer> | -n- <signless-integer> | <n-dimension> ['+' | '-'] <signless-integer> | '+'? n ['+' | '-'] <signless-integer> | -n ['+' | '-'] <signless-integer>"
+	},
+	"absolute-size": {
+		syntax: "[ xx-small | x-small | small | medium | large | x-large | xx-large | xxx-large ]"
+	},
+	"alpha-value": {
+		syntax: "<number> | <percentage> | none"
+	},
+	"alt-text": {
+		syntax: "[ <string> | <counter> | <attr()> ]+"
+	},
+	"anchor-name": {
+		syntax: "<dashed-ident>"
+	},
+	"anchor-side": {
+		syntax: "inside | outside | top | left | right | bottom | start | end | self-start | self-end | <percentage> | center"
+	},
+	"anchor-size": {
+		syntax: "width | height | block | inline | self-block | self-inline"
+	},
+	"anchored-in-parens": {
+		syntax: "( <anchored-query> ) | ( <anchored-feature> ) | <general-enclosed>"
+	},
+	"anchored-query": {
+		syntax: "not <anchored-in-parens> | <anchored-in-parens> [ [ and <anchored-in-parens> ]* | [ or <anchored-in-parens> ]* ] | <anchored-feature>"
+	},
+	"angle-percentage": {
+		syntax: "[ <angle> | <percentage> ]"
+	},
+	"angular-color-hint": {
+		syntax: "<angle-percentage> | <zero>"
+	},
+	"angular-color-stop": {
+		syntax: "<color> <color-stop-angle>?"
+	},
+	"angular-color-stop-list": {
+		syntax: "<angular-color-stop> , [ <angular-color-hint>? , <angular-color-stop> ]#?"
+	},
+	"animateable-feature": {
+		syntax: "scroll-position | contents | <custom-ident>"
+	},
+	"arc-command": {
+		syntax: "arc <command-end-point> [ [ of <length-percentage>{1,2} ] && <arc-sweep>? && <arc-size>? && [rotate <angle>]? ]"
+	},
+	"arc-size": {
+		syntax: "large | small"
+	},
+	"arc-sweep": {
+		syntax: "cw | ccw"
+	},
+	attachment: {
+		syntax: "scroll | fixed | local"
+	},
+	"attr-args": {
+		syntax: "attr( <declaration-value>, <declaration-value>? )"
+	},
+	"attr-matcher": {
+		syntax: "[ '~' | '|' | '^' | '$' | '*' ]? '='"
+	},
+	"attr-modifier": {
+		syntax: "i | s"
+	},
+	"attr-name": {
+		syntax: "[ <ident-token>? '|' ]? <ident-token>"
+	},
+	"attr-type": {
+		syntax: "type( <syntax> ) | raw-string | number | <attr-unit>"
+	},
+	"attr-unit": {
+		syntax: "<custom-ident>"
+	},
+	"attribute-selector": {
+		syntax: "'[' <wq-name> ']' | '[' <wq-name> <attr-matcher> [ <string-token> | <ident-token> ] <attr-modifier>? ']'"
+	},
+	"auto-line-color-list": {
+		syntax: "<line-color-or-repeat>#? , <auto-repeat-line-color> , <line-color-or-repeat>#?"
+	},
+	"auto-line-style-list": {
+		syntax: "<line-style-or-repeat>#? , <auto-repeat-line-style> , <line-style-or-repeat>#?"
+	},
+	"auto-line-width-list": {
+		syntax: "<line-width-or-repeat>#? , <auto-repeat-line-width> , <line-width-or-repeat>#?"
+	},
+	"auto-repeat": {
+		syntax: "repeat( [ auto-fill | auto-fit ] , [ <line-names>? <track-size> ]+ <line-names>? )"
+	},
+	"auto-repeat-line-color": {
+		syntax: "repeat( auto , [ <color> ]# )"
+	},
+	"auto-repeat-line-style": {
+		syntax: "repeat( auto , [ <line-style> ]# )"
+	},
+	"auto-repeat-line-width": {
+		syntax: "repeat( auto , [ <line-width> ]# )"
+	},
+	"auto-track-list": {
+		syntax: "[ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>? <auto-repeat> [ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>?"
+	},
+	autospace: {
+		syntax: "no-autospace | [ ideograph-alpha || ideograph-numeric || punctuation ] || [ insert | replace ]"
+	},
+	axis: {
+		syntax: "block | inline | x | y"
+	},
+	"base-descriptor": {
+		syntax: "base-url : stylesheet | document | <url>"
+	},
+	"baseline-metric": {
+		syntax: "text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
+	},
+	"baseline-position": {
+		syntax: "[ first | last ]? && baseline"
+	},
+	"basic-shape": {
+		syntax: "<basic-shape-rect> | <circle()> | <ellipse()> | <polygon()> | <path()> | <shape()>"
+	},
+	"basic-shape-rect": {
+		syntax: "<inset()> | <rect()> | <xywh()>"
+	},
+	"bg-clip": {
+		syntax: "<visual-box> | [ border-area || text ]"
+	},
+	"bg-image": {
+		syntax: "<image> | none"
+	},
+	"bg-layer": {
+		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <bg-clip>"
+	},
+	"bg-position": {
+		syntax: "<position> | <position-three>"
+	},
+	"bg-size": {
+		syntax: "[ <length-percentage [0,∞]> | auto ]{1,2} | cover | contain"
+	},
+	"blend-mode": {
+		syntax: "normal | darken | multiply | color-burn | lighten | screen | color-dodge | overlay | soft-light | hard-light | difference | exclusion | hue | saturation | color | luminosity"
+	},
+	"boolean-expr": {
+		syntax: "not <boolean-expr-group> | <boolean-expr-group> [ [ and <boolean-expr-group> ]* | [ or <boolean-expr-group> ]* ]"
+	},
+	"border-radius": {
+		syntax: "<slash-separated-border-radius-syntax> | <legacy-border-radius-syntax>"
+	},
+	"box-size": {
+		syntax: "<length-percentage [0,∞]> | stretch | contain | min-content | max-content | fit-content | stretch(<length-percentage [0,∞]>) | fit-content(<length-percentage [0,∞]>) | <calc-size()>"
+	},
+	"calc-keyword": {
+		syntax: "e | pi | infinity | -infinity | NaN"
+	},
+	"calc-product": {
+		syntax: "<calc-value> [ [ '*' | / ] <calc-value> ]*"
+	},
+	"calc-size-basis": {
+		syntax: "[ <size-keyword> | <calc-sum> | <calc-size()> | any ]"
+	},
+	"calc-sum": {
+		syntax: "<calc-product> [ [ '+' | '-' ] <calc-product> ]*"
+	},
+	"calc-value": {
+		syntax: "<number> | <dimension> | <percentage> | <calc-keyword> | ( <calc-sum> )"
+	},
+	"cf-image": {
+		syntax: "[ <image> | <color> ] && <percentage [0,100]>?"
+	},
+	"class-selector": {
+		syntax: "'.' <ident-token> '*'?"
+	},
+	"clip-source": {
+		syntax: "<url>"
+	},
+	"cmyk-component": {
+		syntax: "<number> | <percentage> | none"
+	},
+	color: {
+		syntax: "<color-base> | currentColor | <system-color> | <contrast-color()> | <device-cmyk()> | <light-dark-color>"
+	},
+	"color-base": {
+		syntax: "<hex-color> | <color-function> | <named-color> | <color-mix()> | transparent"
+	},
+	"color-font-tech": {
+		syntax: "color-colrv0 | color-colrv1 | color-svg | color-sbix | color-cbdt"
+	},
+	"color-function": {
+		syntax: "<rgb()> | <rgba()> | <hsl()> | <hsla()> | <hwb()> | <lab()> | <lch()> | <oklab()> | <oklch()> | <ictcp()> | <jzazbz()> | <jzczhz()> | <alpha()> | <color()> | <hdr-color()>"
+	},
+	"color-interpolation-method": {
+		syntax: "in [ <rectangular-color-space> | <polar-color-space> <hue-interpolation-method>? | <custom-color-space> ]"
+	},
+	"color-space": {
+		syntax: "<rectangular-color-space> | <polar-color-space> | <custom-color-space>"
+	},
+	"color-stop": {
+		syntax: "<color-stop-length> | <color-stop-angle>"
+	},
+	"color-stop-angle": {
+		syntax: "[ <angle-percentage> | <zero> ]{1,2}"
+	},
+	"color-stop-length": {
+		syntax: "<length-percentage>{1,2}"
+	},
+	"color-stop-list": {
+		syntax: "<linear-color-stop> , [ <linear-color-hint>? , <linear-color-stop> ]#?"
+	},
+	"color-stripe": {
+		syntax: "<color> && [ <length-percentage> | <flex> ]?"
+	},
+	"colorspace-params": {
+		syntax: "[<custom-params> | <predefined-rgb-params> | <xyz-params>]"
+	},
+	combinator: {
+		syntax: "'>' | '+' | '~' | [ '|' '|' ] | [ / <wq-name> / ]"
+	},
+	"command-end-point": {
+		syntax: "[ to <position> | by <coordinate-pair> ]"
+	},
+	"common-lig-values": {
+		syntax: "[ common-ligatures | no-common-ligatures ]"
+	},
+	"compat-auto": {
+		syntax: "searchfield | textarea | checkbox | radio | menulist | listbox | meter | progress-bar | button"
+	},
+	"compat-special": {
+		syntax: "textfield | menulist-button"
+	},
+	"complex-real-selector": {
+		syntax: "<compound-selector> [ <combinator>? <compound-selector> ]*"
+	},
+	"complex-real-selector-list": {
+		syntax: "<complex-real-selector>#"
+	},
+	"complex-selector": {
+		syntax: "<complex-selector-unit> [ <combinator>? <complex-selector-unit> ]*"
+	},
+	"complex-selector-list": {
+		syntax: "<complex-selector>#"
+	},
+	"complex-selector-unit": {
+		syntax: "[ <compound-selector>? <pseudo-compound-selector>* ]!"
+	},
+	"composite-mode": {
+		syntax: "clear | copy | source-over | destination-over | source-in | destination-in | source-out | destination-out | source-atop | destination-atop | xor | lighter | plus-darker | plus-lighter"
+	},
+	"compositing-operator": {
+		syntax: "add | subtract | intersect | exclude"
+	},
+	"compound-selector": {
+		syntax: "[ <type-selector>? <subclass-selector>* ]!"
+	},
+	"compound-selector-list": {
+		syntax: "<compound-selector>#"
+	},
+	"conic-gradient-syntax": {
+		syntax: "[ [ [ from [ <angle> | <zero> ] ]? [ at <position> ]? ] || <color-interpolation-method> ]? , <angular-color-stop-list>"
+	},
+	"container-condition": {
+		syntax: "[ <container-name>? <container-query>? ]!"
+	},
+	"container-name": {
+		syntax: "<custom-ident>"
+	},
+	"container-query": {
+		syntax: "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
+	},
+	"content-distribution": {
+		syntax: "space-between | space-around | space-evenly | stretch"
+	},
+	"content-level": {
+		syntax: "element | content | text | <attr()> | <counter>"
+	},
+	"content-list": {
+		syntax: "[ <string> | <image> | <attr()> | contents | <quote> | <leader()> | <target> | <string()> | <content()> | <counter> | <symbolic-glyph> ]+"
+	},
+	"content-position": {
+		syntax: "center | start | end | flow-start | flow-end | flex-start | flex-end"
+	},
+	"content-replacement": {
+		syntax: "<image>"
+	},
+	"contextual-alt-values": {
+		syntax: "[ contextual | no-contextual ]"
+	},
+	"control-point": {
+		syntax: "[ <position> | <relative-control-point> ]"
+	},
+	"coord-box": {
+		syntax: "<paint-box> | view-box"
+	},
+	"coordinate-pair": {
+		syntax: "<length-percentage>{2}"
+	},
+	"corner-shape-value": {
+		syntax: "round | scoop | bevel | notch | square | squircle | <superellipse()>"
+	},
+	counter: {
+		syntax: "<counter()> | <counters()>"
+	},
+	"counter-name": {
+		syntax: "<custom-ident>"
+	},
+	"counter-style": {
+		syntax: "<counter-style-name> | <symbols()>"
+	},
+	"counter-style-name": {
+		syntax: "<custom-ident>"
+	},
+	"cross-origin-modifier": {
+		syntax: "cross-origin(anonymous | use-credentials)"
+	},
+	"css-type": {
+		syntax: "<syntax-component> | <type()>"
+	},
+	"cubic-bezier-easing-function": {
+		syntax: "ease | ease-in | ease-out | ease-in-out | <cubic-bezier()>"
+	},
+	"cursor-image": {
+		syntax: "[ <url> | <url-set> ] <number>{2}?"
+	},
+	"cursor-predefined": {
+		syntax: "auto | default | none | context-menu | help | pointer | progress | wait | cell | crosshair | text | vertical-text | alias | copy | move | no-drop | not-allowed | grab | grabbing | e-resize | n-resize | ne-resize | nw-resize | s-resize | se-resize | sw-resize | w-resize | ew-resize | ns-resize | nesw-resize | nwse-resize | col-resize | row-resize | all-scroll | zoom-in | zoom-out | hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out"
+	},
+	"curve-command": {
+		syntax: "curve [ [ to <position> with <control-point> [ / <control-point> ]? ] | [ by <coordinate-pair> with <relative-control-point> [ / <relative-control-point> ]? ] ]"
+	},
+	"custom-arg": {
+		syntax: "'$' <ident-token>"
+	},
+	"custom-color-space": {
+		syntax: "<dashed-ident>"
+	},
+	"custom-params": {
+		syntax: "<dashed-ident> [ <number> | <percentage> | none ]+"
+	},
+	"custom-selector": {
+		syntax: "<custom-arg>? : <extension-name> [ ( <custom-arg>+#? ) ]?"
+	},
+	dasharray: {
+		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
+	},
+	"dashndashdigit-ident": {
+		syntax: "<ident-token>"
+	},
+	"default-value": {
+		syntax: "<declaration-value>"
+	},
+	"deprecated-color": {
+		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonHighlight | ButtonShadow | CaptionText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
+	},
+	"discretionary-lig-values": {
+		syntax: "[ discretionary-ligatures | no-discretionary-ligatures ]"
+	},
+	"display-box": {
+		syntax: "contents | none"
+	},
+	"display-inside": {
+		syntax: "flow | flow-root | table | flex | grid | ruby"
+	},
+	"display-internal": {
+		syntax: "table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container"
+	},
+	"display-legacy": {
+		syntax: "inline-block | inline-table | inline-flex | inline-grid"
+	},
+	"display-listitem": {
+		syntax: "<display-outside>? && [ flow | flow-root ]? && list-item"
+	},
+	"display-outside": {
+		syntax: "block | inline | run-in"
+	},
+	"easing-function": {
+		syntax: "<linear-easing-function> | <cubic-bezier-easing-function> | <step-easing-function>"
+	},
+	"east-asian-variant-values": {
+		syntax: "[ jis78 | jis83 | jis90 | jis04 | simplified | traditional ]"
+	},
+	"east-asian-width-values": {
+		syntax: "[ full-width | proportional-width ]"
+	},
+	"env-args": {
+		syntax: "env( <declaration-value>, <declaration-value>? )"
+	},
+	"event-function": {
+		syntax: "<click()> | <dblclick()> | <pointerenter()> | <pointerleave()> | <pointerup()> | <pointerdown()> | <keypress()> | <focusin()> | <focusout()> | <input()> | <change()>"
+	},
+	"explicit-track-list": {
+		syntax: "[ <line-names>? <track-size> ]+ <line-names>?"
+	},
+	"feature-tag-value": {
+		syntax: "<opentype-tag> [ <integer [0,∞]> | on | off ]?"
+	},
+	"filter-function": {
+		syntax: "<blur()> | <brightness()> | <contrast()> | <drop-shadow()> | <grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <sepia()> | <saturate()>"
+	},
+	"filter-value-list": {
+		syntax: "[ <filter-function> | <url> ]+"
+	},
+	"final-bg-layer": {
+		syntax: "<bg-image> || <bg-position> [ / <bg-size> ]? || <repeat-style> || <attachment> || <visual-box> || <bg-clip> || <'background-color'>"
+	},
+	"fixed-breadth": {
+		syntax: "<length-percentage [0,∞]>"
+	},
+	"fixed-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-names>? <fixed-size> ]+ <line-names>? )"
+	},
+	"fixed-size": {
+		syntax: "<fixed-breadth> | minmax( <fixed-breadth> , <track-breadth> ) | minmax( <inflexible-breadth> , <fixed-breadth> )"
+	},
+	"font-family-name": {
+		syntax: "<string> | <custom-ident>+"
+	},
+	"font-feature-index": {
+		syntax: "<integer>"
+	},
+	"font-feature-value-name": {
+		syntax: "<ident>"
+	},
+	"font-features-tech": {
+		syntax: "features-opentype | features-aat | features-graphite"
+	},
+	"font-format": {
+		syntax: "[<string> | collection | embedded-opentype | opentype | svg | truetype | woff | woff2 ]"
+	},
+	"font-src": {
+		syntax: "<url> [ format( <font-format> ) ]? [ tech( <font-tech># ) ]? | local( <font-family-name> )"
+	},
+	"font-tech": {
+		syntax: "[<font-features-tech> | <color-font-tech> | variations | palettes | incremental ]"
+	},
+	"font-variant-css2": {
+		syntax: "normal | small-caps"
+	},
+	"font-weight-absolute": {
+		syntax: "[ normal | bold | <number [1,1000]> ]"
+	},
+	"font-width-css3": {
+		syntax: "normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded"
+	},
+	"form-control-identifier": {
+		syntax: "select"
+	},
+	"frequency-percentage": {
+		syntax: "[ <frequency> | <percentage> ]"
+	},
+	"function-parameter": {
+		syntax: "<dashed-ident> <css-type>? [ : <default-value> ]?"
+	},
+	"gap-auto-repeat-rule": {
+		syntax: "repeat( auto , <gap-rule># )"
+	},
+	"gap-auto-rule-list": {
+		syntax: "<gap-rule-or-repeat>#? , <gap-auto-repeat-rule> , <gap-rule-or-repeat>#?"
+	},
+	"gap-repeat-rule": {
+		syntax: "repeat( <integer [1,∞]> , <gap-rule># )"
+	},
+	"gap-rule": {
+		syntax: "<line-width> || <line-style> || <color>"
+	},
+	"gap-rule-list": {
+		syntax: "<gap-rule-or-repeat>#"
+	},
+	"gap-rule-or-repeat": {
+		syntax: "<gap-rule> | <gap-repeat-rule>"
+	},
+	"general-enclosed": {
+		syntax: "[ <function-token> <any-value>? ) ] | [ ( <any-value>? ) ]"
+	},
+	"generic-font-complete": {
+		syntax: "serif | sans-serif | system-ui | cursive | fantasy | math | monospace"
+	},
+	"generic-font-family": {
+		syntax: "<generic-font-script-specific>| <generic-font-complete> | <generic-font-incomplete>"
+	},
+	"generic-font-incomplete": {
+		syntax: "ui-serif | ui-sans-serif | ui-monospace | ui-rounded"
+	},
+	"generic-font-script-specific": {
+		syntax: "generic(fangsong) | generic(kai) | generic(khmer-mul) | generic(nastaliq)"
+	},
+	"generic-voice": {
+		syntax: "<age>? <gender> <integer [1,∞]>?"
+	},
+	"geometry-box": {
+		syntax: "<shape-box> | fill-box | stroke-box | view-box"
+	},
+	gradient: {
+		syntax: "[ <linear-gradient()> | <repeating-linear-gradient()> | <radial-gradient()> | <repeating-radial-gradient()> | <conic-gradient()> | <repeating-conic-gradient()> ] | <-legacy-gradient>"
+	},
+	"grid-line": {
+		syntax: "auto | <custom-ident> | [ [ <integer [-∞,-1]> | <integer [1,∞]> ] && <custom-ident>? ] | [ span && [ <integer [1,∞]> || <custom-ident> ] ]"
+	},
+	"highlight-name-selector": {
+		syntax: "'*' | <custom-ident>"
+	},
+	"historical-lig-values": {
+		syntax: "[ historical-ligatures | no-historical-ligatures ]"
+	},
+	"horizontal-line-command": {
+		syntax: "hline [ to [ <length-percentage> | left | center | right | x-start | x-end ] | by <length-percentage> ]"
+	},
+	hue: {
+		syntax: "<number> | <angle>"
+	},
+	"hue-interpolation-method": {
+		syntax: "[ shorter | longer | increasing | decreasing ] hue"
+	},
+	"id-selector": {
+		syntax: "<hash-token>"
+	},
+	"ident-arg": {
+		syntax: "<string> | <integer> | <ident>"
+	},
+	"ident-args": {
+		syntax: "ident( <declaration-value> )"
+	},
+	"if-args": {
+		syntax: "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
+	},
+	"if-args-branch": {
+		syntax: "<declaration-value> : <declaration-value>?"
+	},
+	"if-branch": {
+		syntax: "<if-condition> : <declaration-value>?"
+	},
+	"if-condition": {
+		syntax: "<if-test> | else"
+	},
+	"if-test": {
+		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
+	},
+	image: {
+		syntax: "<url> | <image()> | <image-set()> | <cross-fade()> | <element()> | <gradient>"
+	},
+	"image-1D": {
+		syntax: "<stripes()>"
+	},
+	"image-set-option": {
+		syntax: "[ <image> | <string> ] [ <resolution> || type(<string>) ]?"
+	},
+	"image-src": {
+		syntax: "[ <url> | <string> ]"
+	},
+	"image-tags": {
+		syntax: "[ ltr | rtl ]"
+	},
+	"import-conditions": {
+		syntax: "[ supports( [ <supports-condition> | <declaration> ] ) ]? <media-query-list>?"
+	},
+	"inflexible-breadth": {
+		syntax: "<length-percentage [0,∞]> | min-content | max-content | auto"
+	},
+	"inherit-args": {
+		syntax: "inherit( <declaration-value>, <declaration-value>? )"
+	},
+	"init-descriptor": {
+		syntax: "<init-descriptor-name> : <string>"
+	},
+	"init-descriptor-name": {
+		syntax: "protocol | hostname | port | pathname | search | hash"
+	},
+	"input-position": {
+		syntax: "<percentage> | <number> | <dimension>"
+	},
+	"inset-value": {
+		syntax: "<length-percentage> | overlap-join"
+	},
+	integer: {
+		syntax: "<number-token>"
+	},
+	"integrity-modifier": {
+		syntax: "integrity(<string>)"
+	},
+	"isolation-mode": {
+		syntax: "auto | isolate"
+	},
+	"keyframe-block": {
+		syntax: "<keyframe-selector># { <declaration-list> }"
+	},
+	"keyframe-selector": {
+		syntax: "from | to | <percentage [0,100]>"
+	},
+	"keyframes-name": {
+		syntax: "<custom-ident> | <string>"
+	},
+	"layer-name": {
+		syntax: "<ident> [ '.' <ident> ]*"
+	},
+	"layout-box": {
+		syntax: "<visual-box> | margin-box"
+	},
+	"leader-type": {
+		syntax: "dotted | solid | space | <string>"
+	},
+	"legacy-border-radius-syntax": {
+		syntax: "<length-percentage [0,∞]>{1,2}"
+	},
+	"legacy-device-cmyk-syntax": {
+		syntax: "device-cmyk( <number>#{4} )"
+	},
+	"legacy-hsl-syntax": {
+		syntax: "hsl( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+	},
+	"legacy-hsla-syntax": {
+		syntax: "hsla( <hue>, <percentage>, <percentage>, <alpha-value>? )"
+	},
+	"legacy-pseudo-element-selector": {
+		syntax: ": [before | after | first-line | first-letter]"
+	},
+	"legacy-rgb-syntax": {
+		syntax: "rgb( <percentage>#{3} , <alpha-value>? ) | rgb( <number>#{3} , <alpha-value>? )"
+	},
+	"legacy-rgba-syntax": {
+		syntax: "rgba( <percentage>#{3} , <alpha-value>? ) | rgba( <number>#{3} , <alpha-value>? )"
+	},
+	"length-percentage": {
+		syntax: "[ <length> | <percentage> ]"
+	},
+	"light-dark-color": {
+		syntax: "light-dark(<color>, <color>)"
+	},
+	"light-dark-image": {
+		syntax: "light-dark( [ <image> | none ] , [ <image> | none ] )"
+	},
+	"line-color-list": {
+		syntax: "<line-color-or-repeat>#"
+	},
+	"line-color-or-repeat": {
+		syntax: "[ <color> | <repeat-line-color> ]"
+	},
+	"line-command": {
+		syntax: "line <command-end-point>"
+	},
+	"line-name-list": {
+		syntax: "[ <line-names> | <name-repeat> ]+"
+	},
+	"line-names": {
+		syntax: "'[' <custom-ident>* ']'"
+	},
+	"line-style": {
+		syntax: "none | hidden | dotted | dashed | solid | double | groove | ridge | inset | outset"
+	},
+	"line-style-list": {
+		syntax: "<line-style-or-repeat>#"
+	},
+	"line-style-or-repeat": {
+		syntax: "[ <line-style> | <repeat-line-style> ]"
+	},
+	"line-width": {
+		syntax: "<length [0,∞]> | hairline | thin | medium | thick"
+	},
+	"line-width-list": {
+		syntax: "<line-width-or-repeat>#"
+	},
+	"line-width-or-repeat": {
+		syntax: "[ <line-width> | <repeat-line-width> ]"
+	},
+	"linear-color-hint": {
+		syntax: "<length-percentage>"
+	},
+	"linear-color-stop": {
+		syntax: "<color> <color-stop-length>?"
+	},
+	"linear-easing-function": {
+		syntax: "linear | <linear()>"
+	},
+	"linear-gradient-syntax": {
+		syntax: "[ [ <angle> | <zero> | to <side-or-corner> ] || <color-interpolation-method> ]? , <color-stop-list>"
+	},
+	"location-descriptor": {
+		syntax: "<pattern-descriptor> | <init-descriptor> | <base-descriptor>"
+	},
+	"location-name": {
+		syntax: "<dashed-ident>"
+	},
+	"location-rule": {
+		syntax: "@location <dashed-ident> { <declaration-list> }"
+	},
+	"marker-ref": {
+		syntax: "<url>"
+	},
+	"mask-layer": {
+		syntax: "<mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || <geometry-box> || [ <geometry-box> | no-clip ] || <compositing-operator> || <masking-mode>"
+	},
+	"mask-reference": {
+		syntax: "none | <image> | <mask-source>"
+	},
+	"mask-source": {
+		syntax: "<url>"
+	},
+	"masking-mode": {
+		syntax: "alpha | luminance | match-source"
+	},
+	"media-and": {
+		syntax: "and <media-in-parens>"
+	},
+	"media-condition": {
+		syntax: "<media-not> | <media-in-parens> [ <media-and>* | <media-or>* ]"
+	},
+	"media-condition-without-or": {
+		syntax: "<media-not> | <media-in-parens> <media-and>*"
+	},
+	"media-feature": {
+		syntax: "[ <mf-plain> | <mf-boolean> | <mf-range> ]"
+	},
+	"media-import-condition": {
+		syntax: "<media-query-list>"
+	},
+	"media-in-parens": {
+		syntax: "( <media-condition> ) | ( <media-feature> ) | <general-enclosed>"
+	},
+	"media-not": {
+		syntax: "not <media-in-parens>"
+	},
+	"media-or": {
+		syntax: "or <media-in-parens>"
+	},
+	"media-query": {
+		syntax: "<media-condition> | [ not | only ]? <media-type> [ and <media-condition-without-or> ]?"
+	},
+	"media-type": {
+		syntax: "<ident>"
+	},
+	"mf-boolean": {
+		syntax: "<mf-name>"
+	},
+	"mf-comparison": {
+		syntax: "<mf-lt> | <mf-gt> | <mf-eq>"
+	},
+	"mf-eq": {
+		syntax: "'='"
+	},
+	"mf-gt": {
+		syntax: "'>' '='?"
+	},
+	"mf-lt": {
+		syntax: "'<' '='?"
+	},
+	"mf-name": {
+		syntax: "<ident>"
+	},
+	"mf-plain": {
+		syntax: "<mf-name> : <mf-value>"
+	},
+	"mf-range": {
+		syntax: "<mf-name> <mf-comparison> <mf-value> | <mf-value> <mf-comparison> <mf-name> | <mf-value> <mf-lt> <mf-name> <mf-lt> <mf-value> | <mf-value> <mf-gt> <mf-name> <mf-gt> <mf-value>"
+	},
+	"mf-value": {
+		syntax: "<number> | <dimension> | <ident> | <ratio>"
+	},
+	"modern-device-cmyk-syntax": {
+		syntax: "device-cmyk( <cmyk-component>{4} [ / [ <alpha-value> | none ] ]? )"
+	},
+	"modern-hsl-syntax": {
+		syntax: "hsl([from <color>]? [<hue> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
+	},
+	"modern-hsla-syntax": {
+		syntax: "hsla([from <color>]? [<hue> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? )"
+	},
+	"modern-rgb-syntax": {
+		syntax: "rgb( [ from <color> ]? [ <number> | <percentage> | none]{3} [ / [<alpha-value> | none] ]? )"
+	},
+	"modern-rgba-syntax": {
+		syntax: "rgba( [ from <color> ]? [ <number> | <percentage> | none]{3} [ / [<alpha-value> | none] ]? )"
+	},
+	"move-command": {
+		syntax: "move <command-end-point>"
+	},
+	"mq-boolean": {
+		syntax: "<integer [0,1]>"
+	},
+	"n-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"name-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> | auto-fill ], <line-names>+)"
+	},
+	"named-color": {
+		syntax: "aliceblue | antiquewhite | aqua | aquamarine | azure | beige | bisque | black | blanchedalmond | blue | blueviolet | brown | burlywood | cadetblue | chartreuse | chocolate | coral | cornflowerblue | cornsilk | crimson | cyan | darkblue | darkcyan | darkgoldenrod | darkgray | darkgreen | darkgrey | darkkhaki | darkmagenta | darkolivegreen | darkorange | darkorchid | darkred | darksalmon | darkseagreen | darkslateblue | darkslategray | darkslategrey | darkturquoise | darkviolet | deeppink | deepskyblue | dimgray | dimgrey | dodgerblue | firebrick | floralwhite | forestgreen | fuchsia | gainsboro | ghostwhite | gold | goldenrod | gray | green | greenyellow | grey | honeydew | hotpink | indianred | indigo | ivory | khaki | lavender | lavenderblush | lawngreen | lemonchiffon | lightblue | lightcoral | lightcyan | lightgoldenrodyellow | lightgray | lightgreen | lightgrey | lightpink | lightsalmon | lightseagreen | lightskyblue | lightslategray | lightslategrey | lightsteelblue | lightyellow | lime | limegreen | linen | magenta | maroon | mediumaquamarine | mediumblue | mediumorchid | mediumpurple | mediumseagreen | mediumslateblue | mediumspringgreen | mediumturquoise | mediumvioletred | midnightblue | mintcream | mistyrose | moccasin | navajowhite | navy | oldlace | olive | olivedrab | orange | orangered | orchid | palegoldenrod | palegreen | paleturquoise | palevioletred | papayawhip | peachpuff | peru | pink | plum | powderblue | purple | rebeccapurple | red | rosybrown | royalblue | saddlebrown | salmon | sandybrown | seagreen | seashell | sienna | silver | skyblue | slateblue | slategray | slategrey | snow | springgreen | steelblue | tan | teal | thistle | tomato | turquoise | violet | wheat | white | whitesmoke | yellow | yellowgreen | transparent"
+	},
+	"namespace-prefix": {
+		syntax: "<ident>"
+	},
+	"navigation-condition": {
+		syntax: "not <navigation-in-parens> | <navigation-in-parens> [ and <navigation-in-parens> ]* | <navigation-in-parens> [ or <navigation-in-parens> ]*"
+	},
+	"navigation-in-parens": {
+		syntax: "( <navigation-condition> ) | ( <navigation-test> ) | <general-enclosed>"
+	},
+	"navigation-location": {
+		syntax: "<url> | [ <location-name> | <url-pattern()> ]"
+	},
+	"navigation-location-between-test": {
+		syntax: "between : <navigation-location> and <navigation-location>"
+	},
+	"navigation-location-test": {
+		syntax: "<navigation-relation> : <navigation-location>"
+	},
+	"navigation-phase-keyword": {
+		syntax: "loading | ready | committed"
+	},
+	"navigation-phase-test": {
+		syntax: "phase : <navigation-phase-keyword>"
+	},
+	"navigation-relation": {
+		syntax: "at | from | to"
+	},
+	"navigation-test": {
+		syntax: "<navigation-location-test> | <navigation-location-between-test> | <navigation-type-test> | <navigation-phase-test>"
+	},
+	"navigation-type-keyword": {
+		syntax: "traverse | back | forward | reload"
+	},
+	"navigation-type-test": {
+		syntax: "history : <navigation-type-keyword>"
+	},
+	"ndash-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-dimension": {
+		syntax: "<dimension-token>"
+	},
+	"ndashdigit-ident": {
+		syntax: "<ident-token>"
+	},
+	"ns-prefix": {
+		syntax: "[ <ident-token> | '*' ]? '|'"
+	},
+	"number-optional-number": {
+		syntax: "<number> <number>?"
+	},
+	"numeric-figure-values": {
+		syntax: "[ lining-nums | oldstyle-nums ]"
+	},
+	"numeric-fraction-values": {
+		syntax: "[ diagonal-fractions | stacked-fractions ]"
+	},
+	"numeric-spacing-values": {
+		syntax: "[ proportional-nums | tabular-nums ]"
+	},
+	"offset-path": {
+		syntax: "<ray()> | <url> | <basic-shape>"
+	},
+	"opacity-value": {
+		syntax: "<number> | <percentage>"
+	},
+	"opentype-tag": {
+		syntax: "<string>"
+	},
+	"outline-line-style": {
+		syntax: "none | auto | dotted | dashed | solid | double | groove | ridge | inset | outset"
+	},
+	"overflow-position": {
+		syntax: "unsafe | safe"
+	},
+	"page-selector": {
+		syntax: "[ <ident-token>? <pseudo-page>* ]!"
+	},
+	"page-selector-list": {
+		syntax: "<page-selector>#"
+	},
+	"page-size": {
+		syntax: "A5 | A4 | A3 | B5 | B4 | JIS-B5 | JIS-B4 | letter | legal | ledger"
+	},
+	paint: {
+		syntax: "none | <color> | <url> [ none | <color> ]? | context-fill | context-stroke"
+	},
+	"paint-box": {
+		syntax: "<visual-box> | fill-box | stroke-box"
+	},
+	"palette-identifier": {
+		syntax: "<dashed-ident>"
+	},
+	"param-spec": {
+		syntax: "color | accent-color | [ <dashed-ident> <css-type>? ]"
+	},
+	"pattern-descriptor": {
+		syntax: "pattern : <url-pattern()>"
+	},
+	"pointer-axis": {
+		syntax: "block | inline | x | y"
+	},
+	"pointer-source": {
+		syntax: "root | nearest | self"
+	},
+	points: {
+		syntax: "[ <number>+ ]#"
+	},
+	"polar-color-space": {
+		syntax: "hsl | hwb | lch | oklch"
+	},
+	position: {
+		syntax: "<position-one> | <position-two> | <position-four>"
+	},
+	"position-area": {
+		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | self-x-start | self-x-end | span-self-x-start | span-self-x-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | self-y-start | self-y-end | span-self-y-start | span-self-y-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
+	},
+	"position-area-query": {
+		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | self-x-start | self-x-end | span-self-x-start | span-self-x-end | span-all | any ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | self-y-start | self-y-end | span-self-y-start | span-self-y-end | span-all | any ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all | any ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all | any ] | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all | any ] || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all | any ] | [ start | center | end | span-start | span-end | span-all | any ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all | any ]{1,2} ]"
+	},
+	"position-four": {
+		syntax: "[ [ left | right | x-start | x-end ] <length-percentage> ] && [ [ top | bottom | y-start | y-end ] <length-percentage> ] | [ [ block-start | block-end ] <length-percentage> ] && [ [ inline-start | inline-end ] <length-percentage> ] | [ [ start | end ] <length-percentage> ]{2} "
+	},
+	"position-one": {
+		syntax: "left | center | right | top | bottom | x-start | x-end | y-start | y-end | block-start | block-end | inline-start | inline-end | <length-percentage> "
+	},
+	"position-three": {
+		syntax: "[ left | center | right ] && [ [ top | bottom ] <length-percentage> ] | [ [ left | right ] <length-percentage> ] && [ top | center | bottom ] "
+	},
+	"position-two": {
+		syntax: "[ left | center | right | x-start | x-end ] && [ top | center | bottom | y-start | y-end ] | [ left | center | right | x-start | x-end | <length-percentage> ] [ top | center | bottom | y-start | y-end | <length-percentage> ] | [ block-start | center | block-end ] && [ inline-start | center | inline-end ] | [ start | center | end ]{2} "
+	},
+	"predefined-rgb": {
+		syntax: "srgb | srgb-linear | display-p3 | display-p3-linear | a98-rgb | prophoto-rgb | rec2020 | rec2100-pq | rec2100-hlg | rec2100-linear"
+	},
+	"predefined-rgb-params": {
+		syntax: "<predefined-rgb> [ <number> | <percentage> | none ]{3}"
+	},
+	"progress-source": {
+		syntax: "<percentage> | <number> | <dimension> | <'animation-timeline'>"
+	},
+	"pseudo-class-selector": {
+		syntax: ": <ident-token> | : <function-token> <any-value> )"
+	},
+	"pseudo-compound-selector": {
+		syntax: "<pseudo-element-selector> <pseudo-class-selector>*"
+	},
+	"pseudo-element-selector": {
+		syntax: ": <pseudo-class-selector> | <legacy-pseudo-element-selector>"
+	},
+	"pseudo-page": {
+		syntax: ": [ left | right | first | blank ]"
+	},
+	"pt-class-selector": {
+		syntax: "['.' <custom-ident>]+"
+	},
+	"pt-name-and-class-selector": {
+		syntax: "<pt-name-selector> <pt-class-selector>? | <pt-class-selector>"
+	},
+	"pt-name-selector": {
+		syntax: "'*' | <custom-ident>"
+	},
+	"query-in-parens": {
+		syntax: "( <container-query> ) | ( <size-feature> ) | style( <style-query> ) | scroll-state( <scroll-state-query> ) | <general-enclosed>"
+	},
+	quote: {
+		syntax: "open-quote | close-quote | no-open-quote | no-close-quote"
+	},
+	"radial-extent": {
+		syntax: "closest-corner | closest-side | farthest-corner | farthest-side"
+	},
+	"radial-gradient-syntax": {
+		syntax: "[ [ [ <radial-shape> || <radial-size> ]? [ at <position> ]? ] || <color-interpolation-method>]? , <color-stop-list>"
+	},
+	"radial-shape": {
+		syntax: "circle | ellipse"
+	},
+	"radial-size": {
+		syntax: "<radial-extent> | <length [0,∞]> | <length-percentage [0,∞]>{2}"
+	},
+	"random-cache-key": {
+		syntax: "<dashed-ident> || element-scoped || [ property-scoped | property-index-scoped | <random-ua-ident> ]"
+	},
+	"random-item-args": {
+		syntax: "random-item( <declaration-value>, [ <declaration-value>? ]# )"
+	},
+	"random-key": {
+		syntax: "auto | <random-cache-key> | fixed <number [0,1]>"
+	},
+	"random-ua-ident": {
+		syntax: "<custom-ident>"
+	},
+	ratio: {
+		syntax: "<number [0,∞]> [ / <number [0,∞]> ]?"
+	},
+	"ray-size": {
+		syntax: "<radial-extent> | sides"
+	},
+	"rectangular-color-space": {
+		syntax: "srgb | srgb-linear | display-p3 | display-p3-linear | a98-rgb | prophoto-rgb | rec2020 | lab | oklab | <xyz-space>"
+	},
+	"referrer-policy-modifier": {
+		syntax: "referrer-policy(no-referrer | no-referrer-when-downgrade | same-origin | origin | strict-origin | origin-when-cross-origin | strict-origin-when-cross-origin | unsafe-url)"
+	},
+	"relative-control-point": {
+		syntax: "<coordinate-pair> [ from [ start | end | origin ] ]?"
+	},
+	"relative-real-selector": {
+		syntax: "<combinator>? <complex-real-selector>"
+	},
+	"relative-real-selector-list": {
+		syntax: "<relative-real-selector>#"
+	},
+	"relative-selector": {
+		syntax: "<combinator>? <complex-selector>"
+	},
+	"relative-selector-list": {
+		syntax: "<relative-selector>#"
+	},
+	"relative-size": {
+		syntax: "[ larger | smaller ]"
+	},
+	"repeat-line-color": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <color> ]# )"
+	},
+	"repeat-line-style": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-style> ]# )"
+	},
+	"repeat-line-width": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-width> ]# )"
+	},
+	"repeat-style": {
+		syntax: "repeat-x | repeat-y | repeat-block | repeat-inline | <repetition>{1,2}"
+	},
+	repetition: {
+		syntax: "repeat | space | round | no-repeat"
+	},
+	"request-url-modifier": {
+		syntax: "<cross-origin-modifier> | <integrity-modifier> | <referrer-policy-modifier>"
+	},
+	"reversed-counter-name": {
+		syntax: "reversed( <counter-name> )"
+	},
+	"rounding-strategy": {
+		syntax: "nearest | up | down | to-zero | line-width"
+	},
+	"scope-boundaries": {
+		syntax: "[ [ ( <scope-start> ) ]? [ to ( <scope-end> ) ]? ]!"
+	},
+	"scope-end": {
+		syntax: "<selector-list>"
+	},
+	"scope-start": {
+		syntax: "<selector-list>"
+	},
+	"scroll-button-direction": {
+		syntax: "up | down | left | right | block-start | block-end | inline-start | inline-end | prev | next"
+	},
+	"scroll-state-in-parens": {
+		syntax: "( <scroll-state-query> ) | ( <scroll-state-feature> ) | <general-enclosed>"
+	},
+	"scroll-state-query": {
+		syntax: " not <scroll-state-in-parens> | <scroll-state-in-parens> [ [ and <scroll-state-in-parens> ]* | [ or <scroll-state-in-parens> ]* ] | <scroll-state-feature>"
+	},
+	scroller: {
+		syntax: "root | nearest | self"
+	},
+	"selector-list": {
+		syntax: "<complex-selector-list>"
+	},
+	"self-position": {
+		syntax: "center | start | end | self-start | self-end | flow-start | flow-end | flex-start | flex-end"
+	},
+	shadow: {
+		syntax: "<color>? && [ <length>{2} [ <length [0,∞]> <length>? ]? ] && inset?"
+	},
+	shape: {
+		syntax: "rect(<top>, <right>, <bottom>, <left>)"
+	},
+	"shape-box": {
+		syntax: "<visual-box> | margin-box | half-border-box"
+	},
+	"shape-command": {
+		syntax: "<move-command> | <line-command> | close | <horizontal-line-command> | <vertical-line-command> | <curve-command> | <smooth-command> | <arc-command>"
+	},
+	"side-or-corner": {
+		syntax: "[left | right] || [top | bottom]"
+	},
+	"signed-integer": {
+		syntax: "<number-token>"
+	},
+	"signless-integer": {
+		syntax: "<number-token>"
+	},
+	"simple-selector": {
+		syntax: "<type-selector> | <subclass-selector>"
+	},
+	"simple-selector-list": {
+		syntax: "<simple-selector>#"
+	},
+	"single-animation": {
+		syntax: "<'animation-duration'> || <easing-function> || <'animation-delay-start'> || <single-animation-iteration-count> || <single-animation-direction> || <single-animation-fill-mode> || <single-animation-play-state> || [ none | <keyframes-name> ] || <single-animation-timeline>"
+	},
+	"single-animation-composition": {
+		syntax: "replace | add | accumulate"
+	},
+	"single-animation-direction": {
+		syntax: "normal | reverse | alternate | alternate-reverse"
+	},
+	"single-animation-fill-mode": {
+		syntax: "none | forwards | backwards | both"
+	},
+	"single-animation-iteration-count": {
+		syntax: "infinite | <number [0,∞]>"
+	},
+	"single-animation-play-state": {
+		syntax: "running | paused"
+	},
+	"single-animation-timeline": {
+		syntax: "auto | none | <dashed-ident> | <scroll()> | <view()>"
+	},
+	"single-transition": {
+		syntax: "[ none | <single-transition-property> ] || <time> || <easing-function> || <time> || <transition-behavior-value>"
+	},
+	"single-transition-property": {
+		syntax: "all | <custom-ident>"
+	},
+	"slash-separated-border-radius-syntax": {
+		syntax: "<length-percentage [0,∞]> [ / <length-percentage [0,∞]> ]?"
+	},
+	"smooth-command": {
+		syntax: "smooth [ [ to <position> [ with <control-point> ]? ] | [ by <coordinate-pair> [ with <relative-control-point> ]? ] ]"
+	},
+	"source-size": {
+		syntax: "<media-condition> <source-size-value> | auto"
+	},
+	"source-size-list": {
+		syntax: "<source-size>#? , <source-size-value>"
+	},
+	"source-size-value": {
+		syntax: "<length> | auto"
+	},
+	"spacing-trim": {
+		syntax: "space-all | normal | space-first | trim-start | trim-both | trim-all"
+	},
+	"spread-shadow": {
+		syntax: "<'box-shadow-color'>? && [ [ none | <length>{2} ] [ <'box-shadow-blur'> <'box-shadow-spread'>? ]? ] && <'box-shadow-position'>?"
+	},
+	"step-easing-function": {
+		syntax: "step-start | step-end | <steps()>"
+	},
+	"step-position": {
+		syntax: "jump-start | jump-end | jump-none | jump-both | start | end"
+	},
 	"style-feature": {
 		syntax: "<style-feature-plain> | <style-feature-boolean> | <style-range>"
 	},
 	"style-feature-boolean": {
 		syntax: "<style-feature-name>"
-	},
-	"style-feature-name": {
-		syntax: "<ident> |<custom-property-name>"
 	},
 	"style-feature-plain": {
 		syntax: "<style-feature-name> : <style-feature-value>"
@@ -4404,20 +5676,53 @@ var syntaxes = {
 	"style-range-value": {
 		syntax: "<custom-property-name> | <style-feature-value>"
 	},
-	"superellipse()": {
-		syntax: "superellipse()"
+	"subclass-selector": {
+		syntax: "<id-selector> | <class-selector> | <attribute-selector> | <pseudo-class-selector>"
 	},
-	"supports()": {
-		syntax: "supports( <declaration> )"
+	"supports-at-rule-fn": {
+		syntax: "at-rule( <at-keyword-token> )"
 	},
-	"svg-length": {
-		syntax: "<percentage> | <length> | <number>"
+	"supports-condition": {
+		syntax: "not <supports-in-parens> | <supports-in-parens> [ and <supports-in-parens> ]* | <supports-in-parens> [ or <supports-in-parens> ]*"
 	},
-	"svg-writing-mode": {
-		syntax: "lr-tb | rl-tb | tb-rl | lr | rl | tb"
+	"supports-decl": {
+		syntax: "( [ <declaration> | <supports-condition-name> ] )"
 	},
-	"symbols()": {
-		syntax: "symbols()"
+	"supports-env-fn": {
+		syntax: "env( <ident> )"
+	},
+	"supports-feature": {
+		syntax: "<supports-selector-fn> | <supports-font-tech-fn> | <supports-font-format-fn> | <supports-at-rule-fn> | <supports-named-feature-fn> | <supports-env-fn> | <supports-decl>"
+	},
+	"supports-font-format-fn": {
+		syntax: "font-format( <font-format> )"
+	},
+	"supports-font-tech-fn": {
+		syntax: "font-tech( <font-tech> )"
+	},
+	"supports-import-condition": {
+		syntax: "supports( [ <supports-condition> | <declaration> ] )"
+	},
+	"supports-in-parens": {
+		syntax: "( <supports-condition> ) | <supports-feature> | <general-enclosed>"
+	},
+	"supports-named-feature-fn": {
+		syntax: "named-feature( <ident> )"
+	},
+	"supports-selector-fn": {
+		syntax: "selector( <complex-selector> )"
+	},
+	"svg-paint": {
+		syntax: "child | child( <integer> )"
+	},
+	symbol: {
+		syntax: "<string> | <image> | <custom-ident>"
+	},
+	"symbolic-glyph": {
+		syntax: "disc | circle | square | disclosure-open | disclosure-closed"
+	},
+	"symbols-type": {
+		syntax: "cyclic | numeric | alphabetic | symbolic | fixed"
 	},
 	"syntax-combinator": {
 		syntax: "'|'"
@@ -4426,7 +5731,7 @@ var syntaxes = {
 		syntax: "<syntax-single-component> <syntax-multiplier>? | '<' transform-list '>'"
 	},
 	"syntax-multiplier": {
-		syntax: "'#' | '+'"
+		syntax: "[ '#' | '+' ]"
 	},
 	"syntax-single-component": {
 		syntax: "'<' <syntax-type-name> '>' | <ident>"
@@ -4437,357 +5742,140 @@ var syntaxes = {
 	"syntax-type-name": {
 		syntax: "angle | color | custom-ident | image | integer | length | length-percentage | number | percentage | resolution | string | time | url | transform-function"
 	},
-	"tan()": {
-		syntax: "tan( <calc-sum> )"
+	"system-color": {
+		syntax: "AccentColor | AccentColorText | ActiveText | ButtonBorder | ButtonFace | ButtonText | Canvas | CanvasText | Field | FieldText | GrayText | Highlight | HighlightText | LinkText | Mark | MarkText | SelectedItem | SelectedItemText | VisitedText | <deprecated-color>"
+	},
+	"system-font-family-name": {
+		syntax: "caption | icon | menu | message-box | small-caption | status-bar"
+	},
+	target: {
+		syntax: "<target-counter()> | <target-counters()> | <target-text()>"
 	},
 	"target-contrast": {
 		syntax: "<wcag2>"
 	},
-	"target-counter()": {
-		syntax: "target-counter()"
+	"text-edge": {
+		syntax: "[ text | ideographic | ideographic-ink ] | [ text | ideographic | ideographic-ink | cap | ex ] [ text | ideographic | ideographic-ink | alphabetic ]"
 	},
-	"target-counters()": {
-		syntax: "target-counters()"
-	},
-	"target-text()": {
-		syntax: "target-text()"
-	},
-	top: {
-		syntax: "<length> | auto"
+	"time-percentage": {
+		syntax: "[ <time> | <percentage> ]"
 	},
 	"track-breadth": {
-		syntax: "| <-non-standard-size>"
+		syntax: "<length-percentage [0,∞]> | <flex [0,∞]> | min-content | max-content | auto | <-non-standard-size>"
 	},
-	"transform-interpolate()": {
-		syntax: "transform-interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? ], <input-position>{1,2} : <transform-list>, [ <easing-function>?, <input-position>{1,2} : <transform-list> ]#? )"
+	"track-list": {
+		syntax: "[ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?"
 	},
-	"transform-mix()": {
-		syntax: "transform-mix( [ <transform-list> && <percentage [0,100]> ]# )"
+	"track-repeat": {
+		syntax: "repeat( [ <integer [1,∞]> ] , [ <line-names>? <track-size> ]+ <line-names>? )"
 	},
-	"translate3d()": {
-		syntax: "translate3d( <length-percentage> , <length-percentage> , <length> )"
+	"track-size": {
+		syntax: "<track-breadth> | minmax( <inflexible-breadth> , <track-breadth> ) | fit-content( <length-percentage [0,∞]> )"
 	},
-	"translateZ()": {
-		syntax: "translateZ( <length> )"
+	"transform-function": {
+		syntax: "<scale3d()> | <scale()> | <scaleX()> | <scaleY()> | <scaleZ()> | <translate3d()> | <translate()> | <translateX()> | <translateY()> | <translateZ()> | <rotate3d()> | <rotate()> | <rotateX()> | <rotateY()> | <rotateZ()> | <skew()> | <skewX()> | <skewY()> | <matrix3d()> | <matrix()> | <perspective()>"
+	},
+	"transform-list": {
+		syntax: "<transform-function>+"
+	},
+	"transition-behavior-value": {
+		syntax: "normal | allow-discrete"
+	},
+	"try-size": {
+		syntax: "most-width | most-height | most-block-size | most-inline-size"
+	},
+	"try-tactic": {
+		syntax: "flip-block || flip-inline || flip-start || flip-x || flip-y"
+	},
+	type: {
+		syntax: "'<' [ number | string ] '>'"
+	},
+	"type-selector": {
+		syntax: "<wq-name> | <ns-prefix>? '*'"
 	},
 	url: {
-		syntax: "url( <string> <url-modifier>* ) | <url-token>"
+		syntax: "<url()> | <src()>"
 	},
-	"url-modifier": {
-		syntax: "<ident> | <function-token> <any-value> )"
+	"var-args": {
+		syntax: "var( <declaration-value> , <declaration-value>? )"
 	},
-	"url-pattern()": {
-		syntax: "url-pattern( <string> )"
+	"vertical-line-command": {
+		syntax: "vline [ to [ <length-percentage> | top | center | bottom | y-start | y-end ] | by <length-percentage> ]"
 	},
-	"url()": {
-		syntax: "url( <string> <url-modifier>* ) | <url-token>"
+	"view-transition-type": {
+		syntax: "<custom-ident>"
 	},
-	"var()": {
-		syntax: "var()"
-	},
-	"view()": {
-		syntax: "view( [ <axis> || <'view-timeline-inset'> ]? )"
+	"visual-box": {
+		syntax: "content-box | padding-box | border-box"
 	},
 	wcag2: {
 		syntax: "wcag2 | wcag2([<number> | [ aa | aaa ] && large? ])"
 	},
-	x: {
-		syntax: "<number>"
+	"wq-name": {
+		syntax: "<ns-prefix>? <ident-token>"
 	},
 	"xyz-params": {
 		syntax: "<xyz-space> [ <number> | <percentage> | none ]{3}"
 	},
 	"xyz-space": {
 		syntax: "xyz | xyz-d50 | xyz-d65"
-	},
-	y: {
-		syntax: "<number>"
-	}
-};
-var types = {
-	"<absolute-size>": {
-		syntax: "[ xx-small | x-small | small | medium | large | x-large | xx-large | xxx-large ]"
-	},
-	"<angle-percentage>": {
-		syntax: "[ <angle> | <percentage> ]"
-	},
-	"<antecedent>": {
-		syntax: "<declaration-value>"
-	},
-	"<attr-args>": {
-		syntax: "attr( <declaration-value>, <declaration-value>? )"
-	},
-	"<attr-name>": {
-		syntax: "[ <ident-token>? '|' ]? <ident-token>"
-	},
-	"<attr-type>": {
-		syntax: "type( <syntax> ) | raw-string | number | <attr-unit>"
-	},
-	"<attr-unit>": {
-		syntax: "<custom-ident>"
-	},
-	"<baseline-metric>": {
-		syntax: "text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top"
-	},
-	"<basic-shape-rect>": {
-		syntax: "<inset()> | <rect()> | <xywh()>"
-	},
-	"<basic-shape>": {
-		syntax: "<basic-shape-rect> | <circle()> | <ellipse()> | <polygon()> | <path()> | <shape()>"
-	},
-	"<bg-position>": {
-		syntax: "<position> | <position-three> <position-three>Info about the '<position-three>' reference.#typedef-position-threeReferenced in:2.7. Background Positioning Shorthand: the background-position shorthand property (2) (3) Possible linking"
-	},
-	"<boolean-expr>": {
-		syntax: "not <boolean-expr-group> | <boolean-expr-group> [ [ and <boolean-expr-group> ]* | [ or <boolean-expr-group> ]* ]"
-	},
-	"<clip-source>": {
-		syntax: "<url>"
-	},
-	"<color-stripe>": {
-		syntax: "<color> && [ <length-percentage> | <flex> ]?"
-	},
-	"<color>": {
-		syntax: "<color-base> | currentColor | <system-color> | <contrast-color()> | <device-cmyk()> | <light-dark-color> <color-base>Info about the '<color-base>' reference.#typedef-color-baseReferenced in:2. The <color> syntax Possible linking"
-	},
-	"<compositing-operator>": {
-		syntax: "add | subtract | intersect | exclude"
-	},
-	"<consequent>": {
-		syntax: "<declaration-value>"
-	},
-	"<dasharray>": {
-		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
-	},
-	"<filter-function>": {
-		syntax: "<blur()> | <brightness()> | <contrast()> | <drop-shadow()> | <grayscale()> | <hue-rotate()> | <invert()> | <opacity()> | <sepia()> | <saturate()>"
-	},
-	"<filter-value-list>": {
-		syntax: "[ <filter-function> | <url> ]+"
-	},
-	"<font-family-name>": {
-		syntax: "<string> | <custom-ident>+"
-	},
-	"<frequency-percentage>": {
-		syntax: "[ <frequency> | <percentage> ]"
-	},
-	"<generic-voice>": {
-		syntax: "<age>? <gender> <integer [1,∞]>?"
-	},
-	"<geometry-box>": {
-		syntax: "<shape-box> | fill-box | stroke-box | view-box"
-	},
-	"<ident-arg>": {
-		syntax: "<string> | <integer> | <ident>"
-	},
-	"<ident-args>": {
-		syntax: "ident( <declaration-value> )"
-	},
-	"<if-args-branch>": {
-		syntax: "<declaration-value> : <declaration-value>?"
-	},
-	"<if-args>": {
-		syntax: "if( [ <if-args-branch> ; ]* <if-args-branch> ;? )"
-	},
-	"<if-branch>": {
-		syntax: "<if-condition> : <declaration-value>?"
-	},
-	"<if-condition>": {
-		syntax: "<boolean-expr[ <if-test> ]> | else"
-	},
-	"<if-test>": {
-		syntax: "supports( [ <ident> : <declaration-value> ] | <supports-condition> ) | media( <media-feature> | <media-condition> ) | style( <style-query> )"
-	},
-	"<image-1D>": {
-		syntax: "<stripes()>"
-	},
-	"<inherit-args>": {
-		syntax: "inherit( <declaration-value>, <declaration-value>? )"
-	},
-	"<keyframe-block>": {
-		syntax: "<keyframe-selector># { <declaration-list> }"
-	},
-	"<keyframe-selector>": {
-		syntax: "from | to | <percentage [0,100]>"
-	},
-	"<keyframes-name>": {
-		syntax: "<custom-ident> | <string>"
-	},
-	"<length-percentage>": {
-		syntax: "[ <length> | <percentage> ]"
-	},
-	"<marker-ref>": {
-		syntax: "<url>"
-	},
-	"<mask-layer>": {
-		syntax: "<mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || <geometry-box> || [ <geometry-box> | no-clip ] || <compositing-operator> || <masking-mode>"
-	},
-	"<mask-reference>": {
-		syntax: "none | <image> | <mask-source>"
-	},
-	"<mask-source>": {
-		syntax: "<url>"
-	},
-	"<masking-mode>": {
-		syntax: "alpha | luminance | match-source"
-	},
-	"<number-optional-number>": {
-		syntax: "<number> <number>?"
-	},
-	"<paint>": {
-		syntax: "none | <color> | <url> [none | <color>]? | context-fill | context-stroke"
-	},
-	"<points>": {
-		syntax: "[ <number>+ ]#"
-	},
-	"<position-four>": {
-		syntax: "[ [ [ left | right | x-start | x-end ] <length-percentage> ] && [ [ top | bottom | y-start | y-end ] <length-percentage> ] | [ [ block-start | block-end ] <length-percentage> ] && [ [ inline-start | inline-end ] <length-percentage> ] | [ [ start | end ] <length-percentage> ]{2} ]"
-	},
-	"<position-one>": {
-		syntax: "[ left | center | right | top | bottom | x-start | x-end | y-start | y-end | block-start | block-end | inline-start | inline-end | <length-percentage> ]"
-	},
-	"<position-two>": {
-		syntax: "[ [ left | center | right | x-start | x-end ] && [ top | center | bottom | y-start | y-end ] | [ left | center | right | x-start | x-end | <length-percentage> ] [ top | center | bottom | y-start | y-end | <length-percentage> ] | [ block-start | center | block-end ] && [ inline-start | center | inline-end ] | [ start | center | end ]{2} ]"
-	},
-	"<position>": {
-		syntax: "<position-one> | <position-two> | <position-four>"
-	},
-	"<progress-source>": {
-		syntax: "<percentage> | <number> | <dimension> | <'animation-timeline'>"
-	},
-	"<random-cache-key>": {
-		syntax: "<dashed-ident> || element-scoped || [ property-scoped | property-index-scoped | <random-ua-ident> ]"
-	},
-	"<random-item-args>": {
-		syntax: "random-item( <declaration-value>, [ <declaration-value>? ]# )"
-	},
-	"<random-key>": {
-		syntax: "auto | <random-cache-key> | fixed <number [0,1]>"
-	},
-	"<random-ua-ident>": {
-		syntax: "<custom-ident>"
-	},
-	"<ratio>": {
-		syntax: "<number [0,∞]> [ / <number [0,∞]> ]?"
-	},
-	"<relative-size>": {
-		syntax: "[ larger | smaller ]"
-	},
-	"<request-url-modifier>": {
-		syntax: "<cross-origin-modifier> | <integrity-modifier> | <referrer-policy-modifier>"
-	},
-	"<rounding-strategy>": {
-		syntax: "nearest | up | down | to-zero | line-width"
-	},
-	"<shape-box>": {
-		syntax: "<visual-box> | margin-box | half-border-box"
-	},
-	"<shape-command>": {
-		syntax: "<move-command> | <line-command> | close | <horizontal-line-command> | <vertical-line-command> | <curve-command> | <smooth-command> | <arc-command>"
-	},
-	"<single-animation-composition>": {
-		syntax: "replace | add | accumulate"
-	},
-	"<single-animation-direction>": {
-		syntax: "normal | reverse | alternate | alternate-reverse"
-	},
-	"<single-animation-fill-mode>": {
-		syntax: "none | forwards | backwards | both"
-	},
-	"<single-animation-iteration-count>": {
-		syntax: "infinite | <number [0,∞]>"
-	},
-	"<single-animation-play-state>": {
-		syntax: "running | paused"
-	},
-	"<single-animation-timeline>": {
-		syntax: "auto | none | <dashed-ident> | <scroll()> | <view()>"
-	},
-	"<single-animation>": {
-		syntax: "<'animation-duration'> || <easing-function> || <'animation-delay-start'> || <single-animation-iteration-count> || <single-animation-direction> || <single-animation-fill-mode> || <single-animation-play-state> || [ none | <keyframes-name> ] || <single-animation-timeline>"
-	},
-	"<single-transition-property>": {
-		syntax: "all | <custom-ident>"
-	},
-	"<single-transition>": {
-		syntax: "[ none | <single-transition-property> ] || <time> || <easing-function> || <time> || <transition-behavior-value>"
-	},
-	"<source-size-list>": {
-		syntax: "<source-size>#? , <source-size-value>"
-	},
-	"<source-size-value>": {
-		syntax: "<length> | auto"
-	},
-	"<source-size>": {
-		syntax: "<media-condition> <source-size-value> | auto"
-	},
-	"<syntax-combinator>": {
-		syntax: "'|'"
-	},
-	"<syntax-component>": {
-		syntax: "<syntax-single-component> <syntax-multiplier>? | '<' transform-list '>'"
-	},
-	"<syntax-multiplier>": {
-		syntax: "[ '#' | '+' ]"
-	},
-	"<syntax-single-component>": {
-		syntax: "'<' <syntax-type-name> '>' | <ident>"
-	},
-	"<syntax-string>": {
-		syntax: "<string>"
-	},
-	"<syntax-type-name>": {
-		syntax: "angle | color | custom-ident | image | integer | length | length-percentage | number | percentage | resolution | string | time | url | transform-function"
-	},
-	"<syntax>": {
-		syntax: "'*' | <syntax-component> [ <syntax-combinator> <syntax-component> ]* | <syntax-string>"
-	},
-	"<system-font-family-name>": {
-		syntax: "caption | icon | menu | message-box | small-caption | status-bar"
-	},
-	"<target-contrast>": {
-		syntax: "<wcag2>"
-	},
-	"<text-edge>": {
-		syntax: "[ text | ideographic | ideographic-ink ] | [ text | ideographic | ideographic-ink | cap | ex ] [ text | ideographic | ideographic-ink | alphabetic ]"
-	},
-	"<time-percentage>": {
-		syntax: "[ <time> | <percentage> ]"
-	},
-	"<transform-list>": {
-		syntax: "<transform-function>+"
-	},
-	"<transition-behavior-value>": {
-		syntax: "normal | allow-discrete"
 	}
 };
 var units = [
+	"Hz",
+	"Q",
 	"cap",
 	"ch",
 	"cm",
+	"dB",
 	"deg",
 	"dpcm",
 	"dpi",
 	"dppx",
+	"dvb",
+	"dvh",
+	"dvi",
+	"dvmax",
+	"dvmin",
+	"dvw",
 	"em",
 	"ex",
 	"fr",
 	"grad",
-	"Hz",
 	"ic",
 	"in",
 	"kHz",
+	"lh",
+	"lvb",
+	"lvh",
+	"lvi",
+	"lvmax",
+	"lvmin",
+	"lvw",
 	"mm",
 	"ms",
 	"pc",
 	"pt",
 	"px",
-	"Q",
 	"rad",
+	"rcap",
+	"rch",
 	"rem",
+	"rex",
+	"ric",
+	"rlh",
 	"s",
+	"st",
+	"svb",
+	"svh",
+	"svi",
+	"svmax",
+	"svmin",
+	"svw",
 	"turn",
+	"vb",
 	"vh",
+	"vi",
 	"vmax",
 	"vmin",
 	"vw",

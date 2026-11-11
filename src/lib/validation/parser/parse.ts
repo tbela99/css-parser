@@ -187,7 +187,8 @@ function getTokenType(token: string, loc: Position): ValidationToken {
         } as ValidationStringToken;
     }
 
-    if (isDigits(token)) {
+    // integer, optionally negative: range bounds such as `<integer [-∞,-1]>`
+    if (isDigits(token) || (first == 45 && isDigits(token.slice(1)))) {
         return {
             typ: ValidationTokenEnum.Number,
             val: Number(token),
@@ -416,22 +417,21 @@ export function tokenizeSyntax(
 
         switch (code) {
             // :
-            case 58:
-                if (isIdent(buffer())) {
-                    tokens.push({
-                        typ: ValidationTokenEnum.DeclarationNameToken,
-                        val: buffer(),
-                        [LOC]: { ind: posInd, lin: posLin, col: posCol },
-                    } as ValidationDeclarationNameToken);
+            case 58: {
+                // `<ident-token> : <declaration-value>?`, `name: <value>`: the colon is a token
+                const loc: Position = startToken();
 
+                if (bufferLength() > 0) {
+                    tokens.push(getTokenType(buffer(), startToken()));
                     clear();
-                    curCol++;
-                    curInd++;
-                    break;
                 }
 
-                append(i);
+                tokens.push({
+                    typ: ValidationTokenEnum.Colon,
+                    [LOC]: loc,
+                } as ValidationToken);
                 break;
+            }
 
             // " and '
             case 34:
@@ -485,7 +485,7 @@ export function tokenizeSyntax(
 }
 
 /**
- * parse mdn data syntax
+ * parse a css value definition syntax (webref)
  * @param syntax
  * @returns
  */
@@ -811,6 +811,40 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
                 {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+
+                    // the lower bound of a range may be '-∞': <integer [-∞,-1]>
+                    const isNegativeInfinity: boolean =
+                        tokens[index + 1]?.typ === ValidationTokenEnum.Keyword &&
+                        (tokens[index + 1] as ValidationKeywordToken).val === "-" &&
+                        tokens[index + 2]?.typ === ValidationTokenEnum.InfinityToken;
+
+                    if (
+                        isNegativeInfinity &&
+                        (tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
+                            tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
+                        tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
+                        tokens[index + 3]?.typ === ValidationTokenEnum.Comma &&
+                        (tokens[index + 4]?.typ === ValidationTokenEnum.Number ||
+                            tokens[index + 4]?.typ === ValidationTokenEnum.Dimension ||
+                            tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken) &&
+                        tokens[index + 5]?.typ === ValidationTokenEnum.CloseBracket
+                    ) {
+                        stack.pop();
+
+                        // a null bound is unbounded
+                        Object.assign(tokens[index - 2], {
+                            range: {
+                                min: null,
+                                max:
+                                    tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken
+                                        ? null
+                                        : <ValidationNumberToken>tokens[index + 4],
+                            },
+                        });
+
+                        tokens.splice(index - 1, 8);
+                        break;
+                    }
 
                     if (
                         (tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
@@ -1205,7 +1239,11 @@ export function renderSyntax(
                 q +
                 ((token as ValidationPropertyToken).range == null
                     ? ""
-                    : ` [${renderSyntax((token as ValidationPropertyToken)?.range!.min as ValidationToken)},${
+                    : ` [${
+                          (token as ValidationPropertyToken)?.range?.min == null
+                              ? "-\u221e"
+                              : renderSyntax((token as ValidationPropertyToken)?.range!.min as ValidationToken)
+                      },${
                           (token as ValidationPropertyToken)?.range?.max == null
                               ? "\u221e"
                               : renderSyntax((token as ValidationPropertyToken)?.range!.max as ValidationToken)

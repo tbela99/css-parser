@@ -9,12 +9,18 @@ export interface Position {
 }
 
 export interface ValidationValueRangeMatch {
-    min: ValidationNumberToken;
+    /**
+     * lower bound. null: -∞
+     */
+    min: ValidationNumberToken | null;
     max: ValidationNumberToken | null;
 }
 
 export interface ValidationDimensionRangeMatch {
-    min: ValidationDimensionToken;
+    /**
+     * lower bound. null: -∞
+     */
+    min: ValidationDimensionToken | null;
     max: ValidationDimensionToken | null;
 }
 

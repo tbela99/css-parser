@@ -217,14 +217,15 @@ export function parseDeclaration(
             syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(nam));
         }
 
-        // <declaration-list> or <declaration-rule-list>
+        // <declaration-list>, <declaration-rule-list> or <block-contents>
         // else
         if (
             syntaxRules == null ||
             (syntaxRules.length === 1 &&
                 syntaxRules[0].typ === ValidationTokenEnum.PropertyType &&
                 ((syntaxRules[0] as ValidationPropertyToken).val === "declaration-list" ||
-                    (syntaxRules[0] as ValidationPropertyToken).val === "declaration-rule-list"))
+                    (syntaxRules[0] as ValidationPropertyToken).val === "declaration-rule-list" ||
+                    (syntaxRules[0] as ValidationPropertyToken).val === "block-contents"))
         ) {
             if (
                 isAtRule &&

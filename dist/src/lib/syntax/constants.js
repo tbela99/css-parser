@@ -12,6 +12,10 @@ import config from '../../data/validation.json.js';
  * Used by the validation parser
  */
 const LOC = Symbol.for("loc");
+/**
+ * the units of the validation data, in their canonical spelling (`Hz`, `Q`, `dB`)
+ */
+const validationUnits = config.units;
 const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);
@@ -492,4 +496,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, LOC, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, LOC, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, validationUnits, whenElseFunc, wildCardFuncs };

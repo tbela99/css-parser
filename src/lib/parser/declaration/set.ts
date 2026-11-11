@@ -1,7 +1,7 @@
 import { numericTokenTypes } from "../../ast/arena.ts";
 import type { AstDeclaration, ShorthandPropertyType, Token } from "../../../@types/index.d.ts";
 import { eqToken } from "../utils/eq.ts";
-import { EnumToken } from "../../ast/types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";
 import type { AstArena } from "../../ast/arena.ts";
 
@@ -175,6 +175,16 @@ export class PropertySet {
         let iterator: IterableIterator<AstDeclaration>;
         const arena: AstArena = this.arena;
         const declarations: Map<string, AstDeclaration> = this.declarations;
+
+        // the !important declarations are not merged: `column-gap: 16px !important; row-gap: 40px !important`
+        if (
+            !declarations.has(this.config.shorthand) &&
+            [...declarations.values()].some(
+                (declaration: AstDeclaration) => arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration,
+            )
+        ) {
+            return [...declarations.values()][Symbol.iterator]();
+        }
 
         if (declarations.size < this.config.properties.length) {
             const values = [...declarations.values()];

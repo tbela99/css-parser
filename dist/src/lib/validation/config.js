@@ -7,7 +7,7 @@
  */
 import config from '../../data/validation.json.js';
 import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
-import { ValidationTokenEnum } from './parser/typedef.js';
+import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from './parser/typedef.js';
 import { memoize } from '../parser/utils/cache.js';
 
 const parsedSyntaxes = new Map();
@@ -16,24 +16,54 @@ function getSyntaxConfig() {
     // @ts-expect-error
     return config;
 }
+/**
+ * find a syntax definition in a group.
+ *
+ * the syntaxes are generated from webref (see scripts/webref.ts): the functions and the patched syntaxes are stored in
+ * the {@link ValidationSyntaxGroupEnum.Syntaxes} group, the value types are stored in the
+ * {@link ValidationSyntaxGroupEnum.Types} group with their name without the angle brackets (`color`).
+ * a {@link ValidationSyntaxGroupEnum.Syntaxes} lookup falls back to the {@link ValidationSyntaxGroupEnum.Types} group
+ * @param group
+ * @param key
+ */
+function lookupNode(group, key) {
+    const groups = config;
+    if (groups[group]?.[key] != null) {
+        return groups[group][key];
+    }
+    if (group === ValidationSyntaxGroupEnum.Syntaxes) {
+        return groups[ValidationSyntaxGroupEnum.Types]?.[key] ?? null;
+    }
+    return null;
+}
+/**
+ * true if a type or a function syntax is defined
+ * @param key the type name without the angle brackets, or the function name followed by `()`
+ */
+function hasSyntax(key) {
+    return lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+}
+/**
+ * return the raw syntax of a type or a function
+ * @param key the type name without the angle brackets, or the function name followed by `()`
+ */
+function getSyntax(key) {
+    return lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key)?.syntax ?? null;
+}
 function findNode(group, key) {
-    // @ts-expect-error
-    let obj = config[group];
-    // @ts-expect-error
-    if (obj[key] == null) {
+    let obj = lookupNode(group, key);
+    if (obj == null) {
         if (key.charAt(0) == "@" || key.charAt(0) == "-") {
             const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
             if (matches != null) {
                 key = matches[1] + matches[3];
             }
         }
-        // @ts-expect-error
-        if (obj[key] == null) {
+        obj = lookupNode(group, key);
+        if (obj == null) {
             return null;
         }
     }
-    // @ts-expect-error
-    obj = obj[key];
     return obj;
 }
 const getParsedSyntax = memoize((group, key) => {
@@ -117,4 +147,4 @@ const getSyntaxRule = memoize((group, key) => {
     };
 });
 
-export { getParsedSyntax, getSyntaxConfig, getSyntaxRule };
+export { getParsedSyntax, getSyntax, getSyntaxConfig, getSyntaxRule, hasSyntax };

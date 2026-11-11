@@ -1,5 +1,43 @@
 # Changelog
 
+# v2.1.0
+
+declarations:
+
+- [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
+- [x] renamed the vendor prefixed legacy name aliases to the standard property: `-webkit-align-content` to `align-content`, `-webkit-transition` to `transition`, `-webkit-transform` to `transform`, `-webkit-animation-*` to `animation-*`, `-webkit-mask-*` to `mask-*`, ... (56 properties, see `renamedStandardProperties`). `-webkit-transform: none; transform: none` is rendered `transform: none`
+
+validation
+
+- [x] the validation syntaxes are generated from the CSS definitions of [W3C webref](https://github.com/w3c/webref) instead of mdn-data (deprecated): `npm run syntax-update` runs `scripts/webref.ts`, `scripts/validation.ts` is removed
+- [x] the units are listed in `scripts/local-patch.json`: `@webref/css` does not list them
+- [x] a function or a type defined differently for different scopes keeps its definitions: the scoped definition is inlined in the syntax of its scope (`clip: rect( <top>, <right>, <bottom>, <left> ) | auto`, the `<basic-shape>` `rect()` is the shared definition)
+- [x] a group is no longer matched when the value ends before its mandatory parts: `cubic-bezier(.4,0,.2)`, `[ <a> && <b> ]` with `<a>` only
+- [x] the range of a numeric type is checked when it is the last token: `grid-row: 0`, `width: -10px`
+- [x] `<x>#? , <y>` (`background`) leaves the last item to `<y>`, a list item must match all the tokens before the next comma, `var()` may be a part of a syntax (`var(--color) 65%` in a gradient)
+- [x] the longhands that follow a shorthand that contains `var()` are not merged into it: `border: var(--b); border-color: red`
+- [x] a value is invalid when the tokens are not all consumed by the syntax: `color: red blue`, `width: 10px 20px`
+- [x] `:` is parsed as a colon (`ValidationTokenEnum.Colon`, matches `EnumToken.ColonTokenType`) in the validation syntaxes: `<ident-token> : <declaration-value>?`, `name: <value>`
+- [x] a media feature length may be the number `0`: `@when media(width > 0)`
+- [x] the `||` syntaxes are matched in the order that matches the most tokens: `transition: .2s ease-in-out transform`
+- [x] the `&&` syntaxes are matched in any order, the optional syntaxes may be omitted: `[ <ident> && <length> ]` matches `thin 10px` and `10px thin`, `box-shadow: 0 0 red`
+- [x] new length units: `rex`, `rcap`, `rch`, `ric`, `lvmin`, `svmax`. the unit functions (`isLengthUnit()`, `isFrequencyUnit()`, ...) are case-insensitive (`Q`, `Hz`, `kHz`)
+- [x] `length2Px()` converts `in` (96px) and `pc` (16px) correctly, the units are case-insensitive
+- [x] a number followed by `!important` is no longer dropped: `margin: 8px 0 0!important`
+- [x] the `!important` longhands are not merged into a shorthand (the minifier threw an error): `column-gap: 16px !important; row-gap: 40px !important`
+- [x] new token type `EnumToken.UniCodeRange`: `U+0025-00FF`, `U+4??` are read as a single token and rendered as they are. `u+a` is a selector in a rule prelude
+- [x] `unicode-range` is validated (the validation threw an error)
+- [x] the units are rendered in their canonical spelling: `20hz` is rendered `20Hz`, `2q` `2Q`, `6DB` `6dB`
+- [x] the numbers with an exponent are parsed: `1.5e2!important`, `1e-3`, `1e+3`, `1.5e2px`
+- [x] `<resolution>`, `<frequency>`, `<decibel>` and `<semitones>` are validated (the validation threw an error): `image-resolution`, `image-set()`, `voice-pitch`, `voice-volume`
+- [x] the line endings are LF
+- [x] `npm run syntax-update` prints a summary of the changes between the previous and the new syntax file (added, removed and changed declarations, types and functions, selectors, at-rules, descriptors, media features, units and languages) and appends it to `SYNTAX-CHANGES.md`, ignored by git
+- [x] `npm run syntax-update` reports the removed definitions grouped by origin, with the url of the file that provided them: legacy mdn-data, mdn-data patch (csstree), `local-patch.json` or removed from webref. the origins are saved in `src/data/validation.origins.json`
+- [x] the syntaxes are generated from the consolidated css definitions of `@webref/css`, pulled from a versioned url (`https://cdn.jsdelivr.net/npm/@webref/css@8.7.8/css.json`, updated manually: a new version may introduce breaking changes): the definitions of the latest level of a spec are used, the extensions and the descriptors defined by other specs are merged
+- [x] the renamed properties (the legacy name aliases, vendor prefixed or not) are removed from the syntax file and reported as renamed, the parser renames them: `font-stretch` -> `font-width`, `grid-gap` -> `gap`, `word-wrap` -> `overflow-wrap`, `-webkit-align-content` -> `align-content`, ... `renamedStandardProperties` is updated manually: the report flags the renamed properties it does not contain (`-webkit-appearance`, `-webkit-background-clip`, `-webkit-mask-box-image`)
+- [x] the at-rule descriptors defined by another spec are merged: `@font-face/size-adjust`
+- [x] the value types are stored without their angle brackets (`types.color` for `<color>`)
+
 # v2.0.1
 
 rename file due to firefox blocking it

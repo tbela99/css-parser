@@ -652,6 +652,7 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #23", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/bootstrap-4.css");
+            // webref does not define -ms-user-select: it is validated as user-select, `-ms-user-select: auto` is valid
             return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
@@ -659,7 +660,7 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-            ).then((result) => expect(result.errors.length).equals(1));
+            ).then((result) => expect(result.errors.length).equals(0));
         });
 
         it("file validation #24", function () {
@@ -676,6 +677,7 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #25", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/tailwind.css");
+            // webref does not define -ms-user-select: it is validated as user-select, `-ms-user-select: auto` is valid
             return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
@@ -683,7 +685,7 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-            ).then((result) => expect(result.errors.length).equals(20));
+            ).then((result) => expect(result.errors.length).equals(10));
         });
 
         it("file validation #26", function () {
@@ -846,6 +848,45 @@ html, body, div, span, applet, object, iframe,
  }
 }`),
             );
+        });
+
+        it("ampersand in any order #33", function () {
+            // `<'box-shadow-color'>? && [ <length>{2} ... ] && <'box-shadow-position'>?`
+            return transform(`.a{box-shadow:inset 0 0 0 1px red}.b{box-shadow:red 0 0}.c{box-shadow:0 0 red inset}`, {
+                validation: true,
+            }).then((result) => expect(result.errors.length).equals(0));
+        });
+
+        it("unconsumed tokens #34", function () {
+            return transform(`.a{color:red blue}.b{width:10px 20px}`, {
+                validation: true,
+            }).then((result) => expect(result.errors.length).equals(2));
+        });
+
+        it("unicode range #35", function () {
+            return transform(`@font-face{font-family:x;unicode-range:U+0025-00FF,U+4??,u+1e00!important}u+a,p{color:red}`, {
+                validation: true,
+            }).then((result) => {
+                expect(result.errors.length).equals(0);
+                expect(result.code).equals(
+                    `@font-face{font-family:x;unicode-range:U+0025-00FF,U+4??,u+1e00!important}u+a,p{color:red}`,
+                );
+            });
+        });
+
+        it("numbers and units #36", function () {
+            return transform(`.a{line-height:1.5e2!important;voice-volume:6DB;width:2q;margin:8px 0 0!important}`, {
+                validation: true,
+            }).then((result) => {
+                expect(result.errors.length).equals(0);
+                expect(result.code).equals(`.a{line-height:150!important;voice-volume:6dB;width:2Q;margin:8px 0 0!important}`);
+            });
+        });
+
+        it("media feature length 0 #37", function () {
+            return transform(`@when media(width>0){.a{color:red}}`, {
+                validation: true,
+            }).then((result) => expect(result.errors.length).equals(0));
         });
     });
 }

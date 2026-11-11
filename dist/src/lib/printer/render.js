@@ -1723,6 +1723,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.IdenTokenType:
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
+        case EnumToken.UniCodeRange:
         case EnumToken.DashedIdenTokenType:
         case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:

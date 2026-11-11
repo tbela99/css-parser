@@ -2358,6 +2358,7 @@ function renderToken(
         case EnumToken.IdenTokenType:
         case EnumToken.StringTokenType:
         case EnumToken.LiteralTokenType:
+        case EnumToken.UniCodeRange:
         case EnumToken.DashedIdenTokenType:
         case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:

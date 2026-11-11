@@ -166,13 +166,14 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         else {
             syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(nam));
         }
-        // <declaration-list> or <declaration-rule-list>
+        // <declaration-list>, <declaration-rule-list> or <block-contents>
         // else
         if (syntaxRules == null ||
             (syntaxRules.length === 1 &&
                 syntaxRules[0].typ === ValidationTokenEnum.PropertyType &&
                 (syntaxRules[0].val === "declaration-list" ||
-                    syntaxRules[0].val === "declaration-rule-list"))) {
+                    syntaxRules[0].val === "declaration-rule-list" ||
+                    syntaxRules[0].val === "block-contents"))) {
             if (isAtRule &&
                 (parentNam === "swash" ||
                     parentNam === "annotation" ||

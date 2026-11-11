@@ -647,6 +647,10 @@ declare enum EnumToken {
      */
     UserDefinedDimensionTokenType = 140,
     /**
+     * unicode range token type: `U+0025-00FF`, `U+4??`. the token is rendered as it is
+     */
+    UniCodeRange = 141,
+    /**
      * alias for time token type
      */
     Time = 26,
@@ -2540,6 +2544,14 @@ type AstValueMatcher = (arena: AstArena, token: Token) => boolean;
 type AstNodeMatcher = (arena: AstArena, node: AstNode) => boolean;
 
 /**
+ * Unicode range token: `U+0025-00FF`, `U+4??`
+ */
+export declare interface UniCodeRangeToken extends BaseToken {
+    typ: EnumToken.UniCodeRange;
+    val: string;
+}
+
+/**
  * Literal token
  */
 export declare interface LiteralToken extends BaseToken {
@@ -4128,6 +4140,7 @@ export declare type Token = number;
  */
 export declare type PlainToken =
     | LiteralToken
+    | UniCodeRangeToken
     | IdentToken
     | IdentListToken
     | DashedIdentToken
@@ -5264,6 +5277,10 @@ declare enum ValidationSyntaxGroupEnum {
     Declarations = "declarations",
     Functions = "functions",
     Syntaxes = "syntaxes",
+    /**
+     * value types, keyed by their name without the angle brackets (`color` for `<color>`). referenced as {@link Syntaxes}
+     */
+    Types = "types",
     Selectors = "selectors",
     AtRules = "atRules",
     Units = "units",
@@ -5291,12 +5308,18 @@ interface Position {
 }
 
 interface ValidationValueRangeMatch {
-    min: ValidationNumberToken;
+    /**
+     * lower bound. null: -∞
+     */
+    min: ValidationNumberToken | null;
     max: ValidationNumberToken | null;
 }
 
 interface ValidationDimensionRangeMatch {
-    min: ValidationDimensionToken;
+    /**
+     * lower bound. null: -∞
+     */
+    min: ValidationDimensionToken | null;
     max: ValidationDimensionToken | null;
 }
 
@@ -7314,7 +7337,7 @@ declare const resolve: (url: string, currentDirectory?: string, cwd?: string) =>
  */
 export declare interface ValidationSyntaxNode {
     /**
-     * mdn data syntax
+     * webref syntax
      */
     syntax: string;
     /**
@@ -7520,7 +7543,7 @@ declare function okLabDistance(arena: AstArena, color1: Token, color2: Token): n
 declare function isOkLabClose(arena: AstArena, color1: Token, color2: Token, threshold?: number): boolean;
 
 /**
- * parse mdn data syntax
+ * parse a css value definition syntax (webref)
  * @param syntax
  * @returns
  */
@@ -7865,4 +7888,4 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
 export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue as renderToken, resolve, transform, transformSync, version };
-export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
+export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniCodeRangeToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

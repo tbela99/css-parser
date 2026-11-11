@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node and the browser",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "exports": {
     ".": "./dist/src/node.js",
     "./node": "./dist/src/node.js",
@@ -24,7 +24,7 @@
     "test:web-cov": "web-test-runner -x 'test/specs/code/*.js' --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --coverage \"test/specs/web.spec.js\"",
     "profile": "deno run --allow-read --cpu-prof --cpu-prof-flamegraph test/inspect.js",
     "config-update": "esno scripts/shorthand.ts",
-    "syntax-update": "esno scripts/validation.ts",
+    "syntax-update": "esno scripts/webref.ts",
     "debug:node": "mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/specs/node.spec.js\"",
     "debug:web": "web-test-runner \"./test/specs/web.spec.js\" --manual --open --node-resolve --root-dir=."
   },
