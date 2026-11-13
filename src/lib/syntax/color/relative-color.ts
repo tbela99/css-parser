@@ -29,6 +29,7 @@ export type RelativeColorTypes =
 
 /**
  * Parse relative color components
+ * @param arena
  * @param relativeKeys
  * @param original
  * @param rExp
@@ -149,9 +150,14 @@ export function parseRelativeColorComponents(
         return null;
     }
 
-    const children: Token[] = arena.tokens(converted).filter(
-        (t) => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]),
-    );
+    const children: Token[] = arena
+        .tokens(converted)
+        .filter(
+            (t) =>
+                ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(
+                    arena.dataTypes[t],
+                ),
+        );
     [r, g, b, alpha] = arena.colorType[converted] == ColorType.COLOR ? children.slice(1) : children;
 
     values = <Record<RelativeColorTypes, number | Token | null>>{
@@ -208,6 +214,7 @@ export function parseRelativeColorComponents(
 
 /**
  * Get token numeric value
+ * @param arena
  * @param t
  * @param converted
  * @param component
@@ -234,6 +241,7 @@ function getValue(arena: AstArena, t: Token, converted?: Token, component?: stri
 
 /**
  * Compute component value
+ * @param arena
  * @param expr
  * @param values
  * @returns
@@ -268,7 +276,8 @@ function computeComponentValue(
             expr[<RelativeColorTypes>key] = values[<RelativeColorTypes>arena.strings[arena.stringValue[exp]]] as Token;
         } else if (
             arena.dataTypes[exp] == EnumToken.MathFunctionTokenType ||
-            (arena.dataTypes[exp] == EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))
+            (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+                mathFuncs.includes(arena.strings[arena.stringValue[exp]]))
         ) {
             // inlined: arena.walkValues(arena.tokens(exp))
             for (const value of new ValueWalker(arena, arena.tokens(exp))) {
@@ -290,7 +299,8 @@ function computeComponentValue(
 
             const result: Token[] =
                 (arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
-                    (arena.dataTypes[exp] == EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
+                    (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+                        mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
                 arena.strings[arena.stringValue[exp]] !== "calc"
                     ? (evaluateFunc(arena, exp) as Token[])
                     : evaluate(arena, arena.tokens(exp));

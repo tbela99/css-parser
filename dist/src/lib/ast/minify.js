@@ -126,6 +126,7 @@ function transformAtRuleMediaPrelude(arena, values) {
  * - generate range queries
  *
  * @private
+ * @param arena
  * @param tokens
  */
 function minifyAtRuleMedia(arena, tokens) {

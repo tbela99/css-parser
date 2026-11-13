@@ -232,6 +232,11 @@ class ExpandIfFeature {
             options.features.push(new ExpandIfFeature());
         }
     }
+    /**
+     *
+     * @param arena
+     * @param declaration
+     */
     run(arena, declaration) {
         return processNode(arena, declaration, new Set());
     }

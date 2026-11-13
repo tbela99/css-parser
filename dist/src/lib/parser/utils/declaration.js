@@ -123,7 +123,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     }
     if (
     // inlined: arena.typeOf(name)
-    (arena.dataTypes[name] !== EnumToken.IdenTokenType && arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) ||
+    (arena.dataTypes[name] !== EnumToken.IdenTokenType &&
+        arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) ||
         arena.dataTypes[tokens[i]] !== EnumToken.ColonTokenType) {
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
@@ -238,7 +239,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         switch (arena.dataTypes[token]) {
             case EnumToken.Literal:
                 // inlined: arena.typeOf(stack.at(-1))
-                if (arena.strings[arena.stringValue[token]] === "/" && arena.dataTypes[stack.at(-1)] == EnumToken.MathFunctionTokenDefType) {
+                if (arena.strings[arena.stringValue[token]] === "/" &&
+                    arena.dataTypes[stack.at(-1)] == EnumToken.MathFunctionTokenDefType) {
                     arena.dataTypes[token] = EnumToken.Div;
                 }
                 else if (arena.strings[arena.stringValue[token]] === "-" &&
@@ -327,7 +329,8 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                     }
                     else if (arena.dataTypes[tokens[index]] === EnumToken.UrlFunctionTokenType) {
                         const url = arena.findToken(tokens[index], (arena, t) => arena.dataTypes[t] === EnumToken.StringTokenType);
-                        if (url != null && /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
+                        if (url != null &&
+                            /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
                             arena.dataTypes[url] = EnumToken.UrlTokenTokenType;
                             // inlined: arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1))
                             arena.stringValue[url] = arena.internString(arena.strings[arena.stringValue[url]].slice(1, -1));
@@ -351,7 +354,10 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                                 message: `invalid color`,
                                 node: tokens[index],
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[index]))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[index]))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[index])),
+                                ],
                             });
                         }
                     }
@@ -413,7 +419,10 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
             message: "unbalanced token",
             node: stack[stack.length - 1],
             // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
-            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
+            location: [
+                options.source.file,
+                ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1])),
+            ],
         });
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
@@ -444,12 +453,15 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         if (tokens.length > 0) {
             arena.spanLocation(name, name, tokens[tokens.length - 1]);
         }
-        return createDeclarationNode(arena, name, tokens, hasImportantFlag ? EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ImportantDeclaration : EnumAstNodeStatus.Unknown, result?.errors ?? null);
+        return createDeclarationNode(arena, name, tokens, hasImportantFlag
+            ? EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ImportantDeclaration
+            : EnumAstNodeStatus.Unknown, result?.errors ?? null);
     }
     if (equalsIgnoreCase("composes", nam)) {
         let index = -1;
         for (let i = 0; i < tokens.length; i++) {
-            if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType && equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType &&
+                equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
                 index = i;
                 break;
             }

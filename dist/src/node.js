@@ -11,7 +11,7 @@ import { lstat, readFile } from 'node:fs/promises';
 import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
-export { renderValue as renderToken } from './lib/printer/render.js';
+export { renderValue } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
 import { Tokenizer } from './lib/parser/tokenize.js';
@@ -84,6 +84,7 @@ async function load(url, currentDirectory = ".", responseType = false) {
 }
 /**
  * Render the ast tree
+ * @param arena
  * @param data
  * @param options
  * @param mapping

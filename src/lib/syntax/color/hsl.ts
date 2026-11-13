@@ -3,10 +3,9 @@ import type { AstArena } from "../../ast/arena.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues } from "./rgb.ts";
 import { getColorComponents } from "./utils/components.ts";
-import { hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
+import { hex2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { hwbvalues } from "./hwb.ts";
-import { hwb2hsv } from "./hsv.ts";
 
 export function hex2HslToken(arena: AstArena, token: Token): Token | null {
     let values = hex2srgbvalues(arena, token);
@@ -163,36 +162,16 @@ export function rgb2hslvalues(arena: AstArena, token: Token): number[] | null {
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 
-// https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-export function hsv2hsl(h: number, s: number, v: number, a?: number): number[] {
-    const result = [
-        //[hue, saturation, lightness]
-        //Range should be between 0 - 1
-        h, //Hue stays the same
-
-        //Saturation is very different between the two color spaces
-        //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
-        //Otherwise sat*val/(2-(2-sat)*val)
-        //Conditional is not operating with hue, it is reassigned!
-        (s * v) / ((h = (2 - s) * v) < 1 ? h : 2 - h),
-
-        h / 2, //Lightness is (2-sat)*val/2
-    ];
-
-    if (a != null) {
-        result.push(a);
-    }
-
-    return result;
-}
-
 export function cmyk2hslvalues(arena: AstArena, token: Token): number[] | null {
     const values = cmyk2rgbvalues(arena, token);
 
     return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2hslvalues(arena: AstArena, token: Token): [number, number, number] | [number, number, number, number] | null {
+export function hwb2hslvalues(
+    arena: AstArena,
+    token: Token,
+): [number, number, number] | [number, number, number, number] | null {
     const { h, w, b, a } = hwbvalues(arena, token) ?? {};
 
     if (h == null || w == null || b == null) {

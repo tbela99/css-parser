@@ -15,6 +15,7 @@ import { ValueWalker } from '../../ast/walk.js';
 
 /**
  * Parse relative color components
+ * @param arena
  * @param relativeKeys
  * @param original
  * @param rExp
@@ -102,7 +103,9 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
     if (converted == null) {
         return null;
     }
-    const children = arena.tokens(converted).filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
+    const children = arena
+        .tokens(converted)
+        .filter((t) => ![EnumToken.WhitespaceTokenType, EnumToken.LiteralTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
     [r, g, b, alpha] = arena.colorType[converted] == ColorType.COLOR ? children.slice(1) : children;
     values = {
         [names[0]]: getValue(arena, r, converted, names[0]),
@@ -149,6 +152,7 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
 }
 /**
  * Get token numeric value
+ * @param arena
  * @param t
  * @param converted
  * @param component
@@ -170,6 +174,7 @@ function getValue(arena, t, converted, component) {
 }
 /**
  * Compute component value
+ * @param arena
  * @param expr
  * @param values
  * @returns
@@ -197,7 +202,8 @@ function computeComponentValue(arena, expr, values) {
             expr[key] = values[arena.strings[arena.stringValue[exp]]];
         }
         else if (arena.dataTypes[exp] == EnumToken.MathFunctionTokenType ||
-            (arena.dataTypes[exp] == EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
+            (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+                mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
             // inlined: arena.walkValues(arena.tokens(exp))
             for (const value of new ValueWalker(arena, arena.tokens(exp))) {
                 if (arena.dataTypes[value] == EnumToken.IdenTokenType) {
@@ -215,7 +221,8 @@ function computeComponentValue(arena, expr, values) {
                 }
             }
             const result = (arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
-                (arena.dataTypes[exp] == EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
+                (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+                    mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
                 arena.strings[arena.stringValue[exp]] !== "calc"
                 ? evaluateFunc(arena, exp)
                 : evaluate(arena, arena.tokens(exp));

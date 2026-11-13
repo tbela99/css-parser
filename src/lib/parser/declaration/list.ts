@@ -8,18 +8,18 @@ import type {
     SinglePropertyTypeMapping,
     Token,
 } from "../../../@types/index.d.ts";
-import { PropertySet } from "./set.ts";
-import { getConfig } from "../utils/config.ts";
-import { PropertyMap } from "./map.ts";
-import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
-import { getParsedSyntax } from "../../validation/config.ts";
-import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
-import { isValidDeclarationValue } from "../../validation/match.ts";
-import type { ValidationToken } from "../../validation/parser/types.d.ts";
-import { equalsIgnoreCase, lowercase } from "../utils/text.ts";
-import type { AstArena } from "../../ast/arena.ts";
-import { StructuralMemo } from "../../ast/cache.ts";
-import { parseString } from "../parse.ts";
+import {PropertySet} from "./set.ts";
+import {getConfig} from "../utils/config.ts";
+import {PropertyMap} from "./map.ts";
+import {EnumAstNodeStatus, EnumToken} from "../../ast/types.ts";
+import {getParsedSyntax} from "../../validation/config.ts";
+import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
+import {isValidDeclarationValue} from "../../validation/match.ts";
+import type {ValidationToken} from "../../validation/parser/types.d.ts";
+import {equalsIgnoreCase, lowercase} from "../utils/text.ts";
+import type {AstArena} from "../../ast/arena.ts";
+import {StructuralMemo} from "../../ast/cache.ts";
+import {parseString} from "../parse.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -144,19 +144,6 @@ export class PropertyList {
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
         this.memo = memo ?? new DeclarationMemo();
-    }
-
-    /**
-     * add declarations
-     * @param declarations node ids
-     * @returns
-     */
-    add(declarations: Iterable<AstNode>): this {
-        for (const declaration of declarations) {
-            this.addDeclaration(declaration);
-        }
-
-        return this;
     }
 
     /**
@@ -297,8 +284,11 @@ export class PropertyList {
 
                 owner = this.declarations.get(mapName) as PropertyMap;
             } else if (!this.declarations.has(shorthand)) {
-                // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo));
+                this.declarations.set(
+                    shorthand,
+                    // @ts-ignore
+                    new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo),
+                );
             }
 
             if (owner == this) {

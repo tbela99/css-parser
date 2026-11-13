@@ -1,7 +1,7 @@
 import type { ErrorDescription, Token } from "../../@types/index.d.ts";
 import { type AstArena, TokenField } from "../ast/arena.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";
-import { ColorType, EnumAstNodeStatus, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
+import { ColorType, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { memoize } from "../parser/utils/cache.ts";
 import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
@@ -643,21 +643,21 @@ export function isLength(arena: AstArena, dimension: Token): boolean {
     return arena.unit[dimension] != 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
 }
 
-export function isResolution(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
-}
-
-export function isAngle(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
-}
-
-export function isTime(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
-}
-
-export function isFrequency(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
-}
+// export function isResolution(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isAngle(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isTime(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isFrequency(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+// }
 
 /**
  * Reduce color stops
@@ -947,17 +947,7 @@ function filterChildren(arena: AstArena, token: Token, types: EnumToken[]): Toke
     return children;
 }
 
-const colorKeywords: string[] = [
-    "in",
-    "hue",
-    "from",
-    "alpha",
-    "none",
-    "shorter",
-    "longer",
-    "increasing",
-    "decreasing",
-];
+const colorKeywords: string[] = ["in", "hue", "from", "alpha", "none", "shorter", "longer", "increasing", "decreasing"];
 
 export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription[]): boolean {
     const typ: EnumToken = arena.dataTypes[token];
@@ -1316,7 +1306,7 @@ export function parseColor(arena: AstArena, token: Token): Token {
         if (arena.colorType[token] == ColorType.NONE && arena.stringValue[token] != 0) {
             // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
-            arena.colorType[token] = (ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
+            arena.colorType[token] = ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0;
         }
 
         if (arena.firstToken[token] != 0) {
@@ -1602,13 +1592,11 @@ export function isHash(name: string): boolean {
 //     return name.endsWith("%") && isNumber(name.slice(0, -1));
 // }
 
-export function isFlex(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
-}
+// export function isFlex(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
+// }
 
-export function parseDimension(
-    name: string,
-): { typ: EnumToken; val: number; unit: string } | null {
+export function parseDimension(name: string): { typ: EnumToken; val: number; unit: string } | null {
     let index: number = name.length;
 
     while (index--) {
@@ -1740,6 +1728,7 @@ export function isWhiteSpace(codepoint: number): boolean {
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
 /**
  * Convert length to px
+ * @param arena
  * @param value
  * @returns
  */

@@ -12,6 +12,11 @@ import {
 } from "./srgb.ts";
 import { hsl2srgbvalues } from "./rgb.ts";
 
+/**
+ *
+ * @param arena
+ * @param token
+ */
 export function rgb2cmykToken(arena: AstArena, token: Token): Token | null {
     let components: number[] | null = rgb2srgbvalues(arena, token);
 

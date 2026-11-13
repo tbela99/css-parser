@@ -1,8 +1,7 @@
-import { SyntaxValidationResult } from "../lib/ast/types.ts";
-import type { AstNode } from "./ast.d.ts";
-import type { Token } from "./token.d.ts";
-import type { ValidationOptions } from "./index.d.ts";
-import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../lib/validation/parser/typedef.ts";
+import type {AstNode} from "./ast.d.ts";
+import type {Token} from "./token.d.ts";
+import type {ValidationOptions} from "./index.d.ts";
+import {MediaFeatureType, ValidationSyntaxGroupEnum} from "../lib/validation/parser/typedef.ts";
 
 /**
  * Validation syntax
@@ -74,7 +73,7 @@ export interface ValidationResult {
     /**
      * validation result
      */
-    valid: SyntaxValidationResult;
+    valid: boolean;
     /**
      * node
      */

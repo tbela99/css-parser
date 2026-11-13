@@ -68,14 +68,21 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
         ) {
             const first: Token = arena.firstToken[value];
 
-            if (first != 0 && arena.nextSibling[first] == 0 && arena.dataTypes[first] == EnumToken.DashedIdenTokenType) {
+            if (
+                first != 0 &&
+                arena.nextSibling[first] == 0 &&
+                arena.dataTypes[first] == EnumToken.DashedIdenTokenType
+            ) {
                 const info: VariableScopeInfo = <VariableScopeInfo>(
                     variableScope.get(arena.strings[arena.stringValue[first]])
                 );
 
                 // the variable declaration may have been released
                 if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
-                    arena.replaceToken(value, ...arena.tokens(info.node).map((t: Token): Token => arena.clone(t, true)));
+                    arena.replaceToken(
+                        value,
+                        ...arena.tokens(info.node).map((t: Token): Token => arena.clone(t, true)),
+                    );
                 }
             }
         }
@@ -100,6 +107,14 @@ export class InlineCssVariablesFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param ast
+     * @param _options
+     * @param parent
+     * @param context
+     */
     run(
         arena: AstArena,
         ast: AstRule | AstAtRule,
@@ -176,6 +191,13 @@ export class InlineCssVariablesFeature {
         return null;
     }
 
+    /**
+     *
+     * @param arena
+     * @param _ast
+     * @param _options
+     * @param context
+     */
     cleanup(arena: AstArena, _ast: AstStyleSheet, _options: ParserOptions = {}, context: { [key: string]: any }) {
         const variableScope = <Map<string, VariableScopeInfo>>context.variableScope;
 

@@ -1,4 +1,3 @@
-import { hsl2hsv } from "./hsv.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import type { Token } from "../../../@types/index.d.ts";
 import { getColorComponents } from "./utils/components.ts";
@@ -30,7 +29,6 @@ export function hsl2hwbToken(arena: AstArena, token: Token): Token | null {
         return null;
     }
 
-    // console.error(new Error("hsl2hwbToken"));
     return hwbToken(arena, values);
 }
 
@@ -187,7 +185,10 @@ export function color2hwbvalues(arena: AstArena, token: Token): number[] | null 
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function hwbvalues(arena: AstArena, token: Token): { h: number; w: number; b: number; a?: number | null } | null {
+export function hwbvalues(
+    arena: AstArena,
+    token: Token,
+): { h: number; w: number; b: number; a?: number | null } | null {
     const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null) {
@@ -260,16 +261,6 @@ export function srgb2hwb(r: number, g: number, b: number, a: number | null = nul
     }
 
     const result: number[] = [h, w * 100, bl * 100];
-
-    if (a != null) {
-        result.push(a);
-    }
-
-    return result;
-}
-
-export function hsv2hwb(h: number, s: number, v: number, a: number | null = null): number[] {
-    const result: number[] = [h, (1 - s) * v, 1 - v];
 
     if (a != null) {
         result.push(a);

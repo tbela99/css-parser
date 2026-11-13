@@ -26,6 +26,14 @@ export class ComputeShorthandFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param ast
+     * @param options
+     * @param _parent
+     * @param context
+     */
     run(
         arena: AstArena,
         ast: AstRule | AstAtRule,

@@ -26,6 +26,11 @@ class ComputeCalcExpressionFeature {
             options.features.push(new ComputeCalcExpressionFeature());
         }
     }
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
     run(arena, ast) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
@@ -73,7 +78,9 @@ class ComputeCalcExpressionFeature {
                                 for (const value of new ValueWalker(arena, values)) {
                                     if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
                                         // inlined: arena.getRight(value)
-                                        const r = (arena.getChildAt(value, TokenField.R) == null ? null : arena.fieldTokens(value, TokenField.R))[0];
+                                        const r = (arena.getChildAt(value, TokenField.R) == null
+                                            ? null
+                                            : arena.fieldTokens(value, TokenField.R))[0];
                                         if (arena.numericValue[value] === EnumToken.Add &&
                                             // inlined: arena.isNumeric(r)
                                             numericTokenTypes.has(arena.dataTypes[r]) &&
@@ -91,7 +98,8 @@ class ComputeCalcExpressionFeature {
                                         (parentType == EnumToken.FunctionTokenType &&
                                             arena.strings[arena.stringValue[parent]] == "calc")) &&
                                         // inlined: arena.isNumeric(values[0])
-                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) || arena.hasFraction(values[0])) &&
+                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
+                                            arena.hasFraction(values[0])) &&
                                         !(arena.dataTypes[values[0]] == EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] == EnumToken.FunctionTokenType &&
                                                 mathFuncs.includes(arena.strings[arena.stringValue[values[0]]])));

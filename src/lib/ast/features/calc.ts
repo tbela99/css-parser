@@ -1,11 +1,10 @@
-import { numericTokenTypes } from "../arena.ts";
-import { TokenField } from "../arena.ts";
+import type { AstArena } from "../arena.ts";
+import { numericTokenTypes, TokenField } from "../arena.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
-import type { AstArena } from "../arena.ts";
 import { ValueWalker } from "../walk.ts";
 
 export class ComputeCalcExpressionFeature {
@@ -26,6 +25,11 @@ export class ComputeCalcExpressionFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
     run(arena: AstArena, ast: AstRule | AstAtRule): AstNode | null {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
@@ -68,8 +72,8 @@ export class ComputeCalcExpressionFeature {
                 if (tokensfuncSet.has(typ)) {
                     set ??= new Set();
 
-                    if (!set.has(value)) {
-                        set.add(value);
+                    if (!set!.has(value)) {
+                        set!.add(value);
 
                         if (parent != null) {
                             const name: string = arena.strings[arena.stringValue[value]];
@@ -86,7 +90,11 @@ export class ComputeCalcExpressionFeature {
                                 for (const value of new ValueWalker(arena, values)) {
                                     if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
                                         // inlined: arena.getRight(value)
-                                        const r: Token = (arena.getChildAt(value, TokenField.R) == null ? null : arena.fieldTokens(value, TokenField.R))![0];
+                                        const r: Token = (
+                                            arena.getChildAt(value, TokenField.R) == null
+                                                ? null
+                                                : arena.fieldTokens(value, TokenField.R)
+                                        )![0];
 
                                         if (
                                             arena.numericValue[value] === EnumToken.Add &&
@@ -113,7 +121,8 @@ export class ComputeCalcExpressionFeature {
                                                 arena.strings[arena.stringValue[parent]] == "calc")
                                         ) &&
                                         // inlined: arena.isNumeric(values[0])
-                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) || arena.hasFraction(values[0])) &&
+                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
+                                            arena.hasFraction(values[0])) &&
                                         !(
                                             arena.dataTypes[values[0]] == EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] == EnumToken.FunctionTokenType &&

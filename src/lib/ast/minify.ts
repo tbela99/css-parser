@@ -1,5 +1,5 @@
-import { eq, eqToken } from "../parser/utils/eq.ts";
-import { NodeRenderer, renderValue } from "../printer/render.ts";
+import {eq, eqToken} from "../parser/utils/eq.ts";
+import {NodeRenderer, renderValue} from "../printer/render.ts";
 import * as allFeatures from "./features/index.ts";
 import type {
     AstNode,
@@ -14,15 +14,15 @@ import type {
     RenderOptions,
     Token,
 } from "../../@types/index.d.ts";
-import { EnumAstNodeStatus, EnumToken } from "./types.ts";
-import type { AstArena } from "./arena.ts";
-import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
-import { FeatureWalkMode } from "./features/type.ts";
-import { trimArray } from "../validation/match.ts";
-import { combinators } from "../syntax/constants.ts";
-import { parseString } from "../parser/parse.ts";
-import { equalsIgnoreCase } from "../parser/utils/text.ts";
-import { ValueWalker } from "./walk.ts";
+import {EnumAstNodeStatus, EnumToken} from "./types.ts";
+import type {AstArena} from "./arena.ts";
+import {isFunction, isIdent, isIdentStart, isWhiteSpace} from "../syntax/syntax.ts";
+import {FeatureWalkMode} from "./features/type.ts";
+import {trimArray} from "../validation/match.ts";
+import {combinators} from "../syntax/constants.ts";
+import {parseString} from "../parser/parse.ts";
+import {equalsIgnoreCase} from "../parser/utils/text.ts";
+import {ValueWalker} from "./walk.ts";
 
 const notEndingWith: string[] = ["(", "["].concat(combinators);
 // @ts-ignore
@@ -199,6 +199,7 @@ function transformAtRuleMediaPrelude(arena: AstArena, values: Token[]) {
  * - generate range queries
  *
  * @private
+ * @param arena
  * @param tokens
  */
 function minifyAtRuleMedia(arena: AstArena, tokens: Token[]): Token[] {

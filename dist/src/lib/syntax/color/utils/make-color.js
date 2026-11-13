@@ -11,6 +11,7 @@ import { minmax, getNumber } from '../color.js';
 
 /**
  * Create a color token
+ * @param arena
  * @param kind
  * @param components
  * @param alpha

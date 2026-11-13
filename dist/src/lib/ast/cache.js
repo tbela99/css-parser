@@ -40,7 +40,7 @@ const bits = new Int32Array(f64.buffer);
  * @param value
  */
 function normalize(value) {
-    return value !== value ? NaN : value + 0;
+    return value !== value ? NaN : value;
 }
 /**
  * Memoize values by token structure. Lookups return a slot, the value of a slot is `undefined` until it is set.
@@ -74,6 +74,14 @@ class StructuralMemo {
      */
     values = [];
     /**
+     * number of distinct structures (lookups that inserted a new entry)
+     */
+    size = 0;
+    /**
+     * number of lookups that found an existing entry
+     */
+    hits = 0;
+    /**
      * key hash, key offset in the pool and key length of each slot (3 values per slot)
      */
     slots = new Int32Array(64 * 3);
@@ -93,14 +101,6 @@ class StructuralMemo {
      * end of the key being looked up in the pool
      */
     used = 0;
-    /**
-     * number of distinct structures (lookups that inserted a new entry)
-     */
-    size = 0;
-    /**
-     * number of lookups that found an existing entry
-     */
-    hits = 0;
     /**
      * @param numericEquality compare the numeric values with `==` semantics (`0` and `-0` are equal) and consider
      * all the `NaN` values equal. the raw bits are compared otherwise

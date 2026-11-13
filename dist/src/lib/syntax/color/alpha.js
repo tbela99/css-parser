@@ -16,6 +16,7 @@ import { ValueWalker } from '../../ast/walk.js';
 
 /**
  * Compute alpha color
+ * @param arena
  * @param color
  * @param alpha
  * @returns

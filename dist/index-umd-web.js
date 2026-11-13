@@ -12,18 +12,6 @@
 })(this, (function (exports) { 'use strict';
 
     /**
-     * Syntax validation enum
-     */
-    var SyntaxValidationResult;
-    (function (SyntaxValidationResult) {
-        /** valid syntax */
-        SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
-        /** drop invalid syntax */
-        SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
-        /** preserve unknown at-rules, declarations and pseudo-classes */
-        SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
-    })(SyntaxValidationResult || (SyntaxValidationResult = {}));
-    /**
      * Enum of node statuses
      */
     exports.EnumAstNodeStatus = void 0;
@@ -9316,7 +9304,6 @@
         if (values == null) {
             return null;
         }
-        // console.error(new Error("hsl2hwbToken"));
         return hwbToken(arena, values);
     }
     function cmyk2hwbToken(arena, token) {
@@ -10594,6 +10581,7 @@
     }
     /**
      * Compute color mix
+     * @param arena
      * @param args
      * @returns
      */
@@ -10609,7 +10597,6 @@
         let colorSpace = "oklab";
         let hueInterpolationMethod = "shorter";
         let values = null;
-        // const colors: Token[] = [];
         const percentages = [];
         const srgbComponentValues = [];
         const colorComponents = [];
@@ -11851,6 +11838,7 @@
 
     /**
      * Parse relative color components
+     * @param arena
      * @param relativeKeys
      * @param original
      * @param rExp
@@ -11938,7 +11926,9 @@
         if (converted == null) {
             return null;
         }
-        const children = arena.tokens(converted).filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
+        const children = arena
+            .tokens(converted)
+            .filter((t) => ![exports.EnumToken.WhitespaceTokenType, exports.EnumToken.LiteralTokenType, exports.EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
         [r, g, b, alpha] = arena.colorType[converted] == exports.ColorType.COLOR ? children.slice(1) : children;
         values = {
             [names[0]]: getValue(arena, r, converted, names[0]),
@@ -11985,6 +11975,7 @@
     }
     /**
      * Get token numeric value
+     * @param arena
      * @param t
      * @param converted
      * @param component
@@ -12006,6 +11997,7 @@
     }
     /**
      * Compute component value
+     * @param arena
      * @param expr
      * @param values
      * @returns
@@ -12033,7 +12025,8 @@
                 expr[key] = values[arena.strings[arena.stringValue[exp]]];
             }
             else if (arena.dataTypes[exp] == exports.EnumToken.MathFunctionTokenType ||
-                (arena.dataTypes[exp] == exports.EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
+                (arena.dataTypes[exp] == exports.EnumToken.FunctionTokenType &&
+                    mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
                 // inlined: arena.walkValues(arena.tokens(exp))
                 for (const value of new ValueWalker(arena, arena.tokens(exp))) {
                     if (arena.dataTypes[value] == exports.EnumToken.IdenTokenType) {
@@ -12051,7 +12044,8 @@
                     }
                 }
                 const result = (arena.dataTypes[exp] === exports.EnumToken.MathFunctionTokenType ||
-                    (arena.dataTypes[exp] == exports.EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
+                    (arena.dataTypes[exp] == exports.EnumToken.FunctionTokenType &&
+                        mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
                     arena.strings[arena.stringValue[exp]] !== "calc"
                     ? evaluateFunc(arena, exp)
                     : evaluate(arena, arena.tokens(exp));
@@ -12085,6 +12079,11 @@
         arena.dataTypes[token] = exports.EnumToken.PercentageTokenType;
     }
 
+    /**
+     *
+     * @param arena
+     * @param token
+     */
     function rgb2cmykToken(arena, token) {
         let components = rgb2srgbvalues(arena, token);
         if (components == null || components.length < 3) {
@@ -13376,6 +13375,7 @@
     funcTypes.push(exports.EnumToken.FunctionTokenType, exports.EnumToken.PseudoClassFuncTokenType);
     /**
      * trim leading and trailing whitespace
+     * @param arena
      * @param tokens
      * @returns
      */
@@ -13399,6 +13399,7 @@
     }
     /**
      *
+     * @param arena
      * @param featureName
      * @param tokens
      * @param isMFRange
@@ -13408,7 +13409,8 @@
      */
     function isMFValue(arena, featureName, tokens, isMFRange) {
         // mf-value: <number> | <dimension> | <ident> | <ratio>
-        tokens = tokens.filter((token) => arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== exports.EnumToken.CommentTokenType);
+        tokens = tokens.filter((token) => arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType &&
+            arena.dataTypes[token] !== exports.EnumToken.CommentTokenType);
         // if (tokens.length === 0) {
         //     return { valid: true, success: false };
         // }
@@ -13464,9 +13466,15 @@
                         !arena.hasFraction(tokens[0]),
                 };
             case MediaFeatureType.StringType:
-                return { valid: true, success: tokens.length === 1 && arena.dataTypes[tokens[0]] == exports.EnumToken.StringTokenType };
+                return {
+                    valid: true,
+                    success: tokens.length === 1 && arena.dataTypes[tokens[0]] == exports.EnumToken.StringTokenType,
+                };
             case MediaFeatureType.ResolutionType:
-                return { valid: true, success: tokens.length === 1 && arena.dataTypes[tokens[0]] == exports.EnumToken.ResolutionTokenType };
+                return {
+                    valid: true,
+                    success: tokens.length === 1 && arena.dataTypes[tokens[0]] == exports.EnumToken.ResolutionTokenType,
+                };
             case MediaFeatureType.RatioType:
                 return {
                     valid: true,
@@ -13525,7 +13533,6 @@
         /**
          *
          * @returns
-         * @param open
          * @param close
          * @param counter
          */
@@ -13535,12 +13542,14 @@
             // track balanced parens
             let matchCount = 0;
             const tokens = [];
-            while (index + 1 < this.tokens.length && this.arena.dataTypes[this.tokens[index + 1]] === exports.EnumToken.WhitespaceTokenType) {
+            while (index + 1 < this.tokens.length &&
+                this.arena.dataTypes[this.tokens[index + 1]] === exports.EnumToken.WhitespaceTokenType) {
                 index++;
             }
             while (index + 1 < this.tokens.length) {
                 token = this.tokens[++index];
-                if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType ||
+                    tokensfuncDefMap.has(this.arena.dataTypes[token])) {
                     matchCount++;
                 }
                 else if (this.arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
@@ -13569,7 +13578,8 @@
             const tokens = [[]];
             while (index + 1 < this.tokens.length) {
                 token = this.tokens[++index];
-                if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                if (this.arena.dataTypes[token] === exports.EnumToken.StartParensTokenType ||
+                    tokensfuncDefMap.has(this.arena.dataTypes[token])) {
                     matchCount++;
                 }
                 else if (this.arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
@@ -13632,6 +13642,7 @@
     }
     /**
      * create validation context
+     * @param arena
      * @param tokens
      * @returns
      */
@@ -13652,6 +13663,7 @@
     }
     /**
      * match selector syntax
+     * @param arena
      * @param stream
      * @param errors
      * @param options
@@ -13665,7 +13677,8 @@
         let i = 0;
         let success = true;
         while (i < stream.length &&
-            (arena.dataTypes[stream[i]] === exports.EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === exports.EnumToken.CommentTokenType)) {
+            (arena.dataTypes[stream[i]] === exports.EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[stream[i]] === exports.EnumToken.CommentTokenType)) {
             i++;
         }
         if (i < stream.length) {
@@ -13686,8 +13699,10 @@
                                     message: `Unexpected token ${exports.EnumToken[arena.dataTypes[stream[i]]]}`,
                                     node: stream[i],
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                                    // @ts-expect-error
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                                    ],
                                 },
                             ],
                         };
@@ -13743,8 +13758,10 @@
                                     message: `Nesting selector is not allowed`,
                                     node: token,
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                    // @ts-expect-error
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                    ],
                                 },
                             ],
                         };
@@ -13767,11 +13784,13 @@
                         i++;
                     }
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (stack.length > 0 && arena.dataTypes[stack.at(-1)] === exports.EnumToken.UniversalSelectorTokenType) {
+                    if (stack.length > 0 &&
+                        arena.dataTypes[stack.at(-1)] === exports.EnumToken.UniversalSelectorTokenType) {
                         stack.pop();
                     }
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (stack.length > 0 && selectorNodeTypes.includes((stack.at(-1) == null ? null : arena.dataTypes[stack.at(-1)]))) {
+                    if (stack.length > 0 &&
+                        selectorNodeTypes.includes((stack.at(-1) == null ? null : arena.dataTypes[stack.at(-1)]))) {
                         return {
                             success: false,
                             errors: [
@@ -13780,8 +13799,10 @@
                                     message: `Unexpected combinator ${exports.EnumToken[arena.dataTypes[token]]}`,
                                     node: token,
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                    // @ts-expect-error
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                    ],
                                 },
                             ],
                         };
@@ -13789,7 +13810,8 @@
                     stack.push(token);
                     break;
                 case exports.EnumToken.CommaTokenType:
-                    if (stack.length > 0 && arena.dataTypes[stack[stack.length - 1]] === exports.EnumToken.UniversalSelectorTokenType) {
+                    if (stack.length > 0 &&
+                        arena.dataTypes[stack[stack.length - 1]] === exports.EnumToken.UniversalSelectorTokenType) {
                         stack.pop();
                     }
                     stack.push(token);
@@ -13813,7 +13835,8 @@
                     stack.push(token);
                     break;
                 case exports.EnumToken.AttrEndTokenType:
-                    if (stack.length > 0 && arena.dataTypes[stack[stack.length - 1]] === exports.EnumToken.UniversalSelectorTokenType) {
+                    if (stack.length > 0 &&
+                        arena.dataTypes[stack[stack.length - 1]] === exports.EnumToken.UniversalSelectorTokenType) {
                         stack.pop();
                     }
                     // inlined: arena.typeOf(stack.at(-1))
@@ -13826,8 +13849,10 @@
                                     message: `Unexpected token ${exports.EnumToken[arena.dataTypes[token]]}`,
                                     node: token,
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                    // @ts-expect-error
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                    ],
                                 },
                             ],
                         };
@@ -13868,7 +13893,8 @@
                             break;
                         }
                         if (arena.dataTypes[slice[0]] !== exports.EnumToken.IdenTokenType ||
-                            (arena.strings[arena.stringValue[slice[0]]] != "i" && arena.strings[arena.stringValue[slice[0]]] != "s")) {
+                            (arena.strings[arena.stringValue[slice[0]]] != "i" &&
+                                arena.strings[arena.stringValue[slice[0]]] != "s")) {
                             return {
                                 success: false,
                                 errors: [
@@ -13877,8 +13903,10 @@
                                         message: `Unexpected token ${exports.EnumToken[arena.dataTypes[slice[0]]]}`,
                                         node: slice[0],
                                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(slice[0]))
-                                        // @ts-expect-error
-                                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(slice[0]))],
+                                        location: [
+                                            options.source.file,
+                                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(slice[0])),
+                                        ],
                                     },
                                 ],
                             };
@@ -13896,14 +13924,17 @@
                                 message: `Unexpected token ${exports.EnumToken[arena.dataTypes[token]]}`,
                                 node: token,
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                // @ts-expect-error
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                ],
                             },
                         ],
                     };
                 case exports.EnumToken.EndParensTokenType:
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (stack.length > 0 && arena.dataTypes[stack.at(-1)] === exports.EnumToken.UniversalSelectorTokenType) {
+                    if (stack.length > 0 &&
+                        arena.dataTypes[stack.at(-1)] === exports.EnumToken.UniversalSelectorTokenType) {
                         stack.pop();
                     }
                     if (
@@ -13933,8 +13964,10 @@
                                 message: `Unexpected token ${exports.EnumToken[arena.dataTypes[token]]}`,
                                 node: token,
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                // @ts-expect-error
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                ],
                             },
                         ],
                     };
@@ -13954,8 +13987,10 @@
                                 message: `Unsupported selector token ${exports.EnumToken[arena.dataTypes[token]]}`,
                                 node: token,
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                // @ts-expect-error
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                ],
                             },
                         ],
                     };
@@ -13968,7 +14003,8 @@
                 tokens.pop();
                 // inlined: arena.typeOf(token), arena.typeOf(tokens.at(-2))
             }
-            else if (trimWhitespaceBefore.includes(arena.dataTypes[token]) && arena.dataTypes[tokens.at(-2)] === exports.EnumToken.WhitespaceTokenType) {
+            else if (trimWhitespaceBefore.includes(arena.dataTypes[token]) &&
+                arena.dataTypes[tokens.at(-2)] === exports.EnumToken.WhitespaceTokenType) {
                 tokens.splice(tokens.length - 2, 1);
             }
         }
@@ -13984,8 +14020,10 @@
                         message: `Unmatched token ${exports.EnumToken[arena.dataTypes[stack[stack.length - 1]]]}`,
                         node: stack[stack.length - 1],
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
-                        // @ts-expect-error
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1])),
+                        ],
                     },
                 ],
             };
@@ -14175,13 +14213,19 @@
                 // the location is computed from a token of the value: the error node, the last token, ...
                 if (node != -1 &&
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[node]))
-                    sameLocation(error.location, [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[node]))])) {
+                    sameLocation(error.location, [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[node])),
+                    ])) {
                     location = node;
                 }
                 else {
                     for (let k = 0; k < tokens.length; k++) {
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[k]))
-                        if (sameLocation(error.location, [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[k]))])) {
+                        if (sameLocation(error.location, [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[k])),
+                        ])) {
                             location = k;
                             break;
                         }
@@ -14214,7 +14258,10 @@
             }
             if (errors[i].location != -1) {
                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[errors[i].location]))
-                error.location = [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[errors[i].location]))];
+                error.location = [
+                    options.source.file,
+                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[errors[i].location])),
+                ];
             }
             result.push(error);
         }
@@ -14311,6 +14358,7 @@
     }
     /**
      * matches all syntaxes
+     * @param arena
      * @param syntaxes
      * @param context
      * @param options
@@ -14359,7 +14407,10 @@
                     node: result.token,
                     syntax: result.syntaxToken,
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(result.token ?? (context.tokens[context.tokens.length - 1] as Token)))
-                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(result.token ?? context.tokens[context.tokens.length - 1]))],
+                    location: [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(result.token ?? context.tokens[context.tokens.length - 1])),
+                    ],
                 },
             ]
             : ownErrors(result.errors));
@@ -14381,6 +14432,7 @@
     }
     /**
      * matches a list of syntaxes
+     * @param arena
      * @param syntax
      * @param context
      * @param options
@@ -14388,7 +14440,7 @@
      */
     function matchListSyntax(arena, syntax, context, options) {
         const { isList, match, isOptional, ...rest } = syntax;
-        let success = true;
+        let success;
         let result = null;
         let tmpResult;
         let count = 0;
@@ -14421,7 +14473,7 @@
                 if (Number.isFinite(match?.max?.val) && count === match.max.val) {
                     context.update(
                     // inlined: arena.typeOf(range.at(-1))
-                    arena.dataTypes[range.at(-1)] === exports.EnumToken.CommaTokenType ? (range.at(-2)) : (range.at(-1)));
+                    arena.dataTypes[range.at(-1)] === exports.EnumToken.CommaTokenType ? range.at(-2) : range.at(-1));
                     break;
                 }
                 else {
@@ -14452,6 +14504,7 @@
     }
     /**
      * matches a list of syntaxes
+     * @param arena
      * @param syntax
      * @param context
      * @param options
@@ -14697,9 +14750,11 @@
     }
     /**
      * matches a list of syntaxes
+     * @param arena
      * @param syntaxes
      * @param context
      * @param options
+     * @param out
      * @returns
      */
     function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
@@ -14920,7 +14975,9 @@
                             success = syntaxes[i].val.slice(1, -1) === "-";
                         }
                         else if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType) {
-                            success = arena.strings[arena.stringValue[token]] === syntaxes[i].val.slice(1, -1);
+                            success =
+                                arena.strings[arena.stringValue[token]] ===
+                                    syntaxes[i].val.slice(1, -1);
                         }
                         else if (arena.dataTypes[token] == exports.EnumToken.Plus) {
                             success = true;
@@ -15075,7 +15132,8 @@
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
                     case ValidationTokenEnum.Separator:
-                        if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType && arena.strings[arena.stringValue[token]] === "/") {
+                        if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType &&
+                            arena.strings[arena.stringValue[token]] === "/") {
                             options.visited.get(token).delete(syntaxes[i]);
                             context.next();
                             break;
@@ -15146,6 +15204,7 @@
      * matches a column of syntaxes: `<a> || <b> || <c>`, one or more syntaxes in any order. the syntaxes are matched in
      * the order that matches the most tokens: `[ none | <single-transition-property> ] || <time> || <easing-function>`
      * matches `.2s ease-in-out transform` (`ease-in-out` is also a <custom-ident>)
+     * @param arena
      * @param syntax
      * @param context
      * @param options
@@ -15277,6 +15336,7 @@
     /**
      * matches an ampersand of syntaxes: `<a> && <b> && <c>`, all the syntaxes in any order, except the optional syntaxes
      * that match no token. `[ <ident> && <length> ]` matches `thin 10px` and `10px thin`
+     * @param arena
      * @param syntax
      * @param context
      * @param options
@@ -15302,7 +15362,8 @@
             else if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType && depth-- == 0) {
                 break;
             }
-            if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
+            if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType &&
+                arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
                 tokens.push(token);
             }
         }
@@ -15310,6 +15371,7 @@
     }
     /**
      * matches a property
+     * @param arena
      * @param property
      * @param context
      * @param options
@@ -15394,7 +15456,8 @@
                     if (token != null) {
                         success = false;
                         while ((token = context.peek()) != null) {
-                            if (arena.dataTypes[token] == exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
+                            if (arena.dataTypes[token] == exports.EnumToken.StartParensTokenType ||
+                                tokensfuncDefMap.has(arena.dataTypes[token])) {
                                 stack.push(token);
                             }
                             if (expectToken) {
@@ -15479,7 +15542,8 @@
                         break;
                     }
                     // inlined: arena.typeOf(token)
-                    if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType || arena.dataTypes[token] === exports.EnumToken.IdenTokenType) {
+                    if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType ||
+                        arena.dataTypes[token] === exports.EnumToken.IdenTokenType) {
                         let match = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(arena.strings[arena.stringValue[token]]);
                         success = match != null;
                         // `n + 1`: the sign and the number follow the ident
@@ -15576,7 +15640,9 @@
                     propertyKeywordValues.set(property.val, values);
                 }
                 // inlined: arena.typeOf(token)
-                success = arena.dataTypes[token] == exports.EnumToken.IdenTokenType && values.has(arena.strings[arena.stringValue[token]].toLowerCase());
+                success =
+                    arena.dataTypes[token] == exports.EnumToken.IdenTokenType &&
+                        values.has(arena.strings[arena.stringValue[token]].toLowerCase());
                 break;
             }
             case "mf-name":
@@ -15601,7 +15667,9 @@
             case "counter-name":
             case "counter-style-name":
                 // inlined: arena.typeOf(token)
-                success = arena.dataTypes[token] == exports.EnumToken.IdenTokenType || arena.dataTypes[token] == exports.EnumToken.DashedIdenTokenType;
+                success =
+                    arena.dataTypes[token] == exports.EnumToken.IdenTokenType ||
+                        arena.dataTypes[token] == exports.EnumToken.DashedIdenTokenType;
                 // inlined: arena.typeOf(token)
                 if (success && arena.dataTypes[token] === exports.EnumToken.IdenTokenType) {
                     const val = arena.strings[arena.stringValue[token]].toLowerCase();
@@ -15670,7 +15738,9 @@
             case "zero": {
                 const token = context.peek();
                 // inlined: arena.typeOf(token)
-                success = arena.dataTypes[token] == exports.EnumToken.NumberTokenType && arena.numericValue[token] === 0;
+                success =
+                    arena.dataTypes[token] == exports.EnumToken.NumberTokenType &&
+                        arena.numericValue[token] === 0;
                 break;
             }
             case "integer":
@@ -15678,7 +15748,8 @@
                     const token = context.peek();
                     success =
                         // inlined: arena.typeOf(token)
-                        arena.dataTypes[token] == exports.EnumToken.NumberTokenType && Number.isInteger(Number(arena.numericValue[token]));
+                        arena.dataTypes[token] == exports.EnumToken.NumberTokenType &&
+                            Number.isInteger(Number(arena.numericValue[token]));
                 }
                 break;
             case "dimension": {
@@ -15708,14 +15779,19 @@
                 {
                     const token = context.peek();
                     // inlined: arena.typeOf(token)
-                    success = arena.dataTypes[token] === exports.EnumToken.AngleTokenType || arena.dataTypes[token] === exports.EnumToken.UserDefinedDimensionTokenType;
+                    success =
+                        arena.dataTypes[token] === exports.EnumToken.AngleTokenType ||
+                            arena.dataTypes[token] === exports.EnumToken.UserDefinedDimensionTokenType;
                 }
                 break;
             case "angle-percentage":
                 {
                     const token = context.peek();
                     // inlined: arena.typeOf(token)
-                    success = arena.dataTypes[token] === exports.EnumToken.AngleTokenType || arena.dataTypes[token] === exports.EnumToken.UserDefinedDimensionTokenType || arena.dataTypes[token] === exports.EnumToken.PercentageTokenType;
+                    success =
+                        arena.dataTypes[token] === exports.EnumToken.AngleTokenType ||
+                            arena.dataTypes[token] === exports.EnumToken.UserDefinedDimensionTokenType ||
+                            arena.dataTypes[token] === exports.EnumToken.PercentageTokenType;
                 }
                 break;
             case "percentage":
@@ -15738,12 +15814,15 @@
                             // inlined: arena.typeOf(token)
                             arena.dataTypes[token] == exports.EnumToken.UserDefinedDimensionTokenType ||
                             // inlined: arena.typeOf(token)
-                            (arena.dataTypes[token] == exports.EnumToken.NumberTokenType && arena.numericValue[token] === 0);
+                            (arena.dataTypes[token] == exports.EnumToken.NumberTokenType &&
+                                arena.numericValue[token] === 0);
                 }
                 break;
             case "flex":
                 // inlined: arena.typeOf(context.peek())
-                success = arena.dataTypes[context.peek()] == exports.EnumToken.FlexTokenType || arena.dataTypes[context.peek()] == exports.EnumToken.UserDefinedDimensionTokenType;
+                success =
+                    arena.dataTypes[context.peek()] == exports.EnumToken.FlexTokenType ||
+                        arena.dataTypes[context.peek()] == exports.EnumToken.UserDefinedDimensionTokenType;
                 break;
             case "length": {
                 const token = context.peek();
@@ -15753,7 +15832,8 @@
                         // inlined: arena.typeOf(token)
                         arena.dataTypes[token] == exports.EnumToken.UserDefinedDimensionTokenType ||
                         // inlined: arena.typeOf(token)
-                        (arena.dataTypes[token] == exports.EnumToken.NumberTokenType && arena.numericValue[token] === 0);
+                        (arena.dataTypes[token] == exports.EnumToken.NumberTokenType &&
+                            arena.numericValue[token] === 0);
                 break;
             }
             case "resolution":
@@ -15779,7 +15859,9 @@
                     if (token == null) {
                         break;
                     }
-                    success = arena.dataTypes[token] == exports.EnumToken.TimeTokenType || arena.dataTypes[token] == exports.EnumToken.UserDefinedDimensionTokenType;
+                    success =
+                        arena.dataTypes[token] == exports.EnumToken.TimeTokenType ||
+                            arena.dataTypes[token] == exports.EnumToken.UserDefinedDimensionTokenType;
                 }
                 break;
             case "color":
@@ -15870,7 +15952,8 @@
                     // inlined: arena.typeOf(token)
                     arena.dataTypes[token] == exports.EnumToken.IdenTokenType &&
                         // @ts-expect-error
-                        config$3.languages.some((t) => t === arena.strings[arena.stringValue[token]] || arena.strings[arena.stringValue[token]].startsWith(t + "-"));
+                        config$3.languages.some((t) => t === arena.strings[arena.stringValue[token]] ||
+                            arena.strings[arena.stringValue[token]].startsWith(t + "-"));
                 break;
             }
             case "size-feature": {
@@ -15928,7 +16011,8 @@
                     l = 0;
                     let token;
                     while ((token = context.peek(++l))) {
-                        if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
+                        if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType &&
+                            arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
                             break;
                         }
                     }
@@ -15937,7 +16021,8 @@
                             arena.dataTypes[token] == exports.EnumToken.IdenTokenType ||
                             arena.dataTypes[token] == exports.EnumToken.UrlTokenTokenType)) {
                         while ((token = context.peek(++l))) {
-                            if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
+                            if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType &&
+                                arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
                                 break;
                             }
                         }
@@ -16113,6 +16198,7 @@
     }
     /**
      * matches a repeatable syntax
+     * @param arena
      * @param syntax
      * @param context
      * @param options
@@ -16151,6 +16237,7 @@
 
     /**
      * Create a color token
+     * @param arena
      * @param kind
      * @param components
      * @param alpha
@@ -16216,6 +16303,7 @@
 
     /**
      * Compute alpha color
+     * @param arena
      * @param color
      * @param alpha
      * @returns
@@ -16300,6 +16388,7 @@
 
     /**
      * Converts a color to another color space
+     * @param arena
      * @param token
      * @param to
      *
@@ -16868,7 +16957,7 @@
     const integer_to_char = {};
     const char_to_integer = {};
     let i = 0;
-    for (const char of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=') {
+    for (const char of "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=") {
         char_to_integer[char] = i;
         integer_to_char[i++] = char;
     }
@@ -16882,9 +16971,6 @@
         let value = 0;
         for (let i = 0; i < str.length; i += 1) {
             let integer = char_to_integer[str[i]];
-            // if (integer === undefined) {
-            // 	throw new Error('Invalid character (' + str[i] + ')');
-            // }
             const has_continuation_bit = integer & 32;
             integer &= 31;
             value += integer << shift;
@@ -16915,7 +17001,7 @@
         // if (typeof value === 'number') {
         //     return encode_integer(value);
         // }
-        let result = '';
+        let result = "";
         for (let i = 0; i < value.length; i += 1) {
             result += encode_integer(value[i]);
         }
@@ -16927,7 +17013,7 @@
      * @returns
      */
     function encode_integer(num) {
-        let result = '';
+        let result = "";
         if (num < 0) {
             num = (-num << 1) | 1;
         }
@@ -17308,19 +17394,6 @@
             }
             return result;
         }
-        /**
-         * get line starts
-         * @returns
-         */
-        getLineStarts() {
-            return this.lineStarts;
-        }
-        /**
-         * add line start
-         */
-        addLineStart(lineStart) {
-            this.lineStarts.push(lineStart);
-        }
     }
 
     /**
@@ -17566,62 +17639,6 @@
             this.content += content;
         }
         /**
-         * get file name
-         * @returns
-         */
-        getFileName() {
-            return this.file;
-        }
-        /**
-         * get content
-         * @returns
-         */
-        getContent() {
-            return this.content;
-        }
-        /**
-         * get text
-         * @param start
-         * @param length
-         * @returns
-         */
-        getText(start, length) {
-            return this.content.slice(start, start + length);
-        }
-        /**
-         * Compute line and column of the offset
-         * @param offset
-         * @returns
-         */
-        getOffsets(offset) {
-            return this.lineStarts.getOffsets(offset);
-        }
-        /**
-         * get source location
-         * @param offset
-         * @returns
-         */
-        getSourceLocation(offset) {
-            // inlined: this.getOffsets(offset)
-            return [this.file, ...this.lineStarts.getOffsets(offset)];
-        }
-        /**
-         * get line starts
-         * @returns
-         */
-        getLineStarts() {
-            // inlined: this.lineStarts.getLineStarts()
-            return this.lineStarts.lineStarts;
-        }
-        /**
-         * add line start
-         * @param lineStart
-         */
-        addLineStart(lineStart) {
-            // inlined: this.lineStarts.addLineStart(lineStart)
-            this.lineStarts.lineStarts.push(lineStart);
-        }
-        /**
          * set input source map
          * @param inputSourceMap
          */
@@ -17672,7 +17689,7 @@
      * @param value
      */
     function normalize$1(value) {
-        return value !== value ? NaN : value + 0;
+        return value !== value ? NaN : value;
     }
     /**
      * Memoize values by token structure. Lookups return a slot, the value of a slot is `undefined` until it is set.
@@ -17706,6 +17723,14 @@
          */
         values = [];
         /**
+         * number of distinct structures (lookups that inserted a new entry)
+         */
+        size = 0;
+        /**
+         * number of lookups that found an existing entry
+         */
+        hits = 0;
+        /**
          * key hash, key offset in the pool and key length of each slot (3 values per slot)
          */
         slots = new Int32Array(64 * 3);
@@ -17725,14 +17750,6 @@
          * end of the key being looked up in the pool
          */
         used = 0;
-        /**
-         * number of distinct structures (lookups that inserted a new entry)
-         */
-        size = 0;
-        /**
-         * number of lookups that found an existing entry
-         */
-        hits = 0;
         /**
          * @param numericEquality compare the numeric values with `==` semantics (`0` and `-0` are equal) and consider
          * all the `NaN` values equal. the raw bits are compared otherwise
@@ -17986,6 +18003,13 @@
          */
         static shape = new RenderMemo();
         /**
+         * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
+         * (see {@link acquire})
+         *
+         * @internal
+         */
+        static free = [];
+        /**
          * rendered declarations (`name:value`), by name and value tokens
          */
         declarations = new StructuralMemo();
@@ -17993,13 +18017,6 @@
          * rendered constructs: colors and tokens with sub tokens (functions, parentheses, binary expressions, ...)
          */
         constructs = new StructuralMemo();
-        /**
-         * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
-         * (see {@link acquire})
-         *
-         * @internal
-         */
-        static free = [];
         /**
          * a cleared memo
          */
@@ -18251,7 +18268,7 @@
         // reused by the next renders
         const ownMemo = memo == null;
         // inlined: RenderMemo.acquire()
-        const cache = new RenderCache(memo ?? (RenderMemo.free.pop() ?? new RenderMemo()), options);
+        const cache = new RenderCache(memo ?? RenderMemo.free.pop() ?? new RenderMemo(), options);
         const sourceLocation = {
             end: 0,
         };
@@ -18323,7 +18340,7 @@
      */
     function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation, linesMap, str) {
         let offset = 0;
-        // eat leanding whitespace
+        // eat leading whitespace
         while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
             offset++;
         }
@@ -18364,7 +18381,8 @@
                             // resolution is relative to the source file
                             const absoluteSourceFileName = options.resolve(sourceFileName, absoluteSourcePath)
                                 .absolute;
-                            cache.paths[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                            cache.paths[sourceFileName] = options.resolve(absoluteSourceFileName, absolute)
+                                .relative;
                         }
                         sourceFileName = cache.paths[sourceFileName];
                     }
@@ -18859,7 +18877,9 @@
             }
             else {
                 result =
-                    result.trimEnd() + (useAlpha && index == count - 1 ? "/" : " ") + renderValue(arena, curr, options, cache);
+                    result.trimEnd() +
+                        (useAlpha && index == count - 1 ? "/" : " ") +
+                        renderValue(arena, curr, options, cache);
             }
         }
         return (hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) + "(" + result.trimStart() + ")";
@@ -18867,6 +18887,7 @@
     /**
      * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
      * expressions, ...) are rendered once per render, see {@link RenderMemo}
+     * @param arena
      * @param token
      * @param options
      * @param cache
@@ -19064,7 +19085,8 @@
                                                             arena.dataTypes[slice[j]] === exports.EnumToken.CommentTokenType)) {
                                                         j++;
                                                     }
-                                                    if (j < slice.length && arena.dataTypes[slice[j]] !== exports.EnumToken.CommaTokenType) {
+                                                    if (j < slice.length &&
+                                                        arena.dataTypes[slice[j]] !== exports.EnumToken.CommaTokenType) {
                                                         i = j - 1;
                                                         break;
                                                     }
@@ -19172,7 +19194,8 @@
                                     i++;
                                 }
                                 if (arena.dataTypes[slice[i]] === exports.EnumToken.PercentageTokenType ||
-                                    (arena.dataTypes[slice[i]] === exports.EnumToken.NumberTokenType && 0 === arena.numericValue[slice[i]]) ||
+                                    (arena.dataTypes[slice[i]] === exports.EnumToken.NumberTokenType &&
+                                        0 === arena.numericValue[slice[i]]) ||
                                     (arena.dataTypes[slice[i]] === exports.EnumToken.IdenTokenType &&
                                         (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "center") ||
                                             equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "top") ||
@@ -19451,7 +19474,10 @@
                             }
                             break;
                     }
-                    return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer ?? createReducer(arena, options, cache)) + ")";
+                    return (arena.strings[arena.stringValue[token]] +
+                        "(" +
+                        renderTokenList(slice, reducer ?? createReducer(arena, options, cache)) +
+                        ")");
                 }
             case exports.EnumToken.TimingFunctionTokenType:
             case exports.EnumToken.PseudoClassFuncTokenType:
@@ -19480,7 +19506,10 @@
                             ")");
                     }
                 }
-                return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderReduced(arena, arena.firstToken[token], options, cache, reducer) + ")";
+                return ((arena.strings[arena.stringValue[token]] ?? "") +
+                    "(" +
+                    renderReduced(arena, arena.firstToken[token], options, cache, reducer) +
+                    ")");
             case exports.EnumToken.BlockStartTokenType:
                 return "{";
             case exports.EnumToken.BlockEndTokenType:
@@ -19754,6 +19783,7 @@
     }
     /**
      * Remove whitespace tokens that are not needed
+     * @param arena
      * @param values
      *
      * @internal
@@ -19761,7 +19791,8 @@
     function filterValues(arena, values) {
         let i = 0;
         for (; i < values.length; i++) {
-            if (arena.dataTypes[values[i]] == exports.EnumToken.ImportantTokenType && arena.dataTypes[values[i - 1]] === exports.EnumToken.WhitespaceTokenType) {
+            if (arena.dataTypes[values[i]] == exports.EnumToken.ImportantTokenType &&
+                arena.dataTypes[values[i - 1]] === exports.EnumToken.WhitespaceTokenType) {
                 values.splice(i - 1, 1);
             }
             else if (tokensfuncSet.has(arena.dataTypes[values[i]]) &&
@@ -19934,6 +19965,11 @@
                 options.features.push(new ComputePrefixFeature(options));
             }
         }
+        /**
+         *
+         * @param arena
+         * @param node
+         */
         run(arena, node) {
             if (arena.flags[node] &
                 (exports.EnumAstNodeStatus.Disallowed | exports.EnumAstNodeStatus.Invalid | exports.EnumAstNodeStatus.Malformed)) {
@@ -19992,7 +20028,8 @@
                 if (hasPrefix) {
                     // inlined: arena.walkValues(node)
                     for (const value of new ValueWalker(arena, node)) {
-                        if (arena.dataTypes[value] == exports.EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
+                        if (arena.dataTypes[value] == exports.EnumToken.IdenTokenType ||
+                            funcLike.includes(arena.dataTypes[value])) {
                             const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
                             if (match != null) {
                                 // inlined: arena.setStr(value, match[2])
@@ -20023,8 +20060,9 @@
         }
         /**
          * Convert -webkit-linear-gradient to linear-gradient syntax
-         * @param tokens
          * @returns
+         * @param arena
+         * @param token
          */
         webkitLinearToLinearGradient(arena, token) {
             let i;
@@ -20097,9 +20135,9 @@
                 }
             }
             // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
-            arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+            arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
                 ? "repeating-linear-gradient"
-                : "linear-gradient"));
+                : "linear-gradient");
             arena.setTokenList(token, tokens);
         }
         /**
@@ -20224,7 +20262,8 @@
             let i = 0;
             const tokens = arena.tokens(token);
             while (i < tokens.length &&
-                (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType)) {
+                (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType)) {
                 i++;
             }
             const positions = [];
@@ -20258,7 +20297,8 @@
                     equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                     form.push(tokens[i++]);
                 }
-                while (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType) {
+                while (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType) {
                     i++;
                 }
                 if (arena.dataTypes[tokens[i]] === exports.EnumToken.CommaTokenType) {
@@ -20276,7 +20316,8 @@
                     equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                     form.push(tokens[i++]);
                 }
-                while (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType) {
+                while (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[tokens[i]] === exports.EnumToken.CommentTokenType) {
                     i++;
                 }
                 if (arena.dataTypes[tokens[i]] === exports.EnumToken.CommaTokenType) {
@@ -20309,9 +20350,9 @@
                 tokens.push(arena.createToken(exports.EnumToken.CommaTokenType));
             }
             // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
-            arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+            arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
                 ? "repeating-radial-gradient"
-                : "radial-gradient"));
+                : "radial-gradient");
             for (const colorStop of colorStops) {
                 tokens.push(colorStop);
             }
@@ -20359,7 +20400,9 @@
             if (typ == exports.EnumToken.MathFunctionTokenType ||
                 (typ == exports.EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")) {
                 const first = arena.firstToken[value];
-                if (first != 0 && arena.nextSibling[first] == 0 && arena.dataTypes[first] == exports.EnumToken.DashedIdenTokenType) {
+                if (first != 0 &&
+                    arena.nextSibling[first] == 0 &&
+                    arena.dataTypes[first] == exports.EnumToken.DashedIdenTokenType) {
                     const info = (variableScope.get(arena.strings[arena.stringValue[first]]));
                     // the variable declaration may have been released
                     if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
@@ -20383,6 +20426,14 @@
                 options.features.push(new InlineCssVariablesFeature());
             }
         }
+        /**
+         *
+         * @param arena
+         * @param ast
+         * @param _options
+         * @param parent
+         * @param context
+         */
         run(arena, ast, _options = {}, parent, context) {
             if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
                 return null;
@@ -20435,6 +20486,13 @@
             }
             return null;
         }
+        /**
+         *
+         * @param arena
+         * @param _ast
+         * @param _options
+         * @param context
+         */
         cleanup(arena, _ast, _options = {}, context) {
             const variableScope = context.variableScope;
             if (variableScope == null) {
@@ -22706,12 +22764,9 @@
             this.pattern = config.pattern.split(/\s/);
         }
         /**
-         * tokens of a value (default values of the properties, ...)
-         * @param value
+         *
+         * @param declaration
          */
-        parse(value) {
-            return this.memo == null ? parseString(this.arena, value) : this.memo.parse(this.arena, value);
-        }
         add(declaration) {
             const arena = this.arena;
             const nam = arena.strings[arena.name[declaration]];
@@ -22785,7 +22840,9 @@
                             // default
                             if (props.default.length > 0) {
                                 // inlined: this.parse(props.default[0])
-                                const defaults = this.memo == null ? parseString(this.arena, props.default[0]) : this.memo.parse(this.arena, props.default[0]);
+                                const defaults = this.memo == null
+                                    ? parseString(this.arena, props.default[0])
+                                    : this.memo.parse(this.arena, props.default[0]);
                                 if (!(property in tokens)) {
                                     tokens[property] = [[...defaults]];
                                 }
@@ -22884,7 +22941,9 @@
                                     if (mappedValues.length == 0) {
                                         mappedValues.push(
                                         // inlined: this.parse((value as PropertyMap).config.properties[key].default[0])
-                                        ...(this.memo == null ? parseString(this.arena, value.config.properties[key].default[0]) : this.memo.parse(this.arena, value.config.properties[key].default[0])));
+                                        ...(this.memo == null
+                                            ? parseString(this.arena, value.config.properties[key].default[0])
+                                            : this.memo.parse(this.arena, value.config.properties[key].default[0])));
                                     }
                                     arena.setTokenList(mapped[key], mappedValues);
                                 }
@@ -22987,7 +23046,8 @@
                             }
                             return acc;
                         }, []);
-                        while (result.length > 0 && arena.dataTypes[result[result.length - 1]] == exports.EnumToken.WhitespaceTokenType) {
+                        while (result.length > 0 &&
+                            arena.dataTypes[result[result.length - 1]] == exports.EnumToken.WhitespaceTokenType) {
                             result.pop();
                         }
                         while (result.length > 0 && arena.dataTypes[result[0]] == exports.EnumToken.WhitespaceTokenType) {
@@ -23026,7 +23086,9 @@
                     if (filtered.length == 0 && this.config.default.length > 0) {
                         filtered.push(arena.createDeclaration(exports.EnumToken.DeclarationNodeType, this.config.shorthand, 
                         // inlined: this.parse(this.config.default[0])
-                        this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]), null, null));
+                        this.memo == null
+                            ? parseString(this.arena, this.config.default[0])
+                            : this.memo.parse(this.arena, this.config.default[0]), null, null));
                         if (isImportant) {
                             arena.appendToken(filtered[0], arena.createToken(exports.EnumToken.ImportantTokenType));
                         }
@@ -23052,7 +23114,9 @@
                         }
                         if (keys.every((k, index) => eqToken(arena, k, declarationValues[index]))) {
                             // inlined: this.parse(val as string)
-                            arena.setTokenList(declaration, this.memo == null ? parseString(this.arena, val) : this.memo.parse(this.arena, val));
+                            arena.setTokenList(declaration, this.memo == null
+                                ? parseString(this.arena, val)
+                                : this.memo.parse(this.arena, val));
                             break;
                         }
                     }
@@ -23276,10 +23340,12 @@
                                                 arena.strings[arena.stringValue[values[i]]] in props.mapping) {
                                                 // inlined: this.parse(props.mapping[arena.strings[arena.stringValue[values[i]]]])
                                                 values.splice(i, 1, ...(this.memo == null
-                                                    ? // @ts-ignore
-                                                        parseString(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])
-                                                    : // @ts-ignore
-                                                        this.memo.parse(this.arena, props.mapping[arena.strings[arena.stringValue[values[i]]]])));
+                                                    ? parseString(this.arena, 
+                                                    // @ts-ignore
+                                                    props.mapping[arena.strings[arena.stringValue[values[i]]]])
+                                                    : this.memo.parse(this.arena, 
+                                                    // @ts-ignore
+                                                    props.mapping[arena.strings[arena.stringValue[values[i]]]])));
                                             }
                                         }
                                     }
@@ -23310,7 +23376,9 @@
                         if (curr.length == 0 && this.config.default.length > 0) {
                             curr.push(
                             // inlined: this.parse(this.config.default[0])
-                            ...(this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0])).reduce((acc, curr) => {
+                            ...(this.memo == null
+                                ? parseString(this.arena, this.config.default[0])
+                                : this.memo.parse(this.arena, this.config.default[0])).reduce((acc, curr) => {
                                 if (acc.length > 0) {
                                     acc.push(arena.createToken(exports.EnumToken.WhitespaceTokenType));
                                 }
@@ -23343,7 +23411,10 @@
                         this.config.default.includes(arena.strings[arena.stringValue[values[0]]].toLowerCase()) &&
                         this.config.default[0] != arena.strings[arena.stringValue[values[0]]].toLowerCase()) {
                         // inlined: this.parse(this.config.default[0])
-                        values = this.memo == null ? parseString(this.arena, this.config.default[0]) : this.memo.parse(this.arena, this.config.default[0]);
+                        values =
+                            this.memo == null
+                                ? parseString(this.arena, this.config.default[0])
+                                : this.memo.parse(this.arena, this.config.default[0]);
                     }
                     iterable = [
                         arena.createDeclaration(exports.EnumToken.DeclarationNodeType, this.config.shorthand, values, null, null),
@@ -23579,17 +23650,6 @@
             this.memo = memo ?? new DeclarationMemo();
         }
         /**
-         * add declarations
-         * @param declarations node ids
-         * @returns
-         */
-        add(declarations) {
-            for (const declaration of declarations) {
-                this.addDeclaration(declaration);
-            }
-            return this;
-        }
-        /**
          * add a declaration
          * @param declaration node id
          */
@@ -23705,8 +23765,9 @@
                     owner = this.declarations.get(mapName);
                 }
                 else if (!this.declarations.has(shorthand)) {
+                    this.declarations.set(shorthand, 
                     // @ts-ignore
-                    this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand], this.memo));
+                    new PropertyMap(arena, config.map[shorthand], this.memo));
                 }
                 if (owner == this) {
                     // @ts-ignore
@@ -23858,6 +23919,14 @@
                 options.features.push(new ComputeShorthandFeature(options));
             }
         }
+        /**
+         *
+         * @param arena
+         * @param ast
+         * @param options
+         * @param _parent
+         * @param context
+         */
         run(arena, ast, options, _parent, context) {
             if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
                 return null;
@@ -23929,6 +23998,11 @@
                 options.features.push(new ComputeCalcExpressionFeature());
             }
         }
+        /**
+         *
+         * @param arena
+         * @param ast
+         */
         run(arena, ast) {
             if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
                 return null;
@@ -23976,7 +24050,9 @@
                                     for (const value of new ValueWalker(arena, values)) {
                                         if (arena.dataTypes[value] === exports.EnumToken.BinaryExpressionTokenType) {
                                             // inlined: arena.getRight(value)
-                                            const r = (arena.getChildAt(value, exports.TokenField.R) == null ? null : arena.fieldTokens(value, exports.TokenField.R))[0];
+                                            const r = (arena.getChildAt(value, exports.TokenField.R) == null
+                                                ? null
+                                                : arena.fieldTokens(value, exports.TokenField.R))[0];
                                             if (arena.numericValue[value] === exports.EnumToken.Add &&
                                                 // inlined: arena.isNumeric(r)
                                                 numericTokenTypes.has(arena.dataTypes[r]) &&
@@ -23994,7 +24070,8 @@
                                             (parentType == exports.EnumToken.FunctionTokenType &&
                                                 arena.strings[arena.stringValue[parent]] == "calc")) &&
                                             // inlined: arena.isNumeric(values[0])
-                                            (!numericTokenTypes.has(arena.dataTypes[values[0]]) || arena.hasFraction(values[0])) &&
+                                            (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
+                                                arena.hasFraction(values[0])) &&
                                             !(arena.dataTypes[values[0]] == exports.EnumToken.MathFunctionTokenType ||
                                                 (arena.dataTypes[values[0]] == exports.EnumToken.FunctionTokenType &&
                                                     mathFuncs.includes(arena.strings[arena.stringValue[values[0]]])));
@@ -24783,7 +24860,8 @@
                 case "rotateZ":
                 case "rotate3d":
                     for (const child of arena.tokens(transform)) {
-                        if (arena.dataTypes[child] == exports.EnumToken.WhitespaceTokenType || arena.dataTypes[child] == exports.EnumToken.CommaTokenType) {
+                        if (arena.dataTypes[child] == exports.EnumToken.WhitespaceTokenType ||
+                            arena.dataTypes[child] == exports.EnumToken.CommaTokenType) {
                             continue;
                         }
                         if ((arena.dataTypes[child] != exports.EnumToken.AngleTokenType &&
@@ -24811,7 +24889,8 @@
         const serialized = serialize(arena, matrix);
         if (cumulative.length > 0) {
             for (let i = 0; i < cumulative.length; i++) {
-                if (arena.dataTypes[cumulative[i]] == exports.EnumToken.IdenTokenType && arena.strings[arena.stringValue[cumulative[i]]] == "none") {
+                if (arena.dataTypes[cumulative[i]] == exports.EnumToken.IdenTokenType &&
+                    arena.strings[arena.stringValue[cumulative[i]]] == "none") {
                     cumulative.splice(i--, 1);
                 }
             }
@@ -24819,12 +24898,11 @@
                 cumulative.push(arena.createToken(exports.EnumToken.IdenTokenType, "none"));
             }
         }
-        const result = {
+        return {
             matrix: serialize(arena, toZero(matrix)),
             cumulative,
             minified: minify$1(arena, matrix) ?? [serialized],
         };
-        return result;
     }
     function computeMatrix(arena, transformList, matrixVar) {
         let values = [];
@@ -24843,7 +24921,7 @@
                 case "translate3d":
                     {
                         values.length = 0;
-                        const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                        const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                         const valCount = arena.strings[arena.stringValue[transformList[i]]] == "translate3d"
                             ? 3
                             : arena.strings[arena.stringValue[transformList[i]]] == "translate"
@@ -24892,7 +24970,7 @@
                         let angle;
                         let values = [];
                         let valuesCount = arena.strings[arena.stringValue[transformList[i]]] == "rotate3d" ? 4 : 1;
-                        for (const child of (stripCommaToken(arena, arena.tokens(transformList[i])) ?? [])) {
+                        for (const child of stripCommaToken(arena, arena.tokens(transformList[i])) ?? []) {
                             values.push(child);
                             if (arena.strings[arena.stringValue[transformList[i]]] == "rotateX") {
                                 x = 1;
@@ -24934,10 +25012,11 @@
                     {
                         values.length = 0;
                         let child;
-                        const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                        const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                         for (let k = 0; k < children.length; k++) {
                             child = children[k];
-                            if (arena.dataTypes[child] != exports.EnumToken.NumberTokenType && arena.dataTypes[child] != exports.EnumToken.PercentageTokenType) {
+                            if (arena.dataTypes[child] != exports.EnumToken.NumberTokenType &&
+                                arena.dataTypes[child] != exports.EnumToken.PercentageTokenType) {
                                 return null;
                             }
                             values.push(getNumber(arena, child));
@@ -25009,10 +25088,12 @@
                         let value;
                         for (let k = 0; k < arena.tokens(transformList[i]).length; k++) {
                             child = arena.tokens(transformList[i])[k];
-                            if (arena.dataTypes[child] == exports.EnumToken.CommentTokenType || arena.dataTypes[child] == exports.EnumToken.WhitespaceTokenType) {
+                            if (arena.dataTypes[child] == exports.EnumToken.CommentTokenType ||
+                                arena.dataTypes[child] == exports.EnumToken.WhitespaceTokenType) {
                                 continue;
                             }
-                            if (arena.dataTypes[child] == exports.EnumToken.IdenTokenType && arena.strings[arena.stringValue[child]] == "none") {
+                            if (arena.dataTypes[child] == exports.EnumToken.IdenTokenType &&
+                                arena.strings[arena.stringValue[child]] == "none") {
                                 values.push("none");
                                 continue;
                             }
@@ -25126,6 +25207,11 @@
                 options.features.push(new TransformCssFeature());
             }
         }
+        /**
+         *
+         * @param arena
+         * @param ast
+         */
         run(arena, ast) {
             if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
                 return null;
@@ -25393,6 +25479,11 @@
                 options.features.push(new ExpandIfFeature());
             }
         }
+        /**
+         *
+         * @param arena
+         * @param declaration
+         */
         run(arena, declaration) {
             return processNode(arena, declaration, new Set());
         }
@@ -25517,6 +25608,7 @@
      * - generate range queries
      *
      * @private
+     * @param arena
      * @param tokens
      */
     function minifyAtRuleMedia(arena, tokens) {
@@ -27093,10 +27185,6 @@
          */
         current = 1;
         /**
-         * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
-         */
-        freeList = 0;
-        /**
          * node EnumToken type array
          */
         dataTypes;
@@ -27157,14 +27245,18 @@
          */
         spans;
         /**
+         * error cache
+         */
+        errors = new Map();
+        /**
+         * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
+         */
+        freeList = 0;
+        /**
          * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
          * the high word holds the 24 high bits of the start position and the source
          */
         spans32;
-        /**
-         * error cache
-         */
-        errors = new Map();
         constructor(size = 4096) {
             this.dataTypes = new Uint8Array(size);
             this.parents = new Uint32Array(size);
@@ -27183,6 +27275,12 @@
             this.spans = new BigUint64Array(size);
             this.spans32 = new Uint32Array(this.spans.buffer);
             this.dataTypes[this.root] = exports.EnumToken.StyleSheetNodeType;
+        }
+        /**
+         * true when the column buffers have been transferred to another thread: the arena can no longer be used
+         */
+        get transferred() {
+            return this.dataTypes.length == 0 && this.current > 0;
         }
         /**
          * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
@@ -27221,55 +27319,6 @@
             const arena = new this(0);
             arena.importProperties(properties, transferables);
             return arena;
-        }
-        /**
-         * true when the column buffers have been transferred to another thread: the arena can no longer be used
-         */
-        get transferred() {
-            return this.dataTypes.length == 0 && this.current > 0;
-        }
-        /**
-         * structured-cloneable properties of the arena
-         */
-        exportProperties() {
-            return {
-                kind: "Arena",
-                current: this.current,
-                strings: this.strings,
-                errors: [...this.errors.entries()],
-            };
-        }
-        /**
-         * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
-         */
-        exportTransferables() {
-            const buffers = [];
-            for (const column of arenaColumns) {
-                const array = this[column];
-                // the columns always own their buffer: no offset or partial view
-                buffers.push(array.buffer);
-            }
-            return buffers;
-        }
-        /**
-         * initialize the arena from exported properties and column buffers
-         * @param properties
-         * @param transferables
-         */
-        importProperties(properties, transferables) {
-            if (transferables.length != arenaColumns.length) {
-                throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
-            }
-            for (let i = 0; i < arenaColumns.length; i++) {
-                const column = arenaColumns[i];
-                // @ts-ignore
-                this[column] = new arenaColumnTypes[column](transferables[i]);
-            }
-            this.spans32 = new Uint32Array(this.spans.buffer);
-            this.current = properties.current;
-            this.strings = properties.strings.slice();
-            this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
-            this.errors = new Map(properties.errors);
         }
         allocate() {
             let id = this.freeList;
@@ -27321,23 +27370,9 @@
             return id;
         }
         /**
-         * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+         *
          * @param id
-         * @param args
          */
-        set(id, ...args) {
-            this.dataTypes[id] = args[0];
-            if (args.length > 1) {
-                // 0 is null string, so we can use it to indicate that there is no string value for this node.
-                this.stringValue[id] = args[1];
-            }
-            if (args.length > 2) {
-                this.numericValue[id] = args[2];
-            }
-            if (args.length > 3) {
-                this.unit[id] = args[3];
-            }
-        }
         getType(id) {
             return this.dataTypes[id];
         }
@@ -27587,29 +27622,6 @@
             this.detach(current);
         }
         /**
-         * link a node before a reference node of the given parent
-         * @param parent
-         * @param reference
-         * @param node
-         */
-        #insertBefore(parent, reference, node) {
-            const previous = this.previousSibling[reference];
-            this.previousSibling[node] = previous;
-            this.nextSibling[node] = reference;
-            this.previousSibling[reference] = node;
-            this.parents[node] = parent;
-            if (previous != 0) {
-                this.nextSibling[previous] = node;
-            }
-            else if (this.firstChild[parent] == reference) {
-                this.firstChild[parent] = node;
-            }
-            else if (this.firstToken[parent] == reference) {
-                this.firstToken[parent] = node;
-            }
-        }
-        // ---- structured token fields ---------------------------------------------------------
-        /**
          * list node holding the tokens of a structured token field. created when missing
          * @param id
          * @param field
@@ -27665,6 +27677,7 @@
             const list = this.getChildAt(id, field);
             return list == null ? [] : this.tokens(list);
         }
+        // ---- structured token fields ---------------------------------------------------------
         /**
          * set the tokens of a structured token field
          * @param id
@@ -27692,7 +27705,7 @@
         }
         setRight(id, ...rightId) {
             // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
-            this.setTokenList(this.fieldList(id, exports.TokenField.R), (rightId == null || rightId[0] == null ? [] : rightId));
+            this.setTokenList(this.fieldList(id, exports.TokenField.R), rightId == null || rightId[0] == null ? [] : rightId);
         }
         getRight(id) {
             return this.getChildAt(id, exports.TokenField.R) == null ? null : this.fieldTokens(id, exports.TokenField.R);
@@ -27711,7 +27724,6 @@
         getOp2(id) {
             return this.field(id, exports.TokenField.Op2);
         }
-        // ---- spans ---------------------------------------------------------------------
         setSpan(id, sourceId, start, end) {
             if (littleEndian) {
                 const index = id << 1;
@@ -27746,6 +27758,7 @@
             }
             return Number((this.spans[id] >> 28n) & 0xfffffffn);
         }
+        // ---- spans ---------------------------------------------------------------------
         setSpandStart(id, start) {
             this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
         }
@@ -27936,7 +27949,8 @@
          */
         getValueOwner(id) {
             let parent = this.parents[id];
-            while (parent != 0 && (this.flags[parent] & (exports.EnumAstNodeStatus.HasChildren | exports.EnumAstNodeStatus.HasValues)) == 0) {
+            while (parent != 0 &&
+                (this.flags[parent] & (exports.EnumAstNodeStatus.HasChildren | exports.EnumAstNodeStatus.HasValues)) == 0) {
                 parent = this.parents[parent];
             }
             return parent;
@@ -28719,6 +28733,71 @@
             }
             return count;
         }
+        /**
+         * structured-cloneable properties of the arena
+         */
+        exportProperties() {
+            return {
+                kind: "Arena",
+                current: this.current,
+                strings: this.strings,
+                errors: [...this.errors.entries()],
+            };
+        }
+        /**
+         * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+         */
+        exportTransferables() {
+            const buffers = [];
+            for (const column of arenaColumns) {
+                const array = this[column];
+                // the columns always own their buffer: no offset or partial view
+                buffers.push(array.buffer);
+            }
+            return buffers;
+        }
+        /**
+         * initialize the arena from exported properties and column buffers
+         * @param properties
+         * @param transferables
+         */
+        importProperties(properties, transferables) {
+            if (transferables.length != arenaColumns.length) {
+                throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
+            }
+            for (let i = 0; i < arenaColumns.length; i++) {
+                const column = arenaColumns[i];
+                // @ts-ignore
+                this[column] = new arenaColumnTypes[column](transferables[i]);
+            }
+            this.spans32 = new Uint32Array(this.spans.buffer);
+            this.current = properties.current;
+            this.strings = properties.strings.slice();
+            this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
+            this.errors = new Map(properties.errors);
+        }
+        /**
+         * link a node before a reference node of the given parent
+         * @param parent
+         * @param reference
+         * @param node
+         */
+        #insertBefore(parent, reference, node) {
+            const previous = this.previousSibling[reference];
+            this.previousSibling[node] = previous;
+            this.nextSibling[node] = reference;
+            this.previousSibling[reference] = node;
+            this.parents[node] = parent;
+            if (previous != 0) {
+                this.nextSibling[previous] = node;
+            }
+            else if (this.firstChild[parent] == reference) {
+                this.firstChild[parent] = node;
+            }
+            else if (this.firstToken[parent] == reference) {
+                this.firstToken[parent] = node;
+            }
+        }
     }
     /**
      * Css ast arena: ast nodes and value tokens.
@@ -28748,27 +28827,6 @@
         /**
          * @inheritDoc
          */
-        exportProperties() {
-            return {
-                ...super.exportProperties(),
-                kind: "AstArena",
-                sources: this.sources,
-                raw: this.raw,
-                optimized: this.optimized,
-            };
-        }
-        /**
-         * @inheritDoc
-         */
-        importProperties(properties, transferables) {
-            super.importProperties(properties, transferables);
-            this.sources = properties.sources?.slice() ?? [];
-            this.raw = properties.raw?.slice() ?? [];
-            this.optimized = properties.optimized?.slice() ?? [];
-        }
-        /**
-         * @inheritDoc
-         */
         release(id, deep = false) {
             super.release(id, deep);
             if (id != null) {
@@ -28791,7 +28849,6 @@
             this.optimized = [];
             return mapping;
         }
-        // ---- state ---------------------------------------------------------------------
         /**
          * validation state bits
          * @param id
@@ -28807,6 +28864,7 @@
         setState(id, state) {
             this.flags[id] = (this.flags[id] & ~exports.EnumAstNodeStatus.StateMask) | ((state ?? 0) & exports.EnumAstNodeStatus.StateMask);
         }
+        // ---- state ---------------------------------------------------------------------
         /**
          * true if the node is invalid
          * @param id
@@ -28814,7 +28872,6 @@
         isInvalid(id) {
             return (this.flags[id] & exports.EnumAstNodeStatus.Invalid) != 0;
         }
-        // ---- location ------------------------------------------------------------------
         /**
          * index of a source id in the sources table
          * @param srcId
@@ -28844,6 +28901,7 @@
             this.flags[id] |= exports.EnumAstNodeStatus.HasLocation;
             this.setSpan(id, this.sourceIndex(srcId ?? 0), sta ?? 0, end ?? 0);
         }
+        // ---- location ------------------------------------------------------------------
         /**
          * set the location of a token from the tokenizer values. the source index is the index of the source id in the sources table
          * @param id
@@ -28907,7 +28965,6 @@
         getSource(id) {
             return this.sources[this.getSourceId(id)] ?? 0;
         }
-        // ---- ast nodes -------------------------------------------------------------------
         /**
          * allocate a stylesheet node
          */
@@ -28938,6 +28995,7 @@
             }
             return id;
         }
+        // ---- ast nodes -------------------------------------------------------------------
         /**
          * allocate an at-rule node
          * @param typ
@@ -28995,7 +29053,6 @@
             this.flags[id] = 0;
             return id;
         }
-        // ---- tokens ----------------------------------------------------------------------
         /**
          * allocate a token. string values are interned, numeric values are stored in the `numericValue` column
          * @param typ
@@ -29033,6 +29090,7 @@
             }
             return id;
         }
+        // ---- tokens ----------------------------------------------------------------------
         /**
          * allocate a function token
          * @param typ function token type
@@ -29235,7 +29293,6 @@
             // inlined: this.setChildren(id)
             this.setChildList(id, []);
         }
-        // ---- plain objects -----------------------------------------------------------------
         /**
          * Import an object: an {@link AstArenaNode} or a plain object ({@link PlainAstNode}, {@link PlainToken}).
          *
@@ -29258,169 +29315,6 @@
                 : this.tokenFromObject(node);
         }
         /**
-         * create an ast node from a plain object
-         * @param node
-         */
-        nodeFromObject(node) {
-            const id = this.allocate();
-            const typ = node.typ;
-            this.dataTypes[id] = typ;
-            switch (typ) {
-                case exports.EnumToken.StyleSheetNodeType:
-                    this.flags[id] = exports.EnumAstNodeStatus.HasChildren;
-                    break;
-                case exports.EnumToken.RuleNodeType:
-                case exports.EnumToken.KeyframesRuleNodeType:
-                    this.name[id] = this.internString((node.sel ?? node.nam ?? ""));
-                    this.flags[id] = exports.EnumAstNodeStatus.HasChildren;
-                    if (node.raw != null) {
-                        this.raw[id] = node.raw;
-                    }
-                    if (node.optimized != null) {
-                        this.optimized[id] = node.optimized;
-                    }
-                    if (typeof node.val == "string") {
-                        this.stringValue[id] = this.internString(node.val);
-                    }
-                    break;
-                case exports.EnumToken.AtRuleNodeType:
-                case exports.EnumToken.KeyframesAtRuleNodeType:
-                    this.name[id] = this.internString(node.nam ?? "");
-                    this.stringValue[id] = this.internString(node.val ?? "");
-                    this.flags[id] = node.chi != null ? exports.EnumAstNodeStatus.HasChildren : 0;
-                    break;
-                case exports.EnumToken.CommentNodeType:
-                case exports.EnumToken.CDOCOMMNodeType:
-                    this.stringValue[id] = this.internString(node.val ?? "");
-                    this.flags[id] = 0;
-                    break;
-                default:
-                    // declaration like nodes
-                    this.name[id] = this.internString(node.nam ?? "");
-                    this.flags[id] = exports.EnumAstNodeStatus.HasValues;
-                    if (Array.isArray(node.val)) {
-                        for (const token of node.val) {
-                            this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
-                        }
-                    }
-                    break;
-            }
-            if (Array.isArray(node.tokens)) {
-                for (const token of node.tokens) {
-                    this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
-                }
-            }
-            // inlined: this.setState(id, node.state)
-            this.flags[id] = (this.flags[id] & ~exports.EnumAstNodeStatus.StateMask) | ((node.state ?? 0) & exports.EnumAstNodeStatus.StateMask);
-            const loc = node.loc;
-            if (loc != null) {
-                this.setLocation(id, loc.srcId, loc.sta, loc.end);
-            }
-            const errors = node.errors;
-            if (errors != null && errors.length > 0) {
-                this.errors.set(id, errors);
-            }
-            if (Array.isArray(node.chi) && this.flags[id] & exports.EnumAstNodeStatus.HasChildren) {
-                for (const child of node.chi) {
-                    // inlined: this.appendChildren(id, typeof child == "number" ? child : this.fromObject(child))
-                    this.appendChildList(id, [(typeof child == "number" ? child : this.fromObject(child))]);
-                }
-            }
-            return id;
-        }
-        /**
-         * create a token from a plain object
-         * @param token
-         */
-        tokenFromObject(token) {
-            const id = this.allocate();
-            const typ = token.typ;
-            const plain = token;
-            this.dataTypes[id] = typ;
-            if (typeof plain.nam == "string") {
-                this.name[id] = this.internString(plain.nam);
-            }
-            if (typeof plain.unit == "string") {
-                this.unit[id] = this.internString(plain.unit);
-            }
-            if (typeof plain.kin == "number") {
-                // inlined: this.setColorType(id, plain.kin)
-                this.colorType[id] = plain.kin;
-            }
-            if (typeof plain.cal == "string") {
-                this.unit[id] = this.internString(plain.cal);
-            }
-            if (typeof plain.attr == "string") {
-                this.unit[id] = this.internString(plain.attr);
-            }
-            if (typ == exports.EnumToken.BinaryExpressionTokenType) {
-                this.numericValue[id] = plain.op;
-            }
-            else if (typ == exports.EnumToken.UnaryExpressionTokenType) {
-                this.numericValue[id] = plain.sign;
-                // inlined: this.appendChildren(id, typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))
-                this.appendChildList(id, [(typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))]);
-            }
-            else if (typ == exports.EnumToken.FractionTokenType) {
-                // inlined: this.appendChildren(id, typeof plain.l == "number" ? plain.l : this.fromObject(plain.l), typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))
-                this.appendChildList(id, [(typeof plain.l == "number" ? plain.l : this.fromObject(plain.l)), (typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))]);
-            }
-            else if (typeof plain.val == "string") {
-                if (numericTokenTypes.has(typ)) {
-                    // numeric value as a string
-                    this.numericValue[id] = +plain.val;
-                }
-                else {
-                    this.stringValue[id] = this.internString(plain.val);
-                }
-            }
-            else if (typeof plain.val == "number") {
-                this.numericValue[id] = plain.val;
-            }
-            else if (plain.val != null && typeof plain.val == "object" && !Array.isArray(plain.val)) {
-                // fraction value
-                this.setFraction(id, this.fromObject(plain.val));
-            }
-            else if (Array.isArray(plain.val) && typ != exports.EnumToken.MediaRangeQueryTokenType) {
-                // declaration like tokens
-                for (const child of plain.val) {
-                    this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
-                }
-            }
-            if (Array.isArray(plain.chi)) {
-                for (const child of plain.chi) {
-                    this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
-                }
-            }
-            if (structuredTokenTypes.has(typ)) {
-                const fields = [
-                    ["l", exports.TokenField.L],
-                    ["r", exports.TokenField.R],
-                    ["op", exports.TokenField.Op],
-                    ["op1", exports.TokenField.Op],
-                    ["op2", exports.TokenField.Op2],
-                    ["val", exports.TokenField.Val],
-                ];
-                for (const [key, field] of fields) {
-                    if (plain[key] == null) {
-                        continue;
-                    }
-                    const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
-                    const fieldTokens = [];
-                    for (const value of values) {
-                        fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
-                    }
-                    // inlined: this.setField(id, field, ...fieldTokens)
-                    this.setTokenList(this.fieldList(id, field), fieldTokens);
-                }
-            }
-            const loc = plain.loc;
-            if (loc != null) {
-                this.setLocation(id, loc.srcId, loc.sta, loc.end);
-            }
-            return id;
-        }
-        /**
          * Object view of a node or a token: an {@link AstArenaNode}. The view does not copy the node: its properties read
          * and write the arena. Importing the view in this arena ({@link fromObject}, visitor results, setters of the
          * views) is a noop
@@ -29439,6 +29333,7 @@
         toObject(id) {
             return new AstArenaNode(this, id);
         }
+        // ---- plain objects -----------------------------------------------------------------
         /**
          * export a node or a token as a plain object (deep copy). `JSON.stringify()` of an {@link AstArenaNode} returns
          * the plain object
@@ -29578,7 +29473,6 @@
             }
             return token;
         }
-        // ---- clone / import ----------------------------------------------------------------
         /**
          * clone a node or a token. tokens are always cloned deeply
          * @param id
@@ -29670,7 +29564,6 @@
             }
             return target;
         }
-        // ---- tree helpers --------------------------------------------------------------
         /**
          * index of a child in its parent's children (or tokens) list
          * @param id
@@ -29700,6 +29593,7 @@
                 this.setPreviousSibling(reference, node);
             }
         }
+        // ---- clone / import ----------------------------------------------------------------
         /**
          * insert nodes after a child
          * @param reference
@@ -29728,6 +29622,7 @@
                 this.insertBefore(first, ...nodes);
             }
         }
+        // ---- tree helpers --------------------------------------------------------------
         /**
          * replace a child with other nodes. the node itself may be part of the replacement
          * @param id
@@ -29784,7 +29679,6 @@
         setValueString(id, val) {
             this.stringValue[id] = this.internString(val);
         }
-        // ---- nesting rules expansion ---------------------------------------------------------------
         /**
          * Expand the css nesting rules of a stylesheet, a rule or an at-rule. The tree is expanded in place: the nested rules
          * are moved into the parent of their rule and their selectors are resolved
@@ -29824,6 +29718,216 @@
                 node = next;
             }
             return ast;
+        }
+        /**
+         * replace the nesting selector '&' of a selector
+         * @internal
+         * @param input
+         * @param replace
+         */
+        replaceCompound(input, replace) {
+            const tokens = parseString(this, input);
+            // inlined: this.walkValues(tokens)
+            for (const t of new ValueWalker(this, tokens)) {
+                if (this.dataTypes[t] == exports.EnumToken.NestingSelectorTokenType) {
+                    if (tokens.length == 2) {
+                        this.resetToken(t, exports.EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.strings[this.stringValue[t]], replace));
+                        continue;
+                    }
+                    const rule = splitRule(replace);
+                    this.resetToken(t, exports.EnumToken.LiteralTokenType, rule.length > 1 ? ":is(" + replace + ")" : replace);
+                }
+            }
+            return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
+        }
+        /**
+         * @inheritDoc
+         */
+        exportProperties() {
+            return {
+                ...super.exportProperties(),
+                kind: "AstArena",
+                sources: this.sources,
+                raw: this.raw,
+                optimized: this.optimized,
+            };
+        }
+        /**
+         * @inheritDoc
+         */
+        importProperties(properties, transferables) {
+            super.importProperties(properties, transferables);
+            this.sources = properties.sources?.slice() ?? [];
+            this.raw = properties.raw?.slice() ?? [];
+            this.optimized = properties.optimized?.slice() ?? [];
+        }
+        // ---- nesting rules expansion ---------------------------------------------------------------
+        /**
+         * create an ast node from a plain object
+         * @param node
+         */
+        nodeFromObject(node) {
+            const id = this.allocate();
+            const typ = node.typ;
+            this.dataTypes[id] = typ;
+            switch (typ) {
+                case exports.EnumToken.StyleSheetNodeType:
+                    this.flags[id] = exports.EnumAstNodeStatus.HasChildren;
+                    break;
+                case exports.EnumToken.RuleNodeType:
+                case exports.EnumToken.KeyframesRuleNodeType:
+                    this.name[id] = this.internString((node.sel ?? node.nam ?? ""));
+                    this.flags[id] = exports.EnumAstNodeStatus.HasChildren;
+                    if (node.raw != null) {
+                        this.raw[id] = node.raw;
+                    }
+                    if (node.optimized != null) {
+                        this.optimized[id] = node.optimized;
+                    }
+                    if (typeof node.val == "string") {
+                        this.stringValue[id] = this.internString(node.val);
+                    }
+                    break;
+                case exports.EnumToken.AtRuleNodeType:
+                case exports.EnumToken.KeyframesAtRuleNodeType:
+                    this.name[id] = this.internString(node.nam ?? "");
+                    this.stringValue[id] = this.internString(node.val ?? "");
+                    this.flags[id] = node.chi != null ? exports.EnumAstNodeStatus.HasChildren : 0;
+                    break;
+                case exports.EnumToken.CommentNodeType:
+                case exports.EnumToken.CDOCOMMNodeType:
+                    this.stringValue[id] = this.internString(node.val ?? "");
+                    this.flags[id] = 0;
+                    break;
+                default:
+                    // declaration like nodes
+                    this.name[id] = this.internString(node.nam ?? "");
+                    this.flags[id] = exports.EnumAstNodeStatus.HasValues;
+                    if (Array.isArray(node.val)) {
+                        for (const token of node.val) {
+                            this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
+                        }
+                    }
+                    break;
+            }
+            if (Array.isArray(node.tokens)) {
+                for (const token of node.tokens) {
+                    this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
+                }
+            }
+            // inlined: this.setState(id, node.state)
+            this.flags[id] =
+                (this.flags[id] & ~exports.EnumAstNodeStatus.StateMask) | ((node.state ?? 0) & exports.EnumAstNodeStatus.StateMask);
+            const loc = node.loc;
+            if (loc != null) {
+                this.setLocation(id, loc.srcId, loc.sta, loc.end);
+            }
+            const errors = node.errors;
+            if (errors != null && errors.length > 0) {
+                this.errors.set(id, errors);
+            }
+            if (Array.isArray(node.chi) && this.flags[id] & exports.EnumAstNodeStatus.HasChildren) {
+                for (const child of node.chi) {
+                    // inlined: this.appendChildren(id, typeof child == "number" ? child : this.fromObject(child))
+                    this.appendChildList(id, [typeof child == "number" ? child : this.fromObject(child)]);
+                }
+            }
+            return id;
+        }
+        /**
+         * create a token from a plain object
+         * @param token
+         */
+        tokenFromObject(token) {
+            const id = this.allocate();
+            const typ = token.typ;
+            const plain = token;
+            this.dataTypes[id] = typ;
+            if (typeof plain.nam == "string") {
+                this.name[id] = this.internString(plain.nam);
+            }
+            if (typeof plain.unit == "string") {
+                this.unit[id] = this.internString(plain.unit);
+            }
+            if (typeof plain.kin == "number") {
+                // inlined: this.setColorType(id, plain.kin)
+                this.colorType[id] = plain.kin;
+            }
+            if (typeof plain.cal == "string") {
+                this.unit[id] = this.internString(plain.cal);
+            }
+            if (typeof plain.attr == "string") {
+                this.unit[id] = this.internString(plain.attr);
+            }
+            if (typ == exports.EnumToken.BinaryExpressionTokenType) {
+                this.numericValue[id] = plain.op;
+            }
+            else if (typ == exports.EnumToken.UnaryExpressionTokenType) {
+                this.numericValue[id] = plain.sign;
+                // inlined: this.appendChildren(id, typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))
+                this.appendChildList(id, [typeof plain.val == "number" ? plain.val : this.fromObject(plain.val)]);
+            }
+            else if (typ == exports.EnumToken.FractionTokenType) {
+                // inlined: this.appendChildren(id, typeof plain.l == "number" ? plain.l : this.fromObject(plain.l), typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))
+                this.appendChildList(id, [
+                    typeof plain.l == "number" ? plain.l : this.fromObject(plain.l),
+                    typeof plain.r == "number" ? plain.r : this.fromObject(plain.r),
+                ]);
+            }
+            else if (typeof plain.val == "string") {
+                if (numericTokenTypes.has(typ)) {
+                    // numeric value as a string
+                    this.numericValue[id] = +plain.val;
+                }
+                else {
+                    this.stringValue[id] = this.internString(plain.val);
+                }
+            }
+            else if (typeof plain.val == "number") {
+                this.numericValue[id] = plain.val;
+            }
+            else if (plain.val != null && typeof plain.val == "object" && !Array.isArray(plain.val)) {
+                // fraction value
+                this.setFraction(id, this.fromObject(plain.val));
+            }
+            else if (Array.isArray(plain.val) && typ != exports.EnumToken.MediaRangeQueryTokenType) {
+                // declaration like tokens
+                for (const child of plain.val) {
+                    this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
+                }
+            }
+            if (Array.isArray(plain.chi)) {
+                for (const child of plain.chi) {
+                    this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
+                }
+            }
+            if (structuredTokenTypes.has(typ)) {
+                const fields = [
+                    ["l", exports.TokenField.L],
+                    ["r", exports.TokenField.R],
+                    ["op", exports.TokenField.Op],
+                    ["op1", exports.TokenField.Op],
+                    ["op2", exports.TokenField.Op2],
+                    ["val", exports.TokenField.Val],
+                ];
+                for (const [key, field] of fields) {
+                    if (plain[key] == null) {
+                        continue;
+                    }
+                    const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
+                    const fieldTokens = [];
+                    for (const value of values) {
+                        fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
+                    }
+                    // inlined: this.setField(id, field, ...fieldTokens)
+                    this.setTokenList(this.fieldList(id, field), fieldTokens);
+                }
+            }
+            const loc = plain.loc;
+            if (loc != null) {
+                this.setLocation(id, loc.srcId, loc.sta, loc.end);
+            }
+            return id;
         }
         /**
          * expand a rule: the nested rules and at-rules are moved out of the rule, into `parent` before `before`.
@@ -29914,7 +30018,9 @@
                                 }
                             }
                             const selectors = [];
-                            const selector = rules.length > 1 ? ":is(" + rules.map((a) => a.join("")).join(",") + ")" : rules[0].join("");
+                            const selector = rules.length > 1
+                                ? ":is(" + rules.map((a) => a.join("")).join(",") + ")"
+                                : rules[0].join("");
                             if (childSelectorCompound.length > 0) {
                                 if (childSelectorCompound.length == 1) {
                                     selectors.push(this.replaceCompound("& " + childSelectorCompound[0].trim(), selector));
@@ -30023,11 +30129,11 @@
                                             const rName = this.strings[this.name[r]];
                                             if (atRuleName === "media" && rName === "media") {
                                                 // inlined: this.setValueString(r, val + " and " + rVal)
-                                                this.stringValue[r] = this.internString((val + " and " + rVal));
+                                                this.stringValue[r] = this.internString(val + " and " + rVal);
                                             }
                                             else if (atRuleName == "layer" && rName == "layer") {
                                                 // inlined: this.setValueString(r, val + "." + rVal)
-                                                this.stringValue[r] = this.internString((val + "." + rVal));
+                                                this.stringValue[r] = this.internString(val + "." + rVal);
                                             }
                                         }
                                         place(r);
@@ -30049,27 +30155,6 @@
             if (this.firstChild[ast] == 0) {
                 this.detach(ast);
             }
-        }
-        /**
-         * replace the nesting selector '&' of a selector
-         * @internal
-         * @param input
-         * @param replace
-         */
-        replaceCompound(input, replace) {
-            const tokens = parseString(this, input);
-            // inlined: this.walkValues(tokens)
-            for (const t of new ValueWalker(this, tokens)) {
-                if (this.dataTypes[t] == exports.EnumToken.NestingSelectorTokenType) {
-                    if (tokens.length == 2) {
-                        this.resetToken(t, exports.EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.strings[this.stringValue[t]], replace));
-                        continue;
-                    }
-                    const rule = splitRule(replace);
-                    this.resetToken(t, exports.EnumToken.LiteralTokenType, rule.length > 1 ? ":is(" + replace + ")" : replace);
-                }
-            }
-            return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
         }
         replaceCompoundLiteral(selector, replace) {
             const tokens = [""];
@@ -30147,13 +30232,11 @@
 
     /**
      * Return the color space of the color
+     * @param arena
      * @param color
      * @returns
      */
     function getColorSpace(arena, color) {
-        // if (!("chi" in color)) {
-        //     return "rgb";
-        // }
         let name;
         const components = getColorComponents(arena, color);
         if (components == null || components.length < 3) {
@@ -30793,6 +30876,21 @@
     function isLength(arena, dimension) {
         return arena.unit[dimension] != 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
     }
+    // export function isResolution(arena: AstArena, dimension: Token): boolean {
+    //     return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+    // }
+    //
+    // export function isAngle(arena: AstArena, dimension: Token): boolean {
+    //     return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+    // }
+    //
+    // export function isTime(arena: AstArena, dimension: Token): boolean {
+    //     return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+    // }
+    //
+    // export function isFrequency(arena: AstArena, dimension: Token): boolean {
+    //     return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+    // }
     /**
      * Reduce color stops
      * @param arena
@@ -31016,17 +31114,7 @@
         }
         return children;
     }
-    const colorKeywords = [
-        "in",
-        "hue",
-        "from",
-        "alpha",
-        "none",
-        "shorter",
-        "longer",
-        "increasing",
-        "decreasing",
-    ];
+    const colorKeywords = ["in", "hue", "from", "alpha", "none", "shorter", "longer", "increasing", "decreasing"];
     function isColor(arena, token, errors) {
         const typ = arena.dataTypes[token];
         if (typ == exports.EnumToken.WildCardFunctionTokenType) {
@@ -31318,7 +31406,7 @@
             if (arena.colorType[token] == exports.ColorType.NONE && arena.stringValue[token] != 0) {
                 // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
                 // @ts-expect-error
-                arena.colorType[token] = (exports.ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
+                arena.colorType[token] = exports.ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0;
             }
             if (arena.firstToken[token] != 0) {
                 const tk = arena.findToken(token, (arena, t) => arena.dataTypes[t] !== exports.EnumToken.WhitespaceTokenType &&
@@ -31471,6 +31559,97 @@
     function isHash(name) {
         return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
     }
+    // export const isNumber = memoize(function (name: string): boolean {
+    //     let codepoint: number = name.charCodeAt(0) as number;
+    //     let i: number = 0;
+    //     const j: number = name.length;
+    //
+    //     if (j == 1 && !isDigit(codepoint)) {
+    //         return false;
+    //     }
+    //
+    //     // '+' '-'
+    //     if ([0x2b, 0x2d].includes(codepoint)) {
+    //         i++;
+    //     }
+    //
+    //     // consume digits
+    //     while (i < j) {
+    //         codepoint = name.charCodeAt(i) as number;
+    //
+    //         if (isDigit(codepoint)) {
+    //             i++;
+    //             continue;
+    //         }
+    //
+    //         // '.' 'E' 'e'
+    //         if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+    //             break;
+    //         }
+    //
+    //         return false;
+    //     }
+    //
+    //     // '.'
+    //     if (codepoint == 0x2e) {
+    //         if (!isDigit(name.charCodeAt(++i) as number)) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     while (i < j) {
+    //         codepoint = name.charCodeAt(i) as number;
+    //
+    //         if (isDigit(codepoint)) {
+    //             i++;
+    //             continue;
+    //         }
+    //
+    //         // 'E' 'e'
+    //         if (codepoint == 0x45 || codepoint == 0x65) {
+    //             i++;
+    //             break;
+    //         }
+    //
+    //         return false;
+    //     }
+    //
+    //     // 'E' 'e'
+    //     if (codepoint == 0x45 || codepoint == 0x65) {
+    //         // if (i == j) {
+    //         //     return false;
+    //         // }
+    //
+    //         codepoint = name.charCodeAt(i + 1) as number;
+    //
+    //         // '+' '-'
+    //         // if ([0x2b, 0x2d].includes(codepoint)) {
+    //         //     i++;
+    //         // }
+    //
+    //         codepoint = name.charCodeAt(i + 1) as number;
+    //
+    //         if (!isDigit(codepoint)) {
+    //             return false;
+    //         }
+    //     }
+    //
+    //     // while (++i < j) {
+    //     //     codepoint = name.charCodeAt(i) as number;
+    //
+    //     //     if (!isDigit(codepoint)) {
+    //     //         return false;
+    //     //     }
+    //     // }
+    //
+    //     return true;
+    // }) as (name: string) => boolean;
+    // export function isPercentage(name: string) {
+    //     return name.endsWith("%") && isNumber(name.slice(0, -1));
+    // }
+    // export function isFlex(arena: AstArena, dimension: Token): boolean {
+    //     return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
+    // }
     function parseDimension(name) {
         let index = name.length;
         while (index--) {
@@ -31589,6 +31768,7 @@
     // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
     /**
      * Convert length to px
+     * @param arena
      * @param value
      * @returns
      */
@@ -31755,6 +31935,25 @@
             }
             return hash >>> 0;
         }
+        get(str, start, end) {
+            const hash = RangeTable.hash(str, start, end);
+            if (hash == -1) {
+                return undefined;
+            }
+            const index = this.slots[this.find(str, start, end, hash)];
+            return index == -1 ? undefined : this.values[index];
+        }
+        set(key, value) {
+            const slot = this.find(key, 0, key.length, RangeTable.hash(key, 0, key.length));
+            if (this.slots[slot] == -1) {
+                this.slots[slot] = this.keys.length;
+                this.keys.push(key);
+                this.values.push(value);
+            }
+            else {
+                this.values[this.slots[slot]] = value;
+            }
+        }
         /**
          * slot of a key. the table is never full: it is sized for the static tables of the tokenizer
          * @param str
@@ -31789,25 +31988,6 @@
                     }
                 }
                 slot = (slot + 1) & mask;
-            }
-        }
-        get(str, start, end) {
-            const hash = RangeTable.hash(str, start, end);
-            if (hash == -1) {
-                return undefined;
-            }
-            const index = this.slots[this.find(str, start, end, hash)];
-            return index == -1 ? undefined : this.values[index];
-        }
-        set(key, value) {
-            const slot = this.find(key, 0, key.length, RangeTable.hash(key, 0, key.length));
-            if (this.slots[slot] == -1) {
-                this.slots[slot] = this.keys.length;
-                this.keys.push(key);
-                this.values.push(value);
-            }
-            else {
-                this.values[this.slots[slot]] = value;
             }
         }
     }
@@ -32067,11 +32247,6 @@
          */
         typ = null;
         /**
-         * the identifier read by the last call of consumeIdentToken() has non ascii characters: they may be new lines
-         * (U+2028, U+2029)
-         */
-        identNonAscii = false;
-        /**
          * token kind
          */
         kin = null;
@@ -32116,23 +32291,15 @@
          */
         source = null;
         /**
+         * the identifier read by the last call of consumeIdentToken() has non ascii characters: they may be new lines
+         * (U+2028, U+2029)
+         */
+        identNonAscii = false;
+        /**
          * token hint
          */
         hint = null;
         state = null;
-        /**
-         * id of the source file being tokenized
-         */
-        get sourceId() {
-            return this.parseInfo.source.id;
-        }
-        /**
-         * length of the css input. 0 when the input is a stream
-         */
-        get streamLength() {
-            const stream = this.parseInfo.stream;
-            return typeof stream == "string" ? stream.length : 0;
-        }
         constructor(parseInfo, input = null) {
             this.parseInfo = parseInfo;
             this.input = input;
@@ -32147,6 +32314,19 @@
                         currentPosition: 0,
                     }
                     : parseInfo;
+        }
+        /**
+         * id of the source file being tokenized
+         */
+        get sourceId() {
+            return this.parseInfo.source.id;
+        }
+        /**
+         * length of the css input. 0 when the input is a stream
+         */
+        get streamLength() {
+            const stream = this.parseInfo.stream;
+            return typeof stream == "string" ? stream.length : 0;
         }
         /**
          *
@@ -32612,7 +32792,8 @@
             return this.makeToken(parseInfo, 
             // parseInfo.position < parseInfo.currentPosition
             // inlined: this.peekCharCode(parseInfo)
-            (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode || !this.isURLToken(parseInfo)
+            (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode ||
+                !this.isURLToken(parseInfo)
                 ? exports.EnumToken.BadUrlTokenType
                 : exports.EnumToken.UrlTokenTokenType);
         }
@@ -32620,7 +32801,8 @@
          *
          * @param parseInfo
          * @param hint
-         * @param options
+         * @param slice
+         * @param decodeSegments
          * @returns
          */
         makeToken(parseInfo, hint, slice, decodeSegments) {
@@ -32819,14 +33001,6 @@
                 }
             }
             return true;
-        }
-        /**
-         * Get the current character code without creating a string
-         * @param parseInfo
-         * @returns charCode at current position
-         */
-        peekCharCode(parseInfo) {
-            return parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
         }
         /**
          *
@@ -33092,7 +33266,8 @@
                         charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
                         // match at-rule
                         // inlined: this.peekCharCode(parseInfo)
-                        if (charCode == 45 /* TokenMap.MINUS */ || isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
+                        if (charCode == 45 /* TokenMap.MINUS */ ||
+                            isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
                             // consume '@'
                             parseInfo.position = parseInfo.currentPosition;
                             tokensCount = this.consumeIdentToken(parseInfo);
@@ -34168,7 +34343,8 @@
         }
         if (
         // inlined: arena.typeOf(name)
-        (arena.dataTypes[name] !== exports.EnumToken.IdenTokenType && arena.dataTypes[name] !== exports.EnumToken.DashedIdenTokenType) ||
+        (arena.dataTypes[name] !== exports.EnumToken.IdenTokenType &&
+            arena.dataTypes[name] !== exports.EnumToken.DashedIdenTokenType) ||
             arena.dataTypes[tokens[i]] !== exports.EnumToken.ColonTokenType) {
             if (tokens.length > 0) {
                 arena.spanLocation(name, name, tokens[tokens.length - 1]);
@@ -34283,7 +34459,8 @@
             switch (arena.dataTypes[token]) {
                 case exports.EnumToken.Literal:
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (arena.strings[arena.stringValue[token]] === "/" && arena.dataTypes[stack.at(-1)] == exports.EnumToken.MathFunctionTokenDefType) {
+                    if (arena.strings[arena.stringValue[token]] === "/" &&
+                        arena.dataTypes[stack.at(-1)] == exports.EnumToken.MathFunctionTokenDefType) {
                         arena.dataTypes[token] = exports.EnumToken.Div;
                     }
                     else if (arena.strings[arena.stringValue[token]] === "-" &&
@@ -34372,7 +34549,8 @@
                         }
                         else if (arena.dataTypes[tokens[index]] === exports.EnumToken.UrlFunctionTokenType) {
                             const url = arena.findToken(tokens[index], (arena, t) => arena.dataTypes[t] === exports.EnumToken.StringTokenType);
-                            if (url != null && /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
+                            if (url != null &&
+                                /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
                                 arena.dataTypes[url] = exports.EnumToken.UrlTokenTokenType;
                                 // inlined: arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1))
                                 arena.stringValue[url] = arena.internString(arena.strings[arena.stringValue[url]].slice(1, -1));
@@ -34396,7 +34574,10 @@
                                     message: `invalid color`,
                                     node: tokens[index],
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[index]))
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[index]))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[index])),
+                                    ],
                                 });
                             }
                         }
@@ -34458,7 +34639,10 @@
                 message: "unbalanced token",
                 node: stack[stack.length - 1],
                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
-                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
+                location: [
+                    options.source.file,
+                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1])),
+                ],
             });
             if (tokens.length > 0) {
                 arena.spanLocation(name, name, tokens[tokens.length - 1]);
@@ -34489,12 +34673,15 @@
             if (tokens.length > 0) {
                 arena.spanLocation(name, name, tokens[tokens.length - 1]);
             }
-            return createDeclarationNode(arena, name, tokens, hasImportantFlag ? exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ImportantDeclaration : exports.EnumAstNodeStatus.Unknown, result?.errors ?? null);
+            return createDeclarationNode(arena, name, tokens, hasImportantFlag
+                ? exports.EnumAstNodeStatus.Unknown | exports.EnumAstNodeStatus.ImportantDeclaration
+                : exports.EnumAstNodeStatus.Unknown, result?.errors ?? null);
         }
         if (equalsIgnoreCase("composes", nam)) {
             let index = -1;
             for (let i = 0; i < tokens.length; i++) {
-                if (arena.dataTypes[tokens[i]] === exports.EnumToken.IdenTokenType && equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
+                if (arena.dataTypes[tokens[i]] === exports.EnumToken.IdenTokenType &&
+                    equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
                     index = i;
                     break;
                 }
@@ -36176,6 +36363,7 @@
             type == exports.EnumToken.BadUrlTokenType ||
             type == exports.EnumToken.BadStringTokenType);
     }
+    // new Map([["keyframes", EnumToken.KeyframesAtRuleNodeType]]);
     let keyNameCounter = 0;
     /**
      * Short-scoped name generator.
@@ -36738,7 +36926,10 @@
                             action: "drop",
                             message: "invalid block",
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
-                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
+                            location: [
+                                options.source.file,
+                                ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0])),
+                            ],
                         });
                     }
                 }
@@ -36774,7 +36965,7 @@
             if (node != null) {
                 if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
                     stack.push(node);
-                    context = node;
+                    // context = node;
                 }
             }
         }
@@ -37040,7 +37231,10 @@
                 if (nodeType == exports.EnumToken.CssVariableImportTokenType) {
                     throw new Error("css variable import not supported by parseSync() or transformSync(). use parse() or transform() instead.\nat " +
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(node as AstNode))
-                        [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))].join(":"));
+                        [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(node)),
+                        ].join(":"));
                 }
                 // @ts-ignore
                 if (nodeType == exports.EnumToken.CssVariableDeclarationMapTokenType) {
@@ -37190,10 +37384,7 @@
                                                         }
                                                     }
                                                     mapping[key] = [
-                                                        ...new Set([
-                                                            ...mapping[key].split(" "),
-                                                            ...composedNames,
-                                                        ]),
+                                                        ...new Set([...mapping[key].split(" "), ...composedNames]),
                                                     ].join(" ");
                                                 }
                                             }
@@ -37281,7 +37472,7 @@
                                     }
                                 }
                                 // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
-                                arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
+                                arena.stringValue[token] = arena.internString(str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1));
                             }
                         }
                     }
@@ -37324,7 +37515,8 @@
                                         moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                             ? arena.strings[arena.stringValue[value]]
                                             : moduleSettings.generateScopedName(arena.strings[arena.stringValue[value]], moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
+                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] =
+                                        arena.strings[arena.stringValue[value]];
                                 }
                                 // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
                                 arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
@@ -37339,7 +37531,9 @@
                         }
                         else if ((arena.dataTypes[value] == exports.EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                             arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                            arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                            arena.replaceToken(value, ...arena
+                                .tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID])
+                                .map((token) => arena.clone(token, true)));
                         }
                     }
                 }
@@ -37386,14 +37580,16 @@
                         }
                         return null;
                     })) {
-                        if (arena.dataTypes[value] == exports.EnumToken.HashTokenType || arena.dataTypes[value] == exports.EnumToken.ClassSelectorTokenType) {
+                        if (arena.dataTypes[value] == exports.EnumToken.HashTokenType ||
+                            arena.dataTypes[value] == exports.EnumToken.ClassSelectorTokenType) {
                             hasIdOrClass = true;
                         }
                         if (processed.has(value)) {
                             continue;
                         }
                         processed.add(value);
-                        if (arena.dataTypes[value] == exports.EnumToken.PseudoClassTokenType || arena.dataTypes[value] == exports.EnumToken.PseudoElementTokenType) ;
+                        if (arena.dataTypes[value] == exports.EnumToken.PseudoClassTokenType ||
+                            arena.dataTypes[value] == exports.EnumToken.PseudoElementTokenType) ;
                         else if (arena.dataTypes[value] == exports.EnumToken.PseudoClassFuncTokenType) ;
                         else {
                             if (global.has(value)) {
@@ -37413,7 +37609,7 @@
                                     revMapping[mapping[val]] = val;
                                 }
                                 // inlined: arena.setStr(value, "." + mapping[val])
-                                arena.stringValue[value] = arena.internString(("." + mapping[val]));
+                                arena.stringValue[value] = arena.internString("." + mapping[val]);
                             }
                         }
                     }
@@ -37425,7 +37621,9 @@
                         }
                     }
                     // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
-                    arena.name[node] = arena.internString(arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
+                    arena.name[node] = arena.internString(arena
+                        .tokens(node)
+                        .reduce((acc, token) => acc + renderValue(arena, token), ""));
                 }
                 else if (nodeType == exports.EnumToken.AtRuleNodeType || nodeType == exports.EnumToken.KeyframesAtRuleNodeType) {
                     const val = arena.strings[arena.name[node]].toLowerCase();
@@ -37448,7 +37646,8 @@
                                                 moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
                                                 ? getKeyName(val, moduleSettings.naming)
                                                 : val);
-                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
+                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] =
+                                        arena.strings[arena.stringValue[value]];
                                 }
                                 // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
                                 arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
@@ -37639,7 +37838,10 @@
                             action: "drop",
                             message: "invalid block",
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[0]))
-                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0]))],
+                            location: [
+                                options.source.file,
+                                ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[0])),
+                            ],
                         });
                     }
                 }
@@ -37669,7 +37871,6 @@
                 parensMatch = 0;
                 curlyBracketMatch = 0;
             }
-            // }
         }
         if (tokens.length > 0) {
             node = parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
@@ -38248,10 +38449,7 @@
                                                         }
                                                     }
                                                     mapping[key] = [
-                                                        ...new Set([
-                                                            ...mapping[key].split(" "),
-                                                            ...composedNames,
-                                                        ]),
+                                                        ...new Set([...mapping[key].split(" "), ...composedNames]),
                                                     ].join(" ");
                                                 }
                                             }
@@ -38347,7 +38545,7 @@
                                     }
                                 }
                                 // inlined: arena.setStr(token, str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1))
-                                arena.stringValue[token] = arena.internString((str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1)));
+                                arena.stringValue[token] = arena.internString(str.charAt(0) + renderTokens(arena, tokens) + str.charAt(str.length - 1));
                             }
                         }
                     }
@@ -38389,9 +38587,11 @@
                                     const result = moduleSettings.scoped & exports.ModuleScopeEnumOptions.Global
                                         ? arena.strings[arena.stringValue[value]]
                                         : moduleSettings.generateScopedName(arena.strings[arena.stringValue[value]], moduleSettings.filePath, moduleSettings.pattern, moduleSettings.hashLength);
-                                    // @ts-expect-error
-                                    mapping[arena.strings[arena.stringValue[value]]] = result instanceof Promise ? await result : result;
-                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
+                                    mapping[arena.strings[arena.stringValue[value]]] =
+                                        // @ts-expect-error
+                                        result instanceof Promise ? await result : result;
+                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] =
+                                        arena.strings[arena.stringValue[value]];
                                 }
                                 // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
                                 arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
@@ -38406,7 +38606,9 @@
                         }
                         else if ((arena.dataTypes[value] == exports.EnumToken.IdenTokenType || isIdentColor(arena, value)) &&
                             arena.strings[arena.stringValue[value]] in importedCssVariables) {
-                            arena.replaceToken(value, ...arena.tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID]).map((token) => arena.clone(token, true)));
+                            arena.replaceToken(value, ...arena
+                                .tokens(importedCssVariables[arena.strings[arena.stringValue[value]]][ARENAID])
+                                .map((token) => arena.clone(token, true)));
                         }
                     }
                 }
@@ -38453,14 +38655,16 @@
                         }
                         return null;
                     })) {
-                        if (arena.dataTypes[value] == exports.EnumToken.HashTokenType || arena.dataTypes[value] == exports.EnumToken.ClassSelectorTokenType) {
+                        if (arena.dataTypes[value] == exports.EnumToken.HashTokenType ||
+                            arena.dataTypes[value] == exports.EnumToken.ClassSelectorTokenType) {
                             hasIdOrClass = true;
                         }
                         if (processed.has(value)) {
                             continue;
                         }
                         processed.add(value);
-                        if (arena.dataTypes[value] == exports.EnumToken.PseudoClassTokenType || arena.dataTypes[value] == exports.EnumToken.PseudoElementTokenType) ;
+                        if (arena.dataTypes[value] == exports.EnumToken.PseudoClassTokenType ||
+                            arena.dataTypes[value] == exports.EnumToken.PseudoElementTokenType) ;
                         else if (arena.dataTypes[value] == exports.EnumToken.PseudoClassFuncTokenType) ;
                         else {
                             if (global.has(value)) {
@@ -38482,7 +38686,7 @@
                                     revMapping[mapping[val]] = val;
                                 }
                                 // inlined: arena.setStr(value, "." + mapping[val])
-                                arena.stringValue[value] = arena.internString(("." + mapping[val]));
+                                arena.stringValue[value] = arena.internString("." + mapping[val]);
                             }
                         }
                     }
@@ -38494,7 +38698,9 @@
                         }
                     }
                     // inlined: arena.setSelector(node as AstNode, arena.tokens(node as AstNode).reduce((acc: string, token: Token) => acc + renderValue(arena, token), ""))
-                    arena.name[node] = arena.internString(arena.tokens(node).reduce((acc, token) => acc + renderValue(arena, token), ""));
+                    arena.name[node] = arena.internString(arena
+                        .tokens(node)
+                        .reduce((acc, token) => acc + renderValue(arena, token), ""));
                 }
                 else if (nodeType == exports.EnumToken.AtRuleNodeType || nodeType == exports.EnumToken.KeyframesAtRuleNodeType) {
                     const val = arena.strings[arena.name[node]].toLowerCase();
@@ -38519,7 +38725,8 @@
                                                 moduleSettings.naming & exports.ModuleCaseTransformEnum.CamelCaseOnly
                                                 ? getKeyName(val, moduleSettings.naming)
                                                 : val);
-                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] = arena.strings[arena.stringValue[value]];
+                                    revMapping[mapping[arena.strings[arena.stringValue[value]]]] =
+                                        arena.strings[arena.stringValue[value]];
                                 }
                                 // inlined: arena.setStr(value, mapping[arena.strings[arena.stringValue[value]]])
                                 arena.stringValue[value] = arena.internString(mapping[arena.strings[arena.stringValue[value]]]);
@@ -38565,7 +38772,8 @@
             if (matchCount > 0) {
                 let k = tokens.length;
                 while (k-- > 0 &&
-                    (dataTypes[tokens[k]] === exports.EnumToken.WhitespaceTokenType || dataTypes[tokens[k]] === exports.EnumToken.CommentTokenType))
+                    (dataTypes[tokens[k]] === exports.EnumToken.WhitespaceTokenType ||
+                        dataTypes[tokens[k]] === exports.EnumToken.CommentTokenType))
                     ;
                 if (dataTypes[tokens[k]] == exports.EnumToken.SemiColonTokenType) {
                     matchCount = 0;
@@ -38587,7 +38795,10 @@
                     message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                     node: tokens[i],
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
-                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
+                    location: [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i])),
+                    ],
                 });
                 // the misplaced CDO / CDC comment is rendered as an empty string
                 arena.dataTypes[tokens[i]] = exports.EnumToken.BadCdoTokenType;
@@ -38613,14 +38824,19 @@
             i = 0;
         }
         for (; i < tokens.length; i++) {
-            if (arena.dataTypes[tokens[i]] == exports.EnumToken.CommentTokenType || arena.dataTypes[tokens[i]] == exports.EnumToken.CDOCOMMTokenType) {
-                if (arena.dataTypes[tokens[i]] == exports.EnumToken.CDOCOMMTokenType && contextType != exports.EnumToken.StyleSheetNodeType) {
+            if (arena.dataTypes[tokens[i]] == exports.EnumToken.CommentTokenType ||
+                arena.dataTypes[tokens[i]] == exports.EnumToken.CDOCOMMTokenType) {
+                if (arena.dataTypes[tokens[i]] == exports.EnumToken.CDOCOMMTokenType &&
+                    contextType != exports.EnumToken.StyleSheetNodeType) {
                     errors.push({
                         action: "drop",
                         message: `CDOCOMM not allowed here ${JSON.stringify(tokens[i], null, 1)}`,
                         node: tokens[i],
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[i]))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i]))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(tokens[i])),
+                        ],
                     });
                     // the misplaced CDO / CDC comment is rendered as an empty string
                     arena.dataTypes[tokens[i]] = exports.EnumToken.BadCdoTokenType;
@@ -38703,7 +38919,10 @@
                         action: "drop",
                         node,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(node)),
+                        ],
                     });
                 }
                 else if (options.lenient || arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType) {
@@ -38723,6 +38942,7 @@
         return null;
     }
     /**
+     * @param arena
      * @param stream
      * @param context
      * @param options
@@ -38776,7 +38996,8 @@
                 atRuleErrors = [errors[errors.length - 1]];
                 return createAtRuleNode(arena, atRule, exports.EnumToken.AtRuleNodeType, atRuleTokens, atRuleState, atRuleErrors, atRuleEnd, renderTokens(arena, trimArray(arena, stream), options), !!parseAsBlock);
             }
-            const token = stream.find((t) => arena.dataTypes[t] != exports.EnumToken.WhitespaceTokenType && arena.dataTypes[t] === exports.EnumToken.CommentTokenType) ?? null;
+            const token = stream.find((t) => arena.dataTypes[t] != exports.EnumToken.WhitespaceTokenType &&
+                arena.dataTypes[t] === exports.EnumToken.CommentTokenType) ?? null;
             if (token != null) {
                 errors.push({
                     action: "drop",
@@ -38815,14 +39036,18 @@
                     arena.dataTypes[stream[0]] !== exports.EnumToken.WhitespaceTokenType ||
                     arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
                     // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
-                    options.sourcesMap?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)?.content.charCodeAt(arena.getSpanStart(stream[0])) !==
-                        0x20) {
+                    options.sourcesMap
+                        ?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)
+                        ?.content.charCodeAt(arena.getSpanStart(stream[0])) !== 0x20) {
                     success = false;
                     errors.push({
                         action: "drop",
                         node: stream[0] ?? atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[0] ?? atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[0] ?? atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[0] ?? atRule)),
+                        ],
                         message: "expecting <space>",
                     });
                 }
@@ -38832,7 +39057,10 @@
                         action: "drop",
                         node: stream[1] ?? atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule)),
+                        ],
                         message: "expecting <string>",
                     });
                 }
@@ -38842,7 +39070,10 @@
                         action: "drop",
                         node: stream[1] ?? atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[1] ?? atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[1] ?? atRule)),
+                        ],
                         message: "expecting double-quoted string",
                     });
                 }
@@ -38887,19 +39118,26 @@
                         action: "drop",
                         node: atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                        ],
                         message: `unexpected at-rule ${nam}`,
                     });
                 }
                 if (success) {
                     for (const token of stream) {
-                        if (arena.dataTypes[token] !== exports.EnumToken.CommentTokenType && arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType) {
+                        if (arena.dataTypes[token] !== exports.EnumToken.CommentTokenType &&
+                            arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType) {
                             success = false;
                             errors.push({
                                 action: "drop",
                                 node: token,
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(token))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(token)),
+                                ],
                                 message: `unexpected token`,
                             });
                         }
@@ -38942,7 +39180,8 @@
             }
             case "keyframes": {
                 const tokens = trimArray(arena, stream.slice(1));
-                const filtered = stream.filter((t) => arena.dataTypes[t] !== exports.EnumToken.WhitespaceTokenType && arena.dataTypes[t] !== exports.EnumToken.CommentTokenType);
+                const filtered = stream.filter((t) => arena.dataTypes[t] !== exports.EnumToken.WhitespaceTokenType &&
+                    arena.dataTypes[t] !== exports.EnumToken.CommentTokenType);
                 if (filtered.length != 1 ||
                     (arena.dataTypes[filtered[0]] !== exports.EnumToken.IdenTokenType &&
                         arena.dataTypes[filtered[0]] !== exports.EnumToken.StringTokenType &&
@@ -38951,7 +39190,10 @@
                         action: "drop",
                         node: atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                        ],
                         message: `expected <keyframe-name>`,
                     });
                     success = false;
@@ -38971,9 +39213,6 @@
                         errors.push(error);
                     }
                 }
-                // else {
-                //     parseUrlToken(stream);
-                // }
                 const valid = blockAllowed === parseAsBlock && result.success;
                 if (valid) {
                     let start = 0;
@@ -39006,7 +39245,8 @@
                     (arena.dataTypes[t] === exports.EnumToken.CommentTokenType ||
                         (arena.dataTypes[t] === exports.EnumToken.WhitespaceTokenType &&
                             arena.dataTypes[stream[index + 1]] === exports.EnumToken.CommentTokenType &&
-                            (stream.length < index + 3 || arena.dataTypes[stream[index + 2]] === exports.EnumToken.WhitespaceTokenType))
+                            (stream.length < index + 3 ||
+                                arena.dataTypes[stream[index + 2]] === exports.EnumToken.WhitespaceTokenType))
                         ? ""
                         : renderValue(arena, t, options)), ""), !!parseAsBlock);
             }
@@ -39019,7 +39259,10 @@
                 }
                 else {
                     if (arena.dataTypes[stream[0]] == exports.EnumToken.UrlFunctionTokenType &&
-                        arena.tokens(stream[0]).some((t) => arena.dataTypes[t] == exports.EnumToken.StringTokenType || arena.dataTypes[t] == exports.EnumToken.UrlTokenTokenType)) {
+                        arena
+                            .tokens(stream[0])
+                            .some((t) => arena.dataTypes[t] == exports.EnumToken.StringTokenType ||
+                            arena.dataTypes[t] == exports.EnumToken.UrlTokenTokenType)) {
                         stream.splice(0, 1, ...arena.tokens(stream[0]));
                     }
                 }
@@ -39031,7 +39274,8 @@
                     (arena.dataTypes[t] === exports.EnumToken.CommentTokenType ||
                         (arena.dataTypes[t] === exports.EnumToken.WhitespaceTokenType &&
                             arena.dataTypes[stream[index + 1]] === exports.EnumToken.CommentTokenType &&
-                            (stream.length < index + 3 || arena.dataTypes[stream[index + 2]] === exports.EnumToken.WhitespaceTokenType))
+                            (stream.length < index + 3 ||
+                                arena.dataTypes[stream[index + 2]] === exports.EnumToken.WhitespaceTokenType))
                         ? ""
                         : renderValue(arena, t, options)), ""), false);
             }
@@ -39078,7 +39322,10 @@
                             action: "drop",
                             node: atRule,
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                            location: [
+                                options.source.file,
+                                ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                            ],
                             message: "at-rule @when is required before @else block",
                         });
                     }
@@ -39088,7 +39335,10 @@
                             action: "drop",
                             node: atRule,
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                            location: [
+                                options.source.file,
+                                ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                            ],
                             message: "at-rule @else block is defined after last @else block",
                         });
                     }
@@ -39125,7 +39375,10 @@
                         action: "drop",
                         node: range[0] ?? atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(range[0] ?? atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range[0] ?? atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(range[0] ?? atRule)),
+                        ],
                         message: "expected '(' at start of @scope block",
                     });
                     success = false;
@@ -39136,7 +39389,10 @@
                         action: "drop",
                         node: range.at(-1) ?? atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule)),
+                        ],
                         message: "expected ')' at end of @scope block",
                     });
                     success = false;
@@ -39163,7 +39419,10 @@
                                 action: "drop",
                                 node: stream[index],
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index])),
+                                ],
                                 message: "expected 'to' at end of @scope block",
                             });
                             success = false;
@@ -39177,7 +39436,10 @@
                                     action: "drop",
                                     node: stream[index],
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index])),
+                                    ],
                                     message: "expected 'to' at end of @scope block",
                                 });
                                 success = false;
@@ -39192,7 +39454,10 @@
                                         action: "drop",
                                         node: range.at(-1) ?? atRule,
                                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(range.at(-1) ?? atRule))
-                                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule))],
+                                        location: [
+                                            options.source.file,
+                                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(range.at(-1) ?? atRule)),
+                                        ],
                                         message: "expected ')' at end of @scope block",
                                     });
                                     success = false;
@@ -39246,7 +39511,10 @@
                         action: "drop",
                         node: atRule,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                        ],
                         message: "node is allowed only in @page rule",
                     });
                 }
@@ -39260,7 +39528,10 @@
                                 action: "drop",
                                 node: stream[i],
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                                ],
                                 message: "expected whitespace or comment",
                             });
                             break;
@@ -39361,7 +39632,8 @@
                         let i = 0;
                         const stack = [];
                         for (; i < stream.length; i++) {
-                            if (arena.dataTypes[stream[i]] === exports.EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+                            if (arena.dataTypes[stream[i]] === exports.EnumToken.StartParensTokenType ||
+                                tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
                                 stack.push(stream[i]);
                                 continue;
                             }
@@ -39391,7 +39663,10 @@
                                 action: "drop",
                                 message: "mixin rule cannot be a nested group rule or rule style body",
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                                ],
                             });
                         }
                         break;
@@ -39412,7 +39687,10 @@
                                 action: "drop",
                                 message: "contents rule cannot be used outside mixin rule",
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                                ],
                             });
                         }
                         break;
@@ -39425,9 +39703,12 @@
                                     atRuleState |= exports.EnumAstNodeStatus.Disallowed;
                                     atRuleErrors.push({
                                         action: "drop",
-                                        message: "at-rule layeris not allowed inside mixin rule",
+                                        message: "at-rule layer is not allowed inside mixin rule",
                                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
-                                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule))],
+                                        location: [
+                                            options.source.file,
+                                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(atRule)),
+                                        ],
                                     });
                                     break;
                                 }
@@ -39484,6 +39765,7 @@
     }
     /**
      * Parse css string and return an array of tokens
+     * @param arena
      * @param src
      * @param options
      *    - parseColor: parse identifiers as colors
@@ -39535,6 +39817,7 @@
     }
     /**
      * Parse function tokens in a token array
+     * @param arena
      * @param tokens
      * @param options
      *    - parseColor: parse identifiers as colors
@@ -39573,8 +39856,8 @@
                     // merge the colon and the function name into a pseudo class function
                     const previous = tokens[i - 1];
                     // inlined: arena.setStr(previous, (arena.dataTypes[previous] === EnumToken.ColonTokenType ? ":" : "::") + arena.strings[arena.stringValue[t]])
-                    arena.stringValue[previous] = arena.internString(((arena.dataTypes[previous] === exports.EnumToken.ColonTokenType ? ":" : "::") +
-                        arena.strings[arena.stringValue[t]]));
+                    arena.stringValue[previous] = arena.internString((arena.dataTypes[previous] === exports.EnumToken.ColonTokenType ? ":" : "::") +
+                        arena.strings[arena.stringValue[t]]);
                     arena.dataTypes[previous] = exports.EnumToken.PseudoClassFunctionTokenDefType;
                     // inlined: arena.setSpanEnd(previous, arena.getSpanEnd(t))
                     arena.setSpan(previous, arena.getSourceId(previous), arena.getSpanStart(previous), arena.getSpanEnd(t));
@@ -39600,7 +39883,10 @@
                         message: `Unbalanced token ')'`,
                         node,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(node)),
+                        ],
                     });
                     // return [];
                     continue;
@@ -39631,7 +39917,10 @@
                         message: `Unbalanced token ']'`,
                         node,
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(node))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(node))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(node)),
+                        ],
                     });
                     continue;
                 }
@@ -39735,7 +40024,7 @@
                     }
                     else if (next == exports.EnumToken.IdenTokenType) {
                         // inlined: arena.setStr(tokens[i + 1], ":" + arena.strings[arena.stringValue[tokens[i + 1]]])
-                        arena.stringValue[tokens[i + 1]] = arena.internString((":" + arena.strings[arena.stringValue[tokens[i + 1]]]));
+                        arena.stringValue[tokens[i + 1]] = arena.internString(":" + arena.strings[arena.stringValue[tokens[i + 1]]]);
                         arena.dataTypes[tokens[i + 1]] = exports.EnumToken.PseudoClassTokenType;
                     }
                     if (next == exports.EnumToken.FunctionTokenType || next == exports.EnumToken.IdenTokenType) {
@@ -39907,6 +40196,7 @@
     }
     /**
      * Render the ast tree
+     * @param arena
      * @param data
      * @param options
      * @param mapping
@@ -40229,7 +40519,7 @@
     exports.parseSync = parseSync;
     exports.parseSyntax = parseSyntax;
     exports.render = render;
-    exports.renderToken = renderValue;
+    exports.renderValue = renderValue;
     exports.resolve = resolve;
     exports.transform = transform;
     exports.transformSync = transformSync;

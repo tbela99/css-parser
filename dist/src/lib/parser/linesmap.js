@@ -57,19 +57,6 @@ class LineMap {
         }
         return result;
     }
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts() {
-        return this.lineStarts;
-    }
-    /**
-     * add line start
-     */
-    addLineStart(lineStart) {
-        this.lineStarts.push(lineStart);
-    }
 }
 
 export { LineMap };

@@ -15,7 +15,10 @@ import type { Matrix } from "./type.d.ts";
 import { transformFunctions } from "../../syntax/constants.ts";
 import { length2Px } from "../../syntax/syntax.ts";
 
-export function compute(arena: AstArena, transformLists: Token[]): {
+export function compute(
+    arena: AstArena,
+    transformLists: Token[],
+): {
     matrix: Token;
     cumulative: Token[];
     minified: Token[];
@@ -37,7 +40,10 @@ export function compute(arena: AstArena, transformLists: Token[]): {
             case "rotateZ":
             case "rotate3d":
                 for (const child of arena.tokens(transform)) {
-                    if (arena.dataTypes[child] == EnumToken.WhitespaceTokenType || arena.dataTypes[child] == EnumToken.CommaTokenType) {
+                    if (
+                        arena.dataTypes[child] == EnumToken.WhitespaceTokenType ||
+                        arena.dataTypes[child] == EnumToken.CommaTokenType
+                    ) {
                         continue;
                     }
 
@@ -52,12 +58,12 @@ export function compute(arena: AstArena, transformLists: Token[]): {
                     }
                 }
 
-                // break;
+            // break;
         }
     }
 
     for (const transformList of splitTransformList(arena, transformLists)) {
-        mat = (computeMatrix(arena, transformList, identity()) as Matrix);
+        mat = computeMatrix(arena, transformList, identity()) as Matrix;
 
         if (mat == null) {
             return null;
@@ -76,7 +82,10 @@ export function compute(arena: AstArena, transformLists: Token[]): {
 
     if (cumulative.length > 0) {
         for (let i = 0; i < cumulative.length; i++) {
-            if (arena.dataTypes[cumulative[i]] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[cumulative[i]]] == "none") {
+            if (
+                arena.dataTypes[cumulative[i]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[cumulative[i]]] == "none"
+            ) {
                 cumulative.splice(i--, 1);
             }
         }
@@ -86,13 +95,11 @@ export function compute(arena: AstArena, transformLists: Token[]): {
         }
     }
 
-    const result = {
+    return {
         matrix: serialize(arena, toZero(matrix) as Matrix),
         cumulative,
         minified: minify(arena, matrix) ?? [serialized],
     };
-
-    return result;
 }
 
 export function computeMatrix(arena: AstArena, transformList: Token[], matrixVar: Matrix): Matrix | null {
@@ -117,7 +124,7 @@ export function computeMatrix(arena: AstArena, transformList: Token[], matrixVar
                 {
                     values.length = 0;
 
-                    const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                    const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                     const valCount: number =
                         arena.strings[arena.stringValue[transformList[i]]] == "translate3d"
                             ? 3
@@ -172,7 +179,7 @@ export function computeMatrix(arena: AstArena, transformList: Token[], matrixVar
                     let values: Token[] = [];
                     let valuesCount: number = arena.strings[arena.stringValue[transformList[i]]] == "rotate3d" ? 4 : 1;
 
-                    for (const child of (stripCommaToken(arena, arena.tokens(transformList[i])) ?? [])) {
+                    for (const child of stripCommaToken(arena, arena.tokens(transformList[i])) ?? []) {
                         values.push(child);
 
                         if (arena.strings[arena.stringValue[transformList[i]]] == "rotateX") {
@@ -225,12 +232,15 @@ export function computeMatrix(arena: AstArena, transformList: Token[], matrixVar
 
                     let child: Token;
 
-                    const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                    const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
 
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
 
-                        if (arena.dataTypes[child] != EnumToken.NumberTokenType && arena.dataTypes[child] != EnumToken.PercentageTokenType) {
+                        if (
+                            arena.dataTypes[child] != EnumToken.NumberTokenType &&
+                            arena.dataTypes[child] != EnumToken.PercentageTokenType
+                        ) {
                             return null;
                         }
 
@@ -321,11 +331,17 @@ export function computeMatrix(arena: AstArena, transformList: Token[], matrixVar
                     for (let k = 0; k < arena.tokens(transformList[i]).length; k++) {
                         child = arena.tokens(transformList[i])[k];
 
-                        if (arena.dataTypes[child] == EnumToken.CommentTokenType || arena.dataTypes[child] == EnumToken.WhitespaceTokenType) {
+                        if (
+                            arena.dataTypes[child] == EnumToken.CommentTokenType ||
+                            arena.dataTypes[child] == EnumToken.WhitespaceTokenType
+                        ) {
                             continue;
                         }
 
-                        if (arena.dataTypes[child] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[child]] == "none") {
+                        if (
+                            arena.dataTypes[child] == EnumToken.IdenTokenType &&
+                            arena.strings[arena.stringValue[child]] == "none"
+                        ) {
                             values.push("none");
                             continue;
                         }

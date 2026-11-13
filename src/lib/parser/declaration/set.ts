@@ -190,26 +190,35 @@ export class PropertySet {
             const values = [...declarations.values()];
 
             if (this.isShortHand()) {
-                const val: Token[] = arena.tokens(values[0]).reduce((acc: Token[], curr: Token) => {
-                    if (
-                        arena.dataTypes[curr] != EnumToken.WhitespaceTokenType &&
-                        arena.dataTypes[curr] != EnumToken.CommentTokenType
-                    ) {
-                        acc.push(curr);
-                    }
-
-                    return acc;
-                }, <Token[]>[]);
-
-                // inlined: arena.setTokens(values[0], ...val.reduce((acc: Token[], curr: Token) => { if (acc.length > 0) { acc.push(arena.createToken(EnumToken.WhitespaceTokenType)); } acc.push(curr); return acc; }, <Token[]>[]))
-                arena.setTokenList(values[0], val.reduce((acc: Token[], curr: Token) => {
-                        if (acc.length > 0) {
-                            acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
+                const val: Token[] = arena.tokens(values[0]).reduce(
+                    (acc: Token[], curr: Token) => {
+                        if (
+                            arena.dataTypes[curr] != EnumToken.WhitespaceTokenType &&
+                            arena.dataTypes[curr] != EnumToken.CommentTokenType
+                        ) {
+                            acc.push(curr);
                         }
 
-                        acc.push(curr);
                         return acc;
-                    }, <Token[]>[]));
+                    },
+                    <Token[]>[],
+                );
+
+                // inlined: arena.setTokens(values[0], ...val.reduce((acc: Token[], curr: Token) => { if (acc.length > 0) { acc.push(arena.createToken(EnumToken.WhitespaceTokenType)); } acc.push(curr); return acc; }, <Token[]>[]))
+                arena.setTokenList(
+                    values[0],
+                    val.reduce(
+                        (acc: Token[], curr: Token) => {
+                            if (acc.length > 0) {
+                                acc.push(arena.createToken(EnumToken.WhitespaceTokenType));
+                            }
+
+                            acc.push(curr);
+                            return acc;
+                        },
+                        <Token[]>[],
+                    ),
+                );
             }
 
             return values[Symbol.iterator]();
@@ -242,28 +251,31 @@ export class PropertySet {
                 arena.createDeclaration(
                     EnumToken.DeclarationNodeType,
                     this.config.shorthand,
-                    values.reduce((acc: Token[], curr: Token[]) => {
-                        if (curr.length > 1) {
-                            const k: number = curr.length * 2 - 1;
-                            let i: number = 1;
+                    values.reduce(
+                        (acc: Token[], curr: Token[]) => {
+                            if (curr.length > 1) {
+                                const k: number = curr.length * 2 - 1;
+                                let i: number = 1;
 
-                            while (i < k) {
-                                curr.splice(i, 0, arena.createToken(EnumToken.WhitespaceTokenType));
-                                i += 2;
+                                while (i < k) {
+                                    curr.splice(i, 0, arena.createToken(EnumToken.WhitespaceTokenType));
+                                    i += 2;
+                                }
                             }
-                        }
 
-                        if (acc.length > 0) {
-                            acc.push(arena.createToken(EnumToken.LiteralTokenType, this.config.separator.val));
-                        }
+                            if (acc.length > 0) {
+                                acc.push(arena.createToken(EnumToken.LiteralTokenType, this.config.separator.val));
+                            }
 
-                        for (const token of curr) {
-                            // tokens are shared with the original declarations
-                            acc.push(arena.parents[token] != 0 ? arena.clone(token, true) : token);
-                        }
+                            for (const token of curr) {
+                                // tokens are shared with the original declarations
+                                acc.push(arena.parents[token] != 0 ? arena.clone(token, true) : token);
+                            }
 
-                        return acc;
-                    }, <Token[]>[]),
+                            return acc;
+                        },
+                        <Token[]>[],
+                    ),
                     null,
                     null,
                 ),

@@ -10,6 +10,11 @@ import { color2srgbvalues } from './color.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
 import { hsl2srgbvalues } from './rgb.js';
 
+/**
+ *
+ * @param arena
+ * @param token
+ */
 function rgb2cmykToken(arena, token) {
     let components = rgb2srgbvalues(arena, token);
     if (components == null || components.length < 3) {

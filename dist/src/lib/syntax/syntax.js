@@ -625,6 +625,21 @@ function isFlexUnit(unit) {
 function isLength(arena, dimension) {
     return arena.unit[dimension] != 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
 }
+// export function isResolution(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isAngle(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isTime(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+// }
+//
+// export function isFrequency(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+// }
 /**
  * Reduce color stops
  * @param arena
@@ -848,17 +863,7 @@ function filterChildren(arena, token, types) {
     }
     return children;
 }
-const colorKeywords = [
-    "in",
-    "hue",
-    "from",
-    "alpha",
-    "none",
-    "shorter",
-    "longer",
-    "increasing",
-    "decreasing",
-];
+const colorKeywords = ["in", "hue", "from", "alpha", "none", "shorter", "longer", "increasing", "decreasing"];
 function isColor(arena, token, errors) {
     const typ = arena.dataTypes[token];
     if (typ == EnumToken.WildCardFunctionTokenType) {
@@ -1150,7 +1155,7 @@ function parseColor(arena, token) {
         if (arena.colorType[token] == ColorType.NONE && arena.stringValue[token] != 0) {
             // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
-            arena.colorType[token] = (ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
+            arena.colorType[token] = ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0;
         }
         if (arena.firstToken[token] != 0) {
             const tk = arena.findToken(token, (arena, t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
@@ -1303,6 +1308,97 @@ function isPseudo(name) {
 function isHash(name) {
     return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
 }
+// export const isNumber = memoize(function (name: string): boolean {
+//     let codepoint: number = name.charCodeAt(0) as number;
+//     let i: number = 0;
+//     const j: number = name.length;
+//
+//     if (j == 1 && !isDigit(codepoint)) {
+//         return false;
+//     }
+//
+//     // '+' '-'
+//     if ([0x2b, 0x2d].includes(codepoint)) {
+//         i++;
+//     }
+//
+//     // consume digits
+//     while (i < j) {
+//         codepoint = name.charCodeAt(i) as number;
+//
+//         if (isDigit(codepoint)) {
+//             i++;
+//             continue;
+//         }
+//
+//         // '.' 'E' 'e'
+//         if (codepoint == 0x2e || codepoint == 0x45 || codepoint == 0x65) {
+//             break;
+//         }
+//
+//         return false;
+//     }
+//
+//     // '.'
+//     if (codepoint == 0x2e) {
+//         if (!isDigit(name.charCodeAt(++i) as number)) {
+//             return false;
+//         }
+//     }
+//
+//     while (i < j) {
+//         codepoint = name.charCodeAt(i) as number;
+//
+//         if (isDigit(codepoint)) {
+//             i++;
+//             continue;
+//         }
+//
+//         // 'E' 'e'
+//         if (codepoint == 0x45 || codepoint == 0x65) {
+//             i++;
+//             break;
+//         }
+//
+//         return false;
+//     }
+//
+//     // 'E' 'e'
+//     if (codepoint == 0x45 || codepoint == 0x65) {
+//         // if (i == j) {
+//         //     return false;
+//         // }
+//
+//         codepoint = name.charCodeAt(i + 1) as number;
+//
+//         // '+' '-'
+//         // if ([0x2b, 0x2d].includes(codepoint)) {
+//         //     i++;
+//         // }
+//
+//         codepoint = name.charCodeAt(i + 1) as number;
+//
+//         if (!isDigit(codepoint)) {
+//             return false;
+//         }
+//     }
+//
+//     // while (++i < j) {
+//     //     codepoint = name.charCodeAt(i) as number;
+//
+//     //     if (!isDigit(codepoint)) {
+//     //         return false;
+//     //     }
+//     // }
+//
+//     return true;
+// }) as (name: string) => boolean;
+// export function isPercentage(name: string) {
+//     return name.endsWith("%") && isNumber(name.slice(0, -1));
+// }
+// export function isFlex(arena: AstArena, dimension: Token): boolean {
+//     return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
+// }
 function parseDimension(name) {
     let index = name.length;
     while (index--) {
@@ -1421,6 +1517,7 @@ function isWhiteSpace(codepoint) {
 // https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units#absolute_length_units
 /**
  * Convert length to px
+ * @param arena
  * @param value
  * @returns
  */

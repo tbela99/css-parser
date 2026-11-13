@@ -35,7 +35,8 @@ function compute(arena, transformLists) {
             case "rotateZ":
             case "rotate3d":
                 for (const child of arena.tokens(transform)) {
-                    if (arena.dataTypes[child] == EnumToken.WhitespaceTokenType || arena.dataTypes[child] == EnumToken.CommaTokenType) {
+                    if (arena.dataTypes[child] == EnumToken.WhitespaceTokenType ||
+                        arena.dataTypes[child] == EnumToken.CommaTokenType) {
                         continue;
                     }
                     if ((arena.dataTypes[child] != EnumToken.AngleTokenType &&
@@ -63,7 +64,8 @@ function compute(arena, transformLists) {
     const serialized = serialize(arena, matrix);
     if (cumulative.length > 0) {
         for (let i = 0; i < cumulative.length; i++) {
-            if (arena.dataTypes[cumulative[i]] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[cumulative[i]]] == "none") {
+            if (arena.dataTypes[cumulative[i]] == EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[cumulative[i]]] == "none") {
                 cumulative.splice(i--, 1);
             }
         }
@@ -71,12 +73,11 @@ function compute(arena, transformLists) {
             cumulative.push(arena.createToken(EnumToken.IdenTokenType, "none"));
         }
     }
-    const result = {
+    return {
         matrix: serialize(arena, toZero(matrix)),
         cumulative,
         minified: minify(arena, matrix) ?? [serialized],
     };
-    return result;
 }
 function computeMatrix(arena, transformList, matrixVar) {
     let values = [];
@@ -95,7 +96,7 @@ function computeMatrix(arena, transformList, matrixVar) {
             case "translate3d":
                 {
                     values.length = 0;
-                    const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                    const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                     const valCount = arena.strings[arena.stringValue[transformList[i]]] == "translate3d"
                         ? 3
                         : arena.strings[arena.stringValue[transformList[i]]] == "translate"
@@ -144,7 +145,7 @@ function computeMatrix(arena, transformList, matrixVar) {
                     let angle;
                     let values = [];
                     let valuesCount = arena.strings[arena.stringValue[transformList[i]]] == "rotate3d" ? 4 : 1;
-                    for (const child of (stripCommaToken(arena, arena.tokens(transformList[i])) ?? [])) {
+                    for (const child of stripCommaToken(arena, arena.tokens(transformList[i])) ?? []) {
                         values.push(child);
                         if (arena.strings[arena.stringValue[transformList[i]]] == "rotateX") {
                             x = 1;
@@ -186,10 +187,11 @@ function computeMatrix(arena, transformList, matrixVar) {
                 {
                     values.length = 0;
                     let child;
-                    const children = (stripCommaToken(arena, arena.tokens(transformList[i])) ?? []);
+                    const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
-                        if (arena.dataTypes[child] != EnumToken.NumberTokenType && arena.dataTypes[child] != EnumToken.PercentageTokenType) {
+                        if (arena.dataTypes[child] != EnumToken.NumberTokenType &&
+                            arena.dataTypes[child] != EnumToken.PercentageTokenType) {
                             return null;
                         }
                         values.push(getNumber(arena, child));
@@ -261,10 +263,12 @@ function computeMatrix(arena, transformList, matrixVar) {
                     let value;
                     for (let k = 0; k < arena.tokens(transformList[i]).length; k++) {
                         child = arena.tokens(transformList[i])[k];
-                        if (arena.dataTypes[child] == EnumToken.CommentTokenType || arena.dataTypes[child] == EnumToken.WhitespaceTokenType) {
+                        if (arena.dataTypes[child] == EnumToken.CommentTokenType ||
+                            arena.dataTypes[child] == EnumToken.WhitespaceTokenType) {
                             continue;
                         }
-                        if (arena.dataTypes[child] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[child]] == "none") {
+                        if (arena.dataTypes[child] == EnumToken.IdenTokenType &&
+                            arena.strings[arena.stringValue[child]] == "none") {
                             values.push("none");
                             continue;
                         }

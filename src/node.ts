@@ -14,20 +14,20 @@ import type {
     TransformResult,
     TransformSyncOptions,
 } from "./@types/index.d.ts";
-import { Readable } from "node:stream";
-import { createReadStream } from "node:fs";
-import { lstat, readFile } from "node:fs/promises";
-import { doParse, doParseSync } from "./lib/parser/parse.ts";
-import { doRender } from "./lib/printer/render.ts";
-import type { AstArena } from "./lib/ast/arena.ts";
-import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
-import { Tokenizer } from "./lib/parser/tokenize.ts";
-import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
-import { ResponseType } from "./types.ts";
-import { resolve as resolvePath } from "node:path";
-import { SourceFile } from "./lib/parser/source.ts";
-import { cwd } from "node:process";
-import { parseResult, validateSyncArguments } from "./utils/sync.ts";
+import {Readable} from "node:stream";
+import {createReadStream} from "node:fs";
+import {lstat, readFile} from "node:fs/promises";
+import {doParse, doParseSync} from "./lib/parser/parse.ts";
+import {doRender} from "./lib/printer/render.ts";
+import type {AstArena} from "./lib/ast/arena.ts";
+import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
+import {Tokenizer} from "./lib/parser/tokenize.ts";
+import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
+import {ResponseType} from "./types.ts";
+import {resolve as resolvePath} from "node:path";
+import {SourceFile} from "./lib/parser/source.ts";
+import {cwd} from "node:process";
+import {parseResult, validateSyncArguments} from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -47,7 +47,7 @@ export type {
 
 export { minify } from "./lib/ast/minify.ts";
 export { parseString } from "./lib/parser/parse.ts";
-export { renderValue as renderToken } from "./lib/printer/render.ts";
+export { renderValue } from "./lib/printer/render.ts";
 export { convertColor } from "./lib/syntax/color/color.ts";
 export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
 export { parseDeclarations } from "./lib/parser/parse.ts";
@@ -150,6 +150,7 @@ export async function load(
 
 /**
  * Render the ast tree
+ * @param arena
  * @param data
  * @param options
  * @param mapping

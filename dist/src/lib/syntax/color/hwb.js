@@ -22,7 +22,6 @@ function hsl2hwbToken(arena, token) {
     if (values == null) {
         return null;
     }
-    // console.error(new Error("hsl2hwbToken"));
     return hwbToken(arena, values);
 }
 function cmyk2hwbToken(arena, token) {

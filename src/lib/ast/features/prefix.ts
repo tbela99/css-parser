@@ -1,5 +1,5 @@
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import type { Token, AstNode, ParserOptions } from "../../../@types/index.d.ts";
+import type { AstNode, ParserOptions, Token } from "../../../@types/index.d.ts";
 import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
 import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
@@ -150,6 +150,11 @@ export class ComputePrefixFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param node
+     */
     run(arena: AstArena, node: AstNode): AstNode | null {
         if (
             arena.flags[node] &
@@ -162,10 +167,12 @@ export class ComputePrefixFeature {
 
         if (typ == EnumToken.RuleNodeType) {
             // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
-            arena.name[node] = arena.internString(replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce(
+            arena.name[node] = arena.internString(
+                replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce(
                     (acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""),
                     "",
-                ));
+                ),
+            );
 
             if (arena.firstToken[node] != 0) {
                 const tokens: Token[] = arena.tokens(node);
@@ -226,7 +233,10 @@ export class ComputePrefixFeature {
             if (hasPrefix) {
                 // inlined: arena.walkValues(node)
                 for (const value of new ValueWalker(arena, node)) {
-                    if (arena.dataTypes[value] == EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
+                    if (
+                        arena.dataTypes[value] == EnumToken.IdenTokenType ||
+                        funcLike.includes(arena.dataTypes[value])
+                    ) {
                         const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
 
                         if (match != null) {
@@ -266,8 +276,9 @@ export class ComputePrefixFeature {
 
     /**
      * Convert -webkit-linear-gradient to linear-gradient syntax
-     * @param tokens
      * @returns
+     * @param arena
+     * @param token
      */
     webkitLinearToLinearGradient(arena: AstArena, token: Token): void {
         let i: number;
@@ -375,9 +386,11 @@ export class ComputePrefixFeature {
         }
 
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+        arena.stringValue[token] = arena.internString(
+            equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
                 ? "repeating-linear-gradient"
-                : "linear-gradient"));
+                : "linear-gradient",
+        );
         arena.setTokenList(token, tokens);
     }
 
@@ -529,12 +542,16 @@ export class ComputePrefixFeature {
                         ...arena
                             .tokens(tokens[i])
                             .reverse()
-                            .map((t: Token): Token =>
-                                arena.dataTypes[t] === EnumToken.CommaTokenType
-                                    ? arena.createToken(EnumToken.WhitespaceTokenType)
-                                    : arena.dataTypes[t] === EnumToken.NumberTokenType
-                                      ? arena.createToken(EnumToken.PercentageTokenType, arena.numericValue[t] * 100)
-                                      : t,
+                            .map(
+                                (t: Token): Token =>
+                                    arena.dataTypes[t] === EnumToken.CommaTokenType
+                                        ? arena.createToken(EnumToken.WhitespaceTokenType)
+                                        : arena.dataTypes[t] === EnumToken.NumberTokenType
+                                          ? arena.createToken(
+                                                EnumToken.PercentageTokenType,
+                                                arena.numericValue[t] * 100,
+                                            )
+                                          : t,
                             ),
                     );
                     i += k;
@@ -566,7 +583,8 @@ export class ComputePrefixFeature {
 
         while (
             i < tokens.length &&
-            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)
+            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)
         ) {
             i++;
         }
@@ -611,7 +629,10 @@ export class ComputePrefixFeature {
                 form.push(tokens[i++]);
             }
 
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (
+                arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType
+            ) {
                 i++;
             }
 
@@ -635,7 +656,10 @@ export class ComputePrefixFeature {
                 form.push(tokens[i++]);
             }
 
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (
+                arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType
+            ) {
                 i++;
             }
 
@@ -682,9 +706,11 @@ export class ComputePrefixFeature {
         }
 
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+        arena.stringValue[token] = arena.internString(
+            equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
                 ? "repeating-radial-gradient"
-                : "radial-gradient"));
+                : "radial-gradient",
+        );
 
         for (const colorStop of colorStops) {
             tokens.push(colorStop);

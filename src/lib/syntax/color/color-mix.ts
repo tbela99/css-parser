@@ -1,24 +1,24 @@
-import type { Token } from "../../../@types/index.d.ts";
-import type { AstArena } from "../../ast/arena.ts";
-import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
-import { getNumber, minmax } from "./color.ts";
-import { hslvalues, srgb2lsrgbvalues, srgbvalues } from "./srgb.ts";
-import { getLCHComponents, srgb2lch, xyz2lchvalues } from "./lch.ts";
-import { srgb2hslvalues } from "./hsl.ts";
-import { hwbvalues, srgb2hwb } from "./hwb.ts";
-import { srgb2labvalues } from "./lab.ts";
-import { srgb2lp3values, srgb2p3values } from "./p3.ts";
-import { getColorComponents } from "./utils/components.ts";
-import { getOKLCHComponents, srgb2oklch } from "./oklch.ts";
-import { srgb2oklab } from "./oklab.ts";
-import { srgb2prophotorgbvalues } from "./prophotorgb.ts";
-import { srgb2xyz_d65 } from "./xyz.ts";
-import { XYZ_D65_to_D50, xyzd502lch } from "./xyzd50.ts";
-import { srgb2rec2020values } from "./rec2020.ts";
-import { isPolarColorspace, isRectangularOrthogonalColorspace } from "../syntax.ts";
-import { equalsIgnoreCase } from "../../parser/utils/text.ts";
-import { srgb2a98values } from "./a98rgb.ts";
-import { colorRange, epsilon } from "../constants.ts";
+import type {Token} from "../../../@types/index.d.ts";
+import type {AstArena} from "../../ast/arena.ts";
+import {ColorType, EnumAstNodeStatus, EnumToken} from "../../ast/types.ts";
+import {getNumber, minmax} from "./color.ts";
+import {hslvalues, srgb2lsrgbvalues, srgbvalues} from "./srgb.ts";
+import {getLCHComponents, srgb2lch, xyz2lchvalues} from "./lch.ts";
+import {srgb2hslvalues} from "./hsl.ts";
+import {hwbvalues, srgb2hwb} from "./hwb.ts";
+import {srgb2labvalues} from "./lab.ts";
+import {srgb2lp3values, srgb2p3values} from "./p3.ts";
+import {getColorComponents} from "./utils/components.ts";
+import {getOKLCHComponents, srgb2oklch} from "./oklch.ts";
+import {srgb2oklab} from "./oklab.ts";
+import {srgb2prophotorgbvalues} from "./prophotorgb.ts";
+import {srgb2xyz_d65} from "./xyz.ts";
+import {XYZ_D65_to_D50, xyzd502lch} from "./xyzd50.ts";
+import {srgb2rec2020values} from "./rec2020.ts";
+import {isPolarColorspace, isRectangularOrthogonalColorspace} from "../syntax.ts";
+import {equalsIgnoreCase} from "../../parser/utils/text.ts";
+import {srgb2a98values} from "./a98rgb.ts";
+import {colorRange} from "../constants.ts";
 
 function interpolateHue(interpolationMethod: string, h1: number, h2: number): number[] {
     switch (interpolationMethod) {
@@ -61,6 +61,7 @@ function interpolateHue(interpolationMethod: string, h1: number, h2: number): nu
 }
 /**
  * Compute color mix
+ * @param arena
  * @param args
  * @returns
  */
@@ -77,7 +78,6 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
     let colorSpace: string = "oklab";
     let hueInterpolationMethod: string = "shorter";
     let values: number[] | null = null;
-    // const colors: Token[] = [];
     const percentages: Array<number | null> = [];
     const srgbComponentValues: number[][] = [];
     const colorComponents: Token[][] = [];

@@ -21,7 +21,7 @@
  * @module
  * @internal
  */
-import type { Arena } from "./arena.ts";
+import type {Arena} from "./arena.ts";
 
 /**
  * flags of the header of a serialized token: the fields that follow the header. the header is never negative
@@ -61,7 +61,7 @@ const bits: Int32Array = new Int32Array(f64.buffer);
  * @param value
  */
 function normalize(value: number): number {
-    return value !== value ? NaN : value + 0;
+    return value !== value ? NaN : value;
 }
 
 /**
@@ -96,6 +96,14 @@ export class StructuralMemo<T> {
      */
     readonly values: Array<T | undefined> = [];
     /**
+     * number of distinct structures (lookups that inserted a new entry)
+     */
+    public size: number = 0;
+    /**
+     * number of lookups that found an existing entry
+     */
+    public hits: number = 0;
+    /**
      * key hash, key offset in the pool and key length of each slot (3 values per slot)
      */
     private slots: Int32Array = new Int32Array(64 * 3);
@@ -115,16 +123,6 @@ export class StructuralMemo<T> {
      * end of the key being looked up in the pool
      */
     private used: number = 0;
-
-    /**
-     * number of distinct structures (lookups that inserted a new entry)
-     */
-    public size: number = 0;
-
-    /**
-     * number of lookups that found an existing entry
-     */
-    public hits: number = 0;
 
     /**
      * @param numericEquality compare the numeric values with `==` semantics (`0` and `-0` are equal) and consider

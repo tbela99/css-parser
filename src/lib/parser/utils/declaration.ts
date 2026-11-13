@@ -1,4 +1,4 @@
-import type { AstAtRule, AstDeclaration, AstKeyframesRule, AstNode, Token, AstRule, AstStyleSheet, ErrorDescription, ParserOptions } from "../../../@types/index.d.ts";
+import type { AstDeclaration, AstNode, Token, ErrorDescription, ParserOptions } from "../../../@types/index.d.ts";
 import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { type AstArena, TokenField } from "../../ast/arena.ts";
 import {
@@ -12,7 +12,7 @@ import {
 } from "../../syntax/constants.ts";
 import { isColor, isWhiteSpace, parseColor, renamedStandardProperties } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxRule, ValidationSyntaxRule } from "../../validation/config.ts";
-import { createValidationContext, matchAllSyntaxes, matchDeclarationSyntax, trimArray } from "../../validation/match.ts";
+import { matchDeclarationSyntax, trimArray } from "../../validation/match.ts";
 import type { ValidationMatch } from "../../validation/types.d.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
@@ -164,7 +164,8 @@ export function parseDeclaration(
 
     if (
         // inlined: arena.typeOf(name)
-        (arena.dataTypes[name] !== EnumToken.IdenTokenType && arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) ||
+        (arena.dataTypes[name] !== EnumToken.IdenTokenType &&
+            arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) ||
         arena.dataTypes[tokens[i]] !== EnumToken.ColonTokenType
     ) {
         if (tokens.length > 0) {
@@ -307,7 +308,10 @@ export function parseDeclaration(
         switch (arena.dataTypes[token]) {
             case EnumToken.Literal:
                 // inlined: arena.typeOf(stack.at(-1))
-                if (arena.strings[arena.stringValue[token]] === "/" && arena.dataTypes[stack.at(-1) as number] == EnumToken.MathFunctionTokenDefType) {
+                if (
+                    arena.strings[arena.stringValue[token]] === "/" &&
+                    arena.dataTypes[stack.at(-1) as number] == EnumToken.MathFunctionTokenDefType
+                ) {
                     arena.dataTypes[token] = EnumToken.Div;
                 } else if (
                     arena.strings[arena.stringValue[token]] === "-" &&
@@ -378,60 +382,72 @@ export function parseDeclaration(
                                 [EnumToken.SemiColonTokenType],
                                 true,
                             ).reduce((acc: Token[], curr: Token[]) => {
-                            if (foundElse) {
-                                // else already found
-                                // ignore everything after else
-                                // if(media(any-pointer: fine): 30px; else: 44px; media(any-pointer: fine): 23px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                if (foundElse) {
+                                    // else already found
+                                    // ignore everything after else
+                                    // if(media(any-pointer: fine): 30px; else: 44px; media(any-pointer: fine): 23px); -> if(media(any-pointer: fine): 30px; else: 44px;);
+                                    return acc;
+                                }
+
+                                let index = -1;
+
+                                while (++index < curr.length) {
+                                    if (
+                                        arena.dataTypes[curr[index]] == EnumToken.IdenTokenType &&
+                                        equalsIgnoreCase("else", arena.strings[arena.stringValue[curr[index]]])
+                                    ) {
+                                        foundElse = true;
+                                    }
+
+                                    if (arena.dataTypes[curr[index]] === EnumToken.ColonTokenType) {
+                                        break;
+                                    }
+                                }
+
+                                if (foundElse && acc.length > 0) {
+                                    const condition: Token = arena.createToken(EnumToken.IfConditionTokenType);
+
+                                    // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
+                                    arena.setTokenList(
+                                        arena.fieldList(condition, TokenField.L),
+                                        trimArray(arena, curr.slice(0, index)),
+                                    );
+                                    // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, arena.typeOf(curr.at(-1)) === EnumToken.SemiColonTokenType ? curr.slice(index + 1, -1) : curr.slice(index + 1)))
+                                    arena.setTokenList(
+                                        arena.fieldList(condition, TokenField.R),
+                                        trimArray(
+                                            arena,
+                                            arena.dataTypes[curr.at(-1) as number] === EnumToken.SemiColonTokenType
+                                                ? curr.slice(index + 1, -1)
+                                                : curr.slice(index + 1),
+                                        ),
+                                    );
+
+                                    const ifElse: Token = arena.createToken(EnumToken.IfElseConditionTokenType);
+
+                                    // inlined: arena.setField(ifElse, TokenField.L, acc[acc.length - 1])
+                                    arena.setTokenList(arena.fieldList(ifElse, TokenField.L), [acc[acc.length - 1]]);
+                                    // inlined: arena.setField(ifElse, TokenField.R, condition)
+                                    arena.setTokenList(arena.fieldList(ifElse, TokenField.R), [condition]);
+                                    acc[acc.length - 1] = ifElse;
+                                } else {
+                                    const condition: Token = arena.createToken(EnumToken.IfConditionTokenType);
+
+                                    // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
+                                    arena.setTokenList(
+                                        arena.fieldList(condition, TokenField.L),
+                                        trimArray(arena, curr.slice(0, index)),
+                                    );
+                                    // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, curr.slice(index + 1)))
+                                    arena.setTokenList(
+                                        arena.fieldList(condition, TokenField.R),
+                                        trimArray(arena, curr.slice(index + 1)),
+                                    );
+                                    acc.push(condition);
+                                }
+
                                 return acc;
-                            }
-
-                            let index = -1;
-
-                            while (++index < curr.length) {
-                                if (
-                                    arena.dataTypes[curr[index]] == EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase("else", arena.strings[arena.stringValue[curr[index]]])
-                                ) {
-                                    foundElse = true;
-                                }
-
-                                if (arena.dataTypes[curr[index]] === EnumToken.ColonTokenType) {
-                                    break;
-                                }
-                            }
-
-                            if (foundElse && acc.length > 0) {
-                                const condition: Token = arena.createToken(EnumToken.IfConditionTokenType);
-
-                                // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
-                                arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, curr.slice(0, index)));
-                                // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, arena.typeOf(curr.at(-1)) === EnumToken.SemiColonTokenType ? curr.slice(index + 1, -1) : curr.slice(index + 1)))
-                                arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(
-                                        arena,
-                                        arena.dataTypes[curr.at(-1) as number] === EnumToken.SemiColonTokenType
-                                            ? curr.slice(index + 1, -1)
-                                            : curr.slice(index + 1),
-                                    ));
-
-                                const ifElse: Token = arena.createToken(EnumToken.IfElseConditionTokenType);
-
-                                // inlined: arena.setField(ifElse, TokenField.L, acc[acc.length - 1])
-                                arena.setTokenList(arena.fieldList(ifElse, TokenField.L), [acc[acc.length - 1]]);
-                                // inlined: arena.setField(ifElse, TokenField.R, condition)
-                                arena.setTokenList(arena.fieldList(ifElse, TokenField.R), [condition]);
-                                acc[acc.length - 1] = ifElse;
-                            } else {
-                                const condition: Token = arena.createToken(EnumToken.IfConditionTokenType);
-
-                                // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, curr.slice(0, index)))
-                                arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, curr.slice(0, index)));
-                                // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, curr.slice(index + 1)))
-                                arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, curr.slice(index + 1)));
-                                acc.push(condition);
-                            }
-
-                            return acc;
-                        }, [] as Token[]),
+                            }, [] as Token[]),
                         );
                     } else if (arena.dataTypes[tokens[index]] === EnumToken.UrlFunctionTokenType) {
                         const url: Token | null = arena.findToken(
@@ -439,10 +455,15 @@ export function parseDeclaration(
                             (arena: AstArena, t: Token) => arena.dataTypes[t] === EnumToken.StringTokenType,
                         );
 
-                        if (url != null && /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
+                        if (
+                            url != null &&
+                            /^[a-zA-Z0-0/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))
+                        ) {
                             arena.dataTypes[url] = EnumToken.UrlTokenTokenType;
                             // inlined: arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1))
-                            arena.stringValue[url] = arena.internString(arena.strings[arena.stringValue[url]].slice(1, -1));
+                            arena.stringValue[url] = arena.internString(
+                                arena.strings[arena.stringValue[url]].slice(1, -1),
+                            );
                         }
                     }
 
@@ -466,7 +487,10 @@ export function parseDeclaration(
                                 message: `invalid color`,
                                 node: tokens[index],
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[index]))
-                                location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[index]))],
+                                location: [
+                                    options.source!.file,
+                                    ...options.source!.lineStarts.getOffsets(arena.getSpanStart(tokens[index])),
+                                ],
                             });
                         }
                     }
@@ -536,7 +560,10 @@ export function parseDeclaration(
             message: "unbalanced token",
             node: stack[stack.length - 1],
             // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
-            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
+            location: [
+                options.source!.file,
+                ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1])),
+            ],
         });
 
         if (tokens.length > 0) {
@@ -560,7 +587,9 @@ export function parseDeclaration(
             if (arena.dataTypes[tokens[i]] === EnumToken.StringTokenType) {
                 if (/[\s.]/.test(arena.strings[arena.stringValue[tokens[i]]])) {
                     // inlined: arena.setStr(tokens[i], parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]))
-                    arena.stringValue[tokens[i]] = arena.internString(parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]));
+                    arena.stringValue[tokens[i]] = arena.internString(
+                        parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]),
+                    );
                 }
 
                 if (
@@ -583,7 +612,9 @@ export function parseDeclaration(
             arena,
             name,
             tokens,
-            hasImportantFlag ? EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ImportantDeclaration : EnumAstNodeStatus.Unknown,
+            hasImportantFlag
+                ? EnumAstNodeStatus.Unknown | EnumAstNodeStatus.ImportantDeclaration
+                : EnumAstNodeStatus.Unknown,
             result?.errors ?? null,
         );
     }
@@ -592,7 +623,10 @@ export function parseDeclaration(
         let index: number = -1;
 
         for (let i = 0; i < tokens.length; i++) {
-            if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType && equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
+            if (
+                arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType &&
+                equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])
+            ) {
                 index = i;
                 break;
             }

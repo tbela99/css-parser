@@ -1,4 +1,11 @@
-import type { Token, AstAtRule, AstComment, AstDeclaration, AstNode, AstRule, AstRuleList, AstStyleSheet, ErrorDescription, RenderOptions, RenderResult, SourceLocation } from "../../@types/index.d.ts";
+import type {
+    AstNode,
+    ErrorDescription,
+    RenderOptions,
+    RenderResult,
+    SourceLocation,
+    Token,
+} from "../../@types/index.d.ts";
 import { convertColor, getAngle } from "../syntax/color/color.ts";
 import { reduceHexValue } from "../syntax/color/hex.ts";
 import { ColorType, EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
@@ -45,7 +52,13 @@ export class RenderMemo {
      * collection when no instance is alive, and the optimized code that depends on it discarded (deoptimized)
      */
     static readonly shape: RenderMemo = new RenderMemo();
-
+    /**
+     * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
+     * (see {@link acquire})
+     *
+     * @internal
+     */
+    static readonly free: RenderMemo[] = [];
     /**
      * rendered declarations (`name:value`), by name and value tokens
      */
@@ -54,14 +67,6 @@ export class RenderMemo {
      * rendered constructs: colors and tokens with sub tokens (functions, parentheses, binary expressions, ...)
      */
     readonly constructs: StructuralMemo<string> = new StructuralMemo();
-
-    /**
-     * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
-     * (see {@link acquire})
-     *
-     * @internal
-     */
-    static readonly free: RenderMemo[] = [];
 
     /**
      * a cleared memo
@@ -402,7 +407,7 @@ export function doRender(
     // reused by the next renders
     const ownMemo: boolean = memo == null;
     // inlined: RenderMemo.acquire()
-    const cache: RenderCache = new RenderCache(memo ?? (RenderMemo.free.pop() ?? new RenderMemo()), options);
+    const cache: RenderCache = new RenderCache(memo ?? RenderMemo.free.pop() ?? new RenderMemo(), options);
 
     const sourceLocation = {
         srcId: 0,
@@ -525,7 +530,7 @@ function updateSourceMap(
 ) {
     let offset: number = 0;
 
-    // eat leanding whitespace
+    // eat leading whitespace
     while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
         offset++;
     }
@@ -577,7 +582,8 @@ function updateSourceMap(
                         const absoluteSourceFileName = options.resolve!(sourceFileName, absoluteSourcePath as string)
                             .absolute as string;
 
-                        cache.paths[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute).relative as string;
+                        cache.paths[sourceFileName] = options.resolve!(absoluteSourceFileName, absolute)
+                            .relative as string;
                     }
 
                     sourceFileName = cache.paths[sourceFileName];
@@ -1259,7 +1265,9 @@ function renderColor(
             result = result.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
         } else {
             result =
-                result.trimEnd() + (useAlpha && index == count - 1 ? "/" : " ") + renderValue(arena, curr, options, cache);
+                result.trimEnd() +
+                (useAlpha && index == count - 1 ? "/" : " ") +
+                renderValue(arena, curr, options, cache);
         }
     }
 
@@ -1269,6 +1277,7 @@ function renderColor(
 /**
  * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
  * expressions, ...) are rendered once per render, see {@link RenderMemo}
+ * @param arena
  * @param token
  * @param options
  * @param cache
@@ -1368,9 +1377,13 @@ function renderToken(
         case EnumToken.BinaryExpressionTokenType: {
             const op: EnumToken = arena.numericValue[token];
             // inlined: arena.getLeft(token)
-            const l: Token = (arena.getChildAt(token, TokenField.L) == null ? null : arena.fieldTokens(token, TokenField.L))![0];
+            const l: Token = (
+                arena.getChildAt(token, TokenField.L) == null ? null : arena.fieldTokens(token, TokenField.L)
+            )![0];
             // inlined: arena.getRight(token)
-            const r: Token = (arena.getChildAt(token, TokenField.R) == null ? null : arena.fieldTokens(token, TokenField.R))![0];
+            const r: Token = (
+                arena.getChildAt(token, TokenField.R) == null ? null : arena.fieldTokens(token, TokenField.R)
+            )![0];
 
             if (EnumToken.Mul === op || EnumToken.Div === op) {
                 let result: string = "";
@@ -1526,10 +1539,18 @@ function renderToken(
                                         key = arena.strings[arena.stringValue[slice[k]]].toLowerCase();
                                         switch (key) {
                                             case "right":
-                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, 90, "deg"));
+                                                slice.splice(
+                                                    i,
+                                                    k - i + 1,
+                                                    arena.createToken(EnumToken.AngleTokenType, 90, "deg"),
+                                                );
                                                 break;
                                             case "left":
-                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, 270, "deg"));
+                                                slice.splice(
+                                                    i,
+                                                    k - i + 1,
+                                                    arena.createToken(EnumToken.AngleTokenType, 270, "deg"),
+                                                );
                                                 break;
                                             case "top":
                                             case "bottom":
@@ -1543,7 +1564,10 @@ function renderToken(
                                                     j++;
                                                 }
 
-                                                if (j < slice.length && arena.dataTypes[slice[j]] !== EnumToken.CommaTokenType) {
+                                                if (
+                                                    j < slice.length &&
+                                                    arena.dataTypes[slice[j]] !== EnumToken.CommaTokenType
+                                                ) {
                                                     i = j - 1;
                                                     break;
                                                 }
@@ -1563,7 +1587,15 @@ function renderToken(
                                                     continue;
                                                 }
 
-                                                slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, key === "top" ? 0 : 180, "deg"));
+                                                slice.splice(
+                                                    i,
+                                                    k - i + 1,
+                                                    arena.createToken(
+                                                        EnumToken.AngleTokenType,
+                                                        key === "top" ? 0 : 180,
+                                                        "deg",
+                                                    ),
+                                                );
                                                 i--;
                                                 break;
                                         }
@@ -1683,7 +1715,8 @@ function renderToken(
 
                             if (
                                 arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
-                                (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType && 0 === arena.numericValue[slice[i]]) ||
+                                (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType &&
+                                    0 === arena.numericValue[slice[i]]) ||
                                 (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
                                     (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "center") ||
                                         equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "top") ||
@@ -1756,14 +1789,22 @@ function renderToken(
                                         key === "top left" ||
                                         key === "left top"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 0));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.PercentageTokenType, 0),
+                                        );
                                     } else if (
                                         key === "50% 0%" ||
                                         key === "50% 0" ||
                                         key === "center top" ||
                                         key === "top center"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "top"));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.IdenTokenType, "top"),
+                                        );
                                     } else if (key === "top right" || key === "right top") {
                                         positions.splice(
                                             0,
@@ -1778,28 +1819,48 @@ function renderToken(
                                         key === "left center" ||
                                         key === "center left"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "left"));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.IdenTokenType, "left"),
+                                        );
                                     } else if (key === "100% 50%" || key === "right center" || key === "center right") {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "right"));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.IdenTokenType, "right"),
+                                        );
                                     } else if (
                                         key === "0 100%" ||
                                         key === "0% 100%" ||
                                         key === "left bottom" ||
                                         key === "bottom left"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "bottom"));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.IdenTokenType, "bottom"),
+                                        );
                                     } else if (
                                         key === "50% 100%" ||
                                         key === "center bottom" ||
                                         key === "bottom center"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "bottom"));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.IdenTokenType, "bottom"),
+                                        );
                                     } else if (
                                         key === "100% 100%" ||
                                         key === "right bottom" ||
                                         key === "bottom right"
                                     ) {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 100));
+                                        positions.splice(
+                                            0,
+                                            positions.length,
+                                            arena.createToken(EnumToken.PercentageTokenType, 100),
+                                        );
                                     } else if (position1 === position2) {
                                         positions.splice(0, positions.length, positions[k]);
                                     }
@@ -1981,7 +2042,11 @@ function renderToken(
                                 }
 
                                 if (position1.length > 0) {
-                                    reducegradientBackgroundPosition(arena, positions, `${position1} ${position2}`.trim());
+                                    reducegradientBackgroundPosition(
+                                        arena,
+                                        positions,
+                                        `${position1} ${position2}`.trim(),
+                                    );
                                 }
                             }
 
@@ -2059,7 +2124,12 @@ function renderToken(
                         break;
                 }
 
-                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer ?? createReducer(arena, options, cache, errors)) + ")";
+                return (
+                    arena.strings[arena.stringValue[token]] +
+                    "(" +
+                    renderTokenList(slice, reducer ?? createReducer(arena, options, cache, errors)) +
+                    ")"
+                );
             }
 
         case EnumToken.TimingFunctionTokenType:
@@ -2100,7 +2170,12 @@ function renderToken(
                 }
             }
 
-            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderReduced(arena, arena.firstToken[token], options, cache, reducer, errors) + ")";
+            return (
+                (arena.strings[arena.stringValue[token]] ?? "") +
+                "(" +
+                renderReduced(arena, arena.firstToken[token], options, cache, reducer, errors) +
+                ")"
+            );
 
         case EnumToken.BlockStartTokenType:
             return "{";
@@ -2407,7 +2482,8 @@ function renderToken(
                 ":" +
                 renderTokenList(
                     options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token),
-                    (acc: string, curr: Token): string => acc + renderValue(arena, curr, options, cache, reducer, errors),
+                    (acc: string, curr: Token): string =>
+                        acc + renderValue(arena, curr, options, cache, reducer, errors),
                 )
             );
 
@@ -2482,6 +2558,7 @@ function renderToken(
 
 /**
  * Remove whitespace tokens that are not needed
+ * @param arena
  * @param values
  *
  * @internal
@@ -2490,7 +2567,10 @@ export function filterValues(arena: AstArena, values: Token[]): Token[] {
     let i: number = 0;
 
     for (; i < values.length; i++) {
-        if (arena.dataTypes[values[i]] == EnumToken.ImportantTokenType && arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
+        if (
+            arena.dataTypes[values[i]] == EnumToken.ImportantTokenType &&
+            arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType
+        ) {
             values.splice(i - 1, 1);
         } else if (
             tokensfuncSet.has(arena.dataTypes[values[i]]) &&

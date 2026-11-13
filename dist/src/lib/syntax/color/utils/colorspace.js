@@ -10,13 +10,11 @@ import { getColorComponents } from './components.js';
 
 /**
  * Return the color space of the color
+ * @param arena
  * @param color
  * @returns
  */
 function getColorSpace(arena, color) {
-    // if (!("chi" in color)) {
-    //     return "rgb";
-    // }
     let name;
     const components = getColorComponents(arena, color);
     if (components == null || components.length < 3) {

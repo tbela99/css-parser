@@ -1,16 +1,4 @@
 /**
- * Syntax validation enum
- */
-export enum SyntaxValidationResult {
-    /** valid syntax */
-    Valid,
-    /** drop invalid syntax */
-    Drop,
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    Lenient,
-}
-
-/**
  * Enum of node statuses
  */
 export enum EnumAstNodeStatus {

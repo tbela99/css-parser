@@ -145,10 +145,7 @@ function substituteIfElseNode(
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
                 equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])
             ) {
-                arena.replaceToken(
-                    mapped(targetWrapper) as Token,
-                    ...conditionValue(arena, elseCondition, nodeMap),
-                );
+                arena.replaceToken(mapped(targetWrapper) as Token, ...conditionValue(arena, elseCondition, nodeMap));
 
                 if (targetParentWrapper != declaration) {
                     const siblings: Token[] = arena.tokens(targetParentWrapper);
@@ -313,17 +310,7 @@ function processNode(
                 );
             }
         } else {
-            stack.push(
-                ...substituteIfElseNode(
-                    arena,
-                    declaration,
-                    value,
-                    parentWrapper,
-                    grandParent,
-                    cache,
-                    parent,
-                ),
-            );
+            stack.push(...substituteIfElseNode(arena, declaration, value, parentWrapper, grandParent, cache, parent));
         }
 
         // the node is substituted: release it unless it is the node being replaced
@@ -361,6 +348,11 @@ export class ExpandIfFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param declaration
+     */
     run(arena: AstArena, declaration: AstDeclaration): AstNode | AstNode[] | null {
         return processNode(arena, declaration, new Set<Token>()) as AstNode[];
     }

@@ -60,6 +60,7 @@ function interpolateHue(interpolationMethod, h1, h2) {
 }
 /**
  * Compute color mix
+ * @param arena
  * @param args
  * @returns
  */
@@ -75,7 +76,6 @@ function colorMix(arena, ...args) {
     let colorSpace = "oklab";
     let hueInterpolationMethod = "shorter";
     let values = null;
-    // const colors: Token[] = [];
     const percentages = [];
     const srgbComponentValues = [];
     const colorComponents = [];

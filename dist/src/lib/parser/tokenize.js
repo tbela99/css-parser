@@ -66,6 +66,25 @@ class RangeTable {
         }
         return hash >>> 0;
     }
+    get(str, start, end) {
+        const hash = RangeTable.hash(str, start, end);
+        if (hash == -1) {
+            return undefined;
+        }
+        const index = this.slots[this.find(str, start, end, hash)];
+        return index == -1 ? undefined : this.values[index];
+    }
+    set(key, value) {
+        const slot = this.find(key, 0, key.length, RangeTable.hash(key, 0, key.length));
+        if (this.slots[slot] == -1) {
+            this.slots[slot] = this.keys.length;
+            this.keys.push(key);
+            this.values.push(value);
+        }
+        else {
+            this.values[this.slots[slot]] = value;
+        }
+    }
     /**
      * slot of a key. the table is never full: it is sized for the static tables of the tokenizer
      * @param str
@@ -100,25 +119,6 @@ class RangeTable {
                 }
             }
             slot = (slot + 1) & mask;
-        }
-    }
-    get(str, start, end) {
-        const hash = RangeTable.hash(str, start, end);
-        if (hash == -1) {
-            return undefined;
-        }
-        const index = this.slots[this.find(str, start, end, hash)];
-        return index == -1 ? undefined : this.values[index];
-    }
-    set(key, value) {
-        const slot = this.find(key, 0, key.length, RangeTable.hash(key, 0, key.length));
-        if (this.slots[slot] == -1) {
-            this.slots[slot] = this.keys.length;
-            this.keys.push(key);
-            this.values.push(value);
-        }
-        else {
-            this.values[this.slots[slot]] = value;
         }
     }
 }
@@ -378,11 +378,6 @@ class Tokenizer {
      */
     typ = null;
     /**
-     * the identifier read by the last call of consumeIdentToken() has non ascii characters: they may be new lines
-     * (U+2028, U+2029)
-     */
-    identNonAscii = false;
-    /**
      * token kind
      */
     kin = null;
@@ -427,23 +422,15 @@ class Tokenizer {
      */
     source = null;
     /**
+     * the identifier read by the last call of consumeIdentToken() has non ascii characters: they may be new lines
+     * (U+2028, U+2029)
+     */
+    identNonAscii = false;
+    /**
      * token hint
      */
     hint = null;
     state = null;
-    /**
-     * id of the source file being tokenized
-     */
-    get sourceId() {
-        return this.parseInfo.source.id;
-    }
-    /**
-     * length of the css input. 0 when the input is a stream
-     */
-    get streamLength() {
-        const stream = this.parseInfo.stream;
-        return typeof stream == "string" ? stream.length : 0;
-    }
     constructor(parseInfo, input = null) {
         this.parseInfo = parseInfo;
         this.input = input;
@@ -458,6 +445,19 @@ class Tokenizer {
                     currentPosition: 0,
                 }
                 : parseInfo;
+    }
+    /**
+     * id of the source file being tokenized
+     */
+    get sourceId() {
+        return this.parseInfo.source.id;
+    }
+    /**
+     * length of the css input. 0 when the input is a stream
+     */
+    get streamLength() {
+        const stream = this.parseInfo.stream;
+        return typeof stream == "string" ? stream.length : 0;
     }
     /**
      *
@@ -923,7 +923,8 @@ class Tokenizer {
         return this.makeToken(parseInfo, 
         // parseInfo.position < parseInfo.currentPosition
         // inlined: this.peekCharCode(parseInfo)
-        (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode || !this.isURLToken(parseInfo)
+        (charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset)) != charCode ||
+            !this.isURLToken(parseInfo)
             ? EnumToken.BadUrlTokenType
             : EnumToken.UrlTokenTokenType);
     }
@@ -931,7 +932,8 @@ class Tokenizer {
      *
      * @param parseInfo
      * @param hint
-     * @param options
+     * @param slice
+     * @param decodeSegments
      * @returns
      */
     makeToken(parseInfo, hint, slice, decodeSegments) {
@@ -1130,14 +1132,6 @@ class Tokenizer {
             }
         }
         return true;
-    }
-    /**
-     * Get the current character code without creating a string
-     * @param parseInfo
-     * @returns charCode at current position
-     */
-    peekCharCode(parseInfo) {
-        return parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
     }
     /**
      *
@@ -1403,7 +1397,8 @@ class Tokenizer {
                     charCode = parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset);
                     // match at-rule
                     // inlined: this.peekCharCode(parseInfo)
-                    if (charCode == 45 /* TokenMap.MINUS */ || isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
+                    if (charCode == 45 /* TokenMap.MINUS */ ||
+                        isIdentStart(parseInfo.stream.charCodeAt(parseInfo.currentPosition - parseInfo.offset))) {
                         // consume '@'
                         parseInfo.position = parseInfo.currentPosition;
                         tokensCount = this.consumeIdentToken(parseInfo);

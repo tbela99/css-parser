@@ -34,6 +34,11 @@ class TransformCssFeature {
             options.features.push(new TransformCssFeature());
         }
     }
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
     run(arena, ast) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;

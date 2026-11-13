@@ -121,6 +121,11 @@ class ComputePrefixFeature {
             options.features.push(new ComputePrefixFeature(options));
         }
     }
+    /**
+     *
+     * @param arena
+     * @param node
+     */
     run(arena, node) {
         if (arena.flags[node] &
             (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
@@ -179,7 +184,8 @@ class ComputePrefixFeature {
             if (hasPrefix) {
                 // inlined: arena.walkValues(node)
                 for (const value of new ValueWalker(arena, node)) {
-                    if (arena.dataTypes[value] == EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
+                    if (arena.dataTypes[value] == EnumToken.IdenTokenType ||
+                        funcLike.includes(arena.dataTypes[value])) {
                         const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
                         if (match != null) {
                             // inlined: arena.setStr(value, match[2])
@@ -210,8 +216,9 @@ class ComputePrefixFeature {
     }
     /**
      * Convert -webkit-linear-gradient to linear-gradient syntax
-     * @param tokens
      * @returns
+     * @param arena
+     * @param token
      */
     webkitLinearToLinearGradient(arena, token) {
         let i;
@@ -284,9 +291,9 @@ class ComputePrefixFeature {
             }
         }
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
             ? "repeating-linear-gradient"
-            : "linear-gradient"));
+            : "linear-gradient");
         arena.setTokenList(token, tokens);
     }
     /**
@@ -411,7 +418,8 @@ class ComputePrefixFeature {
         let i = 0;
         const tokens = arena.tokens(token);
         while (i < tokens.length &&
-            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)) {
+            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)) {
             i++;
         }
         const positions = [];
@@ -445,7 +453,8 @@ class ComputePrefixFeature {
                 equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
@@ -463,7 +472,8 @@ class ComputePrefixFeature {
                 equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
@@ -496,9 +506,9 @@ class ComputePrefixFeature {
             tokens.push(arena.createToken(EnumToken.CommaTokenType));
         }
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
             ? "repeating-radial-gradient"
-            : "radial-gradient"));
+            : "radial-gradient");
         for (const colorStop of colorStops) {
             tokens.push(colorStop);
         }

@@ -1,11 +1,12 @@
-import type { Token } from "../../../../@types/index.d.ts";
-import type { AstArena } from "../../../ast/arena.ts";
-import { ColorType, EnumToken } from "../../../ast/types.ts";
-import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
-import { getNumber, minmax } from "../color.ts";
+import type {Token} from "../../../../@types/index.d.ts";
+import type {AstArena} from "../../../ast/arena.ts";
+import {ColorType, EnumToken} from "../../../ast/types.ts";
+import {equalsIgnoreCase} from "../../../parser/utils/text.ts";
+import {getNumber, minmax} from "../color.ts";
 
 /**
  * Create a color token
+ * @param arena
  * @param kind
  * @param components
  * @param alpha

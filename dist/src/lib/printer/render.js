@@ -43,6 +43,13 @@ class RenderMemo {
      */
     static shape = new RenderMemo();
     /**
+     * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
+     * (see {@link acquire})
+     *
+     * @internal
+     */
+    static free = [];
+    /**
      * rendered declarations (`name:value`), by name and value tokens
      */
     declarations = new StructuralMemo();
@@ -50,13 +57,6 @@ class RenderMemo {
      * rendered constructs: colors and tokens with sub tokens (functions, parentheses, binary expressions, ...)
      */
     constructs = new StructuralMemo();
-    /**
-     * cleared memos, reused by the next renders: their buffers are not allocated again. read by the library
-     * (see {@link acquire})
-     *
-     * @internal
-     */
-    static free = [];
     /**
      * a cleared memo
      */
@@ -308,7 +308,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
     // reused by the next renders
     const ownMemo = memo == null;
     // inlined: RenderMemo.acquire()
-    const cache = new RenderCache(memo ?? (RenderMemo.free.pop() ?? new RenderMemo()), options);
+    const cache = new RenderCache(memo ?? RenderMemo.free.pop() ?? new RenderMemo(), options);
     const sourceLocation = {
         end: 0,
     };
@@ -380,7 +380,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
  */
 function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation, linesMap, str) {
     let offset = 0;
-    // eat leanding whitespace
+    // eat leading whitespace
     while (offset < str.length && isWhiteSpace(str.charCodeAt(offset))) {
         offset++;
     }
@@ -421,7 +421,8 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
                         // resolution is relative to the source file
                         const absoluteSourceFileName = options.resolve(sourceFileName, absoluteSourcePath)
                             .absolute;
-                        cache.paths[sourceFileName] = options.resolve(absoluteSourceFileName, absolute).relative;
+                        cache.paths[sourceFileName] = options.resolve(absoluteSourceFileName, absolute)
+                            .relative;
                     }
                     sourceFileName = cache.paths[sourceFileName];
                 }
@@ -916,7 +917,9 @@ function renderColor(arena, token, options, cache, reducer, errors) {
         }
         else {
             result =
-                result.trimEnd() + (useAlpha && index == count - 1 ? "/" : " ") + renderValue(arena, curr, options, cache);
+                result.trimEnd() +
+                    (useAlpha && index == count - 1 ? "/" : " ") +
+                    renderValue(arena, curr, options, cache);
         }
     }
     return (hasAlpha && fnName.endsWith("a") ? fnName.slice(0, -1) : fnName) + "(" + result.trimStart() + ")";
@@ -924,6 +927,7 @@ function renderColor(arena, token, options, cache, reducer, errors) {
 /**
  * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
  * expressions, ...) are rendered once per render, see {@link RenderMemo}
+ * @param arena
  * @param token
  * @param options
  * @param cache
@@ -1121,7 +1125,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                                         arena.dataTypes[slice[j]] === EnumToken.CommentTokenType)) {
                                                     j++;
                                                 }
-                                                if (j < slice.length && arena.dataTypes[slice[j]] !== EnumToken.CommaTokenType) {
+                                                if (j < slice.length &&
+                                                    arena.dataTypes[slice[j]] !== EnumToken.CommaTokenType) {
                                                     i = j - 1;
                                                     break;
                                                 }
@@ -1229,7 +1234,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 i++;
                             }
                             if (arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
-                                (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType && 0 === arena.numericValue[slice[i]]) ||
+                                (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType &&
+                                    0 === arena.numericValue[slice[i]]) ||
                                 (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
                                     (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "center") ||
                                         equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "top") ||
@@ -1508,7 +1514,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                         }
                         break;
                 }
-                return arena.strings[arena.stringValue[token]] + "(" + renderTokenList(slice, reducer ?? createReducer(arena, options, cache)) + ")";
+                return (arena.strings[arena.stringValue[token]] +
+                    "(" +
+                    renderTokenList(slice, reducer ?? createReducer(arena, options, cache)) +
+                    ")");
             }
         case EnumToken.TimingFunctionTokenType:
         case EnumToken.PseudoClassFuncTokenType:
@@ -1537,7 +1546,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                         ")");
                 }
             }
-            return (arena.strings[arena.stringValue[token]] ?? "") + "(" + renderReduced(arena, arena.firstToken[token], options, cache, reducer) + ")";
+            return ((arena.strings[arena.stringValue[token]] ?? "") +
+                "(" +
+                renderReduced(arena, arena.firstToken[token], options, cache, reducer) +
+                ")");
         case EnumToken.BlockStartTokenType:
             return "{";
         case EnumToken.BlockEndTokenType:
@@ -1811,6 +1823,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
 }
 /**
  * Remove whitespace tokens that are not needed
+ * @param arena
  * @param values
  *
  * @internal
@@ -1818,7 +1831,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
 function filterValues(arena, values) {
     let i = 0;
     for (; i < values.length; i++) {
-        if (arena.dataTypes[values[i]] == EnumToken.ImportantTokenType && arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[values[i]] == EnumToken.ImportantTokenType &&
+            arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
             values.splice(i - 1, 1);
         }
         else if (tokensfuncSet.has(arena.dataTypes[values[i]]) &&

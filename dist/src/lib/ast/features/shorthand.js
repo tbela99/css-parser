@@ -27,6 +27,14 @@ class ComputeShorthandFeature {
             options.features.push(new ComputeShorthandFeature(options));
         }
     }
+    /**
+     *
+     * @param arena
+     * @param ast
+     * @param options
+     * @param _parent
+     * @param context
+     */
     run(arena, ast, options, _parent, context) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
             return null;

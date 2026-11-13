@@ -6,18 +6,6 @@
 	License: MIT
  */
 /**
- * Syntax validation enum
- */
-var SyntaxValidationResult;
-(function (SyntaxValidationResult) {
-    /** valid syntax */
-    SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
-    /** drop invalid syntax */
-    SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
-})(SyntaxValidationResult || (SyntaxValidationResult = {}));
-/**
  * Enum of node statuses
  */
 var EnumAstNodeStatus;
@@ -1021,4 +1009,4 @@ var WalkerEvent;
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, WalkerEvent, WalkerOptionEnum };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };

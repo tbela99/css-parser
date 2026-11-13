@@ -1,15 +1,4 @@
 /**
- * Syntax validation enum
- */
-declare enum SyntaxValidationResult {
-    /** valid syntax */
-    Valid = 0,
-    /** drop invalid syntax */
-    Drop = 1,
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    Lenient = 2
-}
-/**
  * Enum of node statuses
  */
 declare enum EnumAstNodeStatus {
@@ -1316,10 +1305,6 @@ declare class Arena {
      */
     current: number;
     /**
-     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
-     */
-    protected freeList: number;
-    /**
      * node EnumToken type array
      */
     dataTypes: Uint8Array;
@@ -1380,15 +1365,23 @@ declare class Arena {
      */
     spans: BigUint64Array;
     /**
+     * error cache
+     */
+    errors: Map<number, ErrorDescription[]>;
+    /**
+     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
+     */
+    protected freeList: number;
+    /**
      * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
      * the high word holds the 24 high bits of the start position and the source
      */
     protected spans32: Uint32Array;
-    /**
-     * error cache
-     */
-    errors: Map<number, ErrorDescription[]>;
     constructor(size?: number);
+    /**
+     * true when the column buffers have been transferred to another thread: the arena can no longer be used
+     */
+    get transferred(): boolean;
     /**
      * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
      * to a worker (or back to the main thread) without copying the node data.
@@ -1421,24 +1414,6 @@ declare class Arena {
      * @returns an `Arena` or an `AstArena` depending on the class the method is called on
      */
     static fromTransferableArenaObjects<T extends Arena>(this: new (size?: number) => T, properties: ArenaProperties, transferables: ArenaTransferables): T;
-    /**
-     * true when the column buffers have been transferred to another thread: the arena can no longer be used
-     */
-    get transferred(): boolean;
-    /**
-     * structured-cloneable properties of the arena
-     */
-    protected exportProperties(): ArenaProperties;
-    /**
-     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
-     */
-    protected exportTransferables(): ArenaTransferables;
-    /**
-     * initialize the arena from exported properties and column buffers
-     * @param properties
-     * @param transferables
-     */
-    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
     allocate(): number;
     /**
      * recycle a detached leaf node (no parent, no children, no tokens) that is no longer referenced:
@@ -1453,36 +1428,9 @@ declare class Arena {
      */
     internString(str: string): number;
     /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     *
      * @param id
-     * @param type
-     * @param stringValue
      */
-    set(id: number, type: EnumToken): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
-     * @param id
-     * @param type
-     * @param stringValue
-     */
-    set(id: number, type: EnumToken, stringValue: number): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, and the fourth is the numeric value.
-     * @param id
-     * @param type
-     * @param stringValue
-     * @param numericValue
-     */
-    set(id: number, type: EnumToken, stringValue: number, numericValue: number): void;
-    /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
-     * @param id
-     * @param type
-     * @param stringValue
-     * @param numericValue
-     * @param unit
-     */
-    set(id: number, type: EnumToken, stringValue: number, numericValue: number, unit: number): void;
     getType(id: number): EnumToken;
     /**
      * type of a node or a token. null when the id is null
@@ -1938,6 +1886,20 @@ declare class Arena {
      * @param id
      */
     childCount(id: number): number;
+    /**
+     * structured-cloneable properties of the arena
+     */
+    protected exportProperties(): ArenaProperties;
+    /**
+     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+     */
+    protected exportTransferables(): ArenaTransferables;
+    /**
+     * initialize the arena from exported properties and column buffers
+     * @param properties
+     * @param transferables
+     */
+    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
 }
 /**
  * Css ast arena: ast nodes and value tokens.
@@ -1959,14 +1921,6 @@ declare class AstArena extends Arena {
      */
     sources: number[];
     constructor(size?: number);
-    /**
-     * @inheritDoc
-     */
-    protected exportProperties(): ArenaProperties;
-    /**
-     * @inheritDoc
-     */
-    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
     /**
      * @inheritDoc
      */
@@ -2206,16 +2160,6 @@ declare class AstArena extends Arena {
      */
     fromObject(node: AstArenaNode | PlainAstNode | PlainToken): number;
     /**
-     * create an ast node from a plain object
-     * @param node
-     */
-    protected nodeFromObject(node: PlainAstNode): number;
-    /**
-     * create a token from a plain object
-     * @param token
-     */
-    protected tokenFromObject(token: PlainToken): number;
-    /**
      * Object view of a node or a token: an {@link AstArenaNode}. The view does not copy the node: its properties read
      * and write the arena. Importing the view in this arena ({@link fromObject}, visitor results, setters of the
      * views) is a noop
@@ -2330,6 +2274,31 @@ declare class AstArena extends Arena {
      */
     expand(ast: AstStyleSheet | AstAtRule | AstRule): AstNode;
     /**
+     * replace the nesting selector '&' of a selector
+     * @internal
+     * @param input
+     * @param replace
+     */
+    replaceCompound(input: string, replace: string): string;
+    /**
+     * @inheritDoc
+     */
+    protected exportProperties(): ArenaProperties;
+    /**
+     * @inheritDoc
+     */
+    protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void;
+    /**
+     * create an ast node from a plain object
+     * @param node
+     */
+    protected nodeFromObject(node: PlainAstNode): number;
+    /**
+     * create a token from a plain object
+     * @param token
+     */
+    protected tokenFromObject(token: PlainToken): number;
+    /**
      * expand a rule: the nested rules and at-rules are moved out of the rule, into `parent` before `before`.
      * the rule is detached when it has no children left
      * @param node
@@ -2337,13 +2306,6 @@ declare class AstArena extends Arena {
      * @param before the expanded nodes are inserted before this child of parent. they are appended when 0
      */
     protected expandRule(node: AstRule, parent: AstNode, before: AstNode): void;
-    /**
-     * replace the nesting selector '&' of a selector
-     * @internal
-     * @param input
-     * @param replace
-     */
-    replaceCompound(input: string, replace: string): string;
     protected replaceCompoundLiteral(selector: string, replace: string): string;
 }
 
@@ -5030,15 +4992,6 @@ declare class LineMap {
      * @returns
      */
     search(offset: number): number;
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts(): number[];
-    /**
-     * add line start
-     */
-    addLineStart(lineStart: number): void;
 }
 
 /**
@@ -5074,45 +5027,6 @@ declare class SourceFile {
      * @param content
      */
     append(content: string): void;
-    /**
-     * get file name
-     * @returns
-     */
-    getFileName(): string | null;
-    /**
-     * get content
-     * @returns
-     */
-    getContent(): string;
-    /**
-     * get text
-     * @param start
-     * @param length
-     * @returns
-     */
-    getText(start: number, length: number): string;
-    /**
-     * Compute line and column of the offset
-     * @param offset
-     * @returns
-     */
-    getOffsets(offset: number): [number, number];
-    /**
-     * get source location
-     * @param offset
-     * @returns
-     */
-    getSourceLocation(offset: number): [string | null, number, number];
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts(): number[];
-    /**
-     * add line start
-     * @param lineStart
-     */
-    addLineStart(lineStart: number): void;
     /**
      * set input source map
      * @param inputSourceMap
@@ -7401,7 +7315,7 @@ interface ValidationResult {
     /**
      * validation result
      */
-    valid: SyntaxValidationResult;
+    valid: boolean;
     /**
      * node
      */
@@ -7467,6 +7381,7 @@ declare function parseDeclarations(declaration: string, arena?: AstArena): {
 };
 /**
  * Parse css string and return an array of tokens
+ * @param arena
  * @param src
  * @param options
  *    - parseColor: parse identifiers as colors
@@ -7496,6 +7411,7 @@ declare function parseString(arena: AstArena, src: string, options?: {
 /**
  * render ast token. identical constructs (colors and tokens with sub tokens: functions, parentheses, binary
  * expressions, ...) are rendered once per render, see {@link RenderMemo}
+ * @param arena
  * @param token
  * @param options
  * @param cache
@@ -7509,6 +7425,7 @@ declare function renderValue(arena: AstArena, token: Token, options?: RenderOpti
 
 /**
  * Converts a color to another color space
+ * @param arena
  * @param token
  * @param to
  *
@@ -7569,6 +7486,7 @@ declare function load(url: string | {
 }, currentDirectory?: string, responseType?: boolean | ResponseType): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 /**
  * Render the ast tree
+ * @param arena
  * @param data
  * @param options
  * @param mapping
@@ -7887,5 +7805,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue as renderToken, resolve, transform, transformSync, version };
+export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue, resolve, transform, transformSync, version };
 export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniCodeRangeToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

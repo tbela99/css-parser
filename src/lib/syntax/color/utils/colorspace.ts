@@ -5,17 +5,15 @@ import { getColorComponents } from "./components.ts";
 
 /**
  * Return the color space of the color
+ * @param arena
  * @param color
  * @returns
  */
 export function getColorSpace(arena: AstArena, color: Token) {
-    // if (!("chi" in color)) {
-    //     return "rgb";
-    // }
 
     let name: string;
 
-    const components = getColorComponents(arena, color);
+    const components: number[] | null = getColorComponents(arena, color);
     if (components == null || components.length < 3) {
         return null;
     }

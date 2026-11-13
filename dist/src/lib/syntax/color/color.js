@@ -33,6 +33,7 @@ import { equalsIgnoreCase } from '../../parser/utils/text.js';
 
 /**
  * Converts a color to another color space
+ * @param arena
  * @param token
  * @param to
  *

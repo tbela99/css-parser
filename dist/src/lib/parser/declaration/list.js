@@ -121,17 +121,6 @@ class PropertyList {
         this.memo = memo ?? new DeclarationMemo();
     }
     /**
-     * add declarations
-     * @param declarations node ids
-     * @returns
-     */
-    add(declarations) {
-        for (const declaration of declarations) {
-            this.addDeclaration(declaration);
-        }
-        return this;
-    }
-    /**
      * add a declaration
      * @param declaration node id
      */
@@ -247,8 +236,9 @@ class PropertyList {
                 owner = this.declarations.get(mapName);
             }
             else if (!this.declarations.has(shorthand)) {
+                this.declarations.set(shorthand, 
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand], this.memo));
+                new PropertyMap(arena, config.map[shorthand], this.memo));
             }
             if (owner == this) {
                 // @ts-ignore

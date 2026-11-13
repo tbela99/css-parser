@@ -1,6 +1,6 @@
-import type { Token } from "../../../@types/index.d.ts";
-import type { AstArena } from "../../ast/arena.ts";
-import { ColorType, EnumToken } from "../../ast/types.ts";
+import type {Token} from "../../../@types/index.d.ts";
+import type {AstArena} from "../../ast/arena.ts";
+import {ColorType, EnumToken} from "../../ast/types.ts";
 import {
     cmyk2RgbToken,
     color2RgbToken,
@@ -77,7 +77,7 @@ import {
     oklab2oklchToken,
     rgb2oklchToken,
 } from "./oklch.ts";
-import { getColorComponents } from "./utils/components.ts";
+import {getColorComponents} from "./utils/components.ts";
 import {
     cmyk2srgbvalues,
     hex2srgbvalues,
@@ -92,12 +92,12 @@ import {
     srgb2lsrgbvalues,
     xyz2srgb,
 } from "./srgb.ts";
-import { prophotorgb2srgbvalues, srgb2prophotorgbvalues } from "./prophotorgb.ts";
-import { rec20202srgb, srgb2rec2020values } from "./rec2020.ts";
-import { srgb2xyz, srgb2xyz_d65 } from "./xyz.ts";
-import { lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values } from "./p3.ts";
-import { xyzd502srgb } from "./xyzd50.ts";
-import { colorMix } from "./color-mix.ts";
+import {prophotorgb2srgbvalues, srgb2prophotorgbvalues} from "./prophotorgb.ts";
+import {rec20202srgb, srgb2rec2020values} from "./rec2020.ts";
+import {srgb2xyz, srgb2xyz_d65} from "./xyz.ts";
+import {lp32srgbvalues, p32srgbvalues, srgb2lp3values, srgb2p3values} from "./p3.ts";
+import {xyzd502srgb} from "./xyzd50.ts";
+import {colorMix} from "./color-mix.ts";
 import {
     cmyk2HexToken,
     color2HexToken,
@@ -110,9 +110,9 @@ import {
     reduceHexValue,
     rgb2HexToken,
 } from "./hex.ts";
-import type { RelativeColorTypes } from "./relative-color.ts";
-import { parseRelativeColorComponents } from "./relative-color.ts";
-import { isIdentColor } from "../syntax.ts";
+import type {RelativeColorTypes} from "./relative-color.ts";
+import {parseRelativeColorComponents} from "./relative-color.ts";
+import {isIdentColor} from "../syntax.ts";
 import {
     color2cmykToken,
     hsl2cmykToken,
@@ -123,14 +123,15 @@ import {
     oklch2cmykToken,
     rgb2cmykToken,
 } from "./cmyk.ts";
-import { a98rgb2srgbvalues, srgb2a98values } from "./a98rgb.ts";
-import { colorFuncColorSpace } from "../constants.ts";
-import { trimArray } from "../../validation/match.ts";
-import { alpha } from "./alpha.ts";
-import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import {a98rgb2srgbvalues, srgb2a98values} from "./a98rgb.ts";
+import {colorFuncColorSpace} from "../constants.ts";
+import {trimArray} from "../../validation/match.ts";
+import {alpha} from "./alpha.ts";
+import {equalsIgnoreCase} from "../../parser/utils/text.ts";
 
 /**
  * Converts a color to another color space
+ * @param arena
  * @param token
  * @param to
  *
@@ -824,6 +825,7 @@ function values2colortoken(arena: AstArena, values: number[], to: ColorType): To
 
 /**
  * clamp color values
+ * @param arena
  * @param token
  */
 export function clamp(arena: AstArena, token: Token): Token {

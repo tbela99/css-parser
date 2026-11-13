@@ -52,7 +52,9 @@ function replace(arena, node, variableScope) {
         if (typ == EnumToken.MathFunctionTokenType ||
             (typ == EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")) {
             const first = arena.firstToken[value];
-            if (first != 0 && arena.nextSibling[first] == 0 && arena.dataTypes[first] == EnumToken.DashedIdenTokenType) {
+            if (first != 0 &&
+                arena.nextSibling[first] == 0 &&
+                arena.dataTypes[first] == EnumToken.DashedIdenTokenType) {
                 const info = (variableScope.get(arena.strings[arena.stringValue[first]]));
                 // the variable declaration may have been released
                 if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
@@ -76,6 +78,14 @@ class InlineCssVariablesFeature {
             options.features.push(new InlineCssVariablesFeature());
         }
     }
+    /**
+     *
+     * @param arena
+     * @param ast
+     * @param _options
+     * @param parent
+     * @param context
+     */
     run(arena, ast, _options = {}, parent, context) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
@@ -128,6 +138,13 @@ class InlineCssVariablesFeature {
         }
         return null;
     }
+    /**
+     *
+     * @param arena
+     * @param _ast
+     * @param _options
+     * @param context
+     */
     cleanup(arena, _ast, _options = {}, context) {
         const variableScope = context.variableScope;
         if (variableScope == null) {
