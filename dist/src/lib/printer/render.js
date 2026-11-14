@@ -700,6 +700,16 @@ function renderTokenList(tokens, reducer) {
  */
 function renderDeclaration(arena, node, options, cache, reducer) {
     const memo = getRenderMemo(cache, options);
+    let minifyValues = options.minifyValues;
+    if (minifyValues) {
+        minifyValues = !arena.startsWith(node, "nam", "--");
+        if (!minifyValues) {
+            // override options to avoid minifying values for custom properties
+            options = { ...options, minifyValues: false };
+            // override the reducer
+            reducer = createReducer(arena, options, cache);
+        }
+    }
     if (memo == null) {
         return `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
     }
@@ -1676,7 +1686,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 if (arena.dataTypes[token] === EnumToken.ResolutionTokenType) {
                     return "0x";
                 }
-                return "0";
+                return options.minifyValues ? "0" : "0" + unit;
             }
             if (arena.dataTypes[token] === EnumToken.TimeTokenType) {
                 if (unit === "ms") {

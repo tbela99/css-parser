@@ -740,5 +740,20 @@ p {
  }
 }`);
         });
+
+        it("do not strip unit from dashed ident #42", function () {
+            return expect(
+                transformSync({
+                    input: `
+
+.a{--x: 0px;width:calc(var(--x) + 1px)}
+`,
+                    beautify: true,
+                }).code,
+            ).equals(`.a {
+ --x: 0px;
+ width: calc(var(--x) + 1px)
+}`);
+        });
     });
 }

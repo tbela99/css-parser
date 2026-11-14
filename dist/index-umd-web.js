@@ -19338,6 +19338,16 @@
      */
     function renderDeclaration(arena, node, options, cache, reducer) {
         const memo = getRenderMemo(cache, options);
+        let minifyValues = options.minifyValues;
+        if (minifyValues) {
+            minifyValues = !arena.startsWith(node, "nam", "--");
+            if (!minifyValues) {
+                // override options to avoid minifying values for custom properties
+                options = { ...options, minifyValues: false };
+                // override the reducer
+                reducer = createReducer(arena, options, cache);
+            }
+        }
         if (memo == null) {
             return `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
         }
@@ -20314,7 +20324,7 @@
                     if (arena.dataTypes[token] === exports.EnumToken.ResolutionTokenType) {
                         return "0x";
                     }
-                    return "0";
+                    return options.minifyValues ? "0" : "0" + unit;
                 }
                 if (arena.dataTypes[token] === exports.EnumToken.TimeTokenType) {
                     if (unit === "ms") {
@@ -26902,6 +26912,30 @@
      * @private
      */
     function optimizeSelector(selector) {
+        if (selector.length === 0) {
+            return null;
+        }
+        if (selector.length === 1) {
+            const current = selector[0];
+            const last = current.at(-1);
+            if (last == null || !last.startsWith(":is(")) {
+                let end = current.length;
+                while (end > 0 && (current[end - 1] === " " || combinators.includes(current[end - 1]))) {
+                    end--;
+                }
+                const optimized = current.slice(0, end);
+                if (optimized[0] === "&" && optimized[1] === " ") {
+                    optimized.splice(0, 2);
+                }
+                const remainder = current.slice(end);
+                return {
+                    match: false,
+                    optimized,
+                    selector: [remainder[0] === "&" && remainder[1] === " " ? remainder.slice(2) : remainder],
+                    reducible: false,
+                };
+            }
+        }
         const map = new Set();
         selector = selector
             .reduce((acc, curr) => {
@@ -27639,10 +27673,11 @@
         if (arena.raw[node] == null) {
             arena.raw[node] = splitRule(arena.strings[arena.name[node]]);
         }
-        let optimized = optimizeSelector(arena.raw[node].reduce((acc, curr) => {
-            acc.push(curr.slice());
-            return acc;
-        }, []));
+        const raw = arena.raw[node];
+        const singleSelectorWithoutIs = raw.length === 1 && (raw[0].at(-1) == null || !raw[0].at(-1).startsWith(":is("));
+        let optimized = optimizeSelector(singleSelectorWithoutIs
+            ? raw
+            : raw.map((curr) => curr.slice()));
         if (optimized != null) {
             arena.optimized[node] = optimized;
         }

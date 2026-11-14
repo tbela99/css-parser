@@ -962,6 +962,18 @@ function renderDeclaration(
     reducer: (acc: string, curr: Token) => string,
 ): string {
     const memo: RenderMemo | null = getRenderMemo(cache, options);
+    let minifyValues: boolean = options.minifyValues as boolean;
+
+    if (minifyValues) {
+        minifyValues = !arena.startsWith(node, "nam", "--");
+
+        if (!minifyValues) {
+            // override options to avoid minifying values for custom properties
+            options = { ...options, minifyValues: false };
+            // override the reducer
+            reducer = createReducer(arena, options, cache);
+        }
+    }
 
     if (memo == null) {
         return `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues as boolean, reducer).trimEnd()}`;
@@ -2354,7 +2366,7 @@ function renderToken(
                     return "0x";
                 }
 
-                return "0";
+                return options.minifyValues ? "0" : "0" + unit;
             }
 
             if (arena.dataTypes[token] === EnumToken.TimeTokenType) {
