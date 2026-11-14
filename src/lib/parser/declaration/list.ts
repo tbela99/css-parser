@@ -260,11 +260,12 @@ export class PropertyList {
                 existing != null &&
                 typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
-                arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0
             ) {
                 return this;
             }
         }
+
         // @ts-ignore
         if (shortHandType === "map") {
             let owner: PropertyMap | PropertyList = this;

@@ -24437,7 +24437,7 @@
                 if (existing != null &&
                     typeof existing === "number" &&
                     arena.flags[existing] & exports.EnumAstNodeStatus.ImportantDeclaration &&
-                    arena.flags[declaration] & ~exports.EnumAstNodeStatus.ImportantDeclaration) {
+                    (arena.flags[declaration] & exports.EnumAstNodeStatus.ImportantDeclaration) == 0) {
                     return this;
                 }
             }

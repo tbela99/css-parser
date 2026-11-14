@@ -217,7 +217,7 @@ class PropertyList {
             if (existing != null &&
                 typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
-                arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration) {
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0) {
                 return this;
             }
         }

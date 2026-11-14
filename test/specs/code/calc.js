@@ -755,5 +755,19 @@ p {
  width: calc(var(--x) + 1px)
 }`);
         });
+
+        it("deduplicate important declarations #43", function () {
+            return expect(
+                transformSync({
+                    input: `
+
+.a{margin-top:2px !important;margin-top:5px !important}
+`,
+                    beautify: true,
+                }).code,
+            ).equals(`.a {
+ margin-top: 5px!important
+}`);
+        });
     });
 }
