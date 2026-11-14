@@ -477,6 +477,7 @@ function isNumericTokenEnd(codepoint: number, isDimension: boolean): boolean {
         // eof
         codepoint === undefined ||
         isWhiteSpace(codepoint) ||
+        codepoint === TokenMap.LEFT_BRACE ||
         codepoint === TokenMap.RIGHT_PARENTHESIS ||
         codepoint === TokenMap.SEMICOLON ||
         codepoint === TokenMap.EXCLAMATION ||
@@ -996,9 +997,12 @@ export class Tokenizer {
         if (codepoint === TokenMap.PERCENTAGE) {
             const slice: number = position;
 
+            if (!isNumericTokenEnd(codes[++position], false)) {
+                return 0;
+            }
             this.slice = slice;
             this.hint = EnumToken.PercentageTokenType;
-            return position - offset + 1;
+            return position - offset;
         }
 
         // dimension: a unit, or a dashed ident (user defined unit)

@@ -10,11 +10,11 @@
 
 ## Feature
 
-- [x] use arraybuffer as input data
+- [x] now accepting arraybuffer as input data: transformSync(arraybuffer);
 - [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
 
 ## Validation
-
+- [x] switching syntax definitions source from mdn-data to webref/css
 - [x] the validation syntaxes are generated from the CSS definitions of [W3C webref](https://github.com/w3c/webref) instead of mdn-data (deprecated): `npm run syntax-update` runs `scripts/webref.ts`, `scripts/validation.ts` is removed
 - [x] the units are listed in `scripts/local-patch.json`: `@webref/css` does not list them
 - [x] a function or a type defined differently for different scopes keeps its definitions: the scoped definition is inlined in the syntax of its scope (`clip: rect( <top>, <right>, <bottom>, <left> ) | auto`, the `<basic-shape>` `rect()` is the shared definition)
