@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { ColorType } from '../../../ast/types.js';
@@ -19,7 +19,9 @@ function getColorType(arena, color) {
             return null;
         }
         return arena.colorType[color] === ColorType.COLOR_MIX
-            ? ColorType[arena.strings[arena.stringValue[token]]?.toUpperCase?.()?.replace?.("-", "_")]
+            ? ColorType[arena.strings[arena.stringValue[token]]
+                ?.toUpperCase?.()
+                ?.replace?.("-", "_")]
             : getColorType(arena, token);
     }
     return arena.colorType[color];

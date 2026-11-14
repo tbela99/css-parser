@@ -1,9 +1,21 @@
 export declare type Point = [number, number, number];
 export declare type Matrix = Float32Array<
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
 >;
 
 export interface DecomposedMatrix3D {

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';
@@ -92,23 +92,23 @@ function structuredFields(typ) {
         fields = noFields;
     }
     else {
-        const single = typ == EnumToken.BinaryExpressionTokenType ||
-            typ == EnumToken.IfElseConditionTokenType ||
-            typ == EnumToken.MatchExpressionTokenType ||
-            typ == EnumToken.NameSpaceAttributeTokenType;
+        const single = typ === EnumToken.BinaryExpressionTokenType ||
+            typ === EnumToken.IfElseConditionTokenType ||
+            typ === EnumToken.MatchExpressionTokenType ||
+            typ === EnumToken.NameSpaceAttributeTokenType;
         const singleLeft = single ||
-            typ == EnumToken.MediaQueryConditionTokenType ||
-            typ == EnumToken.MediaQueryUnaryFeatureTokenType ||
-            typ == EnumToken.SupportsQueryUnaryConditionTokenType ||
-            typ == EnumToken.WhenElseUnaryConditionTokenType;
-        const singleRight = single || typ == EnumToken.ComposesSelectorNodeType;
+            typ === EnumToken.MediaQueryConditionTokenType ||
+            typ === EnumToken.MediaQueryUnaryFeatureTokenType ||
+            typ === EnumToken.SupportsQueryUnaryConditionTokenType ||
+            typ === EnumToken.WhenElseUnaryConditionTokenType;
+        const singleRight = single || typ === EnumToken.ComposesSelectorNodeType;
         fields = [
             ["l", TokenField.L, singleLeft],
             ["r", TokenField.R, singleRight],
             [
-                typ == EnumToken.MediaRangeQueryTokenType ? "op1" : "op",
+                typ === EnumToken.MediaRangeQueryTokenType ? "op1" : "op",
                 TokenField.Op,
-                typ != EnumToken.ContainerStyleRangeTokenType,
+                typ !== EnumToken.ContainerStyleRangeTokenType,
             ],
             ["op2", TokenField.Op2, true],
             ["val", TokenField.Val, false],
@@ -120,7 +120,7 @@ function structuredFields(typ) {
 /**
  * little endian platform
  */
-const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] == 1;
+const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 /**
  * arena columns stored as typed arrays, in the order of the transferable buffers
  */
@@ -198,10 +198,6 @@ class Arena {
      */
     current = 1;
     /**
-     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
-     */
-    freeList = 0;
-    /**
      * node EnumToken type array
      */
     dataTypes;
@@ -262,16 +258,26 @@ class Arena {
      */
     spans;
     /**
+     * error cache
+     */
+    errors = new Map();
+    /**
+     * head of the list of recycled node ids. the list is linked through the `nextSibling` column, see {@link recycle}
+     */
+    freeList = 0;
+    /**
+     * number of nodes the columns can hold: the length of the columns. the length of a typed array is a getter,
+     * allocate() reads the capacity of the arena for each node
+     */
+    capacity = 0;
+    /**
      * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
      * the high word holds the 24 high bits of the start position and the source
      */
     spans32;
-    /**
-     * error cache
-     */
-    errors = new Map();
     constructor(size = 4096) {
         this.dataTypes = new Uint8Array(size);
+        this.capacity = size;
         this.parents = new Uint32Array(size);
         this.nextSibling = new Uint32Array(size);
         this.previousSibling = new Uint32Array(size);
@@ -288,6 +294,12 @@ class Arena {
         this.spans = new BigUint64Array(size);
         this.spans32 = new Uint32Array(this.spans.buffer);
         this.dataTypes[this.root] = EnumToken.StyleSheetNodeType;
+    }
+    /**
+     * true when the column buffers have been transferred to another thread: the arena can no longer be used
+     */
+    get transferred() {
+        return this.dataTypes.length === 0 && this.current > 0;
     }
     /**
      * Export the arena as a structured-cloneable object and the list of its column buffers, to send an arena
@@ -327,66 +339,17 @@ class Arena {
         arena.importProperties(properties, transferables);
         return arena;
     }
-    /**
-     * true when the column buffers have been transferred to another thread: the arena can no longer be used
-     */
-    get transferred() {
-        return this.dataTypes.length == 0 && this.current > 0;
-    }
-    /**
-     * structured-cloneable properties of the arena
-     */
-    exportProperties() {
-        return {
-            kind: "Arena",
-            current: this.current,
-            strings: this.strings,
-            errors: [...this.errors.entries()],
-        };
-    }
-    /**
-     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
-     */
-    exportTransferables() {
-        const buffers = [];
-        for (const column of arenaColumns) {
-            const array = this[column];
-            // the columns always own their buffer: no offset or partial view
-            buffers.push(array.buffer);
-        }
-        return buffers;
-    }
-    /**
-     * initialize the arena from exported properties and column buffers
-     * @param properties
-     * @param transferables
-     */
-    importProperties(properties, transferables) {
-        if (transferables.length != arenaColumns.length) {
-            throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
-        }
-        for (let i = 0; i < arenaColumns.length; i++) {
-            const column = arenaColumns[i];
-            // @ts-ignore
-            this[column] = new arenaColumnTypes[column](transferables[i]);
-        }
-        this.spans32 = new Uint32Array(this.spans.buffer);
-        this.current = properties.current;
-        this.strings = properties.strings.slice();
-        this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
-        this.errors = new Map(properties.errors);
-    }
     allocate() {
         let id = this.freeList;
-        if (id != 0) {
+        if (id !== 0) {
             // reuse a recycled node: its record is already zeroed, except the free list link
             this.freeList = this.nextSibling[id];
             this.nextSibling[id] = 0;
             return id;
         }
         id = ++this.current;
-        if (id >= this.dataTypes.length) {
-            this.resize(this.dataTypes.length * 2);
+        if (id >= this.capacity) {
+            this.resize(this.capacity * 2);
         }
         return id;
     }
@@ -426,60 +389,92 @@ class Arena {
         return id;
     }
     /**
-     * set node data for a given id. The first argument is the id, the second is the type, the third is the string value, the fourth is the numeric value, and the fifth is the unit.
+     *
      * @param id
-     * @param args
      */
-    set(id, ...args) {
-        this.dataTypes[id] = args[0];
-        if (args.length > 1) {
-            // 0 is null string, so we can use it to indicate that there is no string value for this node.
-            this.stringValue[id] = args[1];
-        }
-        if (args.length > 2) {
-            this.numericValue[id] = args[2];
-        }
-        if (args.length > 3) {
-            this.unit[id] = args[3];
-        }
-    }
     getType(id) {
         return this.dataTypes[id];
     }
     /**
-     * type of a node or a token. null when the id is null
+     * type of node or a token. null when the id is null
      * @param id
      */
     typeOf(id) {
         return id == null ? null : this.dataTypes[id];
     }
+    /**
+     *
+     * @param id
+     * @param type
+     */
     setType(id, type) {
         this.dataTypes[id] = type;
     }
+    /**
+     *
+     * @param id
+     * @param nameId
+     */
     setName(id, nameId) {
         this.name[id] = nameId;
     }
+    /**
+     *
+     * @param id
+     */
     getName(id) {
         return this.strings[this.name[id]] ?? null;
     }
+    /**
+     *
+     * @param id
+     * @param valueId
+     */
     setValue(id, valueId) {
         this.stringValue[id] = valueId;
     }
+    /**
+     *
+     * @param id
+     */
     getValue(id) {
         return this.strings[this.stringValue[id]] ?? null;
     }
+    /**
+     *
+     * @param id
+     * @param numericValue
+     */
     setNumericValue(id, numericValue) {
         this.numericValue[id] = numericValue;
     }
+    /**
+     *
+     * @param id
+     * @param unit
+     */
     setUnit(id, unit) {
         this.unit[id] = unit;
     }
+    /**
+     *
+     * @param id
+     */
     getUnit(id) {
         return this.strings[this.unit[id]] ?? null;
     }
+    /**
+     *
+     * @param id
+     */
     getNumericValue(id) {
         return this.numericValue[id];
     }
+    /**
+     *
+     * @param id
+     * @param parentId
+     */
     setParent(id, parentId) {
         this.parents[id] = parentId;
     }
@@ -544,11 +539,11 @@ class Arena {
      */
     setFirstChild(id, firstChildId) {
         const firstChild = this.firstChild[id];
-        if (firstChild == firstChildId) {
+        if (firstChild === firstChildId) {
             return;
         }
         this.detach(firstChildId);
-        if (firstChild != 0) {
+        if (firstChild !== 0) {
             this.#insertBefore(id, firstChild, firstChildId);
             this.detach(firstChild);
         }
@@ -557,6 +552,10 @@ class Arena {
             this.appendChildList(id, [firstChildId]);
         }
     }
+    /**
+     *
+     * @param id
+     */
     getLastChild(id) {
         return this.lastChild[id];
     }
@@ -567,11 +566,11 @@ class Arena {
      */
     setLastChild(id, lastChildId) {
         const lastChild = this.lastChild[id];
-        if (lastChild == lastChildId) {
+        if (lastChild === lastChildId) {
             return;
         }
         this.detach(lastChildId);
-        if (lastChild != 0) {
+        if (lastChild !== 0) {
             this.detach(lastChild);
         }
         // inlined: this.appendChildren(id, lastChildId)
@@ -583,7 +582,7 @@ class Arena {
      * @param nextSiblingId
      */
     setNextSibling(id, nextSiblingId) {
-        if (id == nextSiblingId) {
+        if (id === nextSiblingId) {
             return;
         }
         this.detach(nextSiblingId);
@@ -593,13 +592,13 @@ class Arena {
         this.previousSibling[nextSiblingId] = id;
         this.nextSibling[id] = nextSiblingId;
         this.parents[nextSiblingId] = parent;
-        if (next != 0) {
+        if (next !== 0) {
             this.previousSibling[next] = nextSiblingId;
         }
-        else if (this.lastChild[parent] == id) {
+        else if (this.lastChild[parent] === id) {
             this.lastChild[parent] = nextSiblingId;
         }
-        else if (this.lastToken[parent] == id) {
+        else if (this.lastToken[parent] === id) {
             this.lastToken[parent] = nextSiblingId;
         }
     }
@@ -609,7 +608,7 @@ class Arena {
      * @param previousSiblingId
      */
     setPreviousSibling(id, previousSiblingId) {
-        if (id == previousSiblingId) {
+        if (id === previousSiblingId) {
             return;
         }
         this.detach(previousSiblingId);
@@ -622,11 +621,11 @@ class Arena {
      */
     setFirstToken(id, firstTokenId) {
         const firstToken = this.firstToken[id];
-        if (firstToken == firstTokenId) {
+        if (firstToken === firstTokenId) {
             return;
         }
         this.detach(firstTokenId);
-        if (firstToken != 0) {
+        if (firstToken !== 0) {
             this.#insertBefore(id, firstToken, firstTokenId);
             this.detach(firstToken);
         }
@@ -635,28 +634,56 @@ class Arena {
             this.appendTokenList(id, [firstTokenId]);
         }
     }
+    /**
+     *
+     * @param id
+     * @param colorType
+     */
     setColorType(id, colorType) {
         this.colorType[id] = colorType;
     }
+    /**
+     *
+     * @param id
+     */
     getColorType(id) {
         return this.colorType[id];
     }
+    /**
+     *
+     * @param id
+     * @param flags
+     */
     setFlags(id, flags) {
         this.flags[id] = flags;
     }
+    /**
+     *
+     * @param id
+     */
     getFlags(id) {
         return this.flags[id];
     }
+    /**
+     *
+     * @param id
+     * @param flag
+     */
     hasFlags(id, flag) {
-        return (this.flags[id] & flag) == flag;
+        return (this.flags[id] & flag) === flag;
     }
+    /**
+     *
+     * @param id
+     * @param index
+     */
     getChildAt(id, index) {
         let child = this.firstChild[id];
-        while (index > 0 && child != 0) {
+        while (index > 0 && child !== 0) {
             child = this.nextSibling[child];
             index--;
         }
-        return child == 0 ? null : child;
+        return child === 0 ? null : child;
     }
     /**
      * token at the given position of the token list
@@ -665,11 +692,11 @@ class Arena {
      */
     getTokenAt(id, index) {
         let token = this.firstToken[id];
-        while (index > 0 && token != 0) {
+        while (index > 0 && token !== 0) {
             token = this.nextSibling[token];
             index--;
         }
-        return token == 0 ? null : token;
+        return token === 0 ? null : token;
     }
     /**
      * replace the child at the given index. the node is appended when the index is out of range
@@ -679,7 +706,7 @@ class Arena {
      */
     setChildAt(id, index, child) {
         const current = this.getChildAt(id, index);
-        if (current == child) {
+        if (current === child) {
             return;
         }
         this.detach(child);
@@ -692,29 +719,6 @@ class Arena {
         this.detach(current);
     }
     /**
-     * link a node before a reference node of the given parent
-     * @param parent
-     * @param reference
-     * @param node
-     */
-    #insertBefore(parent, reference, node) {
-        const previous = this.previousSibling[reference];
-        this.previousSibling[node] = previous;
-        this.nextSibling[node] = reference;
-        this.previousSibling[reference] = node;
-        this.parents[node] = parent;
-        if (previous != 0) {
-            this.nextSibling[previous] = node;
-        }
-        else if (this.firstChild[parent] == reference) {
-            this.firstChild[parent] = node;
-        }
-        else if (this.firstToken[parent] == reference) {
-            this.firstToken[parent] = node;
-        }
-    }
-    // ---- structured token fields ---------------------------------------------------------
-    /**
      * list node holding the tokens of a structured token field. created when missing
      * @param id
      * @param field
@@ -723,13 +727,13 @@ class Arena {
         let child = this.firstChild[id];
         let index = 0;
         while (index < field) {
-            if (child == 0) {
+            if (child === 0) {
                 break;
             }
             child = this.nextSibling[child];
             index++;
         }
-        if (child != 0) {
+        if (child !== 0) {
             return child;
         }
         // create the missing slots
@@ -750,7 +754,7 @@ class Arena {
      */
     hasField(id, field) {
         const list = this.getChildAt(id, field);
-        return list != null && this.firstToken[list] != 0;
+        return list != null && this.firstToken[list] !== 0;
     }
     /**
      * first token of a structured token field (single token fields: `l` and `r` of binary expressions, `op`, ...)
@@ -770,6 +774,7 @@ class Arena {
         const list = this.getChildAt(id, field);
         return list == null ? [] : this.tokens(list);
     }
+    // ---- structured token fields ---------------------------------------------------------
     /**
      * set the tokens of a structured token field
      * @param id
@@ -788,35 +793,77 @@ class Arena {
     appendField(id, field, ...tokens) {
         this.appendTokenList(this.fieldList(id, field), tokens);
     }
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setLeft(id, ...children) {
         // inlined: this.setField(id, TokenField.L, ...children)
         this.setTokenList(this.fieldList(id, TokenField.L), children);
     }
+    /**
+     *
+     * @param id
+     */
     getLeft(id) {
         return this.getChildAt(id, TokenField.L) == null ? null : this.fieldTokens(id, TokenField.L);
     }
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id, ...rightId) {
         // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
-        this.setTokenList(this.fieldList(id, TokenField.R), (rightId == null || rightId[0] == null ? [] : rightId));
+        this.setTokenList(this.fieldList(id, TokenField.R), rightId == null || rightId[0] == null ? [] : rightId);
     }
+    /**
+     *
+     * @param id
+     */
     getRight(id) {
         return this.getChildAt(id, TokenField.R) == null ? null : this.fieldTokens(id, TokenField.R);
     }
+    /**
+     *
+     * @param id
+     * @param opId
+     */
     setOp(id, opId) {
         // inlined: this.setField(id, TokenField.Op, opId)
         this.setTokenList(this.fieldList(id, TokenField.Op), [opId]);
     }
+    /**
+     *
+     * @param id
+     */
     getOp(id) {
         return this.field(id, TokenField.Op);
     }
+    /**
+     *
+     * @param id
+     * @param op2Id
+     */
     setOp2(id, op2Id) {
         // inlined: this.setField(id, TokenField.Op2, op2Id)
         this.setTokenList(this.fieldList(id, TokenField.Op2), [op2Id]);
     }
+    /**
+     *
+     * @param id
+     */
     getOp2(id) {
         return this.field(id, TokenField.Op2);
     }
-    // ---- spans ---------------------------------------------------------------------
+    /**
+     *
+     * @param id
+     * @param sourceId
+     * @param start
+     * @param end
+     */
     setSpan(id, sourceId, start, end) {
         if (littleEndian) {
             const index = id << 1;
@@ -838,12 +885,20 @@ class Arena {
         this.spans32[t] = this.spans32[s];
         this.spans32[t + 1] = this.spans32[s + 1];
     }
+    /**
+     *
+     * @param id
+     */
     getSourceId(id) {
         if (littleEndian) {
             return this.spans32[(id << 1) + 1] >>> 24;
         }
         return Number((this.spans[id] >> 56n) & 0xffn);
     }
+    /**
+     *
+     * @param id
+     */
     getSpanStart(id) {
         if (littleEndian) {
             const index = id << 1;
@@ -851,21 +906,44 @@ class Arena {
         }
         return Number((this.spans[id] >> 28n) & 0xfffffffn);
     }
+    // ---- spans ---------------------------------------------------------------------
+    /**
+     *
+     * @param id
+     * @param start
+     */
     setSpandStart(id, start) {
         this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
     }
+    /**
+     *
+     * @param id
+     */
     getSpanEnd(id) {
         if (littleEndian) {
             return this.spans32[id << 1] & 0xfffffff;
         }
         return Number(this.spans[id] & 0xfffffffn);
     }
+    /**
+     *
+     * @param id
+     * @param end
+     */
     setSpanEnd(id, end) {
         this.setSpan(id, this.getSourceId(id), this.getSpanStart(id), end);
     }
+    /**
+     *
+     * @param id
+     */
     getParent(id) {
         return this.parents[id];
     }
+    /**
+     *
+     * @param id
+     */
     resolveString(id) {
         return this.strings[id];
     }
@@ -874,28 +952,28 @@ class Arena {
      * @param id
      */
     detach(id) {
-        if (id == 0 || this.parents[id] == 0) {
+        if (id === 0 || this.parents[id] === 0) {
             return;
         }
         const parent = this.parents[id];
         const next = this.nextSibling[id];
         const previous = this.previousSibling[id];
-        if (previous != 0) {
+        if (previous !== 0) {
             this.nextSibling[previous] = next;
         }
-        else if (this.firstChild[parent] == id) {
+        else if (this.firstChild[parent] === id) {
             this.firstChild[parent] = next;
         }
-        else if (this.firstToken[parent] == id) {
+        else if (this.firstToken[parent] === id) {
             this.firstToken[parent] = next;
         }
-        if (next != 0) {
+        if (next !== 0) {
             this.previousSibling[next] = previous;
         }
-        else if (this.lastChild[parent] == id) {
+        else if (this.lastChild[parent] === id) {
             this.lastChild[parent] = previous;
         }
-        else if (this.lastToken[parent] == id) {
+        else if (this.lastToken[parent] === id) {
             this.lastToken[parent] = previous;
         }
         this.nextSibling[id] = 0;
@@ -995,16 +1073,16 @@ class Arena {
                 // the children, in reverse order
                 const first = top;
                 let token = this.firstToken[value];
-                while (token != 0) {
+                while (token !== 0) {
                     stack[top++] = token;
                     token = this.nextSibling[token];
                 }
-                if ((this.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+                if ((this.flags[value] & EnumAstNodeStatus.HasChildren) === 0) {
                     let child = this.firstChild[value];
-                    while (child != 0) {
-                        if (this.dataTypes[child] == EnumToken.ListTokenType) {
+                    while (child !== 0) {
+                        if (this.dataTypes[child] === EnumToken.ListTokenType) {
                             token = this.firstToken[child];
-                            while (token != 0) {
+                            while (token !== 0) {
                                 stack[top++] = token;
                                 token = this.nextSibling[token];
                             }
@@ -1033,7 +1111,7 @@ class Arena {
      */
     getValueParent(id) {
         const parent = this.parents[id];
-        return parent != 0 && this.dataTypes[parent] == EnumToken.ListTokenType ? this.parents[parent] : parent;
+        return parent !== 0 && this.dataTypes[parent] === EnumToken.ListTokenType ? this.parents[parent] : parent;
     }
     /**
      * node that owns a value token: the declaration, the rule or the at-rule. 0 when the token is detached
@@ -1041,7 +1119,8 @@ class Arena {
      */
     getValueOwner(id) {
         let parent = this.parents[id];
-        while (parent != 0 && (this.flags[parent] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) == 0) {
+        while (parent !== 0 &&
+            (this.flags[parent] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) === 0) {
             parent = this.parents[parent];
         }
         return parent;
@@ -1128,7 +1207,7 @@ class Arena {
         const walker = new NodeWalker(this, node);
         for (let r = walker.next(); !r.done; r = walker.next()) {
             const current = r.value;
-            if (this.firstToken[current] == 0) {
+            if (this.firstToken[current] === 0) {
                 continue;
             }
             const values = new ValueWalker(this, this.tokens(current));
@@ -1150,10 +1229,10 @@ class Arena {
      * @returns the token id or null
      */
     findValue(node, matcher) {
-        if (node == null || node == 0) {
+        if (node == null || node === 0) {
             return null;
         }
-        if ((this.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) == 0) {
+        if ((this.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) === 0) {
             // token: the token itself is tested first
             if (matcher(this, node)) {
                 return node;
@@ -1177,7 +1256,7 @@ class Arena {
     subTokens(id) {
         const result = [];
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             result.push(token);
             token = this.nextSibling[token];
         }
@@ -1186,10 +1265,10 @@ class Arena {
             return result;
         }
         let child = this.firstChild[id];
-        while (child != 0) {
-            if (this.dataTypes[child] == EnumToken.ListTokenType) {
+        while (child !== 0) {
+            if (this.dataTypes[child] === EnumToken.ListTokenType) {
                 token = this.firstToken[child];
-                while (token != 0) {
+                while (token !== 0) {
                     result.push(token);
                     token = this.nextSibling[token];
                 }
@@ -1201,9 +1280,14 @@ class Arena {
         }
         return result;
     }
+    /**
+     *
+     * @param id
+     * @param predicate
+     */
     findChild(id, predicate) {
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             if (predicate(child)) {
                 return child;
             }
@@ -1218,7 +1302,7 @@ class Arena {
      */
     findToken(id, predicate) {
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             if (predicate(this, token)) {
                 return token;
             }
@@ -1234,7 +1318,7 @@ class Arena {
     siblings(id, filter) {
         let siblings = [];
         let child = this.firstChild[this.parents[id]];
-        while (child != 0) {
+        while (child !== 0) {
             if (filter == null || filter(this, child)) {
                 siblings.push(child);
             }
@@ -1250,7 +1334,7 @@ class Arena {
     children(id, filter) {
         let children = [];
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             if (filter != null && !filter(this, child)) {
                 child = this.nextSibling[child];
                 continue;
@@ -1268,7 +1352,7 @@ class Arena {
     tokens(id, filter) {
         let tokens = [];
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             if (filter != null && !filter(this, token)) {
                 token = this.nextSibling[token];
                 continue;
@@ -1285,12 +1369,17 @@ class Arena {
     tokenCount(id) {
         let count = 0;
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             count++;
             token = this.nextSibling[token];
         }
         return count;
     }
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setChildren(id, ...children) {
         this.setChildList(id, children);
     }
@@ -1301,7 +1390,7 @@ class Arena {
      */
     setChildList(id, children) {
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             const next = this.nextSibling[child];
             this.nextSibling[child] = 0;
             this.previousSibling[child] = 0;
@@ -1312,6 +1401,11 @@ class Arena {
         this.lastChild[id] = 0;
         this.appendChildList(id, children);
     }
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setTokens(id, ...children) {
         this.setTokenList(id, children);
     }
@@ -1322,7 +1416,7 @@ class Arena {
      */
     setTokenList(id, tokens) {
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             const next = this.nextSibling[token];
             this.nextSibling[token] = 0;
             this.previousSibling[token] = 0;
@@ -1340,14 +1434,14 @@ class Arena {
      * @param before the children are inserted before this child of `to`. they are appended when 0
      */
     moveChildren(from, to, before = 0) {
-        if (from == to) {
+        if (from === to) {
             return;
         }
         let child = this.firstChild[from];
-        while (child != 0) {
+        while (child !== 0) {
             const next = this.nextSibling[child];
             this.detach(child);
-            if (before == 0) {
+            if (before === 0) {
                 this.appendChild(to, child);
             }
             else {
@@ -1356,6 +1450,11 @@ class Arena {
             child = next;
         }
     }
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendChildren(id, ...children) {
         this.appendChildList(id, children);
     }
@@ -1365,19 +1464,19 @@ class Arena {
      * @param children
      */
     appendChildList(id, children) {
-        if (children.length == 0) {
+        if (children.length === 0) {
             return;
         }
         let lastChild;
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
-            if (child == id || child == 0) {
+            if (child === id || child === 0) {
                 continue;
             }
             // the child may already be the last child: detach before reading the last child
             this.detach(child);
             lastChild = this.lastChild[id];
-            if (lastChild == 0) {
+            if (lastChild === 0) {
                 this.firstChild[id] = child;
             }
             else {
@@ -1389,6 +1488,11 @@ class Arena {
             this.lastChild[id] = child;
         }
     }
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendTokens(id, ...children) {
         this.appendTokenList(id, children);
     }
@@ -1398,19 +1502,19 @@ class Arena {
      * @param children
      */
     appendTokenList(id, children) {
-        if (children.length == 0) {
+        if (children.length === 0) {
             return;
         }
         let lastToken;
         for (let i = 0; i < children.length; i++) {
             const token = children[i];
-            if (token == id || token == 0) {
+            if (token === id || token === 0) {
                 continue;
             }
             // the token may already be the last token: detach before reading the last token
             this.detach(token);
             lastToken = this.lastToken[id];
-            if (lastToken == 0) {
+            if (lastToken === 0) {
                 this.firstToken[id] = token;
             }
             else {
@@ -1428,14 +1532,14 @@ class Arena {
      * @param child
      */
     appendChild(id, child) {
-        if (child == id || child == 0) {
+        if (child === id || child === 0) {
             return;
         }
-        if (this.parents[child] != 0) {
+        if (this.parents[child] !== 0) {
             this.detach(child);
         }
         const lastChild = this.lastChild[id];
-        if (lastChild == 0) {
+        if (lastChild === 0) {
             this.firstChild[id] = child;
         }
         else {
@@ -1452,14 +1556,14 @@ class Arena {
      * @param token
      */
     appendToken(id, token) {
-        if (token == id || token == 0) {
+        if (token === id || token === 0) {
             return;
         }
-        if (this.parents[token] != 0) {
+        if (this.parents[token] !== 0) {
             this.detach(token);
         }
         const lastToken = this.lastToken[id];
-        if (lastToken == 0) {
+        if (lastToken === 0) {
             this.firstToken[id] = token;
         }
         else {
@@ -1477,33 +1581,45 @@ class Arena {
      */
     prependTokens(id, ...tokens) {
         const first = this.firstToken[id];
-        if (first == 0) {
+        if (first === 0) {
             this.appendTokenList(id, tokens);
             return;
         }
         for (const token of tokens) {
-            if (token == id || token == 0) {
+            if (token === id || token === 0) {
                 continue;
             }
             this.setPreviousSibling(first, token);
         }
     }
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     equalsIgnoreCase(node, key, string) {
-        const id = key == "nam" ? this.name[node] : this.stringValue[node];
+        const id = key === "nam" ? this.name[node] : this.stringValue[node];
         const stringId = this.stringIds.get(string);
-        if (stringId != null && id == stringId) {
+        if (stringId != null && id === stringId) {
             return true;
         }
         const value = this.strings[id];
-        if (value == null || string.length != value.length) {
+        if (value == null || string.length !== value.length) {
             return false;
         }
         return equalsIgnoreCase(value, string);
     }
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     startsWith(node, key, string) {
-        const id = key == "nam" ? this.name[node] : this.stringValue[node];
+        const id = key === "nam" ? this.name[node] : this.stringValue[node];
         const stringId = this.stringIds.get(string);
-        if (stringId != null && id == stringId) {
+        if (stringId != null && id === stringId) {
             return true;
         }
         const value = this.strings[id];
@@ -1512,6 +1628,10 @@ class Arena {
         }
         return value.startsWith(string);
     }
+    /**
+     *
+     * @param newSize
+     */
     resize(newSize) {
         if (newSize <= this.dataTypes.length) {
             return;
@@ -1519,6 +1639,7 @@ class Arena {
         const newDataTypes = new Uint8Array(newSize);
         newDataTypes.set(this.dataTypes);
         this.dataTypes = newDataTypes;
+        this.capacity = newSize;
         const newParents = new Uint32Array(newSize);
         newParents.set(this.parents);
         this.parents = newParents;
@@ -1580,7 +1701,7 @@ class Arena {
         for (let i = 0; i < used.length; i++) {
             count += used[i];
         }
-        if (count == this.strings.length) {
+        if (count === this.strings.length) {
             return;
         }
         // remap the string ids
@@ -1622,10 +1743,10 @@ class Arena {
             const id = stack.pop();
             order[next] = id;
             mapping[id] = next++;
-            for (let child = this.lastChild[id]; child != 0; child = this.previousSibling[child]) {
+            for (let child = this.lastChild[id]; child !== 0; child = this.previousSibling[child]) {
                 stack.push(child);
             }
-            for (let token = this.lastToken[id]; token != 0; token = this.previousSibling[token]) {
+            for (let token = this.lastToken[id]; token !== 0; token = this.previousSibling[token]) {
                 stack.push(token);
             }
         }
@@ -1699,18 +1820,19 @@ class Arena {
             this.stringIds = stringIds;
         }
         for (const [id, list] of this.errors) {
-            if (mapping[id] != 0) {
+            if (mapping[id] !== 0) {
                 nodeErrors.set(mapping[id], list);
             }
         }
         if (errors != null) {
             for (const error of errors) {
-                if (typeof error.node == "number") {
+                if (typeof error.node === "number") {
                     error.node = mapping[error.node] || null;
                 }
             }
         }
         this.dataTypes = dataTypes;
+        this.capacity = dataTypes.length;
         this.parents = parents;
         this.nextSibling = nextSibling;
         this.previousSibling = previousSibling;
@@ -1738,7 +1860,7 @@ class Arena {
      */
     mark(...ids) {
         for (const id of ids) {
-            if (id != 0 && id != this.root) {
+            if (id !== 0 && id !== this.root) {
                 this.flags[id] |= EnumAstNodeStatus.Marked;
             }
         }
@@ -1748,7 +1870,7 @@ class Arena {
      * @param id
      */
     isMarked(id) {
-        return (this.flags[id] & EnumAstNodeStatus.Marked) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.Marked) !== 0;
     }
     /**
      * release nodes: detach them and drop their data (interned strings, errors). node ids are never reused:
@@ -1766,18 +1888,18 @@ class Arena {
             }
             return;
         }
-        if (id == 0 || id == this.root) {
+        if (id === 0 || id === this.root) {
             return;
         }
         if (deep) {
             let child = this.firstChild[id];
-            while (child != 0) {
+            while (child !== 0) {
                 const next = this.nextSibling[child];
                 this.release(child, true);
                 child = next;
             }
             let token = this.firstToken[id];
-            while (token != 0) {
+            while (token !== 0) {
                 const next = this.nextSibling[token];
                 this.release(token, true);
                 token = next;
@@ -1799,15 +1921,24 @@ class Arena {
         this.release();
         return this.compact(errors);
     }
+    /**
+     *
+     * @param id
+     * @param errors
+     */
     setErrors(id, errors) {
         // empty error lists are not stored
-        if (errors == null || errors.length == 0) {
+        if (errors == null || errors.length === 0) {
             this.errors.delete(id);
         }
         else {
             this.errors.set(id, errors);
         }
     }
+    /**
+     *
+     * @param id
+     */
     getErrors(id) {
         return this.errors.get(id) ?? null;
     }
@@ -1818,11 +1949,77 @@ class Arena {
     childCount(id) {
         let count = 0;
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             count++;
             child = this.nextSibling[child];
         }
         return count;
+    }
+    /**
+     * structured-cloneable properties of the arena
+     */
+    exportProperties() {
+        return {
+            kind: "Arena",
+            current: this.current,
+            strings: this.strings,
+            errors: [...this.errors.entries()],
+        };
+    }
+    /**
+     * column buffers, in the order of {@link arenaColumns}. the `spans` buffer is shared with the `spans32` view
+     */
+    exportTransferables() {
+        const buffers = [];
+        for (const column of arenaColumns) {
+            const array = this[column];
+            // the columns always own their buffer: no offset or partial view
+            buffers.push(array.buffer);
+        }
+        return buffers;
+    }
+    /**
+     * initialize the arena from exported properties and column buffers
+     * @param properties
+     * @param transferables
+     */
+    importProperties(properties, transferables) {
+        if (transferables.length !== arenaColumns.length) {
+            throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
+        }
+        for (let i = 0; i < arenaColumns.length; i++) {
+            const column = arenaColumns[i];
+            // @ts-ignore
+            this[column] = new arenaColumnTypes[column](transferables[i]);
+        }
+        this.spans32 = new Uint32Array(this.spans.buffer);
+        this.capacity = this.dataTypes.length;
+        this.current = properties.current;
+        this.strings = properties.strings.slice();
+        this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
+        this.errors = new Map(properties.errors);
+    }
+    /**
+     * link a node before a reference node of the given parent
+     * @param parent
+     * @param reference
+     * @param node
+     */
+    #insertBefore(parent, reference, node) {
+        const previous = this.previousSibling[reference];
+        this.previousSibling[node] = previous;
+        this.nextSibling[node] = reference;
+        this.previousSibling[reference] = node;
+        this.parents[node] = parent;
+        if (previous !== 0) {
+            this.nextSibling[previous] = node;
+        }
+        else if (this.firstChild[parent] === reference) {
+            this.firstChild[parent] = node;
+        }
+        else if (this.firstToken[parent] === reference) {
+            this.firstToken[parent] = node;
+        }
     }
 }
 /**
@@ -1844,32 +2041,15 @@ class AstArena extends Arena {
      * source ids. `spans` store the index in this table (8 bits)
      */
     sources = [];
+    /**
+     *
+     * @param size
+     */
     constructor(size = 4096) {
         super(size);
         // string id 0 is the null / empty string
         this.internString("");
         this.flags[this.root] = EnumAstNodeStatus.HasChildren;
-    }
-    /**
-     * @inheritDoc
-     */
-    exportProperties() {
-        return {
-            ...super.exportProperties(),
-            kind: "AstArena",
-            sources: this.sources,
-            raw: this.raw,
-            optimized: this.optimized,
-        };
-    }
-    /**
-     * @inheritDoc
-     */
-    importProperties(properties, transferables) {
-        super.importProperties(properties, transferables);
-        this.sources = properties.sources?.slice() ?? [];
-        this.raw = properties.raw?.slice() ?? [];
-        this.optimized = properties.optimized?.slice() ?? [];
     }
     /**
      * @inheritDoc
@@ -1896,7 +2076,6 @@ class AstArena extends Arena {
         this.optimized = [];
         return mapping;
     }
-    // ---- state ---------------------------------------------------------------------
     /**
      * validation state bits
      * @param id
@@ -1912,21 +2091,21 @@ class AstArena extends Arena {
     setState(id, state) {
         this.flags[id] = (this.flags[id] & ~EnumAstNodeStatus.StateMask) | ((state ?? 0) & EnumAstNodeStatus.StateMask);
     }
+    // ---- state ---------------------------------------------------------------------
     /**
      * true if the node is invalid
      * @param id
      */
     isInvalid(id) {
-        return (this.flags[id] & EnumAstNodeStatus.Invalid) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.Invalid) !== 0;
     }
-    // ---- location ------------------------------------------------------------------
     /**
      * index of a source id in the sources table
      * @param srcId
      */
     sourceIndex(srcId) {
         let index = this.sources.indexOf(srcId);
-        if (index == -1) {
+        if (index === -1) {
             index = this.sources.length;
             this.sources.push(srcId);
         }
@@ -1949,6 +2128,7 @@ class AstArena extends Arena {
         this.flags[id] |= EnumAstNodeStatus.HasLocation;
         this.setSpan(id, this.sourceIndex(srcId ?? 0), sta ?? 0, end ?? 0);
     }
+    // ---- location ------------------------------------------------------------------
     /**
      * set the location of a token from the tokenizer values. the source index is the index of the source id in the sources table
      * @param id
@@ -1977,7 +2157,7 @@ class AstArena extends Arena {
      * @param end
      */
     spanLocation(id, start, end) {
-        if ((this.flags[start] & EnumAstNodeStatus.HasLocation) == 0) {
+        if ((this.flags[start] & EnumAstNodeStatus.HasLocation) === 0) {
             this.copyLocation(id, end);
             return;
         }
@@ -1989,14 +2169,14 @@ class AstArena extends Arena {
      * @param id
      */
     hasLocation(id) {
-        return (this.flags[id] & EnumAstNodeStatus.HasLocation) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.HasLocation) !== 0;
     }
     /**
      * source location
      * @param id
      */
     getLocation(id) {
-        if ((this.flags[id] & EnumAstNodeStatus.HasLocation) == 0) {
+        if ((this.flags[id] & EnumAstNodeStatus.HasLocation) === 0) {
             return null;
         }
         return {
@@ -2012,7 +2192,6 @@ class AstArena extends Arena {
     getSource(id) {
         return this.sources[this.getSourceId(id)] ?? 0;
     }
-    // ---- ast nodes -------------------------------------------------------------------
     /**
      * allocate a stylesheet node
      */
@@ -2043,6 +2222,7 @@ class AstArena extends Arena {
         }
         return id;
     }
+    // ---- ast nodes -------------------------------------------------------------------
     /**
      * allocate an at-rule node
      * @param typ
@@ -2100,7 +2280,6 @@ class AstArena extends Arena {
         this.flags[id] = 0;
         return id;
     }
-    // ---- tokens ----------------------------------------------------------------------
     /**
      * allocate a token. string values are interned, numeric values are stored in the `numericValue` column
      * @param typ
@@ -2110,10 +2289,10 @@ class AstArena extends Arena {
     createToken(typ, val, unit) {
         const id = this.allocate();
         this.dataTypes[id] = typ;
-        if (typeof val == "string") {
+        if (typeof val === "string") {
             this.stringValue[id] = this.internString(val);
         }
-        else if (typeof val == "number") {
+        else if (typeof val === "number") {
             this.numericValue[id] = val;
         }
         if (unit != null) {
@@ -2138,6 +2317,7 @@ class AstArena extends Arena {
         }
         return id;
     }
+    // ---- tokens ----------------------------------------------------------------------
     /**
      * allocate a function token
      * @param typ function token type
@@ -2200,7 +2380,7 @@ class AstArena extends Arena {
      */
     hasFraction(id) {
         const child = this.firstChild[id];
-        return child != 0 && this.dataTypes[child] == EnumToken.FractionTokenType;
+        return child !== 0 && this.dataTypes[child] === EnumToken.FractionTokenType;
     }
     /**
      * fraction token of a numeric token
@@ -2208,7 +2388,7 @@ class AstArena extends Arena {
      */
     getFraction(id) {
         const child = this.firstChild[id];
-        return child != 0 && this.dataTypes[child] == EnumToken.FractionTokenType ? child : 0;
+        return child !== 0 && this.dataTypes[child] === EnumToken.FractionTokenType ? child : 0;
     }
     /**
      * set the fraction value of a numeric token. the numeric value is set to the fraction value
@@ -2217,10 +2397,10 @@ class AstArena extends Arena {
      */
     setFraction(id, fraction) {
         const child = this.getFraction(id);
-        if (child != 0) {
+        if (child !== 0) {
             this.detach(child);
         }
-        if (fraction != null && fraction != 0) {
+        if (fraction != null && fraction !== 0) {
             // inlined: this.appendChildren(id, fraction)
             this.appendChildList(id, [fraction]);
             this.numericValue[id] =
@@ -2277,11 +2457,11 @@ class AstArena extends Arena {
      * @param tokens
      */
     replaceToken(id, ...tokens) {
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return;
         }
         const index = tokens.indexOf(id);
-        if (index == -1) {
+        if (index === -1) {
             this.insertBefore(id, ...tokens);
             this.detach(id);
             return;
@@ -2295,7 +2475,7 @@ class AstArena extends Arena {
      * @param token
      */
     take(token) {
-        return this.parents[token] == 0 ? token : this.clone(token, true);
+        return this.parents[token] === 0 ? token : this.clone(token, true);
     }
     /**
      * copy the data columns of a token (type, values, unit, color type, location)
@@ -2326,10 +2506,10 @@ class AstArena extends Arena {
         this.unit[id] = 0;
         this.colorType[id] = 0;
         this.name[id] = 0;
-        if (typeof val == "string") {
+        if (typeof val === "string") {
             this.stringValue[id] = this.internString(val);
         }
-        else if (typeof val == "number") {
+        else if (typeof val === "number") {
             this.numericValue[id] = val;
         }
         if (unit != null) {
@@ -2340,7 +2520,6 @@ class AstArena extends Arena {
         // inlined: this.setChildren(id)
         this.setChildList(id, []);
     }
-    // ---- plain objects -----------------------------------------------------------------
     /**
      * Import an object: an {@link AstArenaNode} or a plain object ({@link PlainAstNode}, {@link PlainToken}).
      *
@@ -2363,169 +2542,6 @@ class AstArena extends Arena {
             : this.tokenFromObject(node);
     }
     /**
-     * create an ast node from a plain object
-     * @param node
-     */
-    nodeFromObject(node) {
-        const id = this.allocate();
-        const typ = node.typ;
-        this.dataTypes[id] = typ;
-        switch (typ) {
-            case EnumToken.StyleSheetNodeType:
-                this.flags[id] = EnumAstNodeStatus.HasChildren;
-                break;
-            case EnumToken.RuleNodeType:
-            case EnumToken.KeyframesRuleNodeType:
-                this.name[id] = this.internString((node.sel ?? node.nam ?? ""));
-                this.flags[id] = EnumAstNodeStatus.HasChildren;
-                if (node.raw != null) {
-                    this.raw[id] = node.raw;
-                }
-                if (node.optimized != null) {
-                    this.optimized[id] = node.optimized;
-                }
-                if (typeof node.val == "string") {
-                    this.stringValue[id] = this.internString(node.val);
-                }
-                break;
-            case EnumToken.AtRuleNodeType:
-            case EnumToken.KeyframesAtRuleNodeType:
-                this.name[id] = this.internString(node.nam ?? "");
-                this.stringValue[id] = this.internString(node.val ?? "");
-                this.flags[id] = node.chi != null ? EnumAstNodeStatus.HasChildren : 0;
-                break;
-            case EnumToken.CommentNodeType:
-            case EnumToken.CDOCOMMNodeType:
-                this.stringValue[id] = this.internString(node.val ?? "");
-                this.flags[id] = 0;
-                break;
-            default:
-                // declaration like nodes
-                this.name[id] = this.internString(node.nam ?? "");
-                this.flags[id] = EnumAstNodeStatus.HasValues;
-                if (Array.isArray(node.val)) {
-                    for (const token of node.val) {
-                        this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
-                    }
-                }
-                break;
-        }
-        if (Array.isArray(node.tokens)) {
-            for (const token of node.tokens) {
-                this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
-            }
-        }
-        // inlined: this.setState(id, node.state)
-        this.flags[id] = (this.flags[id] & ~EnumAstNodeStatus.StateMask) | ((node.state ?? 0) & EnumAstNodeStatus.StateMask);
-        const loc = node.loc;
-        if (loc != null) {
-            this.setLocation(id, loc.srcId, loc.sta, loc.end);
-        }
-        const errors = node.errors;
-        if (errors != null && errors.length > 0) {
-            this.errors.set(id, errors);
-        }
-        if (Array.isArray(node.chi) && this.flags[id] & EnumAstNodeStatus.HasChildren) {
-            for (const child of node.chi) {
-                // inlined: this.appendChildren(id, typeof child == "number" ? child : this.fromObject(child))
-                this.appendChildList(id, [(typeof child == "number" ? child : this.fromObject(child))]);
-            }
-        }
-        return id;
-    }
-    /**
-     * create a token from a plain object
-     * @param token
-     */
-    tokenFromObject(token) {
-        const id = this.allocate();
-        const typ = token.typ;
-        const plain = token;
-        this.dataTypes[id] = typ;
-        if (typeof plain.nam == "string") {
-            this.name[id] = this.internString(plain.nam);
-        }
-        if (typeof plain.unit == "string") {
-            this.unit[id] = this.internString(plain.unit);
-        }
-        if (typeof plain.kin == "number") {
-            // inlined: this.setColorType(id, plain.kin)
-            this.colorType[id] = plain.kin;
-        }
-        if (typeof plain.cal == "string") {
-            this.unit[id] = this.internString(plain.cal);
-        }
-        if (typeof plain.attr == "string") {
-            this.unit[id] = this.internString(plain.attr);
-        }
-        if (typ == EnumToken.BinaryExpressionTokenType) {
-            this.numericValue[id] = plain.op;
-        }
-        else if (typ == EnumToken.UnaryExpressionTokenType) {
-            this.numericValue[id] = plain.sign;
-            // inlined: this.appendChildren(id, typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))
-            this.appendChildList(id, [(typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))]);
-        }
-        else if (typ == EnumToken.FractionTokenType) {
-            // inlined: this.appendChildren(id, typeof plain.l == "number" ? plain.l : this.fromObject(plain.l), typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))
-            this.appendChildList(id, [(typeof plain.l == "number" ? plain.l : this.fromObject(plain.l)), (typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))]);
-        }
-        else if (typeof plain.val == "string") {
-            if (numericTokenTypes.has(typ)) {
-                // numeric value as a string
-                this.numericValue[id] = +plain.val;
-            }
-            else {
-                this.stringValue[id] = this.internString(plain.val);
-            }
-        }
-        else if (typeof plain.val == "number") {
-            this.numericValue[id] = plain.val;
-        }
-        else if (plain.val != null && typeof plain.val == "object" && !Array.isArray(plain.val)) {
-            // fraction value
-            this.setFraction(id, this.fromObject(plain.val));
-        }
-        else if (Array.isArray(plain.val) && typ != EnumToken.MediaRangeQueryTokenType) {
-            // declaration like tokens
-            for (const child of plain.val) {
-                this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
-            }
-        }
-        if (Array.isArray(plain.chi)) {
-            for (const child of plain.chi) {
-                this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
-            }
-        }
-        if (structuredTokenTypes.has(typ)) {
-            const fields = [
-                ["l", TokenField.L],
-                ["r", TokenField.R],
-                ["op", TokenField.Op],
-                ["op1", TokenField.Op],
-                ["op2", TokenField.Op2],
-                ["val", TokenField.Val],
-            ];
-            for (const [key, field] of fields) {
-                if (plain[key] == null) {
-                    continue;
-                }
-                const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
-                const fieldTokens = [];
-                for (const value of values) {
-                    fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
-                }
-                // inlined: this.setField(id, field, ...fieldTokens)
-                this.setTokenList(this.fieldList(id, field), fieldTokens);
-            }
-        }
-        const loc = plain.loc;
-        if (loc != null) {
-            this.setLocation(id, loc.srcId, loc.sta, loc.end);
-        }
-        return id;
-    }
-    /**
      * Object view of a node or a token: an {@link AstArenaNode}. The view does not copy the node: its properties read
      * and write the arena. Importing the view in this arena ({@link fromObject}, visitor results, setters of the
      * views) is a noop
@@ -2544,6 +2560,7 @@ class AstArena extends Arena {
     toObject(id) {
         return new AstArenaNode(this, id);
     }
+    // ---- plain objects -----------------------------------------------------------------
     /**
      * export a node or a token as a plain object (deep copy). `JSON.stringify()` of an {@link AstArenaNode} returns
      * the plain object
@@ -2592,7 +2609,7 @@ class AstArena extends Arena {
         if (flags & EnumAstNodeStatus.StateMask) {
             node.state = flags & EnumAstNodeStatus.StateMask;
         }
-        if ((flags & EnumAstNodeStatus.HasValues) == 0 && this.firstToken[id] != 0) {
+        if ((flags & EnumAstNodeStatus.HasValues) === 0 && this.firstToken[id] !== 0) {
             node.tokens = [];
             for (const token of this.tokens(id)) {
                 node.tokens.push(this.tokenToObject(token));
@@ -2616,49 +2633,49 @@ class AstArena extends Arena {
     tokenToObject(id) {
         const typ = this.dataTypes[id];
         const token = { typ };
-        if (this.name[id] != 0) {
+        if (this.name[id] !== 0) {
             token.nam = this.strings[this.name[id]];
         }
-        if (typ == EnumToken.BinaryExpressionTokenType) {
+        if (typ === EnumToken.BinaryExpressionTokenType) {
             token.op = this.numericValue[id];
         }
-        else if (typ == EnumToken.UnaryExpressionTokenType) {
+        else if (typ === EnumToken.UnaryExpressionTokenType) {
             token.sign = this.numericValue[id];
-            token.val = this.firstChild[id] == 0 ? null : this.tokenToObject(this.firstChild[id]);
+            token.val = this.firstChild[id] === 0 ? null : this.tokenToObject(this.firstChild[id]);
         }
-        else if (typ == EnumToken.FractionTokenType) {
+        else if (typ === EnumToken.FractionTokenType) {
             token.l = this.tokenToObject(this.firstChild[id]);
             token.r = this.tokenToObject(this.lastChild[id]);
         }
         else if (numericTokenTypes.has(typ)) {
             const fraction = this.getFraction(id);
-            token.val = fraction == 0 ? this.numericValue[id] : this.tokenToObject(fraction);
+            token.val = fraction === 0 ? this.numericValue[id] : this.tokenToObject(fraction);
         }
-        else if (this.stringValue[id] != 0 || typ == EnumToken.IdenTokenType || typ == EnumToken.StringTokenType) {
+        else if (this.stringValue[id] !== 0 || typ === EnumToken.IdenTokenType || typ === EnumToken.StringTokenType) {
             token.val = this.strings[this.stringValue[id]];
         }
-        if (this.unit[id] != 0) {
-            if (typ == EnumToken.ColorTokenType) {
+        if (this.unit[id] !== 0) {
+            if (typ === EnumToken.ColorTokenType) {
                 token.cal = this.strings[this.unit[id]];
             }
-            else if (typ == EnumToken.MatchExpressionTokenType) {
+            else if (typ === EnumToken.MatchExpressionTokenType) {
                 token.attr = this.strings[this.unit[id]];
             }
             else {
                 token.unit = this.strings[this.unit[id]];
             }
         }
-        if (typ == EnumToken.ColorTokenType && this.colorType[id] != ColorType.NONE) {
+        if (typ === EnumToken.ColorTokenType && this.colorType[id] !== ColorType.NONE) {
             token.kin = this.colorType[id];
         }
-        if (this.firstToken[id] != 0) {
+        if (this.firstToken[id] !== 0) {
             const tokens = [];
             for (const child of this.tokens(id)) {
                 tokens.push(this.tokenToObject(child));
             }
-            if (typ == EnumToken.DeclarationNodeType ||
-                typ == EnumToken.CssVariableTokenType ||
-                typ == EnumToken.CssVariableImportTokenType) {
+            if (typ === EnumToken.DeclarationNodeType ||
+                typ === EnumToken.CssVariableTokenType ||
+                typ === EnumToken.CssVariableImportTokenType) {
                 token.val = tokens;
             }
             else {
@@ -2683,7 +2700,6 @@ class AstArena extends Arena {
         }
         return token;
     }
-    // ---- clone / import ----------------------------------------------------------------
     /**
      * clone a node or a token. tokens are always cloned deeply
      * @param id
@@ -2711,18 +2727,18 @@ class AstArena extends Arena {
         if (this.errors.size > 0 && this.errors.has(id)) {
             this.errors.set(target, this.errors.get(id));
         }
-        const isNode = (flags & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) != 0;
+        const isNode = (flags & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) !== 0;
         // declaration values are cloned only when requested
-        if (!isNode || deep || (flags & EnumAstNodeStatus.HasValues) == 0) {
+        if (!isNode || deep || (flags & EnumAstNodeStatus.HasValues) === 0) {
             let token = this.firstToken[id];
-            while (token != 0) {
+            while (token !== 0) {
                 this.appendToken(target, this.clone(token, true, cloneMap));
                 token = this.nextSibling[token];
             }
         }
         if (!isNode || deep) {
             let child = this.firstChild[id];
-            while (child != 0) {
+            while (child !== 0) {
                 this.appendChild(target, this.clone(child, true, cloneMap));
                 child = this.nextSibling[child];
             }
@@ -2762,20 +2778,19 @@ class AstArena extends Arena {
             this.errors.set(target, source.errors.get(id));
         }
         let token = source.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             this.appendToken(target, this.import(source, token));
             token = source.nextSibling[token];
         }
-        if (deep || (flags & EnumAstNodeStatus.HasChildren) == 0) {
+        if (deep || (flags & EnumAstNodeStatus.HasChildren) === 0) {
             let child = source.firstChild[id];
-            while (child != 0) {
+            while (child !== 0) {
                 this.appendChild(target, this.import(source, child));
                 child = source.nextSibling[child];
             }
         }
         return target;
     }
-    // ---- tree helpers --------------------------------------------------------------
     /**
      * index of a child in its parent's children (or tokens) list
      * @param id
@@ -2783,10 +2798,10 @@ class AstArena extends Arena {
     indexOf(id) {
         let index = 0;
         let child = this.previousSibling[id];
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return -1;
         }
-        while (child != 0) {
+        while (child !== 0) {
             index++;
             child = this.previousSibling[child];
         }
@@ -2799,12 +2814,13 @@ class AstArena extends Arena {
      */
     insertBefore(reference, ...nodes) {
         for (const node of nodes) {
-            if (node == reference || node == 0) {
+            if (node === reference || node === 0) {
                 continue;
             }
             this.setPreviousSibling(reference, node);
         }
     }
+    // ---- clone / import ----------------------------------------------------------------
     /**
      * insert nodes after a child
      * @param reference
@@ -2812,7 +2828,7 @@ class AstArena extends Arena {
      */
     insertAfter(reference, ...nodes) {
         for (const node of nodes) {
-            if (node == reference || node == 0) {
+            if (node === reference || node === 0) {
                 continue;
             }
             this.setNextSibling(reference, node);
@@ -2826,24 +2842,25 @@ class AstArena extends Arena {
      */
     prependChildren(id, ...nodes) {
         const first = this.firstChild[id];
-        if (first == 0) {
+        if (first === 0) {
             this.appendChildList(id, nodes);
         }
         else {
             this.insertBefore(first, ...nodes);
         }
     }
+    // ---- tree helpers --------------------------------------------------------------
     /**
      * replace a child with other nodes. the node itself may be part of the replacement
      * @param id
      * @param nodes
      */
     replaceChild(id, ...nodes) {
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return;
         }
         const index = nodes.indexOf(id);
-        if (index == -1) {
+        if (index === -1) {
             this.insertBefore(id, ...nodes);
             this.detach(id);
             return;
@@ -2856,7 +2873,7 @@ class AstArena extends Arena {
      * @param id
      */
     hasChildren(id) {
-        return (this.flags[id] & EnumAstNodeStatus.HasChildren) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.HasChildren) !== 0;
     }
     /**
      * rule selector
@@ -2889,7 +2906,6 @@ class AstArena extends Arena {
     setValueString(id, val) {
         this.stringValue[id] = this.internString(val);
     }
-    // ---- nesting rules expansion ---------------------------------------------------------------
     /**
      * Expand the css nesting rules of a stylesheet, a rule or an at-rule. The tree is expanded in place: the nested rules
      * are moved into the parent of their rule and their selectors are resolved
@@ -2909,17 +2925,18 @@ class AstArena extends Arena {
             return ast;
         }
         let node = this.firstChild[ast];
-        while (node != 0) {
+        while (node !== 0) {
             const next = this.nextSibling[node];
             const typ = this.dataTypes[node];
             if (typ === EnumToken.RuleNodeType) {
                 // the expanded rules are inserted after the rule
                 this.expandRule(node, ast, next);
             }
-            else if (typ == EnumToken.AtRuleNodeType && this.flags[node] & EnumAstNodeStatus.HasChildren) {
+            else if (typ === EnumToken.AtRuleNodeType && this.flags[node] & EnumAstNodeStatus.HasChildren) {
                 let j = this.lastChild[node];
-                while (j != 0) {
-                    if (this.dataTypes[j] == EnumToken.RuleNodeType || this.dataTypes[j] == EnumToken.AtRuleNodeType) {
+                while (j !== 0) {
+                    if (this.dataTypes[j] === EnumToken.RuleNodeType ||
+                        this.dataTypes[j] === EnumToken.AtRuleNodeType) {
                         this.expand(node);
                         break;
                     }
@@ -2929,6 +2946,216 @@ class AstArena extends Arena {
             node = next;
         }
         return ast;
+    }
+    /**
+     * replace the nesting selector '&' of a selector
+     * @internal
+     * @param input
+     * @param replace
+     */
+    replaceCompound(input, replace) {
+        const tokens = parseString(this, input);
+        // inlined: this.walkValues(tokens)
+        for (const t of new ValueWalker(this, tokens)) {
+            if (this.dataTypes[t] === EnumToken.NestingSelectorTokenType) {
+                if (tokens.length === 2) {
+                    this.resetToken(t, EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.strings[this.stringValue[t]], replace));
+                    continue;
+                }
+                const rule = splitRule(replace);
+                this.resetToken(t, EnumToken.LiteralTokenType, rule.length > 1 ? ":is(" + replace + ")" : replace);
+            }
+        }
+        return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
+    }
+    /**
+     * @inheritDoc
+     */
+    exportProperties() {
+        return {
+            ...super.exportProperties(),
+            kind: "AstArena",
+            sources: this.sources,
+            raw: this.raw,
+            optimized: this.optimized,
+        };
+    }
+    /**
+     * @inheritDoc
+     */
+    importProperties(properties, transferables) {
+        super.importProperties(properties, transferables);
+        this.sources = properties.sources?.slice() ?? [];
+        this.raw = properties.raw?.slice() ?? [];
+        this.optimized = properties.optimized?.slice() ?? [];
+    }
+    // ---- nesting rules expansion ---------------------------------------------------------------
+    /**
+     * create an ast node from a plain object
+     * @param node
+     */
+    nodeFromObject(node) {
+        const id = this.allocate();
+        const typ = node.typ;
+        this.dataTypes[id] = typ;
+        switch (typ) {
+            case EnumToken.StyleSheetNodeType:
+                this.flags[id] = EnumAstNodeStatus.HasChildren;
+                break;
+            case EnumToken.RuleNodeType:
+            case EnumToken.KeyframesRuleNodeType:
+                this.name[id] = this.internString((node.sel ?? node.nam ?? ""));
+                this.flags[id] = EnumAstNodeStatus.HasChildren;
+                if (node.raw != null) {
+                    this.raw[id] = node.raw;
+                }
+                if (node.optimized != null) {
+                    this.optimized[id] = node.optimized;
+                }
+                if (typeof node.val === "string") {
+                    this.stringValue[id] = this.internString(node.val);
+                }
+                break;
+            case EnumToken.AtRuleNodeType:
+            case EnumToken.KeyframesAtRuleNodeType:
+                this.name[id] = this.internString(node.nam ?? "");
+                this.stringValue[id] = this.internString(node.val ?? "");
+                this.flags[id] = node.chi != null ? EnumAstNodeStatus.HasChildren : 0;
+                break;
+            case EnumToken.CommentNodeType:
+            case EnumToken.CDOCOMMNodeType:
+                this.stringValue[id] = this.internString(node.val ?? "");
+                this.flags[id] = 0;
+                break;
+            default:
+                // declaration like nodes
+                this.name[id] = this.internString(node.nam ?? "");
+                this.flags[id] = EnumAstNodeStatus.HasValues;
+                if (Array.isArray(node.val)) {
+                    for (const token of node.val) {
+                        this.appendToken(id, typeof token === "number" ? token : this.fromObject(token));
+                    }
+                }
+                break;
+        }
+        if (Array.isArray(node.tokens)) {
+            for (const token of node.tokens) {
+                this.appendToken(id, typeof token === "number" ? token : this.fromObject(token));
+            }
+        }
+        // inlined: this.setState(id, node.state)
+        this.flags[id] =
+            (this.flags[id] & ~EnumAstNodeStatus.StateMask) | ((node.state ?? 0) & EnumAstNodeStatus.StateMask);
+        const loc = node.loc;
+        if (loc != null) {
+            this.setLocation(id, loc.srcId, loc.sta, loc.end);
+        }
+        const errors = node.errors;
+        if (errors != null && errors.length > 0) {
+            this.errors.set(id, errors);
+        }
+        if (Array.isArray(node.chi) && this.flags[id] & EnumAstNodeStatus.HasChildren) {
+            for (const child of node.chi) {
+                // inlined: this.appendChildren(id, typeof child == "number" ? child : this.fromObject(child))
+                this.appendChildList(id, [typeof child === "number" ? child : this.fromObject(child)]);
+            }
+        }
+        return id;
+    }
+    /**
+     * create a token from a plain object
+     * @param token
+     */
+    tokenFromObject(token) {
+        const id = this.allocate();
+        const typ = token.typ;
+        const plain = token;
+        this.dataTypes[id] = typ;
+        if (typeof plain.nam === "string") {
+            this.name[id] = this.internString(plain.nam);
+        }
+        if (typeof plain.unit === "string") {
+            this.unit[id] = this.internString(plain.unit);
+        }
+        if (typeof plain.kin === "number") {
+            // inlined: this.setColorType(id, plain.kin)
+            this.colorType[id] = plain.kin;
+        }
+        if (typeof plain.cal === "string") {
+            this.unit[id] = this.internString(plain.cal);
+        }
+        if (typeof plain.attr === "string") {
+            this.unit[id] = this.internString(plain.attr);
+        }
+        if (typ === EnumToken.BinaryExpressionTokenType) {
+            this.numericValue[id] = plain.op;
+        }
+        else if (typ === EnumToken.UnaryExpressionTokenType) {
+            this.numericValue[id] = plain.sign;
+            // inlined: this.appendChildren(id, typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))
+            this.appendChildList(id, [typeof plain.val === "number" ? plain.val : this.fromObject(plain.val)]);
+        }
+        else if (typ === EnumToken.FractionTokenType) {
+            // inlined: this.appendChildren(id, typeof plain.l == "number" ? plain.l : this.fromObject(plain.l), typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))
+            this.appendChildList(id, [
+                typeof plain.l === "number" ? plain.l : this.fromObject(plain.l),
+                typeof plain.r === "number" ? plain.r : this.fromObject(plain.r),
+            ]);
+        }
+        else if (typeof plain.val === "string") {
+            if (numericTokenTypes.has(typ)) {
+                // numeric value as a string
+                this.numericValue[id] = +plain.val;
+            }
+            else {
+                this.stringValue[id] = this.internString(plain.val);
+            }
+        }
+        else if (typeof plain.val === "number") {
+            this.numericValue[id] = plain.val;
+        }
+        else if (plain.val != null && typeof plain.val === "object" && !Array.isArray(plain.val)) {
+            // fraction value
+            this.setFraction(id, this.fromObject(plain.val));
+        }
+        else if (Array.isArray(plain.val) && typ !== EnumToken.MediaRangeQueryTokenType) {
+            // declaration like tokens
+            for (const child of plain.val) {
+                this.appendToken(id, typeof child === "number" ? child : this.fromObject(child));
+            }
+        }
+        if (Array.isArray(plain.chi)) {
+            for (const child of plain.chi) {
+                this.appendToken(id, typeof child === "number" ? child : this.fromObject(child));
+            }
+        }
+        if (structuredTokenTypes.has(typ)) {
+            const fields = [
+                ["l", TokenField.L],
+                ["r", TokenField.R],
+                ["op", TokenField.Op],
+                ["op1", TokenField.Op],
+                ["op2", TokenField.Op2],
+                ["val", TokenField.Val],
+            ];
+            for (const [key, field] of fields) {
+                if (plain[key] == null) {
+                    continue;
+                }
+                const values = Array.isArray(plain[key]) ? plain[key] : [plain[key]];
+                const fieldTokens = [];
+                for (const value of values) {
+                    fieldTokens.push(typeof value === "number" ? value : this.fromObject(value));
+                }
+                // inlined: this.setField(id, field, ...fieldTokens)
+                this.setTokenList(this.fieldList(id, field), fieldTokens);
+            }
+        }
+        const loc = plain.loc;
+        if (loc != null) {
+            this.setLocation(id, loc.srcId, loc.sta, loc.end);
+        }
+        return id;
     }
     /**
      * expand a rule: the nested rules and at-rules are moved out of the rule, into `parent` before `before`.
@@ -2944,28 +3171,28 @@ class AstArena extends Arena {
         const ast = node;
         const sel = this.strings[this.name[ast]];
         const place = (child) => {
-            if (before == 0) {
+            if (before === 0) {
                 this.appendChild(parent, child);
             }
             else {
                 this.insertBefore(before, child);
             }
         };
-        if (this.dataTypes[ast] == EnumToken.RuleNodeType) {
+        if (this.dataTypes[ast] === EnumToken.RuleNodeType) {
             let child = this.firstChild[ast];
-            while (child != 0) {
+            while (child !== 0) {
                 const next = this.nextSibling[child];
                 const typ = this.dataTypes[child];
-                if (typ == EnumToken.RuleNodeType) {
+                if (typ === EnumToken.RuleNodeType) {
                     const rule = child;
                     const ruleSel = this.strings[this.name[rule]];
                     if (!ruleSel.includes("&")) {
                         const selRule = splitRule(ruleSel);
                         const arSelf = splitRule(sel)
-                            .filter((r) => r.every((t) => t != ":before" && t != ":after" && !t.startsWith("::")))
+                            .filter((r) => r.every((t) => t !== ":before" && t !== ":after" && !t.startsWith("::")))
                             .reduce((acc, curr) => acc.concat([curr.join("")]), [])
                             .join(",");
-                        if (arSelf.length == 0) {
+                        if (arSelf.length === 0) {
                             this.detach(rule);
                             child = next;
                             continue;
@@ -2988,9 +3215,9 @@ class AstArena extends Arena {
                         let withoutCompound = [];
                         // pseudo elements cannot be used with '&'
                         // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
-                        const rules = splitRule(sel).filter((r) => r.every((t) => t != ":before" && t != ":after" && !t.startsWith("::")));
+                        const rules = splitRule(sel).filter((r) => r.every((t) => t !== ":before" && t !== ":after" && !t.startsWith("::")));
                         const parentSelector = !sel.includes("&");
-                        if (rules.length == 0) {
+                        if (rules.length === 0) {
                             this.detach(rule);
                             child = next;
                             continue;
@@ -2998,13 +3225,13 @@ class AstArena extends Arena {
                         for (const sel of this.raw[rule] ?? splitRule(ruleSel)) {
                             const s = sel.join("");
                             if (s.includes("&") || parentSelector) {
-                                if (s.indexOf("&", 1) == -1) {
-                                    if (s.at(0) == "&") {
-                                        if (s.at(1) == " ") {
+                                if (s.indexOf("&", 1) === -1) {
+                                    if (s.at(0) === "&") {
+                                        if (s.at(1) === " ") {
                                             childSelectorCompound.push(s.slice(2));
                                         }
                                         else {
-                                            if (s == "&" || parentSelector) {
+                                            if (s === "&" || parentSelector) {
                                                 withCompound.push(s);
                                             }
                                         }
@@ -3019,9 +3246,11 @@ class AstArena extends Arena {
                             }
                         }
                         const selectors = [];
-                        const selector = rules.length > 1 ? ":is(" + rules.map((a) => a.join("")).join(",") + ")" : rules[0].join("");
+                        const selector = rules.length > 1
+                            ? ":is(" + rules.map((a) => a.join("")).join(",") + ")"
+                            : rules[0].join("");
                         if (childSelectorCompound.length > 0) {
-                            if (childSelectorCompound.length == 1) {
+                            if (childSelectorCompound.length === 1) {
                                 selectors.push(this.replaceCompound("& " + childSelectorCompound[0].trim(), selector));
                             }
                             else {
@@ -3031,20 +3260,20 @@ class AstArena extends Arena {
                             }
                         }
                         if (withCompound.length > 0) {
-                            if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
+                            if (withCompound.every((t) => t[0] === "&" && t.indexOf("&", 1) === -1)) {
                                 withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                                 withCompound.length = 0;
                             }
                         }
                         if (withoutCompound.length > 0) {
-                            if (withoutCompound.length == 1) {
-                                const useIs = rules.length == 1 &&
+                            if (withoutCompound.length === 1) {
+                                const useIs = rules.length === 1 &&
                                     selector.match(/^[a-zA-Z.:]/) != null &&
                                     selector.includes(" ") &&
-                                    withoutCompound.length == 1 &&
+                                    withoutCompound.length === 1 &&
                                     withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
                                 const compound = useIs ? ":is(&)" : "&";
-                                selectors.push(this.replaceCompound(rules.length == 1
+                                selectors.push(this.replaceCompound(rules.length === 1
                                     ? useIs
                                         ? withoutCompound[0] + ":is(&)"
                                         : selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/)
@@ -3064,17 +3293,17 @@ class AstArena extends Arena {
                             }
                         }
                         if (withCompound.length > 0) {
-                            if (withCompound.length == 1) {
+                            if (withCompound.length === 1) {
                                 selectors.push(this.replaceCompound(withCompound[0], selector));
                             }
                         }
                         // inlined: this.setSelector(rule, selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), ""))
-                        this.name[rule] = this.internString(selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), ""));
+                        this.name[rule] = this.internString(selectors.reduce((acc, curr) => (curr.length === 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), ""));
                     }
                     place(rule);
                     this.expandRule(rule, parent, before);
                 }
-                else if (typ == EnumToken.AtRuleNodeType) {
+                else if (typ === EnumToken.AtRuleNodeType) {
                     const astAtRule = child;
                     const atRuleName = this.strings[this.name[astAtRule]];
                     if (atRuleName === "scope") {
@@ -3084,8 +3313,8 @@ class AstArena extends Arena {
                             this.stringValue[astAtRule] = this.internString(this.replaceCompound(atRuleValue, sel));
                         }
                         let hasNesting = false;
-                        for (let t = this.firstChild[astAtRule]; t != 0; t = this.nextSibling[t]) {
-                            if (this.dataTypes[t] == EnumToken.RuleNodeType &&
+                        for (let t = this.firstChild[astAtRule]; t !== 0; t = this.nextSibling[t]) {
+                            if (this.dataTypes[t] === EnumToken.RuleNodeType &&
                                 this.strings[this.name[t]].includes("&")) {
                                 hasNesting = true;
                                 break;
@@ -3106,9 +3335,9 @@ class AstArena extends Arena {
                         // the rules are expanded inside the at-rule: [clone, ...expanded nodes]
                         this.moveChildren(astAtRule, clone);
                         this.expandRule(clone, astAtRule, 0);
-                        if (this.firstChild[clone] != 0) {
+                        if (this.firstChild[clone] !== 0) {
                             // the rule declarations are wrapped in the clone, before the expanded nodes
-                            if (this.firstChild[astAtRule] == 0) {
+                            if (this.firstChild[astAtRule] === 0) {
                                 this.appendChild(astAtRule, clone);
                             }
                             else {
@@ -3118,9 +3347,9 @@ class AstArena extends Arena {
                         place(astAtRule);
                         // the expanded at-rules are moved after the at-rule
                         let r = this.firstChild[astAtRule];
-                        while (r != 0) {
+                        while (r !== 0) {
                             const nextRule = this.nextSibling[r];
-                            if (this.dataTypes[r] == EnumToken.AtRuleNodeType) {
+                            if (this.dataTypes[r] === EnumToken.AtRuleNodeType) {
                                 if (this.flags[r] & EnumAstNodeStatus.HasChildren) {
                                     const val = this.strings[this.stringValue[astAtRule]];
                                     const rVal = this.strings[this.stringValue[r]];
@@ -3128,11 +3357,11 @@ class AstArena extends Arena {
                                         const rName = this.strings[this.name[r]];
                                         if (atRuleName === "media" && rName === "media") {
                                             // inlined: this.setValueString(r, val + " and " + rVal)
-                                            this.stringValue[r] = this.internString((val + " and " + rVal));
+                                            this.stringValue[r] = this.internString(val + " and " + rVal);
                                         }
-                                        else if (atRuleName == "layer" && rName == "layer") {
+                                        else if (atRuleName === "layer" && rName === "layer") {
                                             // inlined: this.setValueString(r, val + "." + rVal)
-                                            this.stringValue[r] = this.internString((val + "." + rVal));
+                                            this.stringValue[r] = this.internString(val + "." + rVal);
                                         }
                                     }
                                     place(r);
@@ -3144,54 +3373,39 @@ class AstArena extends Arena {
                             r = nextRule;
                         }
                     }
-                    if (this.firstChild[astAtRule] == 0) {
+                    if (this.firstChild[astAtRule] === 0) {
                         this.detach(astAtRule);
                     }
                 }
                 child = next;
             }
         }
-        if (this.firstChild[ast] == 0) {
+        if (this.firstChild[ast] === 0) {
             this.detach(ast);
         }
     }
     /**
-     * replace the nesting selector '&' of a selector
-     * @internal
-     * @param input
+     *
+     * @param selector
      * @param replace
+     * @protected
      */
-    replaceCompound(input, replace) {
-        const tokens = parseString(this, input);
-        // inlined: this.walkValues(tokens)
-        for (const t of new ValueWalker(this, tokens)) {
-            if (this.dataTypes[t] == EnumToken.NestingSelectorTokenType) {
-                if (tokens.length == 2) {
-                    this.resetToken(t, EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.strings[this.stringValue[t]], replace));
-                    continue;
-                }
-                const rule = splitRule(replace);
-                this.resetToken(t, EnumToken.LiteralTokenType, rule.length > 1 ? ":is(" + replace + ")" : replace);
-            }
-        }
-        return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
-    }
     replaceCompoundLiteral(selector, replace) {
         const tokens = [""];
         let i = 0;
         for (; i < selector.length; i++) {
-            if (selector.charAt(i) == "&") {
+            if (selector.charAt(i) === "&") {
                 tokens.push("&", "");
             }
         }
         return tokens
             .sort((a, b) => {
-            if (a == "&") {
+            if (a === "&") {
                 return 1;
             }
-            return b == "&" ? -1 : 0;
+            return b === "&" ? -1 : 0;
         })
-            .reduce((acc, curr) => acc + (curr == "&" ? replace : curr), "");
+            .reduce((acc, curr) => acc + (curr === "&" ? replace : curr), "");
     }
 }
 

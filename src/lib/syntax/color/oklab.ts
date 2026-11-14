@@ -115,7 +115,7 @@ function oklabToken(arena: AstArena, values: number[]): Token | null {
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
-    if (values.length == 4 && values[3] != 1) {
+    if (values.length === 4 && values[3] !== 1) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -206,11 +206,11 @@ export function srgb2oklab(r: number, g: number, blue: number, alpha: number | n
 
     const l: number = 0.2104542553 * L + 0.793617785 * M - 0.0040720468 * S;
 
-    const a: number = r == g && g == blue ? 0 : 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
+    const a: number = r === g && g === blue ? 0 : 1.9779984951 * L - 2.428592205 * M + 0.4505937099 * S;
 
-    const b: number = r == g && g == blue ? 0 : 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
+    const b: number = r === g && g === blue ? 0 : 0.0259040371 * L + 0.7827717662 * M - 0.808675766 * S;
 
-    return alpha == null || alpha == 1 ? [l, a, b] : [l, a, b, alpha];
+    return alpha == null || alpha === 1 ? [l, a, b] : [l, a, b, alpha];
 }
 
 export function getOKLABComponents(arena: AstArena, token: Token): number[] | null {
@@ -230,13 +230,13 @@ export function getOKLABComponents(arena: AstArena, token: Token): number[] | nu
     t = components[1];
 
     // @ts-ignore
-    const a: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const a: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 0.4 : 1);
 
     // @ts-ignore
     t = components[2];
 
     // @ts-ignore
-    const b: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const b: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 0.4 : 1);
 
     // @ts-ignore
     let alpha: number | null = null;
@@ -247,7 +247,7 @@ export function getOKLABComponents(arena: AstArena, token: Token): number[] | nu
 
     const rgb: number[] = [l, a, b];
 
-    if (alpha != 1 && alpha != null) {
+    if (alpha !== 1 && alpha != null) {
         rgb.push(alpha);
     }
 

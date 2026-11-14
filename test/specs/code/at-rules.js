@@ -2072,5 +2072,30 @@ p {
 }`),
             );
         });
+
+        it("keyframe rule 0% dropped #70", function () {
+            return transform(
+                `
+
+ @keyframes k{0%{opacity:0}to{opacity:1}}a{animation-name:k}  
+  `,
+                {
+                    beautify: true,
+                    validation: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@keyframes k {
+ 0% {
+  opacity: 0
+ }
+ to {
+  opacity: 1
+ }
+}
+a {
+ animation-name: k
+}`),
+            );
+        });
     });
 }

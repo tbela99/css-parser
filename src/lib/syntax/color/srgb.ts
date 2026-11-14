@@ -59,11 +59,11 @@ export function srgbvalues(arena: AstArena, token: Token): number[] | null {
 export function rgb2srgb(arena: AstArena, token: Token): number[] | null {
     return (
         getColorComponents(arena, token)?.map?.((t: Token, index: number): number =>
-            index == 3
-                ? arena.dataTypes[t] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] == "none"
+            index === 3
+                ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none"
                     ? 1
                     : getNumber(arena, t)
-                : ((arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1) *
+                : ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) *
                       getNumber(arena, t)) /
                   255,
         ) ?? null
@@ -73,7 +73,7 @@ export function rgb2srgb(arena: AstArena, token: Token): number[] | null {
 export function rgb2srgbvalues(arena: AstArena, token: Token): number[] | null {
     return (
         getColorComponents(arena, token)?.map?.((t: Token, index: number): number =>
-            index == 3
+            index === 3
                 ? getNumber(arena, t)
                 : getNumber(arena, t) / 255,
         ) ?? null
@@ -92,7 +92,7 @@ export function rgb2srgbvalues(arena: AstArena, token: Token): number[] | null {
 
 export function hex2srgbvalues(arena: AstArena, token: Token): number[] {
     const value: string = expandHexValue(
-        arena.colorType[token] == ColorType.LIT
+        arena.colorType[token] === ColorType.LIT
             ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
             : arena.strings[arena.stringValue[token]],
     );
@@ -102,7 +102,7 @@ export function hex2srgbvalues(arena: AstArena, token: Token): number[] {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
     }
 
-    if (rgb.length == 4) {
+    if (rgb.length === 4) {
         rgb[3] = +rgb[3].toFixed(2);
     }
 
@@ -125,7 +125,7 @@ export function hwb2srgbvalues(arena: AstArena, token: Token): number[] | null {
 
     const rgb: number[] = hwb2srgb(h, w, b);
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         rgb.push(a);
     }
 
@@ -173,7 +173,7 @@ export function hwb2srgb(
 
     const srgb = [rChroma * factor + wNorm, gChroma * factor + wNorm, bChroma * factor + wNorm];
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         srgb.push(alpha);
     }
 
@@ -225,7 +225,7 @@ export function cmyk2srgbvalues(arena: AstArena, token: Token): number[] | null 
 
     const rgb: number[] = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
 
-    if (components.length == 5) {
+    if (components.length === 5) {
         rgb.push(getNumber(arena, components[4]));
     }
 
@@ -241,7 +241,7 @@ export function oklab2srgbvalues(arena: AstArena, token: Token): number[] | null
 
     const rgb: number[] = OKLab_to_sRGB(l, a, b);
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
 
@@ -258,7 +258,7 @@ export function oklch2srgbvalues(arena: AstArena, token: Token): number[] | null
     const values = lchvalues2labvalues(l, c, h);
     const rgb: number[] = OKLab_to_sRGB(values[0], values[1], values[2]);
 
-    if (alpha != 1) {
+    if (alpha !== 1) {
         rgb.push(alpha);
     }
 
@@ -286,17 +286,17 @@ export function hslvalues(arena: AstArena, token: Token): { h: number; s: number
     // @ts-ignore
     let l: number = getNumber(arena, t);
 
-    if (arena.dataTypes[components[1]] == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[components[1]] === EnumToken.PercentageTokenType) {
         s *= 100;
     }
 
-    if (arena.dataTypes[components[2]] == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[components[2]] === EnumToken.PercentageTokenType) {
         l *= 100;
     }
 
     let a = null;
 
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
 
@@ -378,7 +378,7 @@ export function lch2srgbvalues(arena: AstArena, token: Token): number[] | null {
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
     const rgb: number[] = Lab_to_sRGB(l, a, b);
 
-    if (alpha != 1) {
+    if (alpha !== 1) {
         rgb.push(alpha);
     }
 
@@ -401,7 +401,7 @@ export function srgb2lsrgbvalues(r: number, g: number, b: number, a: number | nu
         return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
     });
 
-    if (a != 1 && a != null) {
+    if (a !== 1 && a != null) {
         rgb.push(a);
     }
 
@@ -425,7 +425,7 @@ export function lsrgb2srgbvalues(r: number, g: number, b: number, alpha: number 
         return 12.92 * val;
     });
 
-    if (alpha != 1 && alpha != null) {
+    if (alpha !== 1 && alpha != null) {
         rgb.push(alpha);
     }
 

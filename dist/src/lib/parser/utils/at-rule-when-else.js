@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { TokenField } from '../../ast/arena.js';
@@ -26,7 +26,8 @@ function matchAtRuleWhenElseSyntax(arena, stream, context, options = {}) {
         if (expectAndOr) {
             let k = i;
             while (k < stream.length &&
-                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)) {
+                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)) {
                 tokens.push(stream[k]);
                 k++;
             }
@@ -90,7 +91,7 @@ function matchAtRuleWhenElseSyntax(arena, stream, context, options = {}) {
                     }
                     arena.spanLocation(stream[i], stream[i], stream[j]);
                     const chi = isSupportsFunction
-                        ? arena.firstToken[stream[i]] != 0
+                        ? arena.firstToken[stream[i]] !== 0
                             ? arena.tokens(stream[i])
                             : trimArray(arena, slice.slice(1, -1))
                         : arena.tokens(tokenList[0]);

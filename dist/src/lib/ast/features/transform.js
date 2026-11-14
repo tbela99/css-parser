@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
@@ -34,22 +34,27 @@ class TransformCssFeature {
             options.features.push(new TransformCssFeature());
         }
     }
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
     run(arena, ast) {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
         }
         let node;
-        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+        for (node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
-            if (arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+            if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType ||
                 !transformProperty.test(arena.strings[arena.name[node]])) {
                 continue;
             }
             const children = [];
             for (const child of arena.tokens(node)) {
-                children.push(arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                children.push(arena.dataTypes[child] === EnumToken.TransformFunctionTokenType
                     ? minifyTransformFunctions(arena, child)
                     : child);
             }

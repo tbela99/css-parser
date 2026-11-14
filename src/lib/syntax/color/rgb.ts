@@ -100,7 +100,7 @@ export function color2RgbToken(arena: AstArena, token: Token): Token | null {
         return null;
     }
 
-    return rgb2RgbToken(arena, values.map((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))));
+    return rgb2RgbToken(arena, values.map((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))));
 }
 
 function rgb2RgbToken(arena: AstArena, values: number[]): Token | null {
@@ -110,7 +110,7 @@ function rgb2RgbToken(arena: AstArena, values: number[]): Token | null {
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
 
@@ -118,7 +118,7 @@ function rgb2RgbToken(arena: AstArena, values: number[]): Token | null {
 }
 export function hex2rgbvalues(arena: AstArena, token: Token): number[] {
     const value: string = expandHexValue(
-        arena.colorType[token] == ColorType.LIT
+        arena.colorType[token] === ColorType.LIT
             ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
             : arena.strings[arena.stringValue[token]],
     );
@@ -128,8 +128,8 @@ export function hex2rgbvalues(arena: AstArena, token: Token): number[] {
         rgb.push(parseInt(value.slice(i, i + 2), 16));
     }
 
-    if (rgb.length == 4) {
-        if (rgb[3] == 255) {
+    if (rgb.length === 4) {
+        if (rgb[3] === 255) {
             rgb.pop();
         } else {
             rgb[3] = +(rgb[3] / 255).toFixed(2);
@@ -140,7 +140,7 @@ export function hex2rgbvalues(arena: AstArena, token: Token): number[] {
 }
 
 export function hwb2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return hwb2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return hwb2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export function hsl2rgbvalues(arena: AstArena, token: Token): number[] | null {
@@ -153,7 +153,7 @@ export function hsl2rgbvalues(arena: AstArena, token: Token): number[] | null {
 
     return hslvalues2srgbvalues(h , s, l)
         .map((t: number) => minmax(Math.round(t * 255), 0, 255))
-        .concat(a == 1 || a == null ? [] : [a]);
+        .concat(a === 1 || a == null ? [] : [a]);
 }
 
 export function hsl2srgbvalues(arena: AstArena, token: Token): number[] | null {
@@ -163,25 +163,25 @@ export function hsl2srgbvalues(arena: AstArena, token: Token): number[] | null {
         return null;
     }
 
-    return hslvalues2srgbvalues(h, s, l).concat(a == 1 || a == null ? [] : [a]);
+    return hslvalues2srgbvalues(h, s, l).concat(a === 1 || a == null ? [] : [a]);
 }
 
 export function cmyk2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return cmyk2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return cmyk2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export function oklab2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return oklab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return oklab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export function oklch2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return oklch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return oklch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export function lab2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return lab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return lab2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export function lch2rgbvalues(arena: AstArena, token: Token): number[] | null {
-    return lch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return lch2srgbvalues(arena, token)?.map?.((t: number, index: number) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }

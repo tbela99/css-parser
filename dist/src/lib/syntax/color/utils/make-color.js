@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken, ColorType } from '../../../ast/types.js';
@@ -11,6 +11,7 @@ import { minmax, getNumber } from '../color.js';
 
 /**
  * Create a color token
+ * @param arena
  * @param kind
  * @param components
  * @param alpha
@@ -22,14 +23,15 @@ function makeColor(arena, kind, components, alpha) {
     }
     const alphaValue = alpha == null
         ? 1
-        : arena.dataTypes[alpha] === EnumToken.IdenTokenType && equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
+        : arena.dataTypes[alpha] === EnumToken.IdenTokenType &&
+            equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
             ? 0
             : minmax(getNumber(arena, alpha), 0, 1);
     components.length = 3;
     // the components may belong to another color token: a token belongs to one token list
     for (let i = 0; i < components.length; i++) {
         // inlined: arena.take(components[i])
-        components[i] = arena.parents[components[i]] == 0 ? components[i] : arena.clone(components[i], true);
+        components[i] = arena.parents[components[i]] === 0 ? components[i] : arena.clone(components[i], true);
     }
     if (alphaValue !== 1) {
         components.push(arena.createToken(EnumToken.NumberTokenType, alphaValue));

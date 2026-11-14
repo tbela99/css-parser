@@ -17,7 +17,9 @@ export function getColorType(arena: AstArena, color: Token): ColorType | null {
 
         return arena.colorType[color] === ColorType.COLOR_MIX
             ? (ColorType[
-                  arena.strings[arena.stringValue[token]]?.toUpperCase?.()?.replace?.("-", "_") as keyof typeof ColorType
+                  arena.strings[arena.stringValue[token]]
+                      ?.toUpperCase?.()
+                      ?.replace?.("-", "_") as keyof typeof ColorType
               ] as ColorType)
             : getColorType(arena, token);
     }

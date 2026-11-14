@@ -16,7 +16,7 @@ export function a98rgb2srgbvalues(r: number, g: number, b: number, a: number | n
 }
 
 export function srgb2a98values(r: number, g: number, b: number, a: number | null = null): number[] {
-    let values = srgb2xyz(r, g, b);
+    let values: number[] = srgb2xyz(r, g, b);
     values = xyz2la98rgb(values[0], values[1], values[2]);
     values = la98rgb2a98rgb(values[0], values[1], values[2]);
 
@@ -39,7 +39,7 @@ function a98rgb2la98(r: number, g: number, b: number, a: number | null = null): 
 
             return sign * Math.pow(abs, 563 / 256);
         })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 
 function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -54,7 +54,7 @@ function la98rgb2a98rgb(r: number, g: number, b: number, a: number | null = null
 
             return sign * Math.pow(abs, 256 / 563);
         })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 
 function la98rgb2xyz(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -71,7 +71,7 @@ function la98rgb2xyz(r: number, g: number, b: number, a: number | null = null): 
         [53769 / 1989134, 351524 / 4972835, 4929758 / 4972835],
     ];
 
-    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a === 1 ? [] : [a]);
 }
 
 function xyz2la98rgb(x: number, y: number, z: number, a: number | null = null): number[] {
@@ -82,5 +82,5 @@ function xyz2la98rgb(x: number, y: number, z: number, a: number | null = null): 
         [16779 / 1248040, -147721 / 1248040, 1266979 / 1248040],
     ];
 
-    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a === 1 ? [] : [a]);
 }

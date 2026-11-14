@@ -108,13 +108,13 @@ export class SourceMap {
                 let encoding: string = "";
                 let offset: number = sourcemaps.indexOf(",") + 1;
 
-                if (offset == 0) {
+                if (offset === 0) {
                     offset = sourcemaps.lastIndexOf(";") + 1;
                 } else {
                     encoding = sourcemaps.slice(sourcemaps.lastIndexOf(";") + 1, offset - 1);
                 }
 
-                if (encoding == "base64") {
+                if (encoding === "base64") {
                     sourcemaps = atob(sourcemaps.slice(offset));
                 } else {
                     sourcemaps = decodeURIComponent(sourcemaps.slice(offset));
@@ -135,8 +135,8 @@ export class SourceMap {
 
             for (let index = 0; index < decodedMappings.length; index++) {
                 if (
-                    decodedMappings[index].length == 0 ||
-                    (decodedMappings[index].length == 1 && decodedMappings[index][0].length == 0)
+                    decodedMappings[index].length === 0 ||
+                    (decodedMappings[index].length === 1 && decodedMappings[index][0].length === 0)
                 ) {
                     continue;
                 }
@@ -191,7 +191,7 @@ export class SourceMap {
 
             srcIndex = this.sourcesMap.indexOf(srcId);
 
-            if (srcIndex == -1) {
+            if (srcIndex === -1) {
                 throw new Error(`Source file ${srcId} not added to sourcemap`);
             }
 
@@ -243,7 +243,7 @@ export class SourceMap {
                         return [];
                     }
 
-                    generatedCodeColumn = index == 0 ? segment[0] : segment[0] + array[0][0];
+                    generatedCodeColumn = index === 0 ? segment[0] : segment[0] + array[0][0];
 
                     result = [generatedCodeColumn];
 
@@ -251,7 +251,7 @@ export class SourceMap {
                         return result;
                     }
 
-                    sourceFileIndex = index == 0 ? segment[1] : segment[1] + array[0][1];
+                    sourceFileIndex = index === 0 ? segment[1] : segment[1] + array[0][1];
                     sourceCodeLine += segment[2];
                     sourceCodeColumn += segment[3];
 
@@ -273,7 +273,7 @@ export class SourceMap {
                     return a[0] - b[0];
                 });
 
-            if (line.length == 0 || (line.length == 1 && line[0].length == 0)) {
+            if (line.length === 0 || (line.length === 1 && line[0].length === 0)) {
                 continue;
             }
 
@@ -287,7 +287,7 @@ export class SourceMap {
      * @param column generated column
      */
     find(line: number, column: number): Array<[string | null, number, number, string | null]> | null {
-        if (this.reverseMap.size == 0) {
+        if (this.reverseMap.size === 0) {
             this.computePositions();
         }
 
@@ -299,7 +299,7 @@ export class SourceMap {
         const result: Array<[string | null, number, number, string | null]> = [];
 
         for (const record of this.reverseMap.get(line)!) {
-            if (record.length == 0 || record[0] < column) {
+            if (record.length === 0 || record[0] < column) {
                 continue;
             }
             if (record[0] > column) {
@@ -314,7 +314,7 @@ export class SourceMap {
             ]);
         }
 
-        return result.length == 0 ? null : result;
+        return result.length === 0 ? null : result;
     }
 
     /**

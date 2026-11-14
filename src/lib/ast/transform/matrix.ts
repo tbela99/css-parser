@@ -7,17 +7,17 @@ import { getNumber } from "../../syntax/color/color.ts";
 import type { Matrix } from "./type.d.ts";
 
 export function parseMatrix(arena: AstArena, mat: Token): Matrix | null {
-    if (arena.dataTypes[mat] == EnumToken.IdenTokenType) {
-        return arena.strings[arena.stringValue[mat]] == "none" ? identity() : null;
+    if (arena.dataTypes[mat] === EnumToken.IdenTokenType) {
+        return arena.strings[arena.stringValue[mat]] === "none" ? identity() : null;
     }
 
     const children = arena.tokens(mat).filter(
-        (t: Token) => arena.dataTypes[t] == EnumToken.NumberTokenType || arena.dataTypes[t] == EnumToken.IdenTokenType,
+        (t: Token) => arena.dataTypes[t] === EnumToken.NumberTokenType || arena.dataTypes[t] === EnumToken.IdenTokenType,
     );
     const values: number[] = [];
 
     for (const child of children) {
-        if (arena.dataTypes[child] != EnumToken.NumberTokenType) {
+        if (arena.dataTypes[child] !== EnumToken.NumberTokenType) {
             return null;
         }
 

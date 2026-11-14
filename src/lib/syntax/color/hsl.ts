@@ -3,10 +3,9 @@ import type { AstArena } from "../../ast/arena.ts";
 import { color2srgbvalues, getNumber } from "./color.ts";
 import { cmyk2rgbvalues, lab2rgbvalues, lch2rgbvalues } from "./rgb.ts";
 import { getColorComponents } from "./utils/components.ts";
-import { hex2srgbvalues, hslvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
+import { hex2srgbvalues, oklab2srgbvalues, oklch2srgbvalues } from "./srgb.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { hwbvalues } from "./hwb.ts";
-import { hwb2hsv } from "./hsv.ts";
 
 export function hex2HslToken(arena: AstArena, token: Token): Token | null {
     let values = hex2srgbvalues(arena, token);
@@ -99,11 +98,11 @@ export function color2HslToken(arena: AstArena, token: Token): Token | null {
 }
 
 function hslToken(arena: AstArena, values: number[]): Token {
-    if (values[1] == 0) {
+    if (values[1] === 0) {
         values[0] = 0;
     }
 
-    if (values[2] == 1 || values[2] == 0) {
+    if (values[2] === 1 || values[2] === 0) {
         values[0] = 0;
         values[1] = 0;
     }
@@ -114,7 +113,7 @@ function hslToken(arena: AstArena, values: number[]): Token {
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
 
-    if (values.length == 4 && values[3] != 1) {
+    if (values.length === 4 && values[3] !== 1) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -150,40 +149,17 @@ export function rgb2hslvalues(arena: AstArena, token: Token): number[] | null {
     // @ts-ignore
     let a: number = null;
 
-    if (chi.length == 4) {
+    if (chi.length === 4) {
         a = getNumber(arena, chi[3]);
     }
 
     const values: number[] = [r, g, b];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         values.push(a);
     }
 
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
-}
-
-// https://gist.github.com/defims/0ca2ef8832833186ed396a2f8a204117#file-annotated-js
-export function hsv2hsl(h: number, s: number, v: number, a?: number): number[] {
-    const result = [
-        //[hue, saturation, lightness]
-        //Range should be between 0 - 1
-        h, //Hue stays the same
-
-        //Saturation is very different between the two color spaces
-        //If (2-sat)*val < 1 set it to sat*val/((2-sat)*val)
-        //Otherwise sat*val/(2-(2-sat)*val)
-        //Conditional is not operating with hue, it is reassigned!
-        (s * v) / ((h = (2 - s) * v) < 1 ? h : 2 - h),
-
-        h / 2, //Lightness is (2-sat)*val/2
-    ];
-
-    if (a != null) {
-        result.push(a);
-    }
-
-    return result;
 }
 
 export function cmyk2hslvalues(arena: AstArena, token: Token): number[] | null {
@@ -192,7 +168,10 @@ export function cmyk2hslvalues(arena: AstArena, token: Token): number[] | null {
     return values == null ? null : rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2hslvalues(arena: AstArena, token: Token): [number, number, number] | [number, number, number, number] | null {
+export function hwb2hslvalues(
+    arena: AstArena,
+    token: Token,
+): [number, number, number] | [number, number, number, number] | null {
     const { h, w, b, a } = hwbvalues(arena, token) ?? {};
 
     if (h == null || w == null || b == null) {
@@ -219,7 +198,7 @@ export function hwb2hslvalues(arena: AstArena, token: Token): [number, number, n
 
     const hsl = [hue, saturation * 100, lightness * 100];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hsl.push(a);
     }
 

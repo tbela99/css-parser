@@ -47,47 +47,6 @@ export function hashId(input: string, length: number = 6): string {
 }
 
 /**
- * Object to string
- * @param input
- * @returns
- */
-export function toSortedString(input: any): string {
-    if (input == null) {
-        return "null";
-    }
-
-    if (typeof input !== "object") {
-        return String(input);
-    }
-    if (Array.isArray(input)) {
-        const result = new Array(input.length);
-
-        for (const value of input) {
-            result.push(toSortedString(value));
-        }
-
-        return JSON.stringify(result);
-    }
-
-    const keys = Object.keys(input).sort();
-
-    for (let i = 0; i < keys.length; i++) {
-        keys[i] = `${keys[i]}:${toSortedString(input[keys[i]])}`;
-    }
-
-    return `{${keys.join(",")}}`;
-}
-
-/**
- * Object hash
- * @param object
- * @returns
- */
-export function objectHash(object: any): string {
-    return hashCode(toSortedString(object)).toString(16);
-}
-
-/**
  * structural signature of a node or a token: type, name, values, tokens and children
  * @param arena
  * @param id
@@ -95,20 +54,20 @@ export function objectHash(object: any): string {
 export function nodeSignature(arena: AstArena, id: number): string {
     let result: string = `${arena.dataTypes[id]}:${arena.name[id]}:${arena.stringValue[id]}:${arena.numericValue[id]}:${arena.unit[id]}:${arena.colorType[id]}`;
 
-    if (arena.firstToken[id] != 0) {
+    if (arena.firstToken[id] !== 0) {
         result += "(";
 
-        for (let token = arena.firstToken[id]; token != 0; token = arena.nextSibling[token]) {
+        for (let token = arena.firstToken[id]; token !== 0; token = arena.nextSibling[token]) {
             result += nodeSignature(arena, token) + ",";
         }
 
         result += ")";
     }
 
-    if (arena.firstChild[id] != 0) {
+    if (arena.firstChild[id] !== 0) {
         result += "{";
 
-        for (let child = arena.firstChild[id]; child != 0; child = arena.nextSibling[child]) {
+        for (let child = arena.firstChild[id]; child !== 0; child = arena.nextSibling[child]) {
             result += nodeSignature(arena, child) + ",";
         }
 
@@ -116,15 +75,6 @@ export function nodeSignature(arena: AstArena, id: number): string {
     }
 
     return result;
-}
-
-/**
- * hash of a node or a token content
- * @param arena
- * @param id
- */
-export function nodeHash(arena: AstArena, id: number): string {
-    return hashCode(nodeSignature(arena, id)).toString(16);
 }
 
 /**
@@ -173,7 +123,7 @@ export async function hash(input: string, length: number = 6, algo?: string): Pr
             case "base64":
                 result = btoa(input);
 
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
 
@@ -213,7 +163,7 @@ export function syncHash(input: string, length: number = 6, algo?: string): stri
             case "base64":
                 result = btoa(input);
 
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
 

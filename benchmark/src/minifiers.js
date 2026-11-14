@@ -80,24 +80,24 @@ const cssnanoProcessor = postcss([cssnano]);
  * official table's "name - version" formatting.
  */
 export const minifiers = [
-    {
-        id: "clean-css",
-        url: versions["clean-css"].url,
-        label: `clean-css - ${versions["clean-css"].version}`,
-        minify: (css) => cleanCssInstance.minify(css).styles,
-    },
-    {
-        id: "cssnano",
-        url: versions.cssnano.url,
-        label: `cssnano - ${versions.cssnano.version}`,
-        minify: async (css) => (await cssnanoProcessor.process(css, { from: undefined })).css,
-    },
-    {
-        id: "csso",
-        url: versions.csso.url,
-        label: `csso - ${versions.csso.version}`,
-        minify: (css) => csso.minify(css).css,
-    },
+    // {
+    //     id: "clean-css",
+    //     url: versions["clean-css"].url,
+    //     label: `clean-css - ${versions["clean-css"].version}`,
+    //     minify: (css) => cleanCssInstance.minify(css).styles,
+    // },
+    // {
+    //     id: "cssnano",
+    //     url: versions.cssnano.url,
+    //     label: `cssnano - ${versions.cssnano.version}`,
+    //     minify: async (css) => (await cssnanoProcessor.process(css, { from: undefined })).css,
+    // },
+    // {
+    //     id: "csso",
+    //     url: versions.csso.url,
+    //     label: `csso - ${versions.csso.version}`,
+    //     minify: (css) => csso.minify(css).css,
+    // },
     // infinite loop bug
     {
         id: "css-tree",
@@ -127,9 +127,18 @@ export const minifiers = [
         minify: (css) => yukuTransform(css).code,
     },
     {
-        id: "css-parser",
+        id: "css-parser-default",
         url: versions["css-parser"].url,
-        label: `@tbela99/css-parser (speed) - ${versions["css-parser"].version}`,
+        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
+        minify: async (css) =>
+            tbelaTransform({
+                input: css,
+            }).code,
+    },
+    {
+        id: "css-parser-speed",
+        url: versions["css-parser"].url,
+        label: `@tbela99/css-parser (fast) - ${versions["css-parser"].version}`,
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
         minify: async (css) =>
             tbelaTransform({
@@ -145,7 +154,23 @@ export const minifiers = [
     {
         id: "css-parser-dev",
         url: versions["css-parser-dev"].url,
-        label: `@tbela99/css-parser-dev (default) - ${versions["css-parser-dev"].version}`,
-        minify: async (css) => tbelaDevTransform({ input: css }).code,
-    }
+        label: `@tbela99/css-parser-dev - ${versions["css-parser-dev"].version}`,
+        minify: async (css) => tbelaDevTransform({ input: Buffer.from(css) }).code,
+    },
+    {
+        id: "css-parser-dev-speed",
+        url: versions["css-parser-dev"].url,
+        label: `@tbela99/css-parser-dev (fast) - ${versions["css-parser-dev"].version}`,
+        title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
+        minify: async (css) =>
+            tbelaDevTransform({
+                input: Buffer.from(css),
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+                // minifyValues: true,
+            }).code,
+    },
 ];

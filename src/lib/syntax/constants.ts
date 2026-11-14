@@ -6,6 +6,11 @@ import { config } from "../validation/json.ts";
  */
 export const LOC = Symbol.for("loc");
 
+/**
+ * the units of the validation data, in their canonical spelling (`Hz`, `Q`, `dB`)
+ */
+export const validationUnits: string[] = config.units as string[];
+
 export const regMatchLinearGradient = /^-((webkit)|o|moz)(-repeating)?-linear-gradient$/i;
 export const regMatchRadialGradient = /^-((webkit)|o|moz)(-repeating)?-radial-gradient$/i;
 export const mFLT = new Set([EnumToken.LtTokenType, EnumToken.LteTokenType]);

@@ -10,7 +10,7 @@ export function gcd(x: number, y: number): number {
     x = Math.abs(x);
     y = Math.abs(y);
 
-    if (x == y) {
+    if (x === y) {
         return x;
     }
 
@@ -40,7 +40,7 @@ export function compute(
     b: number | Fraction,
     op: EnumToken.Add | EnumToken.Sub | EnumToken.Mul | EnumToken.Div,
 ): number | Fraction {
-    if (typeof a == "number" && typeof b == "number") {
+    if (typeof a === "number" && typeof b === "number") {
         switch (op) {
             case EnumToken.Add:
                 return a + b;
@@ -54,7 +54,7 @@ export function compute(
             case EnumToken.Div:
                 const r: [number, number] = simplify(a, b);
 
-                if (r[1] == 1) {
+                if (r[1] === 1) {
                     return r[0];
                 }
 
@@ -65,8 +65,8 @@ export function compute(
         }
     }
 
-    const l1: Fraction = typeof a == "number" ? [a, 1] : a;
-    const r1: Fraction = typeof b == "number" ? [b, 1] : b;
+    const l1: Fraction = typeof a === "number" ? [a, 1] : a;
+    const r1: Fraction = typeof b === "number" ? [b, 1] : b;
 
     let l2: number;
     let r2: number;
@@ -96,7 +96,7 @@ export function compute(
     // @ts-ignore
     const a2: [number, number] = simplify(l2 as number, r2 as number);
 
-    if (a2[1] == 1) {
+    if (a2[1] === 1) {
         return a2[0];
     }
 

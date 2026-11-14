@@ -3,6 +3,14 @@ import type { AstArena } from "../lib/ast/arena.ts";
 import { ColorType, EnumToken, EnumAstNodeStatus } from "../lib/ast/types.ts";
 
 /**
+ * Unicode range token: `U+0025-00FF`, `U+4??`
+ */
+export declare interface UniCodeRangeToken extends BaseToken {
+    typ: EnumToken.UniCodeRange;
+    val: string;
+}
+
+/**
  * Literal token
  */
 export declare interface LiteralToken extends BaseToken {
@@ -1591,6 +1599,7 @@ export declare type Token = number;
  */
 export declare type PlainToken =
     | LiteralToken
+    | UniCodeRangeToken
     | IdentToken
     | IdentListToken
     | DashedIdentToken

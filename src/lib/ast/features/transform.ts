@@ -34,6 +34,11 @@ export class TransformCssFeature {
         }
     }
 
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
     run(arena: AstArena, ast: AstRule | AstAtRule): AstNode | null {
         if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
             return null;
@@ -41,13 +46,13 @@ export class TransformCssFeature {
 
         let node: AstNode | AstDeclaration;
 
-        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+        for (node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
 
             if (
-                arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+                arena.dataTypes[node] !== EnumToken.DeclarationNodeType ||
                 !transformProperty.test(arena.strings[arena.name[node]])
             ) {
                 continue;
@@ -57,7 +62,7 @@ export class TransformCssFeature {
 
             for (const child of arena.tokens(node)) {
                 children.push(
-                    arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                    arena.dataTypes[child] === EnumToken.TransformFunctionTokenType
                         ? minifyTransformFunctions(arena, child)
                         : child,
                 );
@@ -87,7 +92,9 @@ export class TransformCssFeature {
             const l: number = renderValue(arena, matrix).length;
 
             // inlined: arena.setTokens(node, ...r.reduce((acc: Token[], curr: Token[]): Token[] => { if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) { return curr; } return acc; }, [matrix]))
-            arena.setTokenList(node, r.reduce(
+            arena.setTokenList(
+                node,
+                r.reduce(
                     (acc: Token[], curr: Token[]): Token[] => {
                         if (curr.reduce((acc: string, t: Token) => acc + renderValue(arena, t), "").length < l) {
                             return curr;
@@ -96,7 +103,8 @@ export class TransformCssFeature {
                         return acc;
                     },
                     [matrix],
-                ));
+                ),
+            );
         }
 
         return null;

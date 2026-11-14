@@ -44,3 +44,4 @@ export * as sync from './sync.js';
 export * as arena from './arena.js';
 export * as memo from './memo.js';
 
+export * as input from './input.js';

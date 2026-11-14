@@ -29,7 +29,8 @@ export function matchAtRuleWhenElseSyntax(
             let k: number = i;
             while (
                 k < stream.length &&
-                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)
+                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)
             ) {
                 tokens.push(stream[k]);
                 k++;
@@ -110,7 +111,7 @@ export function matchAtRuleWhenElseSyntax(
                     arena.spanLocation(stream[i], stream[i], stream[j]);
 
                     const chi: Token[] = isSupportsFunction
-                        ? arena.firstToken[stream[i]] != 0
+                        ? arena.firstToken[stream[i]] !== 0
                             ? arena.tokens(stream[i])
                             : trimArray(arena, slice.slice(1, -1))
                         : arena.tokens(tokenList[0]);
@@ -129,9 +130,15 @@ export function matchAtRuleWhenElseSyntax(
                         const condition: Token = arena.createToken(EnumToken.WhenElseQueryConditionTokenType);
 
                         // inlined: arena.setField(condition, TokenField.L, ...trimArray(arena, tokens.slice(index2, index)))
-                        arena.setTokenList(arena.fieldList(condition, TokenField.L), trimArray(arena, tokens.slice(index2, index)));
+                        arena.setTokenList(
+                            arena.fieldList(condition, TokenField.L),
+                            trimArray(arena, tokens.slice(index2, index)),
+                        );
                         // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)))
-                        arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, tokens.slice(index + 1)));
+                        arena.setTokenList(
+                            arena.fieldList(condition, TokenField.R),
+                            trimArray(arena, tokens.slice(index + 1)),
+                        );
                         // inlined: arena.setField(condition, TokenField.Op, op)
                         arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
                         arena.spanLocation(condition, op, stream[i]);

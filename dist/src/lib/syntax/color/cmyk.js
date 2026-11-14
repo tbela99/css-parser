@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.1
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken, ColorType } from '../../ast/types.js';
@@ -10,6 +10,11 @@ import { color2srgbvalues } from './color.js';
 import { lch2srgbvalues, lab2srgbvalues, oklch2srgbvalues, oklab2srgbvalues, hwb2srgbvalues, rgb2srgbvalues } from './srgb.js';
 import { hsl2srgbvalues } from './rgb.js';
 
+/**
+ *
+ * @param arena
+ * @param token
+ */
 function rgb2cmykToken(arena, token) {
     let components = rgb2srgbvalues(arena, token);
     if (components == null || components.length < 3) {
@@ -69,9 +74,9 @@ function color2cmykToken(arena, token) {
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);
     const div = 1 - k;
-    const c = k == 1 ? 0 : (1 - r - k) / div;
-    const m = k == 1 ? 0 : (1 - g - k) / div;
-    const y = k == 1 ? 0 : (1 - b - k) / div;
+    const c = k === 1 ? 0 : (1 - r - k) / div;
+    const m = k === 1 ? 0 : (1 - g - k) / div;
+    const y = k === 1 ? 0 : (1 - b - k) / div;
     const result = [c, m, y, k];
     if (a != null && a < 1) {
         result.push(a);
@@ -81,7 +86,7 @@ function srgb2cmykvalues(r, g, b, a = null) {
 function cmyktoken(arena, values) {
     const chi = [];
     for (let index = 0; index < values.length; index++) {
-        if (index == 4) {
+        if (index === 4) {
             chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"));
         }
         chi.push(arena.createToken(EnumToken.PercentageTokenType, values[index] * 100));

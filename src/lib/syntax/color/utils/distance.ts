@@ -23,8 +23,18 @@ export function okLabDistance(arena: AstArena, color1: Token, color2: Token): nu
         return null;
     }
 
-    const okLab1: [number, number, number, number?] = getOKLABComponents(arena, c1) as [number, number, number, number?];
-    const okLab2: [number, number, number, number?] = getOKLABComponents(arena, c2) as [number, number, number, number?];
+    const okLab1: [number, number, number, number?] = getOKLABComponents(arena, c1) as [
+        number,
+        number,
+        number,
+        number?,
+    ];
+    const okLab2: [number, number, number, number?] = getOKLABComponents(arena, c2) as [
+        number,
+        number,
+        number,
+        number?,
+    ];
 
     if (okLab1 == null || okLab2 == null) {
         return null;
