@@ -996,13 +996,9 @@ export class Tokenizer {
         if (codepoint === TokenMap.PERCENTAGE) {
             const slice: number = position;
 
-            if (!isNumericTokenEnd(codes[++position], false)) {
-                return 0;
-            }
-
             this.slice = slice;
             this.hint = EnumToken.PercentageTokenType;
-            return position - offset;
+            return position - offset + 1;
         }
 
         // dimension: a unit, or a dashed ident (user defined unit)

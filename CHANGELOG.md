@@ -2,13 +2,18 @@
 
 # v2.1.0
 
+## Bugs
+
+- [x] do not strip unit from dash ident #180
+- [x] deduplicate important rule #180
+- [x] incorrectly parsing keyframe rule 0% as literal token #180
+
+## Feature
+
 - [x] use arraybuffer as input data
-
-declarations:
-
 - [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
 
-validation
+## Validation
 
 - [x] the validation syntaxes are generated from the CSS definitions of [W3C webref](https://github.com/w3c/webref) instead of mdn-data (deprecated): `npm run syntax-update` runs `scripts/webref.ts`, `scripts/validation.ts` is removed
 - [x] the units are listed in `scripts/local-patch.json`: `@webref/css` does not list them
@@ -73,7 +78,7 @@ see the [migration guide](./files/migration.md)
 - [x] removed `getNodeProperty()` and `setNodeProperty()`: use the arena methods (`arena.getState()`, `arena.setState()`, `arena.getErrors()`, ...) or the object view properties (`arena.toObject(id).state = ...`)
 - [x] `WalkerEvent` and `WalkerOptionEnum` are declared with the other enums (they are still exported by the package)
 
-performance
+## performance
 
 - [x] the parser recycles the tokens that are not attached to the tree (whitespace, `:`, `;`, `{`, `}`, ...): the arena allocates about half the nodes. `arena.recycle(id)` reuses the id of a detached leaf node
 - [x] the initial arena capacity is one node for every 4 bytes of css
