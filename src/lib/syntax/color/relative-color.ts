@@ -83,7 +83,7 @@ export function parseRelativeColorComponents(
         if (component == null) {
             continue;
         }
-        if (arena.dataTypes[component] == EnumToken.IdenTokenType) {
+        if (arena.dataTypes[component] === EnumToken.IdenTokenType) {
             val = arena.strings[arena.stringValue[component]];
 
             if (
@@ -114,21 +114,21 @@ export function parseRelativeColorComponents(
         ) {
             // inlined: arena.walkValues(arena.tokens(component))
             for (const value of new ValueWalker(arena, arena.tokens(component))) {
-                if (arena.dataTypes[value] == EnumToken.IdenTokenType) {
+                if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
                     val = arena.strings[arena.stringValue[value]].toLowerCase();
 
                     if (
                         // @ts-expect-error
                         typeof Math[val.toUpperCase()] !== "number" &&
-                        val != "in" &&
-                        val != "hue" &&
-                        val != "from" &&
-                        val != "alpha" &&
-                        val != "none" &&
-                        val != "shorter" &&
-                        val != "longer" &&
-                        val != "increasing" &&
-                        val != "decreasing" &&
+                        val !== "in" &&
+                        val !== "hue" &&
+                        val !== "from" &&
+                        val !== "alpha" &&
+                        val !== "none" &&
+                        val !== "shorter" &&
+                        val !== "longer" &&
+                        val !== "increasing" &&
+                        val !== "decreasing" &&
                         !colorsFunc.includes(val) &&
                         !colorFuncColorSpace.includes(val) &&
                         !validKeys.includes(val)
@@ -158,7 +158,7 @@ export function parseRelativeColorComponents(
                     arena.dataTypes[t],
                 ),
         );
-    [r, g, b, alpha] = arena.colorType[converted] == ColorType.COLOR ? children.slice(1) : children;
+    [r, g, b, alpha] = arena.colorType[converted] === ColorType.COLOR ? children.slice(1) : children;
 
     values = <Record<RelativeColorTypes, number | Token | null>>{
         [names[0]]: getValue(arena, r, converted, names[0]),
@@ -168,9 +168,9 @@ export function parseRelativeColorComponents(
         alpha:
             alpha == null
                 ? numberToken(arena, 1, b)
-                : arena.dataTypes[alpha] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[alpha]] == "none"
+                : arena.dataTypes[alpha] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[alpha]] === "none"
                   ? numberToken(arena, 0, alpha)
-                  : arena.dataTypes[alpha] == EnumToken.PercentageTokenType
+                  : arena.dataTypes[alpha] === EnumToken.PercentageTokenType
                     ? numberToken(arena, getNumber(arena, alpha), alpha)
                     : alpha,
     };
@@ -184,7 +184,7 @@ export function parseRelativeColorComponents(
             arena,
             aExp == null
                 ? numberToken(arena, 1, bExp)
-                : arena.dataTypes[aExp] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[aExp]] == "none"
+                : arena.dataTypes[aExp] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[aExp]] === "none"
                   ? numberToken(arena, 0, aExp)
                   : aExp,
         ),
@@ -193,10 +193,10 @@ export function parseRelativeColorComponents(
     const result = computeComponentValue(arena, keys, values);
 
     if (result != null) {
-        if ("hsl" == relativeKeys) {
+        if ("hsl" === relativeKeys) {
             toPercentage(arena, result.s);
             toPercentage(arena, result.l);
-        } else if ("hwb" == relativeKeys) {
+        } else if ("hwb" === relativeKeys) {
             toPercentage(arena, result.w);
             toPercentage(arena, result.b);
         }
@@ -221,7 +221,7 @@ export function parseRelativeColorComponents(
  * @returns
  */
 function getValue(arena: AstArena, t: Token, converted?: Token, component?: string): Token {
-    if (arena.dataTypes[t] == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[t] === EnumToken.PercentageTokenType) {
         let value: number = getNumber(arena, t);
 
         if (converted != null) {
@@ -256,7 +256,7 @@ function computeComponentValue(
             // normalize hue
             // inlined: arena.walkValues([object.h as Token])
             for (const k of new ValueWalker(arena, [object.h as Token])) {
-                if (arena.dataTypes[k] == EnumToken.AngleTokenType && arena.strings[arena.unit[k]] == "deg") {
+                if (arena.dataTypes[k] === EnumToken.AngleTokenType && arena.strings[arena.unit[k]] === "deg") {
                     arena.dataTypes[k] = EnumToken.NumberTokenType;
                 }
             }
@@ -272,16 +272,16 @@ function computeComponentValue(
                 EnumToken.LengthTokenType,
             ].includes(arena.dataTypes[exp])
         ) {
-        } else if (arena.dataTypes[exp] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[exp]] in values) {
+        } else if (arena.dataTypes[exp] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[exp]] in values) {
             expr[<RelativeColorTypes>key] = values[<RelativeColorTypes>arena.strings[arena.stringValue[exp]]] as Token;
         } else if (
-            arena.dataTypes[exp] == EnumToken.MathFunctionTokenType ||
-            (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+            arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
+            (arena.dataTypes[exp] === EnumToken.FunctionTokenType &&
                 mathFuncs.includes(arena.strings[arena.stringValue[exp]]))
         ) {
             // inlined: arena.walkValues(arena.tokens(exp))
             for (const value of new ValueWalker(arena, arena.tokens(exp))) {
-                if (arena.dataTypes[value] == EnumToken.IdenTokenType) {
+                if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
                     const name: string = arena.strings[arena.stringValue[value]];
                     const replacement: number | Token | null | undefined = values[name as RelativeColorTypes];
 
@@ -299,13 +299,13 @@ function computeComponentValue(
 
             const result: Token[] =
                 (arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
-                    (arena.dataTypes[exp] == EnumToken.FunctionTokenType &&
+                    (arena.dataTypes[exp] === EnumToken.FunctionTokenType &&
                         mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
                 arena.strings[arena.stringValue[exp]] !== "calc"
                     ? (evaluateFunc(arena, exp) as Token[])
                     : evaluate(arena, arena.tokens(exp));
 
-            if (result.length == 1 && arena.dataTypes[result[0]] != EnumToken.BinaryExpressionTokenType) {
+            if (result.length === 1 && arena.dataTypes[result[0]] !== EnumToken.BinaryExpressionTokenType) {
                 expr[<RelativeColorTypes>key] = result[0];
             }
         }

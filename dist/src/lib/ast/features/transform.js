@@ -44,17 +44,17 @@ class TransformCssFeature {
             return null;
         }
         let node;
-        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+        for (node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
-            if (arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+            if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType ||
                 !transformProperty.test(arena.strings[arena.name[node]])) {
                 continue;
             }
             const children = [];
             for (const child of arena.tokens(node)) {
-                children.push(arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                children.push(arena.dataTypes[child] === EnumToken.TransformFunctionTokenType
                     ? minifyTransformFunctions(arena, child)
                     : child);
             }

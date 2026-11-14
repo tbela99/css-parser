@@ -72,14 +72,14 @@ function hwbToken(arena, values) {
         arena.createToken(EnumToken.PercentageTokenType, values[1]),
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("hwb", ColorType.HWB, chi);
 }
 function rgb2hwbvalues(arena, token) {
     const values = getColorComponents(arena, token).map((t, index) => {
-        if (index == 3) {
+        if (index === 3) {
             return getNumber(arena, t);
         }
         return getNumber(arena, t) / 255;
@@ -157,7 +157,7 @@ function hwbvalues(arena, token) {
     b *= 100;
     // }
     let a = null;
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
         // @ts-ignore
@@ -211,7 +211,7 @@ function hslvalues2hwbvalues(h, s, l, a = null) {
     const w = v - chroma;
     const b = 1 - v;
     const hwb = [hue, w * 100, b * 100];
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hwb.push(a);
     }
     return hwb;

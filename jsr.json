@@ -27,6 +27,8 @@
       "ROADMAP.md",
       "rollup.config.js",
       "scripts",
+      "native",
+      "src/data/validation.origins.json",
       ".DS_Store",
       ".idea",
       "ROADMAP.md",

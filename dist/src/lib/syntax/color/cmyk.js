@@ -74,9 +74,9 @@ function color2cmykToken(arena, token) {
 function srgb2cmykvalues(r, g, b, a = null) {
     const k = 1 - Math.max(r, g, b);
     const div = 1 - k;
-    const c = k == 1 ? 0 : (1 - r - k) / div;
-    const m = k == 1 ? 0 : (1 - g - k) / div;
-    const y = k == 1 ? 0 : (1 - b - k) / div;
+    const c = k === 1 ? 0 : (1 - r - k) / div;
+    const m = k === 1 ? 0 : (1 - g - k) / div;
+    const y = k === 1 ? 0 : (1 - b - k) / div;
     const result = [c, m, y, k];
     if (a != null && a < 1) {
         result.push(a);
@@ -86,7 +86,7 @@ function srgb2cmykvalues(r, g, b, a = null) {
 function cmyktoken(arena, values) {
     const chi = [];
     for (let index = 0; index < values.length; index++) {
-        if (index == 4) {
+        if (index === 4) {
             chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"));
         }
         chi.push(arena.createToken(EnumToken.PercentageTokenType, values[index] * 100));

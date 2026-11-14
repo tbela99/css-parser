@@ -11,7 +11,8 @@ import { doRender } from './lib/printer/render.js';
 export { renderValue } from './lib/printer/render.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
-import { Tokenizer } from './lib/parser/tokenize.js';
+import { createParseInfo, Tokenizer } from './lib/parser/tokenize.js';
+import { isCssInput } from './lib/parser/input.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
@@ -40,11 +41,11 @@ export { version } from '../package.json.js';
  * ```
  */
 async function load(url, currentDirectory = ".", responseType = false) {
-    if (typeof responseType == "boolean") {
+    if (typeof responseType === "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
     let t;
-    if (typeof url == "object") {
+    if (typeof url === "object") {
         t = new URL(url.absolute, self.origin);
     }
     else if (matchUrl.test(url)) {
@@ -57,17 +58,17 @@ async function load(url, currentDirectory = ".", responseType = false) {
         const path = resolve(url, currentDirectory).absolute;
         t = new URL(path, self.origin);
     }
-    return fetch(t, t.origin != self.origin ? { mode: "cors" } : {}).then(async (response) => {
+    return fetch(t, t.origin !== self.origin ? { mode: "cors" } : {}).then(async (response) => {
         if (!response.ok) {
             throw new Error(`${response.status} ${response.statusText} ${response.url}`);
         }
-        if (responseType == ResponseType.ArrayBuffer) {
+        if (responseType === ResponseType.ArrayBuffer) {
             return response.arrayBuffer();
         }
-        if (responseType == ResponseType.JSON) {
+        if (responseType === ResponseType.JSON) {
             return response.json();
         }
-        return responseType == ResponseType.ReadableStream ? response.body : response.text();
+        return responseType === ResponseType.ReadableStream ? response.body : response.text();
     });
 }
 /**
@@ -128,7 +129,7 @@ function render(arena, data, options = {}, mapping) {
 function parseSync(...args) {
     let options;
     let stream;
-    if (typeof args[0] === "string") {
+    if (isCssInput(args[0])) {
         stream = args[0];
         options = args[1];
     }
@@ -152,20 +153,11 @@ function parseSync(...args) {
     });
     options.src = resolve(options.src, options.cwd).relative;
     if (options.source == null) {
-        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
         options.source = source;
     }
-    options.parseInfo = {
-        stream,
-        buffer: "",
-        src: options.src ?? "",
-        offset: 0,
-        time: 0,
-        source: options.source,
-        position: 0,
-        currentPosition: 0,
-    };
+    options.parseInfo = createParseInfo(stream, options.source);
     const result = doParseSync(new Tokenizer(options.parseInfo), options);
     return options.module == null && options.inputSourceMap == null && !options.sourcemap
         ? result
@@ -188,7 +180,7 @@ function parseSync(...args) {
 function transformSync(...args) {
     let options;
     let stream;
-    if (typeof args[0] === "string") {
+    if (isCssInput(args[0])) {
         stream = args[0];
         options = args[1];
     }
@@ -204,9 +196,9 @@ function transformSync(...args) {
     const parseResult = parseSync(stream, options);
     let mapping = null;
     let importMapping = null;
-    if ((typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
-        (typeof options.module == "object" &&
-            typeof options.module.scoped == "number" &&
+    if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+        (typeof options.module === "object" &&
+            typeof options.module.scoped === "number" &&
             options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
         mapping = parseResult.mapping;
         importMapping = parseResult.importMapping;
@@ -258,7 +250,7 @@ function transformSync(...args) {
 async function parse(...args) {
     let options;
     let stream;
-    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+    if (isCssInput(args[0]) || args[0] instanceof ReadableStream) {
         stream = args[0];
         options = args[1];
     }
@@ -267,7 +259,10 @@ async function parse(...args) {
         const { file, input, ...opt } = args[0];
         options = opt;
         if (file != null) {
-            return Promise.resolve((options.load ?? load)(file, "", options.asStream ?? false)).then((stream) => parse(stream, { src: options.file, ...options }));
+            return Promise.resolve((options.load != null
+                ? options.load(file, "", options.asStream ?? false)
+                : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
+                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => parse(stream, { src: options.file, ...options }));
         }
         else {
             stream = input;
@@ -277,7 +272,8 @@ async function parse(...args) {
     options.src ??= "";
     options.sourcesMap ??= new Map();
     Object.assign(options, {
-        load,
+        // a custom loader is used to load the imported files
+        load: options.load ?? load,
         resolve,
         dirname,
         cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
@@ -290,15 +286,7 @@ async function parse(...args) {
         options.sourcesMap.set(source.id, source);
         options.source = source;
     }
-    options.parseInfo = {
-        stream,
-        buffer: "",
-        offset: 0,
-        time: 0,
-        source: options.source,
-        position: 0,
-        currentPosition: 0,
-    };
+    options.parseInfo = createParseInfo(stream, options.source);
     return doParse(stream instanceof ReadableStream
         ? new Tokenizer(options.parseInfo, stream).tokenizeStream()
         : new Tokenizer(options.parseInfo), options).then((result) => options.module == null && options.inputSourceMap == null && !options.sourcemap
@@ -329,7 +317,7 @@ async function parse(...args) {
 async function transform(...args) {
     let options;
     let stream;
-    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+    if (isCssInput(args[0]) || args[0] instanceof ReadableStream) {
         stream = args[0];
         options = args[1];
     }
@@ -338,7 +326,10 @@ async function transform(...args) {
         const { file, input, ...opt } = args[0];
         options = opt;
         if (file != null) {
-            return Promise.resolve((options.load ?? load)(file, "", options.asStream ?? false)).then((stream) => transform(stream, { src: options.file, ...options }));
+            return Promise.resolve((options.load != null
+                ? options.load(file, "", options.asStream ?? false)
+                : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
+                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => transform(stream, { src: options.file, ...options }));
         }
         else {
             stream = input;
@@ -349,9 +340,9 @@ async function transform(...args) {
     return parse(stream, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
-        if ((typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
-            (typeof options.module == "object" &&
-                typeof options.module.scoped == "number" &&
+        if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+            (typeof options.module === "object" &&
+                typeof options.module.scoped === "number" &&
                 options.module.scoped & ModuleScopeEnumOptions.ICSS)) {
             mapping = parseResult.mapping;
             importMapping = parseResult.importMapping;

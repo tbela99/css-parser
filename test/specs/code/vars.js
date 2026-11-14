@@ -60,21 +60,27 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
  /* --animate-repeat: 1 */
 }
 .animate__animated.animate__repeat-1 {
+ -webkit-animation-iteration-count: 1;
  animation-iteration-count: 1
 }
 .animate__animated.animate__repeat-2 {
+ -webkit-animation-iteration-count: 2;
  animation-iteration-count: 2
 }
 .animate__animated.animate__delay-1s {
+ -webkit-animation-delay: 1s;
  animation-delay: 1s
 }
 .animate__animated.animate__delay-2s {
+ -webkit-animation-delay: 2s;
  animation-delay: 2s
 }
 .animate__animated.animate__delay-3s {
+ -webkit-animation-delay: 3s;
  animation-delay: 3s
 }
 .animate__animated.animate__delay-4s {
+ -webkit-animation-delay: 4s;
  animation-delay: 4s
 }`),
             );

@@ -26,22 +26,22 @@ function minifyNthExpression(arena, func) {
     const list = [];
     let index;
     for (index = 0; index < chi.length; index++) {
-        if (arena.dataTypes[chi[index]] == EnumToken.CommentTokenType ||
-            arena.dataTypes[chi[index]] == EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[chi[index]] === EnumToken.CommentTokenType ||
+            arena.dataTypes[chi[index]] === EnumToken.WhitespaceTokenType) {
             continue;
         }
-        if (arena.dataTypes[chi[index]] == EnumToken.IdenTokenType &&
+        if (arena.dataTypes[chi[index]] === EnumToken.IdenTokenType &&
             equalsIgnoreCase("of", arena.strings[arena.stringValue[chi[index]]])) {
             index--;
             break;
         }
         list.push(chi[index]);
     }
-    if (list.length == 2) {
-        if (arena.dataTypes[list[1]] == EnumToken.NumberTokenType) {
-            if (arena.numericValue[list[1]] == 0) {
+    if (list.length === 2) {
+        if (arena.dataTypes[list[1]] === EnumToken.NumberTokenType) {
+            if (arena.numericValue[list[1]] === 0) {
                 list.length = 1;
-                if (arena.dataTypes[list[0]] == EnumToken.DimensionTokenType && arena.numericValue[list[0]] == -2) {
+                if (arena.dataTypes[list[0]] === EnumToken.DimensionTokenType && arena.numericValue[list[0]] === -2) {
                     arena.numericValue[list[0]] = 2;
                 }
             }
@@ -51,16 +51,16 @@ function minifyNthExpression(arena, func) {
                 list.splice(1, 0, arena.createToken(EnumToken.LiteralTokenType, sign > 0 ? "+" : "-"));
             }
         }
-        if (list.length == 3 &&
-            arena.dataTypes[list[2]] == EnumToken.NumberTokenType &&
-            arena.dataTypes[list[0]] == EnumToken.DimensionTokenType &&
-            (arena.numericValue[list[0]] == 2 || arena.numericValue[list[0]] == -2)) {
-            if (1 == arena.numericValue[list[2]]) {
+        if (list.length === 3 &&
+            arena.dataTypes[list[2]] === EnumToken.NumberTokenType &&
+            arena.dataTypes[list[0]] === EnumToken.DimensionTokenType &&
+            (arena.numericValue[list[0]] === 2 || arena.numericValue[list[0]] === -2)) {
+            if (1 === arena.numericValue[list[2]]) {
                 const ident = arena.createToken(EnumToken.IdenTokenType, "odd");
                 arena.copyLocation(ident, list[0]);
                 list.splice(0, 3, ident);
             }
-            else if (0 == arena.numericValue[list[2]]) {
+            else if (0 === arena.numericValue[list[2]]) {
                 const ident = arena.createToken(EnumToken.IdenTokenType, "even");
                 arena.copyLocation(ident, list[0]);
                 list.splice(0, 3, ident);
@@ -68,20 +68,20 @@ function minifyNthExpression(arena, func) {
         }
         chi.splice(0, index, ...list);
     }
-    if (list.length == 1) {
-        if (arena.dataTypes[list[0]] == EnumToken.IdenTokenType &&
+    if (list.length === 1) {
+        if (arena.dataTypes[list[0]] === EnumToken.IdenTokenType &&
             equalsIgnoreCase("-n", arena.strings[arena.stringValue[list[0]]])) {
             // inlined: arena.setStr(list[0], "n")
             arena.stringValue[list[0]] = arena.internString("n");
         }
     }
-    if (list.length == 3) {
-        if (arena.dataTypes[list[0]] == EnumToken.IdenTokenType &&
-            ("n" == arena.strings[arena.stringValue[list[0]]] ||
-                "-n" == arena.strings[arena.stringValue[list[0]]] ||
-                "+n" == arena.strings[arena.stringValue[list[0]]])) {
-            if (arena.dataTypes[list[1]] == EnumToken.NextSiblingCombinatorTokenType) {
-                if (arena.dataTypes[list[2]] == EnumToken.NumberTokenType && 0 == arena.numericValue[list[2]]) {
+    if (list.length === 3) {
+        if (arena.dataTypes[list[0]] === EnumToken.IdenTokenType &&
+            ("n" === arena.strings[arena.stringValue[list[0]]] ||
+                "-n" === arena.strings[arena.stringValue[list[0]]] ||
+                "+n" === arena.strings[arena.stringValue[list[0]]])) {
+            if (arena.dataTypes[list[1]] === EnumToken.NextSiblingCombinatorTokenType) {
+                if (arena.dataTypes[list[2]] === EnumToken.NumberTokenType && 0 === arena.numericValue[list[2]]) {
                     // inlined: arena.setStr(list[0], "n")
                     arena.stringValue[list[0]] = arena.internString("n");
                     chi.splice(0, index, list[0]);
@@ -91,12 +91,13 @@ function minifyNthExpression(arena, func) {
             }
         }
     }
-    const token = chi.find((t) => arena.dataTypes[t] != EnumToken.WhitespaceTokenType && arena.dataTypes[t] != EnumToken.CommentTokenType);
+    const token = chi.find((t) => arena.dataTypes[t] !== EnumToken.WhitespaceTokenType && arena.dataTypes[t] !== EnumToken.CommentTokenType);
     if (token != null) {
-        if (arena.dataTypes[token] == EnumToken.IdenTokenType || arena.dataTypes[token] == EnumToken.LiteralTokenType) {
+        if (arena.dataTypes[token] === EnumToken.IdenTokenType ||
+            arena.dataTypes[token] === EnumToken.LiteralTokenType) {
             const val = arena.strings[arena.stringValue[token]];
-            if (arena.dataTypes[token] == EnumToken.IdenTokenType && (val == "odd" || val == "even")) {
-                if (val == "even") {
+            if (arena.dataTypes[token] === EnumToken.IdenTokenType && (val === "odd" || val === "even")) {
+                if (val === "even") {
                     arena.resetToken(token, EnumToken.DimensionTokenType, 2, "n");
                 }
             }
@@ -121,11 +122,11 @@ function minifyNthExpression(arena, func) {
             let num = null;
             let i = index + 1;
             for (; i < chi.length; i++) {
-                if (arena.dataTypes[chi[i]] == EnumToken.WhitespaceTokenType ||
-                    arena.dataTypes[chi[i]] == EnumToken.CommentTokenType) {
+                if (arena.dataTypes[chi[i]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[chi[i]] === EnumToken.CommentTokenType) {
                     continue;
                 }
-                if (arena.dataTypes[chi[i]] == EnumToken.NumberTokenType) {
+                if (arena.dataTypes[chi[i]] === EnumToken.NumberTokenType) {
                     num = chi[i];
                     break;
                 }
@@ -168,13 +169,13 @@ function splitUnicodeRanges(arena, tokens) {
             tokens.splice(i, 1, ...split);
             i += split.length - 1;
         }
-        else if (arena.firstToken[token] != 0) {
+        else if (arena.firstToken[token] !== 0) {
             // `:is(u+a)`
             const children = arena.tokens(token);
-            if (children.some((child) => arena.dataTypes[child] === EnumToken.UniCodeRange || arena.firstToken[child] != 0)) {
+            if (children.some((child) => arena.dataTypes[child] === EnumToken.UniCodeRange || arena.firstToken[child] !== 0)) {
                 const length = children.length;
                 splitUnicodeRanges(arena, children);
-                if (children.length != length) {
+                if (children.length !== length) {
                     arena.setTokenList(token, children);
                 }
             }
@@ -198,7 +199,8 @@ function parseSelector(arena, tokens, context, options, errors) {
         for (const part of parts) {
             trimArray(arena, part);
             if (options.minify) {
-                const filtered = part.filter((token) => arena.dataTypes[token] !== EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== EnumToken.CommentTokenType);
+                const filtered = part.filter((token) => arena.dataTypes[token] !== EnumToken.WhitespaceTokenType &&
+                    arena.dataTypes[token] !== EnumToken.CommentTokenType);
                 if (filtered.length === 1) {
                     if (arena.dataTypes[filtered[0]] === EnumToken.IdenTokenType &&
                         "from" === arena.strings[arena.stringValue[filtered[0]]].toLowerCase()) {
@@ -263,7 +265,7 @@ function parseSelector(arena, tokens, context, options, errors) {
             parent = arena.parents[parent];
             continue;
         }
-        nested = arena.dataTypes[parent] == EnumToken.RuleNodeType;
+        nested = arena.dataTypes[parent] === EnumToken.RuleNodeType;
         if (nested) {
             break;
         }
@@ -273,18 +275,18 @@ function parseSelector(arena, tokens, context, options, errors) {
     let write = 0;
     for (let read = 0; read < tokens.length; read++) {
         let token = tokens[read];
-        if (arena.dataTypes[token] == EnumToken.ColonTokenType) {
+        if (arena.dataTypes[token] === EnumToken.ColonTokenType) {
             const next = tokens[read + 1];
-            if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
+            if (arena.dataTypes[next] === EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoElementTokenType;
                 // inlined: arena.setStr(token, ":" + arena.strings[arena.stringValue[next]])
-                arena.stringValue[token] = arena.internString((":" + arena.strings[arena.stringValue[next]]));
+                arena.stringValue[token] = arena.internString(":" + arena.strings[arena.stringValue[next]]);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
                 continue;
             }
-            if (arena.dataTypes[next] == EnumToken.FunctionTokenDefType) {
+            if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
                 val = ":" + arena.strings[arena.stringValue[next]];
                 arena.dataTypes[token] =
                     val + "()" in getSyntaxConfig().selectors
@@ -298,19 +300,19 @@ function parseSelector(arena, tokens, context, options, errors) {
                 continue;
             }
         }
-        if (arena.dataTypes[token] == EnumToken.DoubleColonTokenType) {
+        if (arena.dataTypes[token] === EnumToken.DoubleColonTokenType) {
             const next = tokens[read + 1];
             val = ":" + arena.strings[arena.stringValue[next]];
-            if (arena.dataTypes[next] == EnumToken.IdenTokenType) {
+            if (arena.dataTypes[next] === EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoClassTokenType;
                 // inlined: arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val)
-                arena.stringValue[token] = arena.internString(((pseudoElements.includes(val) ? "" : ":") + val));
+                arena.stringValue[token] = arena.internString((pseudoElements.includes(val) ? "" : ":") + val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
                 continue;
             }
-            if (arena.dataTypes[next] == EnumToken.FunctionTokenDefType) {
+            if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
                 val = "::" + arena.strings[arena.stringValue[next]];
                 arena.dataTypes[token] =
                     val + "()" in getSyntaxConfig().selectors
@@ -324,7 +326,7 @@ function parseSelector(arena, tokens, context, options, errors) {
                 continue;
             }
         }
-        if (arena.dataTypes[token] == EnumToken.ColorTokenType) {
+        if (arena.dataTypes[token] === EnumToken.ColorTokenType) {
             if (isHash(arena.strings[arena.stringValue[token]])) {
                 arena.dataTypes[token] = EnumToken.HashTokenType;
                 all[write++] = token;
@@ -360,7 +362,7 @@ function parseSelector(arena, tokens, context, options, errors) {
                     break;
                 case EnumToken.AttrEndTokenType:
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (arena.dataTypes[stack.at(-1)] == EnumToken.AttrStartTokenType) {
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.AttrStartTokenType) {
                         const attr = stack[stack.length - 1];
                         index = tokens.indexOf(attr);
                         arena.spanLocation(attr, attr, token);
@@ -377,7 +379,7 @@ function parseSelector(arena, tokens, context, options, errors) {
                     break;
                 case EnumToken.EndParensTokenType:
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (arena.dataTypes[stack.at(-1)] == EnumToken.PseudoClassFunctionTokenDefType) {
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.PseudoClassFunctionTokenDefType) {
                         const func = stack[stack.length - 1];
                         index = tokens.indexOf(func);
                         arena.spanLocation(func, func, token);
@@ -390,10 +392,10 @@ function parseSelector(arena, tokens, context, options, errors) {
                             // parse an+b
                             // an+b produces an ident such as 'n-0', a literal such as '+2n-0' or a list of tokens such as[2n\s?[+-]\s?3]
                             const name = arena.strings[arena.stringValue[func]];
-                            if (name == ":nth-child" ||
-                                name == ":nth-last-child" ||
-                                name == ":nth-of-type" ||
-                                name == ":nth-last-of-type") {
+                            if (name === ":nth-child" ||
+                                name === ":nth-last-child" ||
+                                name === ":nth-of-type" ||
+                                name === ":nth-last-of-type") {
                                 minifyNthExpression(arena, func);
                             }
                         }
@@ -428,7 +430,7 @@ function renderSelector(arena, tokens) {
     let part = [];
     for (let index = 0; index < tokens.length; index++) {
         const curr = tokens[index];
-        if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType) {
             if (trimWhiteSpace.includes(arena.dataTypes[tokens[index - 1]]) ||
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index + 1]]) ||
                 // inlined: arena.str(tokens[index - 1])
@@ -439,7 +441,7 @@ function renderSelector(arena, tokens) {
             }
         }
         const t = renderValue(arena, curr, selectorRenderOptions);
-        if (t == ",") {
+        if (t === ",") {
             addSelector(selectors, part);
             part = [];
         }
@@ -463,8 +465,8 @@ function renderSelector(arena, tokens) {
  */
 function addSelector(selectors, curr) {
     for (let i = 0; i < curr.length; i++) {
-        if (i + 1 < curr.length && curr[i] == "*") {
-            const index = curr[i + 1] == " " ? 2 : 1;
+        if (i + 1 < curr.length && curr[i] === "*") {
+            const index = curr[i + 1] === " " ? 2 : 1;
             if (![">", "~", "+"].includes(curr[index])) {
                 curr.splice(i, index);
             }

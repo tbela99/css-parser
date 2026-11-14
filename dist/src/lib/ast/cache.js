@@ -90,6 +90,10 @@ class StructuralMemo {
      */
     pool = new Int32Array(1024);
     /**
+     * length of the pool: the length of a typed array is a getter
+     */
+    poolLength = 1024;
+    /**
      * used length of the pool
      */
     poolSize = 0;
@@ -122,11 +126,11 @@ class StructuralMemo {
      */
     list(arena, first, prefix = 0) {
         let used = this.poolSize;
-        if (used + 1 > this.pool.length) {
+        if (used + 1 > this.poolLength) {
             this.growPool(used + 1);
         }
         this.pool[used++] = prefix;
-        for (let token = first; token != 0; token = arena.nextSibling[token]) {
+        for (let token = first; token !== 0; token = arena.nextSibling[token]) {
             used = this.serialize(arena, token, used);
         }
         this.used = used;
@@ -177,7 +181,7 @@ class StructuralMemo {
      */
     serialize(arena, token, used) {
         // header, 5 fields, end marker
-        let buffer = used + 7 > this.pool.length ? this.growPool(used + 7) : this.pool;
+        let buffer = used + 7 > this.poolLength ? this.growPool(used + 7) : this.pool;
         const name = arena.name[token];
         const str = arena.stringValue[token];
         const unit = arena.unit[token];
@@ -187,15 +191,15 @@ class StructuralMemo {
         // type and color type are 8 bits values
         let header = arena.dataTypes[token] | (arena.colorType[token] << 8);
         const index = used++;
-        if (name != 0) {
+        if (name !== 0) {
             header |= 65536 /* Field.Name */;
             buffer[used++] = name;
         }
-        if (str != 0) {
+        if (str !== 0) {
             header |= 131072 /* Field.String */;
             buffer[used++] = str;
         }
-        if (unit != 0) {
+        if (unit !== 0) {
             header |= 262144 /* Field.Unit */;
             buffer[used++] = unit;
         }
@@ -215,25 +219,25 @@ class StructuralMemo {
                 buffer[used++] = bits[1];
             }
         }
-        if (firstToken != 0) {
+        if (firstToken !== 0) {
             header |= 2097152 /* Field.Tokens */;
         }
-        if (firstChild != 0) {
+        if (firstChild !== 0) {
             header |= 4194304 /* Field.Children */;
         }
         buffer[index] = header;
-        if (firstToken != 0) {
-            for (let child = firstToken; child != 0; child = arena.nextSibling[child]) {
+        if (firstToken !== 0) {
+            for (let child = firstToken; child !== 0; child = arena.nextSibling[child]) {
                 used = this.serialize(arena, child, used);
             }
-            buffer = used + 1 > this.pool.length ? this.growPool(used + 1) : this.pool;
+            buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
             buffer[used++] = End;
         }
-        if (firstChild != 0) {
-            for (let child = firstChild; child != 0; child = arena.nextSibling[child]) {
+        if (firstChild !== 0) {
+            for (let child = firstChild; child !== 0; child = arena.nextSibling[child]) {
                 used = this.serialize(arena, child, used);
             }
-            buffer = used + 1 > this.pool.length ? this.growPool(used + 1) : this.pool;
+            buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
             buffer[used++] = End;
         }
         return used;
@@ -244,6 +248,7 @@ class StructuralMemo {
      */
     growPool(size) {
         this.pool = grow(this.pool, size);
+        this.poolLength = this.pool.length;
         return this.pool;
     }
     /**
@@ -268,16 +273,16 @@ class StructuralMemo {
         const mask = table.length - 1;
         let index = hash & mask;
         let slot;
-        while ((slot = table[index]) != 0) {
+        while ((slot = table[index]) !== 0) {
             slot--;
             const meta = slot * 3;
-            if (this.slots[meta] == hash && this.slots[meta + 2] == length) {
+            if (this.slots[meta] === hash && this.slots[meta + 2] === length) {
                 const offset = this.slots[meta + 1];
                 let i = 0;
-                while (i < length && pool[offset + i] == pool[base + i]) {
+                while (i < length && pool[offset + i] === pool[base + i]) {
                     i++;
                 }
-                if (i == length) {
+                if (i === length) {
                     this.hits++;
                     return slot;
                 }
@@ -286,7 +291,7 @@ class StructuralMemo {
         }
         // insert: the serialized key is kept in the pool
         slot = this.size++;
-        if (slot * 3 == this.slots.length) {
+        if (slot * 3 === this.slots.length) {
             this.slots = grow(this.slots, slot * 3 + 3);
         }
         this.slots[slot * 3] = hash;
@@ -307,7 +312,7 @@ class StructuralMemo {
         const mask = table.length - 1;
         for (let slot = 0; slot < this.size; slot++) {
             let index = this.slots[slot * 3] & mask;
-            while (table[index] != 0) {
+            while (table[index] !== 0) {
                 index = (index + 1) & mask;
             }
             table[index] = slot + 1;

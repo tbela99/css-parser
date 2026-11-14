@@ -39,7 +39,7 @@ function getColorSpace(arena, color) {
     else {
         name = arena.strings[arena.stringValue[color]];
     }
-    return name == "device-cmyk"
+    return name === "device-cmyk"
         ? "cmyk"
         : name.startsWith("xyz")
             ? "xyz"

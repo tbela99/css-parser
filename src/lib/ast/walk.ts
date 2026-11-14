@@ -30,19 +30,19 @@ function pushValues(arena: AstArena, stack: number[], value: number, reverse: bo
     const first: number = stack.length;
     let token: number = arena.firstToken[value];
 
-    while (token != 0) {
+    while (token !== 0) {
         stack.push(token);
         token = arena.nextSibling[token];
     }
 
-    if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+    if ((arena.flags[value] & EnumAstNodeStatus.HasChildren) === 0) {
         let child: number = arena.firstChild[value];
 
-        while (child != 0) {
-            if (arena.dataTypes[child] == EnumToken.ListTokenType) {
+        while (child !== 0) {
+            if (arena.dataTypes[child] === EnumToken.ListTokenType) {
                 token = arena.firstToken[child];
 
-                while (token != 0) {
+                while (token !== 0) {
                     stack.push(token);
                     token = arena.nextSibling[token];
                 }
@@ -89,7 +89,7 @@ export class NodeWalker implements IterableIterator<AstNode | Token> {
     ) {
         this.stack = [node];
 
-        if (filter != null && typeof filter == "object") {
+        if (filter != null && typeof filter === "object") {
             this.filter = filter.filter ?? null;
             this.reverse = filter.reverse === true;
             this.attributes = filter.attributes === true;
@@ -110,7 +110,7 @@ export class NodeWalker implements IterableIterator<AstNode | Token> {
      * @param option
      */
     private expand(node: number, option: WalkerOption): void {
-        if (typeof option == "number" && option & WalkerOptionEnum.IgnoreChildren) {
+        if (typeof option === "number" && option & WalkerOptionEnum.IgnoreChildren) {
             return;
         }
 
@@ -125,11 +125,11 @@ export class NodeWalker implements IterableIterator<AstNode | Token> {
         if (this.children && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
             // children are pushed in reverse so that they are popped in document order
             if (this.reverse) {
-                for (let child = arena.firstChild[node]; child != 0; child = arena.nextSibling[child]) {
+                for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
                     stack.push(child);
                 }
             } else {
-                for (let child = arena.lastChild[node]; child != 0; child = arena.previousSibling[child]) {
+                for (let child = arena.lastChild[node]; child !== 0; child = arena.previousSibling[child]) {
                     stack.push(child);
                 }
             }
@@ -140,7 +140,7 @@ export class NodeWalker implements IterableIterator<AstNode | Token> {
         const stack: number[] = this.stack;
         const filter: WalkerFilter | null = this.filter;
 
-        if (this.current != 0) {
+        if (this.current !== 0) {
             this.expand(this.current, this.option);
             this.current = 0;
         }
@@ -152,7 +152,7 @@ export class NodeWalker implements IterableIterator<AstNode | Token> {
             if (filter != null) {
                 option = filter(this.arena, node);
 
-                if (typeof option == "number") {
+                if (typeof option === "number") {
                     if (option & WalkerOptionEnum.Ignore) {
                         continue;
                     }
@@ -221,7 +221,7 @@ export class ValueWalker implements IterableIterator<Token> {
     ) {
         this.reverse = reverse === true;
 
-        if (typeof tokens == "number") {
+        if (typeof tokens === "number") {
             // the value tokens of a node or a token
             pushValues(arena, this.stack, tokens, this.reverse);
         } else if (this.reverse) {
@@ -235,7 +235,7 @@ export class ValueWalker implements IterableIterator<Token> {
         }
 
         // the filter is read once: no filter object is created
-        if (typeof filter == "function") {
+        if (typeof filter === "function") {
             this.fn = filter;
         } else if (filter != null) {
             this.fn = filter.fn ?? null;
@@ -259,7 +259,7 @@ export class ValueWalker implements IterableIterator<Token> {
             type == null ||
             this.arena.dataTypes[token] == type ||
             (Array.isArray(type) && type.includes(this.arena.dataTypes[token])) ||
-            (typeof type == "function" && type(this.arena, token))
+            (typeof type === "function" && type(this.arena, token))
         );
     }
 
@@ -286,7 +286,7 @@ export class ValueWalker implements IterableIterator<Token> {
         const option: WalkerOption | Token[] = this.option;
 
         // the children are read after the token is visited (it may have been modified)
-        if (typeof option != "number" || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
+        if (typeof option !== "number" || (option & WalkerOptionEnum.IgnoreChildren) === 0) {
             pushValues(this.arena, this.stack, value, this.reverse);
         }
 
@@ -302,7 +302,7 @@ export class ValueWalker implements IterableIterator<Token> {
     next(): IteratorResult<Token> {
         const stack: Token[] = this.stack;
 
-        if (this.current != 0) {
+        if (this.current !== 0) {
             this.leave(this.current);
             this.current = 0;
         }
@@ -317,7 +317,7 @@ export class ValueWalker implements IterableIterator<Token> {
 
                 this.option = option;
 
-                if (typeof option == "number") {
+                if (typeof option === "number") {
                     if (option & WalkerOptionEnum.Stop) {
                         break;
                     }

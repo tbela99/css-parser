@@ -71,7 +71,7 @@ const makeBinaryOp: Map<ValidationTokenEnum, ValidationTokenEnum> = new Map([
 const symbolTypes: Map<number, ValidationTokenEnum> = new Map();
 
 for (const [key, type] of Object.entries(SymbolsMapTokens)) {
-    if (key.length == 1) {
+    if (key.length === 1) {
         symbolTypes.set(key.charCodeAt(0), type);
     }
 }
@@ -82,7 +82,7 @@ for (const [key, type] of Object.entries(SymbolsMapTokens)) {
 const pairSymbols: Map<number, Array<[number, ValidationTokenEnum]>> = new Map();
 
 for (const [key, type] of Object.entries(SymbolsMapTokens)) {
-    if (key.length == 2) {
+    if (key.length === 2) {
         const list = pairSymbols.get(key.charCodeAt(0)) ?? [];
 
         list.push([key.charCodeAt(1), type]);
@@ -106,7 +106,7 @@ function pairSymbolType(syntax: string, index: number): ValidationTokenEnum | nu
         const next: number = syntax.charCodeAt(index + 1);
 
         for (let k = 0; k < list.length; k++) {
-            if (list[k][0] == next) {
+            if (list[k][0] === next) {
                 return list[k][1];
             }
         }
@@ -147,7 +147,7 @@ function codePoints(str: string, start: number, end: number): number {
  * @param str
  */
 function isDigits(str: string): boolean {
-    if (str.length == 0) {
+    if (str.length === 0) {
         return false;
     }
 
@@ -179,7 +179,7 @@ function getTokenType(token: string, loc: Position): ValidationToken {
     const first: number = token.charCodeAt(0);
 
     // " or '
-    if (first == 34 || first == 39) {
+    if (first === 34 || first === 39) {
         return {
             typ: ValidationTokenEnum.StringToken,
             val: token,
@@ -188,7 +188,7 @@ function getTokenType(token: string, loc: Position): ValidationToken {
     }
 
     // integer, optionally negative: range bounds such as `<integer [-∞,-1]>`
-    if (isDigits(token) || (first == 45 && isDigits(token.slice(1)))) {
+    if (isDigits(token) || (first === 45 && isDigits(token.slice(1)))) {
         return {
             typ: ValidationTokenEnum.Number,
             val: Number(token),
@@ -218,7 +218,7 @@ function getTokenType(token: string, loc: Position): ValidationToken {
     }
 
     // @
-    if (first == 64 && isIdent(token.slice(1))) {
+    if (first === 64 && isIdent(token.slice(1))) {
         return {
             typ: ValidationTokenEnum.AtRule,
             val: token.slice(1),
@@ -298,9 +298,9 @@ export function tokenizeSyntax(
 
     const bufferLength = (): number => prefix.length + bufferEnd - bufferStart;
     const buffer = (): string =>
-        prefix.length == 0 ? syntax.slice(bufferStart, bufferEnd) : prefix + syntax.slice(bufferStart, bufferEnd);
+        prefix.length === 0 ? syntax.slice(bufferStart, bufferEnd) : prefix + syntax.slice(bufferStart, bufferEnd);
     const append = (index: number): void => {
-        if (bufferEnd == bufferStart) {
+        if (bufferEnd === bufferStart) {
             bufferStart = index;
         }
 
@@ -326,7 +326,7 @@ export function tokenizeSyntax(
         curInd++;
 
         // <an+b>
-        if (code == 60 && syntax.startsWith("an+b>", i + 1)) {
+        if (code === 60 && syntax.startsWith("an+b>", i + 1)) {
             if (bufferLength() > 0) {
                 prefix = buffer();
                 bufferStart = bufferEnd = 0;
@@ -363,11 +363,11 @@ export function tokenizeSyntax(
         }
 
         // :
-        if (code == 58) {
-            if (syntax.charCodeAt(i + 1) == 58) {
+        if (code === 58) {
+            if (syntax.charCodeAt(i + 1) === 58) {
                 if (
                     isIdentStart(syntax.charCodeAt(i + 2)) ||
-                    (syntax.charCodeAt(i + 2) == 45 && isIdentStart(syntax.charCodeAt(i + 3)))
+                    (syntax.charCodeAt(i + 2) === 45 && isIdentStart(syntax.charCodeAt(i + 3)))
                 ) {
                     append(i);
                     append(++i);
@@ -377,7 +377,7 @@ export function tokenizeSyntax(
 
             if (
                 isIdentStart(syntax.charCodeAt(i + 1)) ||
-                (syntax.charCodeAt(i + 1) == 45 && isIdentStart(syntax.charCodeAt(i + 2)))
+                (syntax.charCodeAt(i + 1) === 45 && isIdentStart(syntax.charCodeAt(i + 2)))
             ) {
                 append(i);
                 continue;
@@ -394,7 +394,7 @@ export function tokenizeSyntax(
                     k++;
                 }
 
-                if (k != i) {
+                if (k !== i) {
                     curCol += k - i;
                     curInd += k - i;
                     i = k;
@@ -444,7 +444,7 @@ export function tokenizeSyntax(
                     while (i + 1 < length) {
                         append(++i);
 
-                        if (syntax.charCodeAt(i) == quote) {
+                        if (syntax.charCodeAt(i) === quote) {
                             break;
                         }
                     }
@@ -504,21 +504,21 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
         switch (token!.typ) {
             case ValidationTokenEnum.EOF:
-                if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.PipeToken) {
+                if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PipeToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
                         trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)),
                     );
                     stack.pop();
-                } else if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.AmpersandToken) {
+                } else if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.AmpersandToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
                         tokens.splice(index + 1, tokens.length - index - 2),
                     );
                     stack.pop();
-                } else if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.ColumnToken) {
+                } else if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.ColumnToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationColumnToken).chi.push(
@@ -533,12 +533,12 @@ export function parseSyntax(syntax: string): ValidationToken[] {
             case ValidationTokenEnum.Pipe:
                 {
                     while (
-                        (stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.AmpersandToken ||
-                        (stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.ColumnToken
+                        (stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.AmpersandToken ||
+                        (stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.ColumnToken
                     ) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
-                        if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.AmpersandToken) {
+                        if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.AmpersandToken) {
                             (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
                                 tokens.splice(index + 1, tokens.length - index - 2),
                             );
@@ -551,9 +551,9 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         stack.pop();
                     }
 
-                    let index: number = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+                    let index: number = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
-                    if (stack.at(-1)?.typ != ValidationTokenEnum.PipeToken) {
+                    if (stack.at(-1)?.typ !== ValidationTokenEnum.PipeToken) {
                         stack.push(
                             Object.assign(token, {
                                 typ: ValidationTokenEnum.PipeToken,
@@ -572,7 +572,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                 break;
             case ValidationTokenEnum.Ampersand:
                 {
-                    let index: number = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+                    let index: number = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     if (stack.at(-1)?.typ === makeBinaryOp.get(token!.typ)) {
                         if (token.typ === ValidationTokenEnum.Ampersand) {
@@ -620,7 +620,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
             case ValidationTokenEnum.Column:
                 {
-                    let index: number = stack.length == 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
+                    let index: number = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     if (stack.at(-1)?.typ === makeBinaryOp.get(token!.typ)) {
                         (stack.at(-1) as ValidationColumnToken).chi.push(
@@ -629,7 +629,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
                         tokens.pop();
                     } else {
-                        if (index != -1) {
+                        if (index !== -1) {
                             stack.push(
                                 Object.assign(token, {
                                     typ: makeBinaryOp.get(token!.typ),
@@ -650,7 +650,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                 break;
 
             case ValidationTokenEnum.OpenParenthesis:
-                if (tokens.at(-2)?.typ == ValidationTokenEnum.Keyword) {
+                if (tokens.at(-2)?.typ === ValidationTokenEnum.Keyword) {
                     stack.push(
                         Object.assign(
                             tokens.at(-2) as ValidationToken,
@@ -664,7 +664,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     break;
                 }
 
-                if (tokens.at(-2)?.typ == ValidationTokenEnum.PseudoClassToken) {
+                if (tokens.at(-2)?.typ === ValidationTokenEnum.PseudoClassToken) {
                     stack.push(
                         Object.assign(
                             tokens.at(-2) as ValidationToken,
@@ -682,7 +682,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                 break;
 
             case ValidationTokenEnum.CloseParenthesis:
-                if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.PipeToken) {
+                if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PipeToken) {
                     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                     (stack.at(-1) as ValidationPipeToken).chi.push(
@@ -692,8 +692,8 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                 }
 
                 if (
-                    stack.at(-1)?.typ == ValidationTokenEnum.OpenParenthesis ||
-                    ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.PropertyType &&
+                    stack.at(-1)?.typ === ValidationTokenEnum.OpenParenthesis ||
+                    ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PropertyType &&
                         (stack.at(-1) as ValidationPropertyToken).val === "function-token")
                 ) {
                     stack.pop();
@@ -744,7 +744,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
                         tokens.splice(tokens.length - 2, 2);
 
-                        if ((tokens.at(-1) as ValidationPropertyToken).val == "function-token") {
+                        if ((tokens.at(-1) as ValidationPropertyToken).val === "function-token") {
                             // consume the closing ')'
                             stack.push(tokens.at(-1) as ValidationToken);
                         }
@@ -771,7 +771,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
 
             case ValidationTokenEnum.CloseBracket:
                 while (true) {
-                    if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.AmpersandToken) {
+                    if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.AmpersandToken) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationAmpersandToken).r = trimSyntaxArray(
@@ -779,7 +779,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         );
                         stack.pop();
                         continue;
-                    } else if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.ColumnToken) {
+                    } else if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.ColumnToken) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationColumnToken).chi.push(
@@ -789,7 +789,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         continue;
                     }
 
-                    if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.PipeToken) {
+                    if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.PipeToken) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationPipeToken).chi.push(
@@ -922,7 +922,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     //     continue;
                     // } else
 
-                    if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.ColumnToken) {
+                    if ((stack.at(-1) as ValidationToken).typ === ValidationTokenEnum.ColumnToken) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationColumnToken).chi.push(
@@ -932,7 +932,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                         continue;
                     }
 
-                    if ((stack.at(-1) as ValidationToken)?.typ == ValidationTokenEnum.PipeToken) {
+                    if ((stack.at(-1) as ValidationToken)?.typ === ValidationTokenEnum.PipeToken) {
                         let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
 
                         (stack.at(-1) as ValidationPipeToken).chi.push(
@@ -954,7 +954,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     const slice = tokens.slice(index + 1, -1);
 
                     if (slice.length === 1 || slice.length === 3) {
-                        if (slice[0].typ == ValidationTokenEnum.Number) {
+                        if (slice[0].typ === ValidationTokenEnum.Number) {
                             Object.assign(tokens[index - 1], {
                                 match: {
                                     min: slice[0] as ValidationNumberToken,
@@ -980,7 +980,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                                     match: {
                                         min: slice[0] as ValidationNumberToken,
                                         max:
-                                            slice[2].typ == ValidationTokenEnum.InfinityToken
+                                            slice[2].typ === ValidationTokenEnum.InfinityToken
                                                 ? Number.POSITIVE_INFINITY
                                                 : (slice[2] as ValidationNumberToken),
                                     },
@@ -1015,7 +1015,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     // } else
 
                     // {
-                    isGroup = tokens.at(-3)?.typ == ValidationTokenEnum.Comma;
+                    isGroup = tokens.at(-3)?.typ === ValidationTokenEnum.Comma;
 
                     if (isGroup) {
                         sliceIndex = tokens.length - 3;
@@ -1043,14 +1043,14 @@ export function parseSyntax(syntax: string): ValidationToken[] {
                     // } else
 
                     if (
-                        tokens.at(-2)!.typ == ValidationTokenEnum.Whitespace &&
+                        tokens.at(-2)!.typ === ValidationTokenEnum.Whitespace &&
                         tokens.at(-3)?.isOptional &&
                         tokens.at(-3)!.typ !== ValidationTokenEnum.OptionalGroupToken
                     ) {
                         sliceIndex = tokens.length - 3;
                     }
 
-                    if (sliceIndex != -1) {
+                    if (sliceIndex !== -1) {
                         if (tokens[sliceIndex].isList) {
                             tokens.pop();
                         }
@@ -1088,7 +1088,7 @@ export function parseSyntax(syntax: string): ValidationToken[] {
     }
 
     if (stack.length > 0) {
-        if (stack.at(-1)?.typ == ValidationTokenEnum.PipeToken) {
+        if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
             let index = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
             (stack.at(-1) as ValidationPipeToken).chi.push(
                 trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)),
@@ -1336,7 +1336,7 @@ export function renderSyntax(
             return (token as ValidationOptionalGroupToken).chi.reduce(
                 (acc: string, curr: ValidationToken, index: number, array: ValidationToken[]) =>
                     acc +
-                    (index == array.length - 1
+                    (index === array.length - 1
                         ? curr.typ === ValidationTokenEnum.Comma
                             ? "?,"
                             : renderSyntax(curr, options) + "?"

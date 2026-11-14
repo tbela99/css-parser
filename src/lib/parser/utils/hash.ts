@@ -54,20 +54,20 @@ export function hashId(input: string, length: number = 6): string {
 export function nodeSignature(arena: AstArena, id: number): string {
     let result: string = `${arena.dataTypes[id]}:${arena.name[id]}:${arena.stringValue[id]}:${arena.numericValue[id]}:${arena.unit[id]}:${arena.colorType[id]}`;
 
-    if (arena.firstToken[id] != 0) {
+    if (arena.firstToken[id] !== 0) {
         result += "(";
 
-        for (let token = arena.firstToken[id]; token != 0; token = arena.nextSibling[token]) {
+        for (let token = arena.firstToken[id]; token !== 0; token = arena.nextSibling[token]) {
             result += nodeSignature(arena, token) + ",";
         }
 
         result += ")";
     }
 
-    if (arena.firstChild[id] != 0) {
+    if (arena.firstChild[id] !== 0) {
         result += "{";
 
-        for (let child = arena.firstChild[id]; child != 0; child = arena.nextSibling[child]) {
+        for (let child = arena.firstChild[id]; child !== 0; child = arena.nextSibling[child]) {
             result += nodeSignature(arena, child) + ",";
         }
 
@@ -123,7 +123,7 @@ export async function hash(input: string, length: number = 6, algo?: string): Pr
             case "base64":
                 result = btoa(input);
 
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
 
@@ -163,7 +163,7 @@ export function syncHash(input: string, length: number = 6, algo?: string): stri
             case "base64":
                 result = btoa(input);
 
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
 

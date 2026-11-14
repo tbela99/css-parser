@@ -1067,11 +1067,19 @@ declare class AstArenaNode {
      * at-rule / declaration name, token name. undefined for the other nodes
      */
     get nam(): string | undefined;
+    /**
+     *
+     * @param nam
+     */
     set nam(nam: string);
     /**
      * rule selector. undefined for the other nodes
      */
     get sel(): string | undefined;
+    /**
+     *
+     * @param sel
+     */
     set sel(sel: string);
     /**
      * value:
@@ -1083,22 +1091,38 @@ declare class AstArenaNode {
      * - structured tokens with a value field: the field tokens
      */
     get val(): string | number | AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param val
+     */
     set val(val: string | number | AstArenaNodeInput | readonly AstArenaNodeInput[] | null | undefined);
     /**
      * children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function token
      * (arguments), a parentheses token, ... undefined when the node has no children
      */
     get chi(): readonly AstArenaNode[] | undefined;
+    /**
+     *
+     * @param chi
+     */
     set chi(chi: readonly AstArenaNodeInput[] | null | undefined);
     /**
      * prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
      */
     get tokens(): readonly AstArenaNode[] | null;
+    /**
+     *
+     * @param tokens
+     */
     set tokens(tokens: readonly AstArenaNodeInput[] | null | undefined);
     /**
      * unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
      */
     get unit(): string | undefined;
+    /**
+     *
+     * @param unit
+     */
     set unit(unit: string | null | undefined);
     /**
      * color space of a color
@@ -1119,46 +1143,82 @@ declare class AstArenaNode {
      * sign of a unary expression
      */
     get sign(): EnumToken | undefined;
+    /**
+     *
+     * @param sign
+     */
     set sign(sign: EnumToken);
     /**
      * operator: the operator of a binary expression, the operator tokens of a structured token
      */
     get op(): EnumToken | AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param op
+     */
     set op(op: EnumToken | AstArenaNodeInput | readonly AstArenaNodeInput[] | null);
     /**
      * first operator of a media range query
      */
     get op1(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param op
+     */
     set op1(op: AstArenaNodeInput | readonly AstArenaNodeInput[] | null);
     /**
      * second operator of a media range query
      */
     get op2(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param op
+     */
     set op2(op: AstArenaNodeInput | readonly AstArenaNodeInput[] | null);
     /**
      * left hand side of a structured token, numerator of a fraction
      */
     get l(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param l
+     */
     set l(l: AstArenaNodeInput | readonly AstArenaNodeInput[] | null);
     /**
      * right hand side of a structured token, denominator of a fraction
      */
     get r(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
+    /**
+     *
+     * @param r
+     */
     set r(r: AstArenaNodeInput | readonly AstArenaNodeInput[] | null);
     /**
      * source location. null when the node has no location
      */
     get loc(): Readonly<SourceLocation> | null;
+    /**
+     *
+     * @param loc
+     */
     set loc(loc: SourceLocation | null | undefined);
     /**
      * validation state
      */
     get state(): EnumAstNodeStatus;
+    /**
+     *
+     * @param state
+     */
     set state(state: EnumAstNodeStatus | null | undefined);
     /**
      * validation errors. null when the node has no errors
      */
     get errors(): readonly ErrorDescription[] | null;
+    /**
+     *
+     * @param errors
+     */
     set errors(errors: readonly ErrorDescription[] | null | undefined);
     /**
      * parent node, or the token that owns the token (see {@link AstArena.getValueParent}). null when the node is
@@ -1373,6 +1433,11 @@ declare class Arena {
      */
     protected freeList: number;
     /**
+     * number of nodes the columns can hold: the length of the columns. the length of a typed array is a getter,
+     * allocate() reads the capacity of the arena for each node
+     */
+    protected capacity: number;
+    /**
      * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
      * the high word holds the 24 high bits of the start position and the source
      */
@@ -1433,19 +1498,65 @@ declare class Arena {
      */
     getType(id: number): EnumToken;
     /**
-     * type of a node or a token. null when the id is null
+     * type of node or a token. null when the id is null
      * @param id
      */
     typeOf(id: number | null | undefined): EnumToken | null;
+    /**
+     *
+     * @param id
+     * @param type
+     */
     setType(id: number, type: EnumToken): void;
+    /**
+     *
+     * @param id
+     * @param nameId
+     */
     setName(id: number, nameId: number): void;
+    /**
+     *
+     * @param id
+     */
     getName(id: number): string;
+    /**
+     *
+     * @param id
+     * @param valueId
+     */
     setValue(id: number, valueId: number): void;
+    /**
+     *
+     * @param id
+     */
     getValue(id: number): string;
+    /**
+     *
+     * @param id
+     * @param numericValue
+     */
     setNumericValue(id: number, numericValue: number): void;
+    /**
+     *
+     * @param id
+     * @param unit
+     */
     setUnit(id: number, unit: number): void;
+    /**
+     *
+     * @param id
+     */
     getUnit(id: number): string;
+    /**
+     *
+     * @param id
+     */
     getNumericValue(id: number): number;
+    /**
+     *
+     * @param id
+     * @param parentId
+     */
     setParent(id: number, parentId: number): void;
     /**
      * first child of a node. 0 when the node has no children
@@ -1491,6 +1602,10 @@ declare class Arena {
      * @param firstChildId
      */
     setFirstChild(id: number, firstChildId: number): void;
+    /**
+     *
+     * @param id
+     */
     getLastChild(id: number): number;
     /**
      * replace the last child
@@ -1516,11 +1631,39 @@ declare class Arena {
      * @param firstTokenId
      */
     setFirstToken(id: number, firstTokenId: number): void;
+    /**
+     *
+     * @param id
+     * @param colorType
+     */
     setColorType(id: number, colorType: number): void;
+    /**
+     *
+     * @param id
+     */
     getColorType(id: number): number;
+    /**
+     *
+     * @param id
+     * @param flags
+     */
     setFlags(id: number, flags: number): void;
+    /**
+     *
+     * @param id
+     */
     getFlags(id: number): number;
+    /**
+     *
+     * @param id
+     * @param flag
+     */
     hasFlags(id: number, flag: number): boolean;
+    /**
+     *
+     * @param id
+     * @param index
+     */
     getChildAt(id: number, index: number): number | null;
     /**
      * token at the given position of the token list
@@ -1573,15 +1716,63 @@ declare class Arena {
      * @param tokens
      */
     appendField(id: number, field: TokenField, ...tokens: number[]): void;
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setLeft(id: number, ...children: number[]): void;
+    /**
+     *
+     * @param id
+     */
     getLeft(id: number): number[] | null;
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id: number, rightId: null): void;
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id: number, ...rightId: number[]): void;
+    /**
+     *
+     * @param id
+     */
     getRight(id: number): number[] | null;
+    /**
+     *
+     * @param id
+     * @param opId
+     */
     setOp(id: number, opId: number): void;
+    /**
+     *
+     * @param id
+     */
     getOp(id: number): number;
+    /**
+     *
+     * @param id
+     * @param op2Id
+     */
     setOp2(id: number, op2Id: number): void;
+    /**
+     *
+     * @param id
+     */
     getOp2(id: number): number;
+    /**
+     *
+     * @param id
+     * @param sourceId
+     * @param start
+     * @param end
+     */
     setSpan(id: number, sourceId: number, start: number, end: number): void;
     /**
      * copy the packed location of a node
@@ -1589,12 +1780,42 @@ declare class Arena {
      * @param source
      */
     copySpan(target: number, source: number): void;
+    /**
+     *
+     * @param id
+     */
     getSourceId(id: number): number;
+    /**
+     *
+     * @param id
+     */
     getSpanStart(id: number): number;
+    /**
+     *
+     * @param id
+     * @param start
+     */
     setSpandStart(id: number, start: number): void;
+    /**
+     *
+     * @param id
+     */
     getSpanEnd(id: number): number;
+    /**
+     *
+     * @param id
+     * @param end
+     */
     setSpanEnd(id: number, end: number): void;
+    /**
+     *
+     * @param id
+     */
     getParent(id: number): number;
+    /**
+     *
+     * @param id
+     */
     resolveString(id: number): string;
     /**
      * detach a node from its parent
@@ -1756,6 +1977,11 @@ declare class Arena {
      * @param id
      */
     subTokens(id: number): number[];
+    /**
+     *
+     * @param id
+     * @param predicate
+     */
     findChild(id: number, predicate: (id: number) => boolean): number | null;
     /**
      * find a token in the token list
@@ -1786,6 +2012,11 @@ declare class Arena {
      * @param id
      */
     tokenCount(id: number): number;
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setChildren(id: number, ...children: number[]): void;
     /**
      * replace the children. same as {@link setChildren} with an array
@@ -1793,6 +2024,11 @@ declare class Arena {
      * @param children
      */
     setChildList(id: number, children: number[]): void;
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setTokens(id: number, ...children: number[]): void;
     /**
      * replace the token list. same as {@link setTokens} with an array
@@ -1807,6 +2043,11 @@ declare class Arena {
      * @param before the children are inserted before this child of `to`. they are appended when 0
      */
     moveChildren(from: number, to: number, before?: number): void;
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendChildren(id: number, ...children: number[]): void;
     /**
      * append children. same as {@link appendChildren} with an array
@@ -1814,6 +2055,11 @@ declare class Arena {
      * @param children
      */
     appendChildList(id: number, children: number[]): void;
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendTokens(id: number, ...children: number[]): void;
     /**
      * append tokens. same as {@link appendTokens} with an array
@@ -1839,8 +2085,24 @@ declare class Arena {
      * @param tokens
      */
     prependTokens(id: number, ...tokens: number[]): void;
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean;
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     startsWith(node: number, key: "nam" | "val", string: string): boolean;
+    /**
+     *
+     * @param newSize
+     */
     resize(newSize: number): void;
     /**
      * drop the interned strings that are no longer referenced by any node
@@ -1879,7 +2141,16 @@ declare class Arena {
      * @returns mapping of the old ids to the new ids (0 when the node was dropped)
      */
     trim(errors?: ErrorDescription[] | null): Uint32Array;
+    /**
+     *
+     * @param id
+     * @param errors
+     */
     setErrors(id: number, errors: ErrorDescription[] | null): void;
+    /**
+     *
+     * @param id
+     */
     getErrors(id: number): ErrorDescription[] | null;
     /**
      * number of children
@@ -1920,6 +2191,10 @@ declare class AstArena extends Arena {
      * source ids. `spans` store the index in this table (8 bits)
      */
     sources: number[];
+    /**
+     *
+     * @param size
+     */
     constructor(size?: number);
     /**
      * @inheritDoc
@@ -2306,6 +2581,12 @@ declare class AstArena extends Arena {
      * @param before the expanded nodes are inserted before this child of parent. they are appended when 0
      */
     protected expandRule(node: AstRule, parent: AstNode, before: AstNode): void;
+    /**
+     *
+     * @param selector
+     * @param replace
+     * @protected
+     */
     protected replaceCompoundLiteral(selector: string, replace: string): string;
 }
 
@@ -5058,9 +5339,20 @@ export declare interface PropertyListOptions {
  */
 export declare interface ParseInfo$1 {
     /**
-     * stream
+     * the text of the css. the css input (a string, an ArrayBuffer or a view of an ArrayBuffer) is converted by the
+     * tokenizer
      */
     stream: string;
+
+    /**
+     * the utf-16 code units of the css, read by the tokenizer. the code units of an ascii ArrayBuffer are its bytes
+     */
+    codes: Uint8Array | Uint16Array;
+
+    /**
+     * the number of code units: the length of a typed array is a getter
+     */
+    length: number;
 
     /**
      * Source file
@@ -5318,6 +5610,12 @@ interface ValidationDimensionToken extends ValidationToken$1 {
     unitText: string;
     unit: keyof EnumToken;
 }
+
+/**
+ * css input: the utf-8 encoded css in an ArrayBuffer or in a view of an ArrayBuffer (Uint8Array, Buffer), the preferred
+ * input, or a string
+ */
+type CssInput = string | ArrayBuffer | ArrayBufferView;
 
 /**
  * response type
@@ -6339,8 +6637,8 @@ interface MinifyOptions {
 export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
-    | string
-    | Promise<string>
+    | CssInput
+    | Promise<CssInput>
     | object;
 
 /**
@@ -6568,18 +6866,18 @@ export declare interface ParseInputFileOptions {
  */
 export declare interface ParseInputOptions {
     /**
-     * Input string or stream
+     * Input css: an ArrayBuffer or a view of an ArrayBuffer (utf-8, the preferred input), or a string
      */
-    input: string;
+    input: CssInput;
 }
 /**
  * Input options for string or stream
  */
 export declare interface ParseInputStreamOptions {
     /**
-     * Input string or stream
+     * Input css: an ArrayBuffer or a view of an ArrayBuffer (utf-8, the preferred input), a string or a stream
      */
-    input: string | ReadableStream<Uint8Array>;
+    input: CssInput | ReadableStream<Uint8Array>;
 }
 
 /**
@@ -7255,6 +7553,11 @@ export declare interface ValidationSyntaxNode {
      */
     syntax: string;
     /**
+     * name of the standard property whose syntax is used: the vendor prefixed legacy name aliases of webref
+     * (`-webkit-align-content` is an alias of `align-content`). an alias has no other key
+     */
+    alias?: string;
+    /**
      * validation tokens
      */
     ast?: ValidationToken[];
@@ -7535,7 +7838,7 @@ declare function render(arena: AstArena, data: AstNode, options?: RenderOptions,
  * ```
  *
  */
-declare function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
+declare function parseSync(stream: CssInput, options?: ParserSyncOptions): ParseResult;
 /**
  * Parse CSS string
  * @param options
@@ -7569,7 +7872,7 @@ declare function parseSync(options: ParseInputOptions & ParserSyncOptions): Pars
  * ```
  *
  */
-declare function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
+declare function transformSync(css: CssInput, options?: TransformSyncOptions): TransformResult;
 /**
  * Transform CSS
  * @param options
@@ -7628,7 +7931,7 @@ declare function transformSync(options: ParseInputOptions & TransformSyncOptions
  *  console.log(result.ast);
  * ```
  */
-declare function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+declare function parse(stream: CssInput | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 /**
  * Parse CSS
  * @param options
@@ -7745,7 +8048,7 @@ declare function parse(options: ParseInputStreamOptions & ParserOptions): Promis
  *  console.log(result.code);
  * ```
  */
-declare function transform(css: string | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
+declare function transform(css: CssInput | ReadableStream<Uint8Array>, options?: TransformOptions): Promise<TransformResult>;
 /**
  * Transform CSS
  * @param options
@@ -7806,4 +8109,4 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
 export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, ResponseType, SourceMap, TokenField, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue, resolve, transform, transformSync, version };
-export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniCodeRangeToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };
+export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssInput, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResult, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResult, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniCodeRangeToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

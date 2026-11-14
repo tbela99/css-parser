@@ -11,7 +11,7 @@ import { EnumToken } from '../types.js';
 function gcd(x, y) {
     x = Math.abs(x);
     y = Math.abs(y);
-    if (x == y) {
+    if (x === y) {
         return x;
     }
     let t;
@@ -32,7 +32,7 @@ function gcd(x, y) {
  * @param op
  */
 function compute(a, b, op) {
-    if (typeof a == "number" && typeof b == "number") {
+    if (typeof a === "number" && typeof b === "number") {
         switch (op) {
             case EnumToken.Add:
                 return a + b;
@@ -42,7 +42,7 @@ function compute(a, b, op) {
                 return a * b;
             case EnumToken.Div:
                 const r = simplify(a, b);
-                if (r[1] == 1) {
+                if (r[1] === 1) {
                     return r[0];
                 }
                 const result = a / b;
@@ -50,8 +50,8 @@ function compute(a, b, op) {
                 return minifyNumber(result).length < r2.length ? result : [r[0], r[1]];
         }
     }
-    const l1 = typeof a == "number" ? [a, 1] : a;
-    const r1 = typeof b == "number" ? [b, 1] : b;
+    const l1 = typeof a === "number" ? [a, 1] : a;
+    const r1 = typeof b === "number" ? [b, 1] : b;
     let l2;
     let r2;
     switch (op) {
@@ -74,7 +74,7 @@ function compute(a, b, op) {
     }
     // @ts-ignore
     const a2 = simplify(l2, r2);
-    if (a2[1] == 1) {
+    if (a2[1] === 1) {
         return a2[0];
     }
     const result = a2[0] / a2[1];

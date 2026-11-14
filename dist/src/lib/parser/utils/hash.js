@@ -75,7 +75,7 @@ async function hash(input, length = 6, algo) {
             case "base64url":
             case "base64":
                 result = btoa(input);
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
                 return result.slice(0, length);
@@ -105,7 +105,7 @@ function syncHash(input, length = 6, algo) {
             case "base64url":
             case "base64":
                 result = btoa(input);
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
                 return result.slice(0, length);

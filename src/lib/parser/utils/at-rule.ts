@@ -6,7 +6,8 @@ import { getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 
 export function matchAtRuleSyntax(
-    arena: AstArena, atRule: Token,
+    arena: AstArena,
+    atRule: Token,
     stream: Token[],
     options: ParserOptions | ValidationOptions,
 ): {

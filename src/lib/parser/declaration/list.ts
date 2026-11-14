@@ -8,18 +8,18 @@ import type {
     SinglePropertyTypeMapping,
     Token,
 } from "../../../@types/index.d.ts";
-import {PropertySet} from "./set.ts";
-import {getConfig} from "../utils/config.ts";
-import {PropertyMap} from "./map.ts";
-import {EnumAstNodeStatus, EnumToken} from "../../ast/types.ts";
-import {getParsedSyntax} from "../../validation/config.ts";
-import {ValidationSyntaxGroupEnum} from "../../validation/parser/typedef.ts";
-import {isValidDeclarationValue} from "../../validation/match.ts";
-import type {ValidationToken} from "../../validation/parser/types.d.ts";
-import {equalsIgnoreCase, lowercase} from "../utils/text.ts";
-import type {AstArena} from "../../ast/arena.ts";
-import {StructuralMemo} from "../../ast/cache.ts";
-import {parseString} from "../parse.ts";
+import { PropertySet } from "./set.ts";
+import { getConfig } from "../utils/config.ts";
+import { PropertyMap } from "./map.ts";
+import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
+import { getParsedSyntax } from "../../validation/config.ts";
+import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
+import { isValidDeclarationValue } from "../../validation/match.ts";
+import type { ValidationToken } from "../../validation/parser/types.d.ts";
+import { equalsIgnoreCase, lowercase } from "../utils/text.ts";
+import type { AstArena } from "../../ast/arena.ts";
+import { StructuralMemo } from "../../ast/cache.ts";
+import { parseString } from "../parse.ts";
 
 const config: PropertiesConfig = getConfig();
 
@@ -156,7 +156,7 @@ export class PropertyList {
         const arena: AstArena = this.arena;
 
         name =
-            arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+            arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
                 : arena.strings[arena.name[declaration]];
 
@@ -242,7 +242,7 @@ export class PropertyList {
         // it are not merged into it. `background: var(--bg); background-clip: text`
         if (
             shorthand === name &&
-            (shortHandType! == "map" || shortHandType! == "set") &&
+            (shortHandType! === "map" || shortHandType! === "set") &&
             hasWildCardFunction(arena, declaration)
         ) {
             this.declarations.set(this.memo.key(arena, declaration), declaration);
@@ -258,7 +258,7 @@ export class PropertyList {
 
             if (
                 existing != null &&
-                typeof existing == "number" &&
+                typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
                 arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration
             ) {
@@ -266,7 +266,7 @@ export class PropertyList {
             }
         }
         // @ts-ignore
-        if (shortHandType == "map") {
+        if (shortHandType === "map") {
             let owner: PropertyMap | PropertyList = this;
 
             const mapName: string =
@@ -309,7 +309,7 @@ export class PropertyList {
         }
 
         // @ts-ignore
-        else if (shortHandType == "set") {
+        else if (shortHandType === "set") {
             // @ts-ignore
 
             if (!this.declarations.has(shorthand)) {
@@ -414,7 +414,7 @@ export class PropertyList {
             }
         }
 
-        if (values != declarationValues) {
+        if (values !== declarationValues) {
             arena.setTokenList(declaration, values);
         }
     }

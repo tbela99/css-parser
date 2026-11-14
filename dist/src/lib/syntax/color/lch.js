@@ -10,6 +10,7 @@ import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
 import { cmyk2srgbvalues } from './srgb.js';
+import { epsilon } from '../constants.js';
 
 function hex2lchToken(arena, token) {
     const values = hex2lchvalues(arena, token);
@@ -80,7 +81,7 @@ function lchToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("lch", ColorType.LCH, chi);
@@ -141,20 +142,20 @@ function color2lchvalues(arena, token) {
     return srgb2lch(values[0], values[1], values[2], values[3]);
 }
 function labvalues2lchvalues(l, a, b, alpha = null) {
-    let c = Math.sqrt(a * a + b * b);
+    const c = Math.sqrt(a * a + b * b);
     let h = (Math.atan2(b, a) * 180) / Math.PI;
-    if (h < 0) {
-        h += 360;
+    if (h >= -epsilon && h <= epsilon) {
+        h = 0;
     }
-    if (c < 0.0001) {
-        c = h = 0;
+    else if (h < 0) {
+        h += 360;
     }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 function xyz2lchvalues(x, y, z, alpha) {
     const values = xyz2lab(x, y, z);
     const lch = labvalues2lchvalues(values[0], values[1], values[2]);
-    return alpha == null || alpha == 1 ? lch : lch.concat(alpha);
+    return alpha == null || alpha === 1 ? lch : lch.concat(alpha);
 }
 function getLCHComponents(arena, token) {
     const components = getColorComponents(arena, token);
@@ -174,11 +175,11 @@ function getLCHComponents(arena, token) {
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const l = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
+    const l = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 150 : 1);
+    const c = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 150 : 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore

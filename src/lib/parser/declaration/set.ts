@@ -11,21 +11,21 @@ function dedup(arena: AstArena, values: Token[][]): Token[][] {
 
         while (i-- > 1) {
             const t: Token = value[i];
-            const k: Token = value[i == 1 ? 0 : i % 2];
+            const k: Token = value[i === 1 ? 0 : i % 2];
 
             if (
                 // inlined: arena.isNumeric(t)
                 numericTokenTypes.has(arena.dataTypes[t]) &&
                 // inlined: arena.isNumeric(k)
                 numericTokenTypes.has(arena.dataTypes[k]) &&
-                arena.numericValue[t] == 0 &&
-                arena.numericValue[k] == 0 &&
+                arena.numericValue[t] === 0 &&
+                arena.numericValue[k] === 0 &&
                 !arena.hasFraction(t) &&
                 !arena.hasFraction(k)
             ) {
                 if (
-                    (arena.dataTypes[t] == EnumToken.NumberTokenType && isLength(arena, k)) ||
-                    (arena.dataTypes[k] == EnumToken.NumberTokenType && isLength(arena, t)) ||
+                    (arena.dataTypes[t] === EnumToken.NumberTokenType && isLength(arena, k)) ||
+                    (arena.dataTypes[k] === EnumToken.NumberTokenType && isLength(arena, t)) ||
                     isLength(arena, k) ||
                     isLength(arena, t)
                 ) {
@@ -65,7 +65,7 @@ export class PropertySet {
         const arena: AstArena = this.arena;
         const nam: string = arena.strings[arena.name[declaration]];
 
-        if (nam == this.config.shorthand) {
+        if (nam === this.config.shorthand) {
             this.declarations = new Map<string, AstDeclaration>();
         } else {
             // expand shorthand
@@ -80,13 +80,13 @@ export class PropertySet {
                     if (
                         // @ts-expect-error
                         this.config.types.some((t) => typ == EnumToken[t]) ||
-                        (typ == EnumToken.NumberTokenType &&
-                            arena.numericValue[token] == 0 &&
+                        (typ === EnumToken.NumberTokenType &&
+                            arena.numericValue[token] === 0 &&
                             (this.config.types.includes("Length") ||
                                 this.config.types.includes("Angle") ||
                                 this.config.types.includes("Dimension")))
                     ) {
-                        if (tokens.length == 0) {
+                        if (tokens.length === 0) {
                             tokens.push([]);
                             current++;
                         }
@@ -95,12 +95,12 @@ export class PropertySet {
                         continue;
                     }
 
-                    if (typ != EnumToken.WhitespaceTokenType && typ != EnumToken.CommentTokenType) {
+                    if (typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType) {
                         if (
-                            typ == EnumToken.IdenTokenType &&
+                            typ === EnumToken.IdenTokenType &&
                             this.config.keywords.includes(arena.strings[arena.stringValue[token]])
                         ) {
-                            if (tokens.length == 0) {
+                            if (tokens.length === 0) {
                                 tokens.push([]);
                                 current++;
                             }
@@ -109,8 +109,8 @@ export class PropertySet {
                         }
 
                         if (
-                            typ == EnumToken.LiteralTokenType &&
-                            arena.strings[arena.stringValue[token]] == this.config.separator?.val
+                            typ === EnumToken.LiteralTokenType &&
+                            arena.strings[arena.stringValue[token]] === this.config.separator?.val
                         ) {
                             tokens.push([]);
                             current++;
@@ -145,7 +145,7 @@ export class PropertySet {
 
                             const node: AstDeclaration = this.declarations.get(property)!;
 
-                            if (arena.firstToken[node] != 0) {
+                            if (arena.firstToken[node] !== 0) {
                                 arena.appendToken(node, arena.createToken(EnumToken.WhitespaceTokenType));
                             }
 
@@ -165,10 +165,10 @@ export class PropertySet {
 
     isShortHand(): boolean {
         if (this.declarations.has(this.config.shorthand)) {
-            return this.declarations.size == 1;
+            return this.declarations.size === 1;
         }
 
-        return this.config.properties.length == this.declarations.size;
+        return this.config.properties.length === this.declarations.size;
     }
 
     [Symbol.iterator](): IterableIterator<AstDeclaration> {
@@ -193,8 +193,8 @@ export class PropertySet {
                 const val: Token[] = arena.tokens(values[0]).reduce(
                     (acc: Token[], curr: Token) => {
                         if (
-                            arena.dataTypes[curr] != EnumToken.WhitespaceTokenType &&
-                            arena.dataTypes[curr] != EnumToken.CommentTokenType
+                            arena.dataTypes[curr] !== EnumToken.WhitespaceTokenType &&
+                            arena.dataTypes[curr] !== EnumToken.CommentTokenType
                         ) {
                             acc.push(curr);
                         }
@@ -230,11 +230,11 @@ export class PropertySet {
                 const id: AstDeclaration | undefined = this.declarations.get(property);
 
                 for (const token of id == null ? [] : arena.tokens(id)) {
-                    if (arena.dataTypes[token] == EnumToken.WhitespaceTokenType) {
+                    if (arena.dataTypes[token] === EnumToken.WhitespaceTokenType) {
                         continue;
                     }
 
-                    if (values.length == index) {
+                    if (values.length === index) {
                         values.push([]);
                     }
 
@@ -269,7 +269,7 @@ export class PropertySet {
 
                             for (const token of curr) {
                                 // tokens are shared with the original declarations
-                                acc.push(arena.parents[token] != 0 ? arena.clone(token, true) : token);
+                                acc.push(arena.parents[token] !== 0 ? arena.clone(token, true) : token);
                             }
 
                             return acc;

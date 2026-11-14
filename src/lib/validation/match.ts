@@ -245,9 +245,9 @@ export function isMFValue(
                 valid: true,
                 success:
                     tokens.length === 1 &&
-                    (arena.dataTypes[tokens[0]] == EnumToken.LengthTokenType ||
+                    (arena.dataTypes[tokens[0]] === EnumToken.LengthTokenType ||
                         // a length may be the number 0: `(width > 0)`
-                        (arena.dataTypes[tokens[0]] == EnumToken.NumberTokenType &&
+                        (arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType &&
                             arena.numericValue[tokens[0]] === 0 &&
                             !arena.hasFraction(tokens[0]))),
             };
@@ -257,7 +257,7 @@ export function isMFValue(
                 valid: true,
                 success:
                     tokens.length === 1 &&
-                    arena.dataTypes[tokens[0]] == EnumToken.NumberTokenType &&
+                    arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType &&
                     !arena.numericValue[tokens[0]].toString().includes("."),
             };
 
@@ -266,33 +266,33 @@ export function isMFValue(
                 valid: true,
                 success:
                     tokens.length === 1 &&
-                    arena.dataTypes[tokens[0]] == EnumToken.NumberTokenType &&
+                    arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType &&
                     !arena.hasFraction(tokens[0]),
             };
 
         case MediaFeatureType.StringType:
             return {
                 valid: true,
-                success: tokens.length === 1 && arena.dataTypes[tokens[0]] == EnumToken.StringTokenType,
+                success: tokens.length === 1 && arena.dataTypes[tokens[0]] === EnumToken.StringTokenType,
             };
 
         case MediaFeatureType.ResolutionType:
             return {
                 valid: true,
-                success: tokens.length === 1 && arena.dataTypes[tokens[0]] == EnumToken.ResolutionTokenType,
+                success: tokens.length === 1 && arena.dataTypes[tokens[0]] === EnumToken.ResolutionTokenType,
             };
 
         case MediaFeatureType.RatioType:
             return {
                 valid: true,
                 success:
-                    (tokens.length == 1 && arena.dataTypes[tokens[0]] == EnumToken.NumberTokenType) ||
+                    (tokens.length === 1 && arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType) ||
                     (tokens.length === 3 &&
-                        arena.dataTypes[tokens[0]] == EnumToken.NumberTokenType &&
+                        arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType &&
                         !arena.hasFraction(tokens[0]) &&
-                        arena.dataTypes[tokens[1]] == EnumToken.LiteralTokenType &&
+                        arena.dataTypes[tokens[1]] === EnumToken.LiteralTokenType &&
                         arena.strings[arena.stringValue[tokens[1]]] === "/" &&
-                        arena.dataTypes[tokens[2]] == EnumToken.NumberTokenType &&
+                        arena.dataTypes[tokens[2]] === EnumToken.NumberTokenType &&
                         !arena.hasFraction(tokens[2])),
             };
 
@@ -334,9 +334,9 @@ class ValidationTokenContext implements ValidationContext {
 
         while (offset >= 0 && index < this.tokens.length) {
             while (
-                this.arena.dataTypes[token] == EnumToken.WhitespaceTokenType ||
-                this.arena.dataTypes[token] == EnumToken.CommentTokenType ||
-                this.arena.dataTypes[token] == EnumToken.CDOCOMMTokenType
+                this.arena.dataTypes[token] === EnumToken.WhitespaceTokenType ||
+                this.arena.dataTypes[token] === EnumToken.CommentTokenType ||
+                this.arena.dataTypes[token] === EnumToken.CDOCOMMTokenType
             ) {
                 token = this.tokens[++index];
             }
@@ -462,15 +462,15 @@ class ValidationTokenContext implements ValidationContext {
     slice(): ValidationTokenContext {
         return new ValidationTokenContext(
             this.arena,
-            this.index == -1 ? this.tokens.slice() : this.tokens.slice(this.index),
-            this.index == -1 ? -1 : 0,
+            this.index === -1 ? this.tokens.slice() : this.tokens.slice(this.index),
+            this.index === -1 ? -1 : 0,
         );
     }
 
     update(token: Token | null | undefined) {
         const index = token == null ? -1 : this.tokens.indexOf(token);
 
-        if (index != -1) {
+        if (index !== -1) {
             this.index = index;
         }
 
@@ -848,8 +848,8 @@ export function matchSelectorSyntax(
 
                     if (
                         arena.dataTypes[slice[0]] !== EnumToken.IdenTokenType ||
-                        (arena.strings[arena.stringValue[slice[0]]] != "i" &&
-                            arena.strings[arena.stringValue[slice[0]]] != "s")
+                        (arena.strings[arena.stringValue[slice[0]]] !== "i" &&
+                            arena.strings[arena.stringValue[slice[0]]] !== "s")
                     ) {
                         return {
                             success: false,
@@ -1100,7 +1100,7 @@ let encodingHash: number = 0;
  * @param value
  */
 function encode(value: number): void {
-    if (encodingLength == encoding.length) {
+    if (encodingLength === encoding.length) {
         const previous: Float64Array = encoding;
 
         encoding = new Float64Array(previous.length * 2);
@@ -1125,20 +1125,20 @@ function encodeToken(arena: AstArena, token: Token): void {
     encode(arena.unit[token]);
     encode(arena.colorType[token]);
 
-    if (arena.firstToken[token] != 0) {
+    if (arena.firstToken[token] !== 0) {
         encode(-1);
 
-        for (let child: Token = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+        for (let child: Token = arena.firstToken[token]; child !== 0; child = arena.nextSibling[child]) {
             encodeToken(arena, child);
         }
 
         encode(-2);
     }
 
-    if (arena.firstChild[token] != 0) {
+    if (arena.firstChild[token] !== 0) {
         encode(-3);
 
-        for (let child: Token = arena.firstChild[token]; child != 0; child = arena.nextSibling[child]) {
+        for (let child: Token = arena.firstChild[token]; child !== 0; child = arena.nextSibling[child]) {
             encodeToken(arena, child);
         }
 
@@ -1199,14 +1199,14 @@ function findValidation(arena: AstArena, syntaxes: ValidationToken[]): CachedVal
         for (let i = 0; i < bucket.length; i++) {
             const candidate: Float64Array = bucket[i].encoding;
 
-            if (candidate.length == encodingLength) {
+            if (candidate.length === encodingLength) {
                 let k: number = 0;
 
                 while (k < encodingLength && candidate[k] === encoding[k]) {
                     k++;
                 }
 
-                if (k == encodingLength) {
+                if (k === encodingLength) {
                     return bucket[i];
                 }
             }
@@ -1246,11 +1246,11 @@ function cacheValidation(
 function collectTokens(arena: AstArena, token: Token, result: Token[]): void {
     result.push(token);
 
-    for (let child: Token = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+    for (let child: Token = arena.firstToken[token]; child !== 0; child = arena.nextSibling[child]) {
         collectTokens(arena, child, result);
     }
 
-    for (let child: Token = arena.firstChild[token]; child != 0; child = arena.nextSibling[child]) {
+    for (let child: Token = arena.firstChild[token]; child !== 0; child = arena.nextSibling[child]) {
         collectTokens(arena, child, result);
     }
 }
@@ -1288,7 +1288,7 @@ function bindErrors(
         if (error.node != null) {
             node = tokens.indexOf(error.node as Token);
 
-            if (node == -1) {
+            if (node === -1) {
                 return null;
             }
         }
@@ -1296,7 +1296,7 @@ function bindErrors(
         if (error.location != null) {
             // the location is computed from a token of the value: the error node, the last token, ...
             if (
-                node != -1 &&
+                node !== -1 &&
                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[node]))
                 sameLocation(error.location, [
                     options.source!.file,
@@ -1318,7 +1318,7 @@ function bindErrors(
                     }
                 }
 
-                if (location == -1) {
+                if (location === -1) {
                     return null;
                 }
             }
@@ -1352,11 +1352,11 @@ function rebuildErrors(
     for (let i = 0; i < errors.length; i++) {
         const error: ErrorDescription = { ...errors[i].error };
 
-        if (errors[i].node != -1) {
+        if (errors[i].node !== -1) {
             error.node = tokens[errors[i].node];
         }
 
-        if (errors[i].location != -1) {
+        if (errors[i].location !== -1) {
             // inlined: options.source!.getSourceLocation(arena.getSpanStart(tokens[errors[i].location]))
             error.location = [
                 options.source!.file,
@@ -1465,7 +1465,7 @@ export function isValidDeclarationValue(
     encodingLength = 0;
     encodingHash = 0x811c9dc5;
 
-    for (let token: Token = arena.firstToken[declaration]; token != 0; token = arena.nextSibling[token]) {
+    for (let token: Token = arena.firstToken[declaration]; token !== 0; token = arena.nextSibling[token]) {
         encodeToken(arena, token);
     }
 
@@ -1522,10 +1522,10 @@ export function matchAllSyntaxes(
     if (syntaxes != null && result.success && result.syntaxToken != null) {
         const index: number = syntaxes.indexOf(result.syntaxToken);
 
-        if (index != -1) {
+        if (index !== -1) {
             const mandatory: number = findMandatorySyntax(syntaxes, index);
 
-            if (mandatory != -1) {
+            if (mandatory !== -1) {
                 return setMatch(
                     out,
                     false,
@@ -1781,7 +1781,7 @@ const nullableSyntaxes: WeakMap<ValidationToken, boolean> = new WeakMap();
  * @param syntax
  */
 function isNullable(syntax: ValidationToken): boolean {
-    if (syntax.typ == ValidationTokenEnum.Whitespace) {
+    if (syntax.typ === ValidationTokenEnum.Whitespace) {
         return true;
     }
 
@@ -1939,7 +1939,7 @@ function matchWildCardFunction(
         if (probe.success) {
             if (probe.context.done()) {
                 // the syntax matched all the tokens: the remaining syntaxes must be optional
-                if (findMandatorySyntax(syntaxes, index + 1) == -1) {
+                if (findMandatorySyntax(syntaxes, index + 1) === -1) {
                     context.end();
                     return setMatch(out, true, probe.valid, null, context, null, probe.errors);
                 }
@@ -2008,7 +2008,7 @@ function setDoneMatch(
 ): ValidationMatch {
     const mandatory: number = findMandatorySyntax(syntaxes, index);
 
-    if (mandatory != -1) {
+    if (mandatory !== -1) {
         return setMatch(out, false, valid, token, context, syntaxes[mandatory], noErrors);
     }
 
@@ -2042,8 +2042,8 @@ function matchSyntax(
     let isOptional: boolean;
 
     if (
-        context.tokens.length == 1 &&
-        arena.dataTypes[context.tokens[0]] == EnumToken.IdenTokenType &&
+        context.tokens.length === 1 &&
+        arena.dataTypes[context.tokens[0]] === EnumToken.IdenTokenType &&
         isCssWideKeyword(arena.strings[arena.stringValue[context.tokens[0]]])
     ) {
         context.end();
@@ -2051,7 +2051,7 @@ function matchSyntax(
     }
 
     while (++i < syntaxes.length) {
-        if (syntaxes[i].typ == ValidationTokenEnum.Whitespace) {
+        if (syntaxes[i].typ === ValidationTokenEnum.Whitespace) {
             continue;
         }
 
@@ -2066,7 +2066,7 @@ function matchSyntax(
             // the remaining syntaxes must be optional: `<a>? <b>`
             const mandatory: number = findMandatorySyntax(syntaxes, isOptional ? i + 1 : i);
 
-            if (mandatory != -1) {
+            if (mandatory !== -1) {
                 return setMatch(out, false, true, null, context, syntaxes[mandatory], [
                     {
                         action: "drop",
@@ -2250,7 +2250,7 @@ function matchSyntax(
             switch (syntaxes[i].typ) {
                 case ValidationTokenEnum.Colon:
                     // `<ident-token> : <declaration-value>?`
-                    if (arena.dataTypes[token] == EnumToken.ColonTokenType) {
+                    if (arena.dataTypes[token] === EnumToken.ColonTokenType) {
                         success = true;
                         context.next();
                         break;
@@ -2263,7 +2263,7 @@ function matchSyntax(
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
 
                 case ValidationTokenEnum.Comma:
-                    if (arena.dataTypes[token] == EnumToken.CommaTokenType) {
+                    if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
                         success = true;
                         (options.visited!.get(token) as Set<ValidationToken>)!.delete(syntaxes[i]);
                         context.next();
@@ -2274,7 +2274,7 @@ function matchSyntax(
 
                 case ValidationTokenEnum.Keyword:
                     if (
-                        arena.dataTypes[token] == EnumToken.IdenTokenType &&
+                        arena.dataTypes[token] === EnumToken.IdenTokenType &&
                         lowercase(arena.strings[arena.stringValue[token]]) ===
                             lowercase((syntaxes[i] as ValidationKeywordToken).val)
                     ) {
@@ -2328,7 +2328,7 @@ function matchSyntax(
 
                     // `<bg-layer>#? , <final-bg-layer>` (the group of the optional list, the comma is the list separator) is
                     // matched as `[ <bg-layer> , ]* <final-bg-layer>`: the last item is left to the next syntax
-                    if (chi.length == 1 && chi[0].isList) {
+                    if (chi.length === 1 && chi[0].isList) {
                         const { isList, isOptional, match, ...item } = chi[0];
                         const group: ValidationToken[] = [
                             item as ValidationToken,
@@ -2380,7 +2380,7 @@ function matchSyntax(
                         success =
                             arena.strings[arena.stringValue[token]] ===
                             (syntaxes[i] as ValidationStringToken).val.slice(1, -1);
-                    } else if (arena.dataTypes[token] == EnumToken.Plus) {
+                    } else if (arena.dataTypes[token] === EnumToken.Plus) {
                         success = true;
                     }
 
@@ -2435,7 +2435,7 @@ function matchSyntax(
 
                             if (tmp.success) {
                                 // an alternative that consumes the tokens is skipped if mandatory syntaxes remain
-                                if (tmp.context.done() && findMandatorySyntax(syntaxes, i + 1) != -1) {
+                                if (tmp.context.done() && findMandatorySyntax(syntaxes, i + 1) !== -1) {
                                     continue;
                                 }
 
@@ -2789,7 +2789,7 @@ function matchUnorderedSyntaxes(
         // `<a>? && <b>?` matches no token
         success:
             best != null ||
-            (all && syntaxes.every((syntaxes: ValidationToken[]) => findMandatorySyntax(syntaxes, 0) == -1)),
+            (all && syntaxes.every((syntaxes: ValidationToken[]) => findMandatorySyntax(syntaxes, 0) === -1)),
         valid: true,
         token: context.current(),
         context,
@@ -2860,7 +2860,7 @@ function searchUnorderedSyntaxes(
 
         const rest: number[] = remaining.slice(0, k).concat(remaining.slice(k + 1));
         // the match may stop after this syntax
-        const complete: boolean = !all || rest.every((index: number) => findMandatorySyntax(syntaxes[index], 0) == -1);
+        const complete: boolean = !all || rest.every((index: number) => findMandatorySyntax(syntaxes[index], 0) === -1);
         const candidates: ValidationContext[] = [];
 
         if (!next.done() && rest.length > 0) {
@@ -2906,12 +2906,12 @@ function searchUnorderedSyntaxes(
 function ampersandOperands(syntax: ValidationAmpersandToken, operands: ValidationToken[][] = []): ValidationToken[][] {
     for (const side of [syntax.l, syntax.r]) {
         const tokens: ValidationToken[] = side.filter(
-            (token: ValidationToken) => token.typ != ValidationTokenEnum.Whitespace,
+            (token: ValidationToken) => token.typ !== ValidationTokenEnum.Whitespace,
         );
 
         if (
-            tokens.length == 1 &&
-            tokens[0].typ == ValidationTokenEnum.AmpersandToken &&
+            tokens.length === 1 &&
+            tokens[0].typ === ValidationTokenEnum.AmpersandToken &&
             !tokens[0].isOptional &&
             !tokens[0].isRepeatable &&
             !tokens[0].isRepeatableAtLeastOnce &&
@@ -2960,7 +2960,7 @@ function peekFeatureTokens(arena: AstArena, context: ValidationContext): Token[]
 
         if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
             depth++;
-        } else if (arena.dataTypes[token] === EnumToken.EndParensTokenType && depth-- == 0) {
+        } else if (arena.dataTypes[token] === EnumToken.EndParensTokenType && depth-- === 0) {
             break;
         }
 
@@ -2994,7 +2994,7 @@ function matchProperty(
     // inlined: arena.typeOf(token)
     let t: EnumToken = (token == null ? null : arena.dataTypes[token as number]) as EnumToken;
     let checkCalc: boolean =
-        (t == EnumToken.MathFunctionTokenDefType || t == EnumToken.MathFunctionTokenType) &&
+        (t === EnumToken.MathFunctionTokenDefType || t === EnumToken.MathFunctionTokenType) &&
         [
             "number",
             "zero",
@@ -3096,7 +3096,7 @@ function matchProperty(
 
                     while ((token = context.peek()) != null) {
                         if (
-                            arena.dataTypes[token] == EnumToken.StartParensTokenType ||
+                            arena.dataTypes[token] === EnumToken.StartParensTokenType ||
                             tokensfuncDefMap.has(arena.dataTypes[token])
                         ) {
                             stack.push(token);
@@ -3106,11 +3106,11 @@ function matchProperty(
                             expectToken = false;
                         }
 
-                        if (arena.dataTypes[token] == EnumToken.CommaTokenType) {
+                        if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
                             expectToken = true;
                         }
 
-                        if (arena.dataTypes[token] == EnumToken.EndParensTokenType) {
+                        if (arena.dataTypes[token] === EnumToken.EndParensTokenType) {
                             if (stack.length > 0) {
                                 stack.pop();
                             } else {
@@ -3345,7 +3345,7 @@ function matchProperty(
 
             // inlined: arena.typeOf(token)
             success =
-                arena.dataTypes[token as number] == EnumToken.IdenTokenType &&
+                arena.dataTypes[token as number] === EnumToken.IdenTokenType &&
                 values.has(arena.strings[arena.stringValue[token as Token]].toLowerCase());
             break;
         }
@@ -3365,7 +3365,7 @@ function matchProperty(
         case "extension-name":
         case "custom-property-name":
             // inlined: arena.typeOf(context.peek())
-            success = arena.dataTypes[context.peek() as number] == EnumToken.DashedIdenTokenType;
+            success = arena.dataTypes[context.peek() as number] === EnumToken.DashedIdenTokenType;
             break;
 
         case "namespace-prefix":
@@ -3376,8 +3376,8 @@ function matchProperty(
         case "counter-style-name":
             // inlined: arena.typeOf(token)
             success =
-                arena.dataTypes[token as number] == EnumToken.IdenTokenType ||
-                arena.dataTypes[token as number] == EnumToken.DashedIdenTokenType;
+                arena.dataTypes[token as number] === EnumToken.IdenTokenType ||
+                arena.dataTypes[token as number] === EnumToken.DashedIdenTokenType;
 
             // inlined: arena.typeOf(token)
             if (success && arena.dataTypes[token as number] === EnumToken.IdenTokenType) {
@@ -3435,7 +3435,7 @@ function matchProperty(
 
         case "wq-name": {
             // inlined: arena.typeOf(context.peek())
-            const success = arena.dataTypes[context.peek() as number] == EnumToken.IdenTokenType;
+            const success = arena.dataTypes[context.peek() as number] === EnumToken.IdenTokenType;
 
             return {
                 success,
@@ -3452,7 +3452,7 @@ function matchProperty(
                 const token = context.peek();
 
                 // inlined: arena.typeOf(token)
-                success = arena.dataTypes[token as number] == EnumToken.NumberTokenType;
+                success = arena.dataTypes[token as number] === EnumToken.NumberTokenType;
             }
 
             break;
@@ -3461,7 +3461,7 @@ function matchProperty(
             const token = context.peek();
             // inlined: arena.typeOf(token)
             success =
-                arena.dataTypes[token as number] == EnumToken.NumberTokenType &&
+                arena.dataTypes[token as number] === EnumToken.NumberTokenType &&
                 arena.numericValue[token as Token] === 0;
             break;
         }
@@ -3472,7 +3472,7 @@ function matchProperty(
 
                 success =
                     // inlined: arena.typeOf(token)
-                    arena.dataTypes[token as number] == EnumToken.NumberTokenType &&
+                    arena.dataTypes[token as number] === EnumToken.NumberTokenType &&
                     Number.isInteger(Number(arena.numericValue[token as Token]));
             }
             break;
@@ -3482,23 +3482,23 @@ function matchProperty(
 
             success =
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.DimensionTokenType ||
+                arena.dataTypes[token as number] === EnumToken.DimensionTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.AngleTokenType ||
+                arena.dataTypes[token as number] === EnumToken.AngleTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.LengthTokenType ||
+                arena.dataTypes[token as number] === EnumToken.LengthTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.PercentageTokenType ||
+                arena.dataTypes[token as number] === EnumToken.PercentageTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.ResolutionTokenType ||
+                arena.dataTypes[token as number] === EnumToken.ResolutionTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.TimeTokenType ||
+                arena.dataTypes[token as number] === EnumToken.TimeTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.FrequencyTokenType ||
+                arena.dataTypes[token as number] === EnumToken.FrequencyTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.UserDefinedDimensionTokenType ||
+                arena.dataTypes[token as number] === EnumToken.UserDefinedDimensionTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.FlexTokenType;
+                arena.dataTypes[token as number] === EnumToken.FlexTokenType;
             break;
         }
 
@@ -3546,13 +3546,13 @@ function matchProperty(
 
                 success =
                     // inlined: arena.typeOf(token)
-                    arena.dataTypes[token as number] == EnumToken.PercentageTokenType ||
+                    arena.dataTypes[token as number] === EnumToken.PercentageTokenType ||
                     // inlined: arena.typeOf(token)
-                    arena.dataTypes[token as number] == EnumToken.LengthTokenType ||
+                    arena.dataTypes[token as number] === EnumToken.LengthTokenType ||
                     // inlined: arena.typeOf(token)
-                    arena.dataTypes[token as number] == EnumToken.UserDefinedDimensionTokenType ||
+                    arena.dataTypes[token as number] === EnumToken.UserDefinedDimensionTokenType ||
                     // inlined: arena.typeOf(token)
-                    (arena.dataTypes[token as number] == EnumToken.NumberTokenType &&
+                    (arena.dataTypes[token as number] === EnumToken.NumberTokenType &&
                         arena.numericValue[token as Token] === 0);
             }
             break;
@@ -3560,8 +3560,8 @@ function matchProperty(
         case "flex":
             // inlined: arena.typeOf(context.peek())
             success =
-                arena.dataTypes[context.peek() as number] == EnumToken.FlexTokenType ||
-                arena.dataTypes[context.peek() as number] == EnumToken.UserDefinedDimensionTokenType;
+                arena.dataTypes[context.peek() as number] === EnumToken.FlexTokenType ||
+                arena.dataTypes[context.peek() as number] === EnumToken.UserDefinedDimensionTokenType;
             break;
 
         case "length": {
@@ -3569,23 +3569,23 @@ function matchProperty(
 
             success =
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.LengthTokenType ||
+                arena.dataTypes[token as number] === EnumToken.LengthTokenType ||
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.UserDefinedDimensionTokenType ||
+                arena.dataTypes[token as number] === EnumToken.UserDefinedDimensionTokenType ||
                 // inlined: arena.typeOf(token)
-                (arena.dataTypes[token as number] == EnumToken.NumberTokenType &&
+                (arena.dataTypes[token as number] === EnumToken.NumberTokenType &&
                     arena.numericValue[token as Token] === 0);
             break;
         }
 
         case "resolution":
             // inlined: arena.typeOf(context.peek())
-            success = arena.dataTypes[context.peek() as number] == EnumToken.ResolutionTokenType;
+            success = arena.dataTypes[context.peek() as number] === EnumToken.ResolutionTokenType;
             break;
 
         case "frequency":
             // inlined: arena.typeOf(context.peek())
-            success = arena.dataTypes[context.peek() as number] == EnumToken.FrequencyTokenType;
+            success = arena.dataTypes[context.peek() as number] === EnumToken.FrequencyTokenType;
             break;
 
         case "decibel":
@@ -3594,8 +3594,8 @@ function matchProperty(
             const token: Token | null = context.peek();
 
             success =
-                arena.dataTypes[token as number] == EnumToken.DimensionTokenType &&
-                equalsIgnoreCase(arena.strings[arena.unit[token as Token]], property.val == "decibel" ? "dB" : "st");
+                arena.dataTypes[token as number] === EnumToken.DimensionTokenType &&
+                equalsIgnoreCase(arena.strings[arena.unit[token as Token]], property.val === "decibel" ? "dB" : "st");
             break;
         }
 
@@ -3608,8 +3608,8 @@ function matchProperty(
                 }
 
                 success =
-                    arena.dataTypes[token] == EnumToken.TimeTokenType ||
-                    arena.dataTypes[token] == EnumToken.UserDefinedDimensionTokenType;
+                    arena.dataTypes[token] === EnumToken.TimeTokenType ||
+                    arena.dataTypes[token] === EnumToken.UserDefinedDimensionTokenType;
             }
             break;
 
@@ -3627,7 +3627,7 @@ function matchProperty(
 
                     parseTokens(arena, newRange, { parseColor: true }, errors);
 
-                    success = newRange.length == 1 && isColor(arena, newRange[0], errors);
+                    success = newRange.length === 1 && isColor(arena, newRange[0], errors);
 
                     if (success) {
                         context.update(range.at(-1));
@@ -3685,12 +3685,12 @@ function matchProperty(
                 property.val.startsWith("forgiving-relative-selector-list"),
             );
 
-            if (result.success || property.val == "forgiving-relative-selector-list") {
+            if (result.success || property.val === "forgiving-relative-selector-list") {
                 context.update(tokens.at(-1));
             }
 
             return {
-                success: result.success || property.val == "forgiving-relative-selector-list",
+                success: result.success || property.val === "forgiving-relative-selector-list",
                 valid: true,
                 token: context.peek(),
                 context,
@@ -3721,7 +3721,7 @@ function matchProperty(
 
             success =
                 // inlined: arena.typeOf(token)
-                arena.dataTypes[token as number] == EnumToken.IdenTokenType &&
+                arena.dataTypes[token as number] === EnumToken.IdenTokenType &&
                 // @ts-expect-error
                 (config.languages as string[]).some(
                     (t) =>
@@ -3792,7 +3792,7 @@ function matchProperty(
             let l: number;
 
             // inlined: arena.typeOf(token)
-            if (arena.dataTypes[token as number] == EnumToken.UrlFunctionTokenDefType) {
+            if (arena.dataTypes[token as number] === EnumToken.UrlFunctionTokenDefType) {
                 l = 0;
                 let token: Token | null;
 
@@ -3807,9 +3807,9 @@ function matchProperty(
 
                 if (
                     token != null &&
-                    (arena.dataTypes[token] == EnumToken.StringTokenType ||
-                        arena.dataTypes[token] == EnumToken.IdenTokenType ||
-                        arena.dataTypes[token] == EnumToken.UrlTokenTokenType)
+                    (arena.dataTypes[token] === EnumToken.StringTokenType ||
+                        arena.dataTypes[token] === EnumToken.IdenTokenType ||
+                        arena.dataTypes[token] === EnumToken.UrlTokenTokenType)
                 ) {
                     while ((token = context.peek(++l))) {
                         if (
@@ -3821,7 +3821,7 @@ function matchProperty(
                     }
 
                     // inlined: arena.typeOf(token)
-                    if (arena.dataTypes[token as number] == EnumToken.EndParensTokenType) {
+                    if (arena.dataTypes[token as number] === EnumToken.EndParensTokenType) {
                         success = true;
                         context.update(token);
 
@@ -3839,7 +3839,7 @@ function matchProperty(
             }
 
             // inlined: arena.typeOf(token)
-            if (arena.dataTypes[token as number] != EnumToken.UrlFunctionTokenType) {
+            if (arena.dataTypes[token as number] !== EnumToken.UrlFunctionTokenType) {
                 success = false;
                 break;
             }
@@ -3859,9 +3859,9 @@ function matchProperty(
 
             if (l < urlTokens.length) {
                 success =
-                    arena.dataTypes[urlTokens[l]] == EnumToken.StringTokenType ||
-                    arena.dataTypes[urlTokens[l]] == EnumToken.IdenTokenType ||
-                    arena.dataTypes[urlTokens[l]] == EnumToken.UrlTokenTokenType;
+                    arena.dataTypes[urlTokens[l]] === EnumToken.StringTokenType ||
+                    arena.dataTypes[urlTokens[l]] === EnumToken.IdenTokenType ||
+                    arena.dataTypes[urlTokens[l]] === EnumToken.UrlTokenTokenType;
                 context.next();
 
                 return {
@@ -3882,11 +3882,11 @@ function matchProperty(
 
             // `type(<number> | <transform-function>)`: the css type syntax
             if (
-                (arena.dataTypes[token as number] == EnumToken.FunctionTokenDefType ||
-                    arena.dataTypes[token as number] == EnumToken.FunctionTokenType) &&
+                (arena.dataTypes[token as number] === EnumToken.FunctionTokenDefType ||
+                    arena.dataTypes[token as number] === EnumToken.FunctionTokenType) &&
                 equalsIgnoreCase(arena.strings[arena.stringValue[token as Token]], "type")
             ) {
-                if (arena.dataTypes[token as number] == EnumToken.FunctionTokenDefType) {
+                if (arena.dataTypes[token as number] === EnumToken.FunctionTokenDefType) {
                     context.update(context.peekRange().at(-1));
                 } else {
                     context.next();
@@ -3903,7 +3903,7 @@ function matchProperty(
             }
 
             // inlined: arena.typeOf(token)
-            success = arena.dataTypes[token as number] == EnumToken.CssTypeTokenType;
+            success = arena.dataTypes[token as number] === EnumToken.CssTypeTokenType;
 
             if (success) {
                 context.next();
@@ -3913,9 +3913,9 @@ function matchProperty(
 
                 if (
                     multiplier != null &&
-                    (arena.dataTypes[multiplier] == EnumToken.Plus ||
-                        (arena.dataTypes[multiplier] == EnumToken.LiteralTokenType &&
-                            arena.strings[arena.stringValue[multiplier]] == "#"))
+                    (arena.dataTypes[multiplier] === EnumToken.Plus ||
+                        (arena.dataTypes[multiplier] === EnumToken.LiteralTokenType &&
+                            arena.strings[arena.stringValue[multiplier]] === "#"))
                 ) {
                     context.next();
                 }
@@ -3938,12 +3938,12 @@ function matchProperty(
 
             // inlined: arena.typeOf(token)
             success =
-                arena.dataTypes[token as number] == EnumToken.CustomFunctionTokenDefType ||
-                arena.dataTypes[token as number] == EnumToken.CustomFunctionTokenType;
+                arena.dataTypes[token as number] === EnumToken.CustomFunctionTokenDefType ||
+                arena.dataTypes[token as number] === EnumToken.CustomFunctionTokenType;
 
             if (success) {
                 // `--name(<arguments>)`: the function and its arguments
-                if (arena.dataTypes[token as number] == EnumToken.CustomFunctionTokenDefType) {
+                if (arena.dataTypes[token as number] === EnumToken.CustomFunctionTokenDefType) {
                     context.update(context.peekRange().at(-1));
                 } else {
                     context.next();
@@ -3964,7 +3964,7 @@ function matchProperty(
 
         case "block-contents":
             // inlined: arena.typeOf(context.peek())
-            success = arena.dataTypes[context.peek() as number] == EnumToken.StartParensTokenType;
+            success = arena.dataTypes[context.peek() as number] === EnumToken.StartParensTokenType;
 
             if (success) {
                 context.next();
@@ -4006,7 +4006,7 @@ function matchProperty(
     if (
         !success &&
         // inlined: arena.typeOf(context.peek())
-        arena.dataTypes[context.peek() as number] == EnumToken.IdenTokenType &&
+        arena.dataTypes[context.peek() as number] === EnumToken.IdenTokenType &&
         allValues.includes(arena.strings[arena.stringValue[context.peek() as Token]])
     ) {
         success = true;

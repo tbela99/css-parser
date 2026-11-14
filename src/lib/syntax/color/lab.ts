@@ -111,7 +111,7 @@ function labToken(arena: AstArena, values: number[]): Token | null {
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -244,7 +244,7 @@ export function xyz2lab(x: number, y: number, z: number, a: number | null = null
     ];
     // L in range [0,100]. For use in CSS, add a percent
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         result.push(a);
     }
 
@@ -286,19 +286,19 @@ export function getLABComponents(arena: AstArena, token: Token): number[] | null
     let t: Token = components[0];
 
     // @ts-ignore
-    const l: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
+    const l: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 100 : 1);
 
     // @ts-ignore
     t = components[1];
 
     // @ts-ignore
-    const a: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
+    const a: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 125 : 1);
 
     // @ts-ignore
     t = components[2];
 
     // @ts-ignore
-    const b: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
+    const b: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 125 : 1);
 
     // @ts-ignore
     t = components[3];
@@ -308,7 +308,7 @@ export function getLABComponents(arena: AstArena, token: Token): number[] | null
 
     const result: number[] = [l, a, b];
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         result.push(alpha);
     }
 

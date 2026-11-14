@@ -29,7 +29,7 @@ export function dirname(path: string): string {
     for (; i < path.length; i++) {
         const chr: string = path.charAt(i);
 
-        if (chr == "/") {
+        if (chr === "/") {
             parts.push("");
         } else {
             parts[parts.length - 1] += chr;
@@ -47,17 +47,17 @@ export function dirname(path: string): string {
  * @private
  */
 function splitPath(result: string): { i: number; parts: string[] } {
-    if (result.length == 0) {
+    if (result.length === 0) {
         return { parts: [], i: 0 };
     }
 
-    const parts: string[] = result == "/" ? [] : [""];
+    const parts: string[] = result === "/" ? [] : [""];
     let i: number = 0;
 
     for (; i < result.length; i++) {
         const chr: string = result.charAt(i);
 
-        if (chr == "/") {
+        if (chr === "/") {
             parts.push("");
         }
         // else if (chr == "?" || chr == "#") {
@@ -83,7 +83,7 @@ function splitPath(result: string): { i: number; parts: string[] } {
 }
 
 /**
- * Nomalize path
+ * Normalize path
  * @param path
  * @private
  */
@@ -102,14 +102,14 @@ export const normalize = memoize(function (path: string) {
     for (; i < path.length; i++) {
         const chr: string = path.charAt(i);
 
-        if (chr == "/") {
-            if (parts.length == 0 || parts[parts.length - 1] !== "") {
+        if (chr === "/") {
+            if (parts.length === 0 || parts[parts.length - 1] !== "") {
                 parts.push("");
             }
-        } else if (chr == "?" || chr == "#") {
+        } else if (chr === "?" || chr === "#") {
             break;
         } else {
-            if (parts.length == 0) {
+            if (parts.length === 0) {
                 parts.push("");
             }
 
@@ -123,13 +123,13 @@ export const normalize = memoize(function (path: string) {
         // if (parts[k] == ".") {
         //     parts.splice(k--, 1);
         // } else
-        if (k > 0 && parts[k] == "..") {
+        if (k > 0 && parts[k] === "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
     }
 
-    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
+    return (path.charAt(0) === "/" ? "/" : "") + parts.join("/");
 });
 
 /**
@@ -143,7 +143,7 @@ export const diff = memoize(function (path1: string, path2: string) {
     const { parts: dirs } = splitPath(path2);
 
     for (const p of dirs) {
-        if (parts[0] == p) {
+        if (parts[0] === p) {
             parts.shift();
         } else {
             parts.unshift("..");
@@ -193,7 +193,7 @@ export const resolve = memoize(function (
     }
 
     const absolute =
-        dir == "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
+        dir === "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
             ? resolvePath(url)
             : resolvePath(dir, url);
 

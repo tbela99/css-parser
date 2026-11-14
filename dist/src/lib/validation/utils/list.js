@@ -16,7 +16,7 @@ function stripCommaToken(arena, tokenList) {
     let result = [];
     for (let i = 0; i < tokenList.length; i++) {
         const typ = arena.dataTypes[tokenList[i]];
-        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
+        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CommaTokenType) {
             continue;
         }
         result.push(tokenList[i]);

@@ -23,26 +23,26 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
 
     // check identity
     if (
-        round(decomposed.translate[0]) == 0 &&
-        round(decomposed.translate[1]) == 0 &&
-        round(decomposed.translate[2]) == 0
+        round(decomposed.translate[0]) === 0 &&
+        round(decomposed.translate[1]) === 0 &&
+        round(decomposed.translate[2]) === 0
     ) {
         transforms.delete("translate");
     }
 
-    if (round(decomposed.scale[0]) == 1 && round(decomposed.scale[1]) == 1 && round(decomposed.scale[2]) == 1) {
+    if (round(decomposed.scale[0]) === 1 && round(decomposed.scale[1]) === 1 && round(decomposed.scale[2]) === 1) {
         transforms.delete("scale");
     }
 
-    if (round(decomposed.skew[0]) == 0 && round(decomposed.skew[1]) == 0) {
+    if (round(decomposed.skew[0]) === 0 && round(decomposed.skew[1]) === 0) {
         transforms.delete("skew");
     }
 
-    if (round(decomposed.perspective[2]) == 0) {
+    if (round(decomposed.perspective[2]) === 0) {
         transforms.delete("perspective");
     }
 
-    if (round(decomposed.rotate[3]) == 0) {
+    if (round(decomposed.rotate[3]) === 0) {
         transforms.delete("rotate");
     }
 
@@ -50,27 +50,27 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
         let coordinates = new Set(["x", "y", "z"]);
 
         for (let i = 0; i < 3; i++) {
-            if (round(decomposed.translate[i]) == 0) {
-                coordinates.delete(i == 0 ? "x" : i == 1 ? "y" : "z");
+            if (round(decomposed.translate[i]) === 0) {
+                coordinates.delete(i === 0 ? "x" : i === 1 ? "y" : "z");
             }
         }
 
-        if (coordinates.size == 1) {
+        if (coordinates.size === 1) {
             if (coordinates.has("x")) {
                 result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "translate", [arena.createToken(EnumToken.LengthTokenType, round(decomposed.translate[0]), "px")]));
             } else {
                 let axis: string = coordinates.has("y") ? "y" : "z";
-                let index: number = axis == "y" ? 1 : 2;
+                let index: number = axis === "y" ? 1 : 2;
 
                 result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "translate" + axis.toUpperCase(), [arena.createToken(EnumToken.LengthTokenType, round(decomposed.translate[index]), "px")]));
             }
         } else if (coordinates.has("z")) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "translate3d", [
-                    decomposed.translate[0] == 0
+                    decomposed.translate[0] === 0
                         ? arena.createToken(EnumToken.NumberTokenType, 0)
                         : arena.createToken(EnumToken.LengthTokenType, round(decomposed.translate[0]), "px"),
                     arena.createToken(EnumToken.CommaTokenType),
-                    decomposed.translate[1] == 0
+                    decomposed.translate[1] === 0
                         ? arena.createToken(EnumToken.NumberTokenType, 0)
                         : arena.createToken(EnumToken.LengthTokenType, round(decomposed.translate[1]), "px"),
                     arena.createToken(EnumToken.CommaTokenType),
@@ -88,15 +88,15 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
     if (transforms.has("rotate")) {
         const [x, y, z, angle] = decomposed.rotate;
 
-        if (y == 0 && z == 0) {
+        if (y === 0 && z === 0) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "rotateX", [
                     arena.createToken(EnumToken.AngleTokenType, round(angle), "deg"),
                 ]));
-        } else if (x == 0 && z == 0) {
+        } else if (x === 0 && z === 0) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "rotateY", [
                     arena.createToken(EnumToken.AngleTokenType, round(angle), "deg"),
                 ]));
-        } else if (x == 0 && y == 0) {
+        } else if (x === 0 && y === 0) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "rotate", [
                     arena.createToken(EnumToken.AngleTokenType, round(angle), "deg"),
                 ]));
@@ -114,7 +114,7 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
     }
 
     if (transforms.has("skew")) {
-        if (round(decomposed.skew[1]) == 0) {
+        if (round(decomposed.skew[1]) === 0) {
             skew.delete("y");
         }
 
@@ -122,7 +122,7 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
             decomposed.skew[i] = round((Math.atan(decomposed.skew[i]) * 180) / Math.PI);
         }
 
-        if (skew.size == 1) {
+        if (skew.size === 1) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "skew" + (skew.has("x") ? "" : "Y"), [arena.createToken(EnumToken.AngleTokenType, round(decomposed.skew[0]), "deg")]));
         } else {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "skew", [
@@ -136,22 +136,22 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
     if (transforms.has("scale")) {
         const [sx, sy, sz] = toZero(decomposed.scale);
 
-        if (sz == 1) {
+        if (sz === 1) {
             scales.delete("z");
         }
 
-        if (sy == 1) {
+        if (sy === 1) {
             scales.delete("y");
         }
 
-        if (sx == 1) {
+        if (sx === 1) {
             scales.delete("x");
         }
 
-        if (scales.size == 1) {
+        if (scales.size === 1) {
             let prefix: string = scales.has("x") ? "X" : scales.has("y") ? "Y" : "Z";
 
-            result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "scale" + prefix, [arena.createToken(EnumToken.NumberTokenType, round(prefix == "Z" ? sz : prefix == "Y" ? sy : sx))]));
+            result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "scale" + prefix, [arena.createToken(EnumToken.NumberTokenType, round(prefix === "Z" ? sz : prefix === "Y" ? sy : sx))]));
         } else if (!scales.has("z")) {
             result.push(arena.createFunction(EnumToken.TransformFunctionTokenType, "scale", [
                     arena.createToken(EnumToken.NumberTokenType, round(sx)),
@@ -170,7 +170,7 @@ export function minify(arena: AstArena, matrix: Matrix): Token[] | null {
     }
 
     // identity
-    return result.length == 0 || (result.length == 1 && eqMatrix(arena, identity(), result))
+    return result.length === 0 || (result.length === 1 && eqMatrix(arena, identity(), result))
         ? [
               arena.createToken(EnumToken.IdenTokenType, "none"),
           ]
@@ -211,7 +211,7 @@ export function eqMatrix(arena: AstArena, a: Token | Matrix, b: Token[]): boolea
 export function minifyTransformFunctions(arena: AstArena, transform: Token): Token {
     const name: string = arena.strings[arena.stringValue[transform]];
 
-    if ("skewX" == name) {
+    if ("skewX" === name) {
         // inlined: arena.setStr(transform, "skew")
         arena.stringValue[transform] = arena.internString("skew");
         return transform;
@@ -225,9 +225,9 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
 
     for (const token of arena.tokens(transform)) {
         if (
-            arena.dataTypes[token] == EnumToken.CommentTokenType ||
-            arena.dataTypes[token] == EnumToken.WhitespaceTokenType ||
-            arena.dataTypes[token] == EnumToken.CommaTokenType
+            arena.dataTypes[token] === EnumToken.CommentTokenType ||
+            arena.dataTypes[token] === EnumToken.WhitespaceTokenType ||
+            arena.dataTypes[token] === EnumToken.CommaTokenType
         ) {
             continue;
         }
@@ -244,7 +244,7 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
         }
 
         if (
-            arena.dataTypes[token] == EnumToken.PercentageTokenType &&
+            arena.dataTypes[token] === EnumToken.PercentageTokenType &&
             !arena.hasFraction(token) &&
             name.startsWith("scale")
         ) {
@@ -255,11 +255,11 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
         values.push(token);
     }
 
-    if (values.length == 0) {
+    if (values.length === 0) {
         return transform;
     }
 
-    if ((name == "translate" || name == "scale") && values.length > 2) {
+    if ((name === "translate" || name === "scale") && values.length > 2) {
         return transform;
     }
 
@@ -267,23 +267,23 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
     const t = new Set(["x", "y", "z"]);
 
     for (let i = 0; i < 3; i++) {
-        const axis = i == 0 ? "x" : i == 1 ? "y" : "z";
+        const axis = i === 0 ? "x" : i === 1 ? "y" : "z";
 
-        if (values.length <= i || arena.numericValue[values[i]] == ignoredValue) {
+        if (values.length <= i || arena.numericValue[values[i]] === ignoredValue) {
             t.delete(axis);
         }
     }
 
-    if (name == "translate3d" || name == "translate") {
-        if (t.size == 0) {
+    if (name === "translate3d" || name === "translate") {
+        if (t.size === 0) {
             return arena.createFunction(EnumToken.TransformFunctionTokenType, "translate", [arena.createToken(EnumToken.NumberTokenType, 0)]);
         }
 
-        if (t.size == 1) {
+        if (t.size === 1) {
             return arena.createFunction(EnumToken.TransformFunctionTokenType, "translate" + (t.has("x") ? "" : t.has("y") ? "Y" : "Z"), [values[t.has("x") ? 0 : t.has("y") ? 1 : 2]]);
         }
 
-        if (t.size == 2) {
+        if (t.size === 2) {
             if (t.has("z")) {
                 return transform;
             }
@@ -292,16 +292,16 @@ export function minifyTransformFunctions(arena: AstArena, transform: Token): Tok
         }
     }
 
-    if (name == "scale3d" || name == "scale") {
-        if (t.size == 0) {
+    if (name === "scale3d" || name === "scale") {
+        if (t.size === 0) {
             return arena.createFunction(EnumToken.TransformFunctionTokenType, "scale", [arena.createToken(EnumToken.NumberTokenType, 1)]);
         }
 
-        if (t.size == 1) {
+        if (t.size === 1) {
             return arena.createFunction(EnumToken.TransformFunctionTokenType, "scale" + (t.has("x") ? "X" : t.has("y") ? "Y" : "Z"), [values[t.has("x") ? 0 : t.has("y") ? 1 : 2]]);
         }
 
-        if (t.size == 2) {
+        if (t.size === 2) {
             if (t.has("z")) {
                 return transform;
             }

@@ -81,7 +81,7 @@ function labToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("lab", ColorType.LAB, chi);
@@ -177,7 +177,7 @@ function xyz2lab(x, y, z, a = null) {
         200 * (f[1] - f[2]), // b
     ];
     // L in range [0,100]. For use in CSS, add a percent
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         result.push(a);
     }
     return result;
@@ -208,21 +208,21 @@ function getLABComponents(arena, token) {
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const l = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
+    const l = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const a = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
+    const a = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
-    const b = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 125 : 1);
+    const b = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 125 : 1);
     // @ts-ignore
     t = components[3];
     // @ts-ignore
     const alpha = t == null ? 1 : getNumber(arena, t);
     const result = [l, a, b];
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         result.push(alpha);
     }
     return result;

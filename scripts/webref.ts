@@ -8,13 +8,16 @@ import localPatch from "./local-patch.json" with { type: "json" };
 const webrefUrl = "https://cdn.jsdelivr.net/npm/@webref/css@8.7.8/css.json";
 // the renamed properties are renamed by the parser (renamedStandardProperties), they are updated manually
 const renamedPropertiesFile = import.meta.dirname! + "/../src/lib/syntax/syntax.ts";
-// the csstree patch, written for mdn-data
-const patchUrl = "https://raw.githubusercontent.com/csstree/csstree/refs/heads/master/data/patch.json";
+// the csstree patch, written for mdn-data. the version is pinned: the generated syntax file must not change when a new
+// version is published, it is updated manually
+const patchUrl = "https://cdn.jsdelivr.net/npm/css-tree@3.2.1/data/patch.json";
 const localPatchUrl = "scripts/local-patch.json";
 const languagesUrl = "https://cdn.jsdelivr.net/npm/@iso-639/data/1/en.json";
 // the legacy data source (mdn-data, deprecated), used to find the origin of the definitions of the syntax files
-// generated before the migration to webref
-const legacyUrl = "https://raw.githubusercontent.com/mdn/data/main/css/";
+// generated before the migration to webref, and the legacy syntax of the vendor prefixed aliases, see
+// applyLegacySyntaxes(), and the definitions of the non standard properties, see addLegacyDefinitions(). the version is
+// pinned, it is the version of the syntax files generated from mdn-data
+const legacyUrl = "https://cdn.jsdelivr.net/npm/mdn-data@2.37.2/css/";
 const fetchInit = {
     headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:180.0) Gecko/20100101 Firefox/151.0" },
 };
@@ -31,6 +34,9 @@ const originLabels: string[] = [
 
 // the origins of the definitions of the legacy syntax files, see legacyOrigins()
 let legacy: Promise<Origins> | null = null;
+
+// the mdn-data files, by file name, see fetchMdn()
+const mdnFiles: Map<string, Promise<unknown>> = new Map();
 
 export interface ParsedSyntax {
     syntax: string;
@@ -90,12 +96,26 @@ const patches: PatchSyntax = (await fetchJson(patchUrl)) as PatchSyntax;
 
 const webref: WebrefCss = (await fetchJson(webrefUrl)) as WebrefCss;
 
+// the mdn-data properties provide the legacy syntax of some vendor prefixed aliases: `-webkit-mask-clip`
+const mdnProperties: Record<string, { syntax?: string }> = (await fetchMdn("properties.json")) as Record<
+    string,
+    { syntax?: string }
+>;
+
 // functions and types scoped to another definition (e.g. <filter-function> -> blur(), clip -> rect()). they are
 // resolved once all the definitions are loaded, see resolveScopedDefinitions()
 const scopedDefinitions: ScopedDefinition[] = [];
 
 // renamed definitions, by origin group: old name -> new name. they are not added to the syntax file
 const renamed: Partial<Record<OriginGroup, Record<string, string>>> = { declarations: {} };
+
+// the vendor prefixed legacy name aliases of webref: alias -> standard property. they are not renamed, see
+// applyLegacySyntaxes()
+const aliases: Record<string, string> = {};
+
+// the names of the webref types, with or without a syntax (`length`, `string`): the references to these types are
+// defined, see undefinedReferences()
+const webrefTypes: Set<string> = new Set((webref.types ?? []).map((type: WebrefDefinition) => type.name));
 
 // the renamed properties the parser does not rename, see checkRenamedProperties()
 const renamedMissing: Set<string> = new Set();
@@ -128,10 +148,19 @@ for (const atRule of webref.atrules ?? []) {
 }
 
 for (const property of webref.properties ?? []) {
-    // legacy name aliases are renamed properties: `word-wrap` is a legacy name alias of `overflow-wrap`,
-    // `-webkit-align-content` of `align-content`. they are not added, the parser renames them
-    // (renamedStandardProperties)
     if (property.legacyAliasOf != null) {
+        // the vendor prefixed legacy name aliases use the syntax of the standard property, they are not renamed:
+        // `-webkit-align-content: { alias: "align-content" }`, see lookupNode() in src/lib/validation/config.ts
+        if (/^-[a-z]+-/.test(property.name)) {
+            define("declarations", property.name, webrefUrl, () => {
+                json.declarations[property.name] = { alias: property.legacyAliasOf };
+            });
+            aliases[property.name] = property.legacyAliasOf;
+            continue;
+        }
+
+        // the other legacy name aliases are renamed properties (`word-wrap` is a legacy name alias of `overflow-wrap`):
+        // they are not added, the parser renames them (renamedStandardProperties)
         console.error(`>> renamed property >> ${property.name} >> ${property.legacyAliasOf}`);
         renamed.declarations![property.name] = property.legacyAliasOf;
         continue;
@@ -185,6 +214,9 @@ for (const [definitions, isType] of [
 
 await checkRenamedProperties();
 resolveScopedDefinitions();
+// the non standard properties and selectors that webref does not define (`box-orient`, `font-smooth`,
+// `-webkit-tap-highlight-color`, `::-webkit-slider-thumb`) keep their mdn-data definition
+await addLegacyDefinitions();
 
 // @webref/css does not list the units: they are defined by the local patch
 for (const unit of Object.keys((localPatch as { units?: Record<string, unknown> }).units ?? {})) {
@@ -198,6 +230,14 @@ json.units = Object.keys(origins.units).sort();
 applyPatches(false, patchUrl, patches);
 // @ts-ignore
 applyPatches(true, localPatchUrl, localPatch as PatchSyntax);
+// the vendor prefixed aliases with a legacy syntax (mdn-data, csstree patch, local patch) extend the standard syntax
+applyLegacySyntaxes();
+
+for (const [name, declaration] of Object.entries(json.declarations as Record<string, { alias?: string }>)) {
+    if (declaration.alias != null && !(declaration.alias in json.declarations)) {
+        console.error(`>> alias of an undefined property >> ${name} >> ${declaration.alias}`);
+    }
+}
 
 json = sortKeys(json) as typeof json;
 
@@ -206,7 +246,7 @@ const outputFile: string = outputDirectory + "/validation.json";
 // the origin of the definitions of the syntax file, used to report the origin of the removed definitions
 const originsFile: string = outputDirectory + "/validation.origins.json";
 // the changes are appended to this file, they are ported manually to CHANGELOG.md
-const changesFile: string = process.env.CSS_SYNTAX_CHANGES_FILE ?? import.meta.dirname! + "/../VALIDATION-SYNTAX-CHANGELOG.md";
+const changesFile: string = process.env.CSS_SYNTAX_CHANGES_FILE ?? import.meta.dirname! + "/../SYNTAX-CHANGES.md";
 
 // the previous syntax file, compared with the new one
 const previous: SyntaxFile | null = await readFile(outputFile, "utf8").then(
@@ -246,6 +286,18 @@ async function fetchJson(url: string): Promise<unknown> {
 }
 
 /**
+ * fetch a mdn-data file, once
+ * @param file the name of the file: `properties.json`
+ */
+function fetchMdn(file: string): Promise<unknown> {
+    if (!mdnFiles.has(file)) {
+        mdnFiles.set(file, fetchJson(legacyUrl + file));
+    }
+
+    return mdnFiles.get(file)!;
+}
+
+/**
  * consolidated css definitions of @webref/css (css.json)
  */
 interface WebrefCss {
@@ -282,20 +334,34 @@ function define(group: OriginGroup, name: string, url: string, add: () => void) 
 }
 
 /**
- * report the renamed properties that the parser does not rename: renamedStandardProperties is updated manually
+ * the parser renames the properties listed in renamedStandardProperties (src/lib/syntax/syntax.ts), which is updated
+ * manually. report the renamed properties it does not rename or renames to another property, and the vendor prefixed
+ * properties it renames: the vendor prefixed aliases are not renamed
  */
 async function checkRenamedProperties() {
     const source: string = await readFile(renamedPropertiesFile, "utf8").catch(() => "");
     const entries: string =
         source.match(/renamedStandardProperties\s*=\s*new Map\(\s*\[([\s\S]*?)\]\s*\)/)?.[1] ?? "";
-    const known: Set<string> = new Set(
-        [...entries.matchAll(/\[\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\]/g)].map((match) => match[1]),
+    const known: Map<string, string> = new Map(
+        [...entries.matchAll(/\[\s*["']([^"']+)["']\s*,\s*["']([^"']+)["']\s*\]/g)].map(
+            (match): [string, string] => [match[1], match[2]],
+        ),
     );
 
     for (const [name, target] of Object.entries(renamed.declarations!)) {
         if (!known.has(name)) {
             console.error(`>> renamed property missing from renamedStandardProperties >> ${name} >> ${target}`);
             renamedMissing.add(name);
+        } else if (known.get(name) != target) {
+            console.error(
+                `>> renamed property with another target in renamedStandardProperties >> ${name} >> ${target} >> ${known.get(name)}`,
+            );
+        }
+    }
+
+    for (const [name, target] of known) {
+        if (/^-[a-z]+-/.test(name)) {
+            console.error(`>> vendor prefixed property renamed by renamedStandardProperties >> ${name} >> ${target}`);
         }
     }
 }
@@ -557,16 +623,22 @@ function applyPatches(replace: boolean, url: string, ...patches: PatchSyntax[]) 
                 continue;
             }
 
+            // the vendor prefixed aliases are not replaced: the patch provides their legacy syntax, which extends the
+            // syntax of the standard property, see applyLegacySyntaxes()
+            if (Object.hasOwn(aliases, key)) {
+                continue;
+            }
+
             if (!(key in json.declarations)) {
                 console.error(`>> adding declarations >> ${key}`);
                 json.declarations[key] = { syntax: value.syntax };
                 origins.declarations[key] = url;
-            } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
+            } else if (isExtension(value)) {
                 console.error(`>> extending declaration syntax >> ${key}`);
                 json.declarations[key].syntax += " " + value.syntax;
             } else if (replace) {
                 console.error(`>> replacing declaration syntax >> ${key}`);
-                json.declarations[key].syntax = " " + value.syntax;
+                json.declarations[key] = { syntax: " " + value.syntax };
                 origins.declarations[key] = url;
             } else {
                 console.error(`>> keeping webref declaration syntax >> ${key}`);
@@ -586,7 +658,7 @@ function applyPatches(replace: boolean, url: string, ...patches: PatchSyntax[]) 
                 console.error(`>> adding type syntax >> ${key}`);
                 json.syntaxes[key] = { syntax: value.syntax };
                 origins.types[originName("types", key)] = url;
-            } else if (value.comment?.startsWith?.("extend") || value.syntax.startsWith("|")) {
+            } else if (isExtension(value)) {
                 console.error(`>> extending type syntax >> ${key} >> ${JSON.stringify(value)}`);
                 type.syntax += " " + value.syntax;
             } else if (replace) {
@@ -639,6 +711,220 @@ function applyPatches(replace: boolean, url: string, ...patches: PatchSyntax[]) 
     }
 }
 
+/**
+ * add the mdn-data definitions of the properties and of the selectors that webref does not define: the non standard
+ * properties (`box-orient`, `font-smooth`, `-ms-user-select`, `-webkit-tap-highlight-color`,
+ * `-webkit-overflow-scrolling`) and the non standard pseudo elements (`::-webkit-slider-thumb`). the previous syntax
+ * files were generated from mdn-data: without them, these declarations would be invalid, the vendor prefixed
+ * declarations would be validated with the syntax of another property (`-webkit-box-orient` with `flex-direction`) and
+ * `removePrefix` would rename them to another property.
+ *
+ * the renamed properties (`word-wrap`) and the vendor prefixed aliases are not added. the types referenced by the added
+ * definitions that are not defined (`<outline-radius>`) are added from mdn-data. they are added before the patches:
+ * the csstree patch and the local patch extend or replace them, as they did with mdn-data
+ */
+async function addLegacyDefinitions() {
+    const selectors: Record<string, { syntax?: string }> = (await fetchMdn("selectors.json")) as Record<
+        string,
+        { syntax?: string }
+    >;
+    const syntaxes: Record<string, { syntax?: string }> = (await fetchMdn("syntaxes.json")) as Record<
+        string,
+        { syntax?: string }
+    >;
+    const added: string[] = [];
+
+    for (const [name, property] of Object.entries(mdnProperties)) {
+        if (
+            property.syntax == null ||
+            // custom properties
+            name.startsWith("--") ||
+            name in json.declarations ||
+            Object.hasOwn(aliases, name) ||
+            Object.hasOwn(renamed.declarations!, name)
+        ) {
+            continue;
+        }
+
+        console.error(`>> adding mdn-data declaration >> ${name}`);
+        json.declarations[name] = { syntax: property.syntax };
+        origins.declarations[name] = legacyUrl + "properties.json";
+        added.push(property.syntax);
+    }
+
+    for (const [name, selector] of Object.entries(selectors)) {
+        // the other entries describe the selectors (`Type selectors`)
+        if (selector.syntax == null || !name.startsWith(":") || name in json.selectors) {
+            continue;
+        }
+
+        console.error(`>> adding mdn-data selector >> ${name}`);
+        json.selectors[name] = { syntax: selector.syntax };
+        origins.selectors[name] = legacyUrl + "selectors.json";
+    }
+
+    // the types referenced by the added definitions, and by the types they reference
+    while (added.length > 0) {
+        for (const reference of undefinedReferences(added.pop() as string)) {
+            const name: string = reference.slice(1, -1);
+
+            if (name.startsWith("'") || syntaxes[name]?.syntax == null) {
+                continue;
+            }
+
+            console.error(`>> adding mdn-data type syntax >> ${name}`);
+            json.syntaxes[name] = { syntax: syntaxes[name].syntax };
+            origins.types[originName("types", name)] = legacyUrl + "syntaxes.json";
+            added.push(syntaxes[name].syntax as string);
+        }
+    }
+}
+
+/**
+ * true if a patch extends a definition instead of replacing it: its syntax starts with `|` or its comment starts with
+ * `extend`
+ * @param value
+ */
+function isExtension(value: { comment?: string; syntax: string }): boolean {
+    return value.comment?.startsWith?.("extend") || value.syntax.trimStart().startsWith("|");
+}
+
+/**
+ * true if the syntax of a vendor prefixed alias is a legacy syntax: it differs from the syntax of the standard property
+ * @param syntax the syntax of the vendor prefixed alias
+ * @param standardSyntaxes the syntaxes of the standard property (webref, mdn-data)
+ */
+function isLegacySyntax(syntax: string | undefined | null, ...standardSyntaxes: Array<string | undefined | null>) {
+    const normalized: string = normalizeSyntax(syntax);
+
+    return (
+        normalized != "" &&
+        standardSyntaxes.every(
+            (standardSyntax: string | undefined | null) =>
+                standardSyntax == null || normalizeSyntax(standardSyntax) != normalized,
+        )
+    );
+}
+
+/**
+ * the references of a syntax that are not defined: `<'mask-clip'>`, `<composite-style>`, `<rect()>`. the webref types
+ * without a syntax (`<length>`, `<string>`) and the tokens (`<ident-token>`) are defined
+ * @param syntax
+ */
+function undefinedReferences(syntax: string): string[] {
+    const references: Set<string> = new Set();
+
+    for (const match of syntax.matchAll(/<'([^']+)'>/g)) {
+        if (json.declarations[match[1]]?.syntax == null) {
+            references.add(match[0]);
+        }
+    }
+
+    for (const match of syntax.matchAll(/<([a-zA-Z0-9-]+(?:\(\))?)(?:\s*\[[^\]]*\])?>/g)) {
+        const name: string = match[1];
+
+        if (!name.endsWith("-token") && !webrefTypes.has(name) && findTypeSyntax(name) == null) {
+            references.add(`<${name}>`);
+        }
+    }
+
+    return [...references];
+}
+
+/**
+ * the vendor prefixed legacy name aliases of webref are not renamed: they use the syntax of the standard property
+ * (`-webkit-align-content: { alias: "align-content" }`). when mdn-data, the csstree patch or the local patch provide a
+ * legacy syntax, a syntax that accepts the values the standard property does not accept, the alias gets its own
+ * syntax: the syntax of the standard property extended with the legacy syntax.
+ *
+ * `-webkit-mask-clip: <'mask-clip'> | [ <coord-box> | no-clip | border | padding | content | text ]#`
+ *
+ * the sources are applied in the order of the mdn-data pipeline: mdn-data, then the csstree patch (written for
+ * mdn-data), then the local patch. a patch replaces the legacy syntax of the previous sources, or extends it when its
+ * syntax starts with `|` (see isExtension()). mdn-data provides a legacy syntax when the syntax of the alias differs
+ * from the syntax of the standard property in mdn-data and in webref
+ */
+function applyLegacySyntaxes() {
+    const mdnPropertiesUrl: string = legacyUrl + "properties.json";
+
+    for (const [name, standard] of Object.entries(aliases)) {
+        if (json.declarations[name]?.alias == null) {
+            continue;
+        }
+
+        const standardSyntaxes: Array<string | undefined> = [
+            json.declarations[standard]?.syntax,
+            mdnProperties[standard]?.syntax,
+        ];
+
+        // the legacy syntax, replaced by the next sources
+        let legacy: string | null = null;
+        // the extensions of the legacy syntax
+        let extensions: string[] = [];
+        // the sources of the legacy syntax and of its extensions
+        let urls: string[] = [];
+
+        if (isLegacySyntax(mdnProperties[name]?.syntax, ...standardSyntaxes)) {
+            legacy = mdnProperties[name].syntax as string;
+            urls = [mdnPropertiesUrl];
+        }
+
+        for (const [url, patch] of [
+            [patchUrl, patches],
+            [localPatchUrl, localPatch],
+        ] as Array<[string, Partial<PatchSyntax>]>) {
+            const value: { comment?: string; syntax: string } | undefined = patch.properties?.[name];
+
+            if (value?.syntax == null) {
+                continue;
+            }
+
+            if (localPatch.skipped.some((t: string) => name.startsWith(t))) {
+                console.error(`>> skipping property >> ${name}`);
+                continue;
+            }
+
+            if (isExtension(value)) {
+                // `| <legacy>`: an alternative of the syntax
+                extensions.push(value.syntax.trim().replace(/^\|\s*/, ""));
+                urls.push(url);
+            } else if (isLegacySyntax(value.syntax, ...standardSyntaxes)) {
+                legacy = value.syntax.trim();
+                extensions = [];
+                urls = [url];
+            } else {
+                // the patch provides the syntax of the standard property: there is no legacy syntax
+                console.error(`>> no legacy syntax for the vendor prefixed alias >> ${name} >> ${originLabel(url)}`);
+                legacy = null;
+                extensions = [];
+                urls = [];
+            }
+        }
+
+        if (legacy == null && extensions.length == 0) {
+            console.error(`>> vendor prefixed alias >> ${name} >> ${standard}`);
+            continue;
+        }
+
+        const syntax: string = [`<'${standard}'>`, ...(legacy == null ? [] : [legacy.trim()]), ...extensions].join(
+            " | ",
+        );
+
+        const sources: string = [...new Set(urls.map(originLabel))].join(", ");
+
+        console.error(`>> legacy syntax of a vendor prefixed alias >> ${name} >> ${sources}`);
+
+        json.declarations[name] = { syntax };
+        origins.declarations[name] = urls.at(-1) as string;
+
+        for (const reference of undefinedReferences(syntax)) {
+            console.error(
+                `>> undefined reference in the legacy syntax of a vendor prefixed alias >> ${name} >> ${reference}`,
+            );
+        }
+    }
+}
+
 // =============================== //
 // summary of the changes between the previous and the new syntax file
 
@@ -646,7 +932,7 @@ function applyPatches(replace: boolean, url: string, ...patches: PatchSyntax[]) 
  * syntax file (src/data/validation.json)
  */
 interface SyntaxFile {
-    declarations?: Record<string, { syntax: string }>;
+    declarations?: Record<string, { syntax?: string; alias?: string }>;
     syntaxes?: Record<string, { syntax: string }>;
     types?: Record<string, { syntax: string }>;
     selectors?: Record<string, { syntax: string }>;
@@ -706,11 +992,12 @@ function compareDefinitions(previous: Record<string, string>, current: Record<st
  * the syntaxes of a group, by name
  * @param group
  */
-function syntaxesOf(group: Record<string, { syntax?: string }> | undefined): Record<string, string> {
+function syntaxesOf(group: Record<string, { syntax?: string; alias?: string }> | undefined): Record<string, string> {
     const result: Record<string, string> = {};
 
     for (const [name, definition] of Object.entries(group ?? {})) {
-        result[name] = normalizeSyntax(definition?.syntax);
+        // an alias is reported with the name of the standard property
+        result[name] = definition?.alias != null ? `alias of ${definition.alias}` : normalizeSyntax(definition?.syntax);
     }
 
     return result;
@@ -934,7 +1221,7 @@ function legacyOrigins(): Promise<Origins> {
         };
 
         const mdn = async (file: string): Promise<Record<string, any>> =>
-            ((await fetchJson(legacyUrl + file).catch((error: Error) => {
+            ((await fetchMdn(file).catch((error: Error) => {
                 console.error(`>> legacy mdn-data not available >> ${error.message}`);
                 return {};
             })) ?? {}) as Record<string, any>;
@@ -993,11 +1280,12 @@ function originLabel(url: string): string {
         return "unknown origin";
     }
 
-    if (url.startsWith(legacyUrl)) {
+    // the other versions of mdn-data and of the csstree patch: the origins saved by the previous versions of this script
+    if (url.startsWith(legacyUrl) || /\/mdn-data@|\/mdn\/data\//.test(url)) {
         return "legacy mdn-data";
     }
 
-    if (url == patchUrl) {
+    if (url == patchUrl || /\/css-tree@|\/csstree\/csstree\//.test(url)) {
         return "mdn-data patch";
     }
 

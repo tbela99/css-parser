@@ -10,7 +10,6 @@ import { getColorComponents } from "./components.ts";
  * @returns
  */
 export function getColorSpace(arena: AstArena, color: Token) {
-
     let name: string;
 
     const components: number[] | null = getColorComponents(arena, color);
@@ -34,7 +33,7 @@ export function getColorSpace(arena: AstArena, color: Token) {
         name = arena.strings[arena.stringValue[color]];
     }
 
-    return name! == "device-cmyk"
+    return name! === "device-cmyk"
         ? "cmyk"
         : name!.startsWith("xyz")
           ? "xyz"

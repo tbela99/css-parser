@@ -35,13 +35,13 @@ function compute(arena, transformLists) {
             case "rotateZ":
             case "rotate3d":
                 for (const child of arena.tokens(transform)) {
-                    if (arena.dataTypes[child] == EnumToken.WhitespaceTokenType ||
-                        arena.dataTypes[child] == EnumToken.CommaTokenType) {
+                    if (arena.dataTypes[child] === EnumToken.WhitespaceTokenType ||
+                        arena.dataTypes[child] === EnumToken.CommaTokenType) {
                         continue;
                     }
-                    if ((arena.dataTypes[child] != EnumToken.AngleTokenType &&
-                        arena.dataTypes[child] != EnumToken.NumberTokenType &&
-                        arena.dataTypes[child] != EnumToken.PercentageTokenType) ||
+                    if ((arena.dataTypes[child] !== EnumToken.AngleTokenType &&
+                        arena.dataTypes[child] !== EnumToken.NumberTokenType &&
+                        arena.dataTypes[child] !== EnumToken.PercentageTokenType) ||
                         // angle >= 360deg, do not transform
                         Math.abs(getAngle(arena, child)) >= 1) {
                         return null;
@@ -64,12 +64,12 @@ function compute(arena, transformLists) {
     const serialized = serialize(arena, matrix);
     if (cumulative.length > 0) {
         for (let i = 0; i < cumulative.length; i++) {
-            if (arena.dataTypes[cumulative[i]] == EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[cumulative[i]]] == "none") {
+            if (arena.dataTypes[cumulative[i]] === EnumToken.IdenTokenType &&
+                arena.strings[arena.stringValue[cumulative[i]]] === "none") {
                 cumulative.splice(i--, 1);
             }
         }
-        if (cumulative.length == 0) {
+        if (cumulative.length === 0) {
             cumulative.push(arena.createToken(EnumToken.IdenTokenType, "none"));
         }
     }
@@ -84,7 +84,7 @@ function computeMatrix(arena, transformList, matrixVar) {
     let val;
     let i = 0;
     for (; i < transformList.length; i++) {
-        if (arena.dataTypes[transformList[i]] != EnumToken.TransformFunctionTokenType ||
+        if (arena.dataTypes[transformList[i]] !== EnumToken.TransformFunctionTokenType ||
             !transformFunctions.includes(arena.strings[arena.stringValue[transformList[i]]])) {
             return null;
         }
@@ -97,13 +97,13 @@ function computeMatrix(arena, transformList, matrixVar) {
                 {
                     values.length = 0;
                     const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
-                    const valCount = arena.strings[arena.stringValue[transformList[i]]] == "translate3d"
+                    const valCount = arena.strings[arena.stringValue[transformList[i]]] === "translate3d"
                         ? 3
-                        : arena.strings[arena.stringValue[transformList[i]]] == "translate"
+                        : arena.strings[arena.stringValue[transformList[i]]] === "translate"
                             ? 2
                             : 1;
                     for (let j = 0; j < children.length; j++) {
-                        if (arena.dataTypes[children[j]] == EnumToken.WhitespaceTokenType) {
+                        if (arena.dataTypes[children[j]] === EnumToken.WhitespaceTokenType) {
                             continue;
                         }
                         val = length2Px(arena, children[j]);
@@ -112,19 +112,19 @@ function computeMatrix(arena, transformList, matrixVar) {
                         }
                         values.push(val);
                     }
-                    if (values.length == 0 || values.length > valCount) {
+                    if (values.length === 0 || values.length > valCount) {
                         return null;
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "translateX") {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "translateX") {
                         matrixVar = translateX(values[0], matrixVar);
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "translateY") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "translateY") {
                         matrixVar = translateY(values[0], matrixVar);
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "translateZ") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "translateZ") {
                         matrixVar = translateZ(values[0], matrixVar);
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "translate") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "translate") {
                         matrixVar = translate(values, matrixVar);
                     }
                     else {
@@ -144,34 +144,34 @@ function computeMatrix(arena, transformList, matrixVar) {
                     let z = 0;
                     let angle;
                     let values = [];
-                    let valuesCount = arena.strings[arena.stringValue[transformList[i]]] == "rotate3d" ? 4 : 1;
+                    let valuesCount = arena.strings[arena.stringValue[transformList[i]]] === "rotate3d" ? 4 : 1;
                     for (const child of stripCommaToken(arena, arena.tokens(transformList[i])) ?? []) {
                         values.push(child);
-                        if (arena.strings[arena.stringValue[transformList[i]]] == "rotateX") {
+                        if (arena.strings[arena.stringValue[transformList[i]]] === "rotateX") {
                             x = 1;
                         }
-                        else if (arena.strings[arena.stringValue[transformList[i]]] == "rotateY") {
+                        else if (arena.strings[arena.stringValue[transformList[i]]] === "rotateY") {
                             y = 1;
                         }
-                        else if (arena.strings[arena.stringValue[transformList[i]]] == "rotate" ||
-                            arena.strings[arena.stringValue[transformList[i]]] == "rotateZ") {
+                        else if (arena.strings[arena.stringValue[transformList[i]]] === "rotate" ||
+                            arena.strings[arena.stringValue[transformList[i]]] === "rotateZ") {
                             z = 1;
                         }
                     }
-                    if (values.length != valuesCount) {
+                    if (values.length !== valuesCount) {
                         return null;
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "rotate3d") {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "rotate3d") {
                         x = getNumber(arena, values[0]);
                         y = getNumber(arena, values[1]);
                         z = getNumber(arena, values[2]);
                     }
                     angle = getAngle(arena, values[values.length - 1]);
-                    if ([x, y, z, angle].some((t) => typeof t != "number" || Number.isNaN(+t))) {
+                    if ([x, y, z, angle].some((t) => typeof t !== "number" || Number.isNaN(+t))) {
                         return null;
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "rotate" ||
-                        arena.strings[arena.stringValue[transformList[i]]] == "rotateZ") {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "rotate" ||
+                        arena.strings[arena.stringValue[transformList[i]]] === "rotateZ") {
                         matrixVar = rotate(angle * 2 * Math.PI, matrixVar);
                     }
                     else {
@@ -190,36 +190,36 @@ function computeMatrix(arena, transformList, matrixVar) {
                     const children = stripCommaToken(arena, arena.tokens(transformList[i])) ?? [];
                     for (let k = 0; k < children.length; k++) {
                         child = children[k];
-                        if (arena.dataTypes[child] != EnumToken.NumberTokenType &&
-                            arena.dataTypes[child] != EnumToken.PercentageTokenType) {
+                        if (arena.dataTypes[child] !== EnumToken.NumberTokenType &&
+                            arena.dataTypes[child] !== EnumToken.PercentageTokenType) {
                             return null;
                         }
                         values.push(getNumber(arena, child));
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "scale3d") {
-                        if (values.length != 3) {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "scale3d") {
+                        if (values.length !== 3) {
                             return null;
                         }
                         matrixVar = scale3d(values[0], values[1], values[2], matrixVar);
                         break;
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "scale") {
-                        if (values.length != 1 && values.length != 2) {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "scale") {
+                        if (values.length !== 1 && values.length !== 2) {
                             return null;
                         }
                         matrixVar = scale(values[0], values[1] ?? values[0], matrixVar);
                         break;
                     }
-                    if (values.length != 1) {
+                    if (values.length !== 1) {
                         return null;
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "scaleX") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "scaleX") {
                         matrixVar = scaleX(values[0], matrixVar);
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "scaleY") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "scaleY") {
                         matrixVar = scaleY(values[0], matrixVar);
                     }
-                    else if (arena.strings[arena.stringValue[transformList[i]]] == "scaleZ") {
+                    else if (arena.strings[arena.stringValue[transformList[i]]] === "scaleZ") {
                         matrixVar = scaleZ(values[0], matrixVar);
                     }
                 }
@@ -233,24 +233,24 @@ function computeMatrix(arena, transformList, matrixVar) {
                     let value;
                     for (let k = 0; k < arena.tokens(transformList[i]).length; k++) {
                         child = arena.tokens(transformList[i])[k];
-                        if (arena.dataTypes[child] == EnumToken.CommentTokenType ||
-                            arena.dataTypes[child] == EnumToken.CommaTokenType ||
-                            arena.dataTypes[child] == EnumToken.WhitespaceTokenType) {
+                        if (arena.dataTypes[child] === EnumToken.CommentTokenType ||
+                            arena.dataTypes[child] === EnumToken.CommaTokenType ||
+                            arena.dataTypes[child] === EnumToken.WhitespaceTokenType) {
                             continue;
                         }
                         value = getAngle(arena, child);
                         values.push(value * 2 * Math.PI);
                     }
-                    if (values.length == 0 ||
-                        values.length > (arena.strings[arena.stringValue[transformList[i]]] == "skew" ? 2 : 1)) {
+                    if (values.length === 0 ||
+                        values.length > (arena.strings[arena.stringValue[transformList[i]]] === "skew" ? 2 : 1)) {
                         return null;
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "skew") {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "skew") {
                         matrixVar = skew(values, matrixVar);
                     }
                     else {
                         matrixVar =
-                            arena.strings[arena.stringValue[transformList[i]]] == "skewX"
+                            arena.strings[arena.stringValue[transformList[i]]] === "skewX"
                                 ? skewX(values[0], matrixVar)
                                 : skewY(values[0], matrixVar);
                     }
@@ -263,12 +263,12 @@ function computeMatrix(arena, transformList, matrixVar) {
                     let value;
                     for (let k = 0; k < arena.tokens(transformList[i]).length; k++) {
                         child = arena.tokens(transformList[i])[k];
-                        if (arena.dataTypes[child] == EnumToken.CommentTokenType ||
-                            arena.dataTypes[child] == EnumToken.WhitespaceTokenType) {
+                        if (arena.dataTypes[child] === EnumToken.CommentTokenType ||
+                            arena.dataTypes[child] === EnumToken.WhitespaceTokenType) {
                             continue;
                         }
-                        if (arena.dataTypes[child] == EnumToken.IdenTokenType &&
-                            arena.strings[arena.stringValue[child]] == "none") {
+                        if (arena.dataTypes[child] === EnumToken.IdenTokenType &&
+                            arena.strings[arena.stringValue[child]] === "none") {
                             values.push("none");
                             continue;
                         }
@@ -278,7 +278,7 @@ function computeMatrix(arena, transformList, matrixVar) {
                         }
                         values.push(value);
                     }
-                    if (values.length != 1) {
+                    if (values.length !== 1) {
                         return null;
                     }
                     matrixVar = perspective(values[0], matrixVar);
@@ -303,12 +303,12 @@ function computeMatrix(arena, transformList, matrixVar) {
                         }
                         values.push(value);
                     }
-                    if (arena.strings[arena.stringValue[transformList[i]]] == "matrix") {
-                        if (values.length != 6) {
+                    if (arena.strings[arena.stringValue[transformList[i]]] === "matrix") {
+                        if (values.length !== 6) {
                             return null;
                         }
                     }
-                    else if (values.length != 16) {
+                    else if (values.length !== 16) {
                         return null;
                     }
                     matrixVar = multiply(matrixVar, matrix(values));
@@ -324,14 +324,14 @@ function splitTransformList(arena, transformList) {
     let pattern = null;
     const tokens = [];
     for (let i = 0; i < transformList.length; i++) {
-        if (arena.dataTypes[transformList[i]] == EnumToken.CommentTokenType ||
-            arena.dataTypes[transformList[i]] == EnumToken.WhitespaceTokenType) {
+        if (arena.dataTypes[transformList[i]] === EnumToken.CommentTokenType ||
+            arena.dataTypes[transformList[i]] === EnumToken.WhitespaceTokenType) {
             continue;
         }
         if (pattern == null ||
-            (arena.dataTypes[transformList[i]] == EnumToken.TransformFunctionTokenType &&
+            (arena.dataTypes[transformList[i]] === EnumToken.TransformFunctionTokenType &&
                 !arena.strings[arena.stringValue[transformList[i]]].startsWith(pattern))) {
-            if (arena.dataTypes[transformList[i]] == EnumToken.TransformFunctionTokenType) {
+            if (arena.dataTypes[transformList[i]] === EnumToken.TransformFunctionTokenType) {
                 if (arena.strings[arena.stringValue[transformList[i]]].startsWith("scale")) {
                     pattern = "scale";
                 }
@@ -349,7 +349,7 @@ function splitTransformList(arena, transformList) {
             }
         }
         if (pattern != null &&
-            arena.dataTypes[transformList[i]] == EnumToken.TransformFunctionTokenType &&
+            arena.dataTypes[transformList[i]] === EnumToken.TransformFunctionTokenType &&
             arena.strings[arena.stringValue[transformList[i]]].startsWith(pattern)) {
             tokens[tokens.length - 1].push(transformList[i]);
             continue;

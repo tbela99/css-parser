@@ -53,7 +53,7 @@ function alpha(arena, color, alpha) {
             }
         }
         const result = evaluate(arena, [alpha]);
-        if (result.length == 1) {
+        if (result.length === 1) {
             alpha = result[0];
         }
         // else {

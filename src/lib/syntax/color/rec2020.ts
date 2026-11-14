@@ -34,7 +34,7 @@ function rec20202lrec2020(r: number, g: number, b: number, a?: number): number[]
 
             return sign * Math.pow((abs + alpha - 1) / alpha, 1 / 0.45);
         })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 
 function lrec20202rec2020(r: number, g: number, b: number, a?: number): number[] {
@@ -56,7 +56,7 @@ function lrec20202rec2020(r: number, g: number, b: number, a?: number): number[]
 
             return 4.5 * val;
         })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 
 function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
@@ -70,7 +70,7 @@ function lrec20202xyz(r: number, g: number, b: number, a?: number): number[] {
     ];
     // 0 is actually calculated as  4.994106574466076e-17
 
-    return multiplyMatrices(M, [r, g, b]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [r, g, b]).concat(a == null || a === 1 ? [] : [a]);
 }
 
 function xyz2lrec2020(x: number, y: number, z: number, a?: number): number[] {
@@ -81,5 +81,5 @@ function xyz2lrec2020(x: number, y: number, z: number, a?: number): number[] {
         [792561 / 44930125, -1921689 / 44930125, 42328811 / 44930125],
     ];
 
-    return multiplyMatrices(M, [x, y, z]).concat(a == null || a == 1 ? [] : [a]);
+    return multiplyMatrices(M, [x, y, z]).concat(a == null || a === 1 ? [] : [a]);
 }

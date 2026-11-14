@@ -29,7 +29,17 @@ function getSyntaxConfig() {
 function lookupNode(group, key) {
     const groups = config;
     if (groups[group]?.[key] != null) {
-        return groups[group][key];
+        let node = groups[group][key];
+        // an alias uses the syntax of the standard property: `-webkit-align-content` is an alias of `align-content`.
+        // the name of the declaration is not changed
+        for (let i = 0; node.alias != null && i < 4; i++) {
+            const target = groups[group][node.alias];
+            if (target == null) {
+                return null;
+            }
+            node = target;
+        }
+        return node.alias != null ? null : node;
     }
     if (group === ValidationSyntaxGroupEnum.Syntaxes) {
         return groups[ValidationSyntaxGroupEnum.Types]?.[key] ?? null;
@@ -53,7 +63,7 @@ function getSyntax(key) {
 function findNode(group, key) {
     let obj = lookupNode(group, key);
     if (obj == null) {
-        if (key.charAt(0) == "@" || key.charAt(0) == "-") {
+        if (key.charAt(0) === "@" || key.charAt(0) === "-") {
             const matches = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/);
             if (matches != null) {
                 key = matches[1] + matches[3];
@@ -98,7 +108,7 @@ const getSyntaxRule = memoize((group, key) => {
             break;
         }
     }
-    if (blockStart != -1) {
+    if (blockStart !== -1) {
         i = syntaxRules.length;
         while (i--) {
             if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
@@ -107,8 +117,8 @@ const getSyntaxRule = memoize((group, key) => {
             }
         }
     }
-    let block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
-    let prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+    let block = blockStart === -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+    let prelude = trimSyntaxArray(blockStart === -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
     let propertyDescriptors = null;
     // @ts-expect-error
     if (node.descriptors != null) {

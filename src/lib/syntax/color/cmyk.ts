@@ -100,9 +100,9 @@ export function color2cmykToken(arena: AstArena, token: Token): Token | null {
 export function srgb2cmykvalues(r: number, g: number, b: number, a: number | null = null): number[] {
     const k: number = 1 - Math.max(r, g, b);
     const div: number = 1 - k;
-    const c: number = k == 1 ? 0 : (1 - r - k) / div;
-    const m: number = k == 1 ? 0 : (1 - g - k) / div;
-    const y: number = k == 1 ? 0 : (1 - b - k) / div;
+    const c: number = k === 1 ? 0 : (1 - r - k) / div;
+    const m: number = k === 1 ? 0 : (1 - g - k) / div;
+    const y: number = k === 1 ? 0 : (1 - b - k) / div;
 
     const result: number[] = [c, m, y, k];
     if (a != null && a < 1) {
@@ -116,7 +116,7 @@ function cmyktoken(arena: AstArena, values: number[]): Token {
     const chi: Token[] = [];
 
     for (let index = 0; index < values.length; index++) {
-        if (index == 4) {
+        if (index === 4) {
             chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"));
         }
 

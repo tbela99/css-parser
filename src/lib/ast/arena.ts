@@ -142,25 +142,25 @@ export function structuredFields(typ: EnumToken): ReadonlyArray<StructuredField>
         fields = noFields;
     } else {
         const single: boolean =
-            typ == EnumToken.BinaryExpressionTokenType ||
-            typ == EnumToken.IfElseConditionTokenType ||
-            typ == EnumToken.MatchExpressionTokenType ||
-            typ == EnumToken.NameSpaceAttributeTokenType;
+            typ === EnumToken.BinaryExpressionTokenType ||
+            typ === EnumToken.IfElseConditionTokenType ||
+            typ === EnumToken.MatchExpressionTokenType ||
+            typ === EnumToken.NameSpaceAttributeTokenType;
         const singleLeft: boolean =
             single ||
-            typ == EnumToken.MediaQueryConditionTokenType ||
-            typ == EnumToken.MediaQueryUnaryFeatureTokenType ||
-            typ == EnumToken.SupportsQueryUnaryConditionTokenType ||
-            typ == EnumToken.WhenElseUnaryConditionTokenType;
-        const singleRight: boolean = single || typ == EnumToken.ComposesSelectorNodeType;
+            typ === EnumToken.MediaQueryConditionTokenType ||
+            typ === EnumToken.MediaQueryUnaryFeatureTokenType ||
+            typ === EnumToken.SupportsQueryUnaryConditionTokenType ||
+            typ === EnumToken.WhenElseUnaryConditionTokenType;
+        const singleRight: boolean = single || typ === EnumToken.ComposesSelectorNodeType;
 
         fields = [
             ["l", TokenField.L, singleLeft],
             ["r", TokenField.R, singleRight],
             [
-                typ == EnumToken.MediaRangeQueryTokenType ? "op1" : "op",
+                typ === EnumToken.MediaRangeQueryTokenType ? "op1" : "op",
                 TokenField.Op,
-                typ != EnumToken.ContainerStyleRangeTokenType,
+                typ !== EnumToken.ContainerStyleRangeTokenType,
             ],
             ["op2", TokenField.Op2, true],
             ["val", TokenField.Val, false],
@@ -174,7 +174,7 @@ export function structuredFields(typ: EnumToken): ReadonlyArray<StructuredField>
 /**
  * little endian platform
  */
-const littleEndian: boolean = new Uint8Array(new Uint16Array([1]).buffer)[0] == 1;
+const littleEndian: boolean = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 
 /**
  * Plain (structured-cloneable) properties of an arena. See {@link Arena.toTransferableArenaObject}
@@ -365,6 +365,11 @@ export class Arena {
      */
     protected freeList: number = 0;
     /**
+     * number of nodes the columns can hold: the length of the columns. the length of a typed array is a getter,
+     * allocate() reads the capacity of the arena for each node
+     */
+    protected capacity: number = 0;
+    /**
      * 32 bits view of the spans: the low word holds the end position and the 4 low bits of the start position,
      * the high word holds the 24 high bits of the start position and the source
      */
@@ -372,6 +377,7 @@ export class Arena {
 
     constructor(size: number = 4096) {
         this.dataTypes = new Uint8Array(size);
+        this.capacity = size;
         this.parents = new Uint32Array(size);
         this.nextSibling = new Uint32Array(size);
         this.previousSibling = new Uint32Array(size);
@@ -396,7 +402,7 @@ export class Arena {
      * true when the column buffers have been transferred to another thread: the arena can no longer be used
      */
     get transferred(): boolean {
-        return this.dataTypes.length == 0 && this.current > 0;
+        return this.dataTypes.length === 0 && this.current > 0;
     }
 
     /**
@@ -447,7 +453,7 @@ export class Arena {
     public allocate(): number {
         let id: number = this.freeList;
 
-        if (id != 0) {
+        if (id !== 0) {
             // reuse a recycled node: its record is already zeroed, except the free list link
             this.freeList = this.nextSibling[id];
             this.nextSibling[id] = 0;
@@ -456,8 +462,8 @@ export class Arena {
 
         id = ++this.current;
 
-        if (id >= this.dataTypes.length) {
-            this.resize(this.dataTypes.length * 2);
+        if (id >= this.capacity) {
+            this.resize(this.capacity * 2);
         }
 
         return id;
@@ -512,49 +518,95 @@ export class Arena {
     }
 
     /**
-     * type of a node or a token. null when the id is null
+     * type of node or a token. null when the id is null
      * @param id
      */
     typeOf(id: number | null | undefined): EnumToken | null {
         return id == null ? null : this.dataTypes[id];
     }
 
+    /**
+     *
+     * @param id
+     * @param type
+     */
     setType(id: number, type: EnumToken): void {
         this.dataTypes[id] = type;
     }
 
+    /**
+     *
+     * @param id
+     * @param nameId
+     */
     setName(id: number, nameId: number): void {
         this.name[id] = nameId;
     }
 
+    /**
+     *
+     * @param id
+     */
     getName(id: number): string {
         return this.strings[this.name[id]] ?? null;
     }
 
+    /**
+     *
+     * @param id
+     * @param valueId
+     */
     setValue(id: number, valueId: number): void {
         this.stringValue[id] = valueId;
     }
 
+    /**
+     *
+     * @param id
+     */
     getValue(id: number): string {
         return this.strings[this.stringValue[id]] ?? null;
     }
 
+    /**
+     *
+     * @param id
+     * @param numericValue
+     */
     setNumericValue(id: number, numericValue: number): void {
         this.numericValue[id] = numericValue;
     }
 
+    /**
+     *
+     * @param id
+     * @param unit
+     */
     setUnit(id: number, unit: number): void {
         this.unit[id] = unit;
     }
 
+    /**
+     *
+     * @param id
+     */
     getUnit(id: number): string {
         return this.strings[this.unit[id]] ?? null;
     }
 
+    /**
+     *
+     * @param id
+     */
     getNumericValue(id: number): number {
         return this.numericValue[id];
     }
 
+    /**
+     *
+     * @param id
+     * @param parentId
+     */
     setParent(id: number, parentId: number): void {
         this.parents[id] = parentId;
     }
@@ -629,13 +681,13 @@ export class Arena {
     setFirstChild(id: number, firstChildId: number): void {
         const firstChild = this.firstChild[id];
 
-        if (firstChild == firstChildId) {
+        if (firstChild === firstChildId) {
             return;
         }
 
         this.detach(firstChildId);
 
-        if (firstChild != 0) {
+        if (firstChild !== 0) {
             this.#insertBefore(id, firstChild, firstChildId);
             this.detach(firstChild);
         } else {
@@ -644,6 +696,10 @@ export class Arena {
         }
     }
 
+    /**
+     *
+     * @param id
+     */
     getLastChild(id: number): number {
         return this.lastChild[id];
     }
@@ -656,13 +712,13 @@ export class Arena {
     setLastChild(id: number, lastChildId: number): void {
         const lastChild = this.lastChild[id];
 
-        if (lastChild == lastChildId) {
+        if (lastChild === lastChildId) {
             return;
         }
 
         this.detach(lastChildId);
 
-        if (lastChild != 0) {
+        if (lastChild !== 0) {
             this.detach(lastChild);
         }
 
@@ -676,7 +732,7 @@ export class Arena {
      * @param nextSiblingId
      */
     setNextSibling(id: number, nextSiblingId: number): void {
-        if (id == nextSiblingId) {
+        if (id === nextSiblingId) {
             return;
         }
 
@@ -690,11 +746,11 @@ export class Arena {
         this.nextSibling[id] = nextSiblingId;
         this.parents[nextSiblingId] = parent;
 
-        if (next != 0) {
+        if (next !== 0) {
             this.previousSibling[next] = nextSiblingId;
-        } else if (this.lastChild[parent] == id) {
+        } else if (this.lastChild[parent] === id) {
             this.lastChild[parent] = nextSiblingId;
-        } else if (this.lastToken[parent] == id) {
+        } else if (this.lastToken[parent] === id) {
             this.lastToken[parent] = nextSiblingId;
         }
     }
@@ -705,7 +761,7 @@ export class Arena {
      * @param previousSiblingId
      */
     setPreviousSibling(id: number, previousSiblingId: number): void {
-        if (id == previousSiblingId) {
+        if (id === previousSiblingId) {
             return;
         }
 
@@ -721,13 +777,13 @@ export class Arena {
     setFirstToken(id: number, firstTokenId: number): void {
         const firstToken = this.firstToken[id];
 
-        if (firstToken == firstTokenId) {
+        if (firstToken === firstTokenId) {
             return;
         }
 
         this.detach(firstTokenId);
 
-        if (firstToken != 0) {
+        if (firstToken !== 0) {
             this.#insertBefore(id, firstToken, firstTokenId);
             this.detach(firstToken);
         } else {
@@ -736,35 +792,63 @@ export class Arena {
         }
     }
 
+    /**
+     *
+     * @param id
+     * @param colorType
+     */
     setColorType(id: number, colorType: number): void {
         this.colorType[id] = colorType;
     }
 
+    /**
+     *
+     * @param id
+     */
     getColorType(id: number): number {
         return this.colorType[id];
     }
 
+    /**
+     *
+     * @param id
+     * @param flags
+     */
     setFlags(id: number, flags: number): void {
         this.flags[id] = flags;
     }
 
+    /**
+     *
+     * @param id
+     */
     getFlags(id: number): number {
         return this.flags[id];
     }
 
+    /**
+     *
+     * @param id
+     * @param flag
+     */
     hasFlags(id: number, flag: number): boolean {
-        return (this.flags[id] & flag) == flag;
+        return (this.flags[id] & flag) === flag;
     }
 
+    /**
+     *
+     * @param id
+     * @param index
+     */
     getChildAt(id: number, index: number): number | null {
         let child = this.firstChild[id];
 
-        while (index > 0 && child != 0) {
+        while (index > 0 && child !== 0) {
             child = this.nextSibling[child];
             index--;
         }
 
-        return child == 0 ? null : child;
+        return child === 0 ? null : child;
     }
 
     /**
@@ -775,12 +859,12 @@ export class Arena {
     getTokenAt(id: number, index: number): number | null {
         let token = this.firstToken[id];
 
-        while (index > 0 && token != 0) {
+        while (index > 0 && token !== 0) {
             token = this.nextSibling[token];
             index--;
         }
 
-        return token == 0 ? null : token;
+        return token === 0 ? null : token;
     }
 
     /**
@@ -792,7 +876,7 @@ export class Arena {
     setChildAt(id: number, index: number, child: number): void {
         const current = this.getChildAt(id, index);
 
-        if (current == child) {
+        if (current === child) {
             return;
         }
 
@@ -818,7 +902,7 @@ export class Arena {
         let index: number = 0;
 
         while (index < field) {
-            if (child == 0) {
+            if (child === 0) {
                 break;
             }
 
@@ -826,7 +910,7 @@ export class Arena {
             index++;
         }
 
-        if (child != 0) {
+        if (child !== 0) {
             return child;
         }
 
@@ -852,7 +936,7 @@ export class Arena {
     hasField(id: number, field: TokenField): boolean {
         const list: number | null = this.getChildAt(id, field);
 
-        return list != null && this.firstToken[list] != 0;
+        return list != null && this.firstToken[list] !== 0;
     }
 
     /**
@@ -899,19 +983,43 @@ export class Arena {
         this.appendTokenList(this.fieldList(id, field), tokens);
     }
 
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setLeft(id: number, ...children: number[]): void {
         // inlined: this.setField(id, TokenField.L, ...children)
         this.setTokenList(this.fieldList(id, TokenField.L), children);
     }
 
+    /**
+     *
+     * @param id
+     */
     getLeft(id: number): number[] | null {
         return this.getChildAt(id, TokenField.L) == null ? null : this.fieldTokens(id, TokenField.L);
     }
 
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id: number, rightId: null): void;
 
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id: number, ...rightId: number[]): void;
 
+    /**
+     *
+     * @param id
+     * @param rightId
+     */
     setRight(id: number, ...rightId: number[] | [null]): void {
         // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
         this.setTokenList(
@@ -920,28 +1028,57 @@ export class Arena {
         );
     }
 
+    /**
+     *
+     * @param id
+     */
     getRight(id: number): number[] | null {
         return this.getChildAt(id, TokenField.R) == null ? null : this.fieldTokens(id, TokenField.R);
     }
 
+    /**
+     *
+     * @param id
+     * @param opId
+     */
     setOp(id: number, opId: number): void {
         // inlined: this.setField(id, TokenField.Op, opId)
         this.setTokenList(this.fieldList(id, TokenField.Op), [opId]);
     }
 
+    /**
+     *
+     * @param id
+     */
     getOp(id: number): number {
         return this.field(id, TokenField.Op);
     }
 
+    /**
+     *
+     * @param id
+     * @param op2Id
+     */
     setOp2(id: number, op2Id: number): void {
         // inlined: this.setField(id, TokenField.Op2, op2Id)
         this.setTokenList(this.fieldList(id, TokenField.Op2), [op2Id]);
     }
 
+    /**
+     *
+     * @param id
+     */
     getOp2(id: number): number {
         return this.field(id, TokenField.Op2);
     }
 
+    /**
+     *
+     * @param id
+     * @param sourceId
+     * @param start
+     * @param end
+     */
     public setSpan(id: number, sourceId: number, start: number, end: number): void {
         if (littleEndian) {
             const index: number = id << 1;
@@ -968,6 +1105,10 @@ export class Arena {
         this.spans32[t + 1] = this.spans32[s + 1];
     }
 
+    /**
+     *
+     * @param id
+     */
     public getSourceId(id: number): number {
         if (littleEndian) {
             return this.spans32[(id << 1) + 1] >>> 24;
@@ -976,6 +1117,10 @@ export class Arena {
         return Number((this.spans[id] >> 56n) & 0xffn);
     }
 
+    /**
+     *
+     * @param id
+     */
     public getSpanStart(id: number): number {
         if (littleEndian) {
             const index: number = id << 1;
@@ -988,10 +1133,19 @@ export class Arena {
 
     // ---- spans ---------------------------------------------------------------------
 
+    /**
+     *
+     * @param id
+     * @param start
+     */
     setSpandStart(id: number, start: number): void {
         this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
     }
 
+    /**
+     *
+     * @param id
+     */
     public getSpanEnd(id: number): number {
         if (littleEndian) {
             return this.spans32[id << 1] & 0xfffffff;
@@ -1000,14 +1154,27 @@ export class Arena {
         return Number(this.spans[id] & 0xfffffffn);
     }
 
+    /**
+     *
+     * @param id
+     * @param end
+     */
     public setSpanEnd(id: number, end: number): void {
         this.setSpan(id, this.getSourceId(id), this.getSpanStart(id), end);
     }
 
+    /**
+     *
+     * @param id
+     */
     getParent(id: number): number {
         return this.parents[id];
     }
 
+    /**
+     *
+     * @param id
+     */
     public resolveString(id: number): string {
         return this.strings[id];
     }
@@ -1017,7 +1184,7 @@ export class Arena {
      * @param id
      */
     detach(id: number): void {
-        if (id == 0 || this.parents[id] == 0) {
+        if (id === 0 || this.parents[id] === 0) {
             return;
         }
 
@@ -1025,19 +1192,19 @@ export class Arena {
         const next = this.nextSibling[id];
         const previous = this.previousSibling[id];
 
-        if (previous != 0) {
+        if (previous !== 0) {
             this.nextSibling[previous] = next;
-        } else if (this.firstChild[parent] == id) {
+        } else if (this.firstChild[parent] === id) {
             this.firstChild[parent] = next;
-        } else if (this.firstToken[parent] == id) {
+        } else if (this.firstToken[parent] === id) {
             this.firstToken[parent] = next;
         }
 
-        if (next != 0) {
+        if (next !== 0) {
             this.previousSibling[next] = previous;
-        } else if (this.lastChild[parent] == id) {
+        } else if (this.lastChild[parent] === id) {
             this.lastChild[parent] = previous;
-        } else if (this.lastToken[parent] == id) {
+        } else if (this.lastToken[parent] === id) {
             this.lastToken[parent] = previous;
         }
 
@@ -1150,19 +1317,19 @@ export class Arena {
                 const first: number = top;
                 let token: number = this.firstToken[value];
 
-                while (token != 0) {
+                while (token !== 0) {
                     stack[top++] = token;
                     token = this.nextSibling[token];
                 }
 
-                if ((this.flags[value] & EnumAstNodeStatus.HasChildren) == 0) {
+                if ((this.flags[value] & EnumAstNodeStatus.HasChildren) === 0) {
                     let child: number = this.firstChild[value];
 
-                    while (child != 0) {
-                        if (this.dataTypes[child] == EnumToken.ListTokenType) {
+                    while (child !== 0) {
+                        if (this.dataTypes[child] === EnumToken.ListTokenType) {
                             token = this.firstToken[child];
 
-                            while (token != 0) {
+                            while (token !== 0) {
                                 stack[top++] = token;
                                 token = this.nextSibling[token];
                             }
@@ -1194,7 +1361,7 @@ export class Arena {
     getValueParent(id: number): number {
         const parent: number = this.parents[id];
 
-        return parent != 0 && this.dataTypes[parent] == EnumToken.ListTokenType ? this.parents[parent] : parent;
+        return parent !== 0 && this.dataTypes[parent] === EnumToken.ListTokenType ? this.parents[parent] : parent;
     }
 
     /**
@@ -1205,8 +1372,8 @@ export class Arena {
         let parent: number = this.parents[id];
 
         while (
-            parent != 0 &&
-            (this.flags[parent] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) == 0
+            parent !== 0 &&
+            (this.flags[parent] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) === 0
         ) {
             parent = this.parents[parent];
         }
@@ -1307,7 +1474,7 @@ export class Arena {
         for (let r = walker.next(); !r.done; r = walker.next()) {
             const current: number = r.value;
 
-            if (this.firstToken[current] == 0) {
+            if (this.firstToken[current] === 0) {
                 continue;
             }
 
@@ -1333,11 +1500,11 @@ export class Arena {
      * @returns the token id or null
      */
     findValue(node: number, matcher: AstValueMatcher): number | null {
-        if (node == null || node == 0) {
+        if (node == null || node === 0) {
             return null;
         }
 
-        if ((this.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) == 0) {
+        if ((this.flags[node] & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) === 0) {
             // token: the token itself is tested first
             if (matcher(this as unknown as AstArena, node)) {
                 return node;
@@ -1366,7 +1533,7 @@ export class Arena {
         const result: number[] = [];
         let token: number = this.firstToken[id];
 
-        while (token != 0) {
+        while (token !== 0) {
             result.push(token);
             token = this.nextSibling[token];
         }
@@ -1378,11 +1545,11 @@ export class Arena {
 
         let child: number = this.firstChild[id];
 
-        while (child != 0) {
-            if (this.dataTypes[child] == EnumToken.ListTokenType) {
+        while (child !== 0) {
+            if (this.dataTypes[child] === EnumToken.ListTokenType) {
                 token = this.firstToken[child];
 
-                while (token != 0) {
+                while (token !== 0) {
                     result.push(token);
                     token = this.nextSibling[token];
                 }
@@ -1396,9 +1563,14 @@ export class Arena {
         return result;
     }
 
+    /**
+     *
+     * @param id
+     * @param predicate
+     */
     findChild(id: number, predicate: (id: number) => boolean): number | null {
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             if (predicate(child)) {
                 return child;
             }
@@ -1415,7 +1587,7 @@ export class Arena {
      */
     findToken(id: number, predicate: (arena: this, id: number) => boolean): number | null {
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             if (predicate(this, token)) {
                 return token;
             }
@@ -1433,7 +1605,7 @@ export class Arena {
     siblings(id: number, filter?: (arena: this, id: number) => boolean): number[] {
         let siblings: number[] = [];
         let child = this.firstChild[this.parents[id]];
-        while (child != 0) {
+        while (child !== 0) {
             if (filter == null || filter(this, child)) {
                 siblings.push(child);
             }
@@ -1450,7 +1622,7 @@ export class Arena {
     children(id: number, filter?: (arena: this, id: number) => boolean): number[] {
         let children: number[] = [];
         let child = this.firstChild[id];
-        while (child != 0) {
+        while (child !== 0) {
             if (filter != null && !filter(this, child)) {
                 child = this.nextSibling[child];
                 continue;
@@ -1469,7 +1641,7 @@ export class Arena {
     tokens(id: number, filter?: (arena: this, id: number) => boolean): number[] {
         let tokens: number[] = [];
         let token = this.firstToken[id];
-        while (token != 0) {
+        while (token !== 0) {
             if (filter != null && !filter(this, token)) {
                 token = this.nextSibling[token];
                 continue;
@@ -1488,7 +1660,7 @@ export class Arena {
         let count: number = 0;
         let token: number = this.firstToken[id];
 
-        while (token != 0) {
+        while (token !== 0) {
             count++;
             token = this.nextSibling[token];
         }
@@ -1496,6 +1668,11 @@ export class Arena {
         return count;
     }
 
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setChildren(id: number, ...children: number[]): void {
         this.setChildList(id, children);
     }
@@ -1508,7 +1685,7 @@ export class Arena {
     setChildList(id: number, children: number[]): void {
         let child = this.firstChild[id];
 
-        while (child != 0) {
+        while (child !== 0) {
             const next = this.nextSibling[child];
 
             this.nextSibling[child] = 0;
@@ -1523,6 +1700,11 @@ export class Arena {
         this.appendChildList(id, children);
     }
 
+    /**
+     *
+     * @param id
+     * @param children
+     */
     setTokens(id: number, ...children: number[]): void {
         this.setTokenList(id, children);
     }
@@ -1535,7 +1717,7 @@ export class Arena {
     setTokenList(id: number, tokens: number[]): void {
         let token = this.firstToken[id];
 
-        while (token != 0) {
+        while (token !== 0) {
             const next = this.nextSibling[token];
 
             this.nextSibling[token] = 0;
@@ -1557,18 +1739,18 @@ export class Arena {
      * @param before the children are inserted before this child of `to`. they are appended when 0
      */
     moveChildren(from: number, to: number, before: number = 0): void {
-        if (from == to) {
+        if (from === to) {
             return;
         }
 
         let child: number = this.firstChild[from];
 
-        while (child != 0) {
+        while (child !== 0) {
             const next: number = this.nextSibling[child];
 
             this.detach(child);
 
-            if (before == 0) {
+            if (before === 0) {
                 this.appendChild(to, child);
             } else {
                 this.#insertBefore(to, before, child);
@@ -1578,6 +1760,11 @@ export class Arena {
         }
     }
 
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendChildren(id: number, ...children: number[]): void {
         this.appendChildList(id, children);
     }
@@ -1588,7 +1775,7 @@ export class Arena {
      * @param children
      */
     appendChildList(id: number, children: number[]): void {
-        if (children.length == 0) {
+        if (children.length === 0) {
             return;
         }
 
@@ -1597,7 +1784,7 @@ export class Arena {
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
 
-            if (child == id || child == 0) {
+            if (child === id || child === 0) {
                 continue;
             }
 
@@ -1605,7 +1792,7 @@ export class Arena {
             this.detach(child);
             lastChild = this.lastChild[id];
 
-            if (lastChild == 0) {
+            if (lastChild === 0) {
                 this.firstChild[id] = child;
             } else {
                 this.nextSibling[lastChild] = child;
@@ -1618,6 +1805,11 @@ export class Arena {
         }
     }
 
+    /**
+     *
+     * @param id
+     * @param children
+     */
     appendTokens(id: number, ...children: number[]): void {
         this.appendTokenList(id, children);
     }
@@ -1628,7 +1820,7 @@ export class Arena {
      * @param children
      */
     appendTokenList(id: number, children: number[]): void {
-        if (children.length == 0) {
+        if (children.length === 0) {
             return;
         }
 
@@ -1637,7 +1829,7 @@ export class Arena {
         for (let i = 0; i < children.length; i++) {
             const token = children[i];
 
-            if (token == id || token == 0) {
+            if (token === id || token === 0) {
                 continue;
             }
 
@@ -1645,7 +1837,7 @@ export class Arena {
             this.detach(token);
             lastToken = this.lastToken[id];
 
-            if (lastToken == 0) {
+            if (lastToken === 0) {
                 this.firstToken[id] = token;
             } else {
                 this.nextSibling[lastToken] = token;
@@ -1664,17 +1856,17 @@ export class Arena {
      * @param child
      */
     appendChild(id: number, child: number): void {
-        if (child == id || child == 0) {
+        if (child === id || child === 0) {
             return;
         }
 
-        if (this.parents[child] != 0) {
+        if (this.parents[child] !== 0) {
             this.detach(child);
         }
 
         const lastChild: number = this.lastChild[id];
 
-        if (lastChild == 0) {
+        if (lastChild === 0) {
             this.firstChild[id] = child;
         } else {
             this.nextSibling[lastChild] = child;
@@ -1692,17 +1884,17 @@ export class Arena {
      * @param token
      */
     appendToken(id: number, token: number): void {
-        if (token == id || token == 0) {
+        if (token === id || token === 0) {
             return;
         }
 
-        if (this.parents[token] != 0) {
+        if (this.parents[token] !== 0) {
             this.detach(token);
         }
 
         const lastToken: number = this.lastToken[id];
 
-        if (lastToken == 0) {
+        if (lastToken === 0) {
             this.firstToken[id] = token;
         } else {
             this.nextSibling[lastToken] = token;
@@ -1722,13 +1914,13 @@ export class Arena {
     prependTokens(id: number, ...tokens: number[]): void {
         const first: number = this.firstToken[id];
 
-        if (first == 0) {
+        if (first === 0) {
             this.appendTokenList(id, tokens);
             return;
         }
 
         for (const token of tokens) {
-            if (token == id || token == 0) {
+            if (token === id || token === 0) {
                 continue;
             }
 
@@ -1736,28 +1928,40 @@ export class Arena {
         }
     }
 
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     public equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean {
-        const id = key == "nam" ? this.name[node] : this.stringValue[node];
+        const id = key === "nam" ? this.name[node] : this.stringValue[node];
         const stringId = this.stringIds.get(string);
 
-        if (stringId != null && id == stringId) {
+        if (stringId != null && id === stringId) {
             return true;
         }
 
         const value: string | undefined = this.strings[id];
 
-        if (value == null || string.length != value.length) {
+        if (value == null || string.length !== value.length) {
             return false;
         }
 
         return equalsIgnoreCase(value, string);
     }
 
+    /**
+     *
+     * @param node
+     * @param key
+     * @param string
+     */
     public startsWith(node: number, key: "nam" | "val", string: string): boolean {
-        const id = key == "nam" ? this.name[node] : this.stringValue[node];
+        const id = key === "nam" ? this.name[node] : this.stringValue[node];
         const stringId = this.stringIds.get(string);
 
-        if (stringId != null && id == stringId) {
+        if (stringId != null && id === stringId) {
             return true;
         }
 
@@ -1770,6 +1974,10 @@ export class Arena {
         return value.startsWith(string);
     }
 
+    /**
+     *
+     * @param newSize
+     */
     public resize(newSize: number) {
         if (newSize <= this.dataTypes.length) {
             return;
@@ -1778,6 +1986,7 @@ export class Arena {
         const newDataTypes = new Uint8Array(newSize);
         newDataTypes.set(this.dataTypes);
         this.dataTypes = newDataTypes;
+        this.capacity = newSize;
 
         const newParents = new Uint32Array(newSize);
         newParents.set(this.parents);
@@ -1858,7 +2067,7 @@ export class Arena {
             count += used[i];
         }
 
-        if (count == this.strings.length) {
+        if (count === this.strings.length) {
             return;
         }
 
@@ -1908,11 +2117,11 @@ export class Arena {
             order[next] = id;
             mapping[id] = next++;
 
-            for (let child = this.lastChild[id]; child != 0; child = this.previousSibling[child]) {
+            for (let child = this.lastChild[id]; child !== 0; child = this.previousSibling[child]) {
                 stack.push(child);
             }
 
-            for (let token = this.lastToken[id]; token != 0; token = this.previousSibling[token]) {
+            for (let token = this.lastToken[id]; token !== 0; token = this.previousSibling[token]) {
                 stack.push(token);
             }
         }
@@ -1998,20 +2207,21 @@ export class Arena {
         }
 
         for (const [id, list] of this.errors) {
-            if (mapping[id] != 0) {
+            if (mapping[id] !== 0) {
                 nodeErrors.set(mapping[id], list);
             }
         }
 
         if (errors != null) {
             for (const error of errors) {
-                if (typeof error.node == "number") {
+                if (typeof error.node === "number") {
                     error.node = mapping[error.node] || null;
                 }
             }
         }
 
         this.dataTypes = dataTypes;
+        this.capacity = dataTypes.length;
         this.parents = parents;
         this.nextSibling = nextSibling;
         this.previousSibling = previousSibling;
@@ -2041,7 +2251,7 @@ export class Arena {
      */
     mark(...ids: number[]): void {
         for (const id of ids) {
-            if (id != 0 && id != this.root) {
+            if (id !== 0 && id !== this.root) {
                 this.flags[id] |= EnumAstNodeStatus.Marked;
             }
         }
@@ -2052,7 +2262,7 @@ export class Arena {
      * @param id
      */
     isMarked(id: number): boolean {
-        return (this.flags[id] & EnumAstNodeStatus.Marked) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.Marked) !== 0;
     }
 
     /**
@@ -2073,14 +2283,14 @@ export class Arena {
             return;
         }
 
-        if (id == 0 || id == this.root) {
+        if (id === 0 || id === this.root) {
             return;
         }
 
         if (deep) {
             let child: number = this.firstChild[id];
 
-            while (child != 0) {
+            while (child !== 0) {
                 const next: number = this.nextSibling[child];
 
                 this.release(child, true);
@@ -2089,7 +2299,7 @@ export class Arena {
 
             let token: number = this.firstToken[id];
 
-            while (token != 0) {
+            while (token !== 0) {
                 const next: number = this.nextSibling[token];
 
                 this.release(token, true);
@@ -2115,15 +2325,24 @@ export class Arena {
         return this.compact(errors);
     }
 
+    /**
+     *
+     * @param id
+     * @param errors
+     */
     setErrors(id: number, errors: ErrorDescription[] | null) {
         // empty error lists are not stored
-        if (errors == null || errors.length == 0) {
+        if (errors == null || errors.length === 0) {
             this.errors.delete(id);
         } else {
             this.errors.set(id, errors);
         }
     }
 
+    /**
+     *
+     * @param id
+     */
     getErrors(id: number): ErrorDescription[] | null {
         return this.errors.get(id) ?? null;
     }
@@ -2136,7 +2355,7 @@ export class Arena {
         let count: number = 0;
         let child: number = this.firstChild[id];
 
-        while (child != 0) {
+        while (child !== 0) {
             count++;
             child = this.nextSibling[child];
         }
@@ -2178,7 +2397,7 @@ export class Arena {
      * @param transferables
      */
     protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void {
-        if (transferables.length != arenaColumns.length) {
+        if (transferables.length !== arenaColumns.length) {
             throw new TypeError(`expected ${arenaColumns.length} column buffers, got ${transferables.length}`);
         }
 
@@ -2190,6 +2409,7 @@ export class Arena {
         }
 
         this.spans32 = new Uint32Array(this.spans.buffer);
+        this.capacity = this.dataTypes.length;
         this.current = properties.current;
         this.strings = properties.strings.slice();
         this.stringIds = new Map(this.strings.map((str: string, index: number) => [str, index]));
@@ -2210,11 +2430,11 @@ export class Arena {
         this.previousSibling[reference] = node;
         this.parents[node] = parent;
 
-        if (previous != 0) {
+        if (previous !== 0) {
             this.nextSibling[previous] = node;
-        } else if (this.firstChild[parent] == reference) {
+        } else if (this.firstChild[parent] === reference) {
             this.firstChild[parent] = node;
-        } else if (this.firstToken[parent] == reference) {
+        } else if (this.firstToken[parent] === reference) {
             this.firstToken[parent] = node;
         }
     }
@@ -2240,6 +2460,10 @@ export class AstArena extends Arena {
      */
     public sources: number[] = [];
 
+    /**
+     *
+     * @param size
+     */
     constructor(size: number = 4096) {
         super(size);
 
@@ -2304,7 +2528,7 @@ export class AstArena extends Arena {
      * @param id
      */
     isInvalid(id: number): boolean {
-        return (this.flags[id] & EnumAstNodeStatus.Invalid) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.Invalid) !== 0;
     }
 
     /**
@@ -2314,7 +2538,7 @@ export class AstArena extends Arena {
     sourceIndex(srcId: number): number {
         let index: number = this.sources.indexOf(srcId);
 
-        if (index == -1) {
+        if (index === -1) {
             index = this.sources.length;
             this.sources.push(srcId);
         }
@@ -2378,7 +2602,7 @@ export class AstArena extends Arena {
      * @param end
      */
     spanLocation(id: number, start: number, end: number): void {
-        if ((this.flags[start] & EnumAstNodeStatus.HasLocation) == 0) {
+        if ((this.flags[start] & EnumAstNodeStatus.HasLocation) === 0) {
             this.copyLocation(id, end);
             return;
         }
@@ -2397,7 +2621,7 @@ export class AstArena extends Arena {
      * @param id
      */
     hasLocation(id: number): boolean {
-        return (this.flags[id] & EnumAstNodeStatus.HasLocation) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.HasLocation) !== 0;
     }
 
     /**
@@ -2405,7 +2629,7 @@ export class AstArena extends Arena {
      * @param id
      */
     getLocation(id: number): SourceLocation | null {
-        if ((this.flags[id] & EnumAstNodeStatus.HasLocation) == 0) {
+        if ((this.flags[id] & EnumAstNodeStatus.HasLocation) === 0) {
             return null;
         }
 
@@ -2565,9 +2789,9 @@ export class AstArena extends Arena {
 
         this.dataTypes[id] = typ;
 
-        if (typeof val == "string") {
+        if (typeof val === "string") {
             this.stringValue[id] = this.internString(val);
-        } else if (typeof val == "number") {
+        } else if (typeof val === "number") {
             this.numericValue[id] = val;
         }
 
@@ -2678,7 +2902,7 @@ export class AstArena extends Arena {
     hasFraction(id: number): boolean {
         const child: number = this.firstChild[id];
 
-        return child != 0 && this.dataTypes[child] == EnumToken.FractionTokenType;
+        return child !== 0 && this.dataTypes[child] === EnumToken.FractionTokenType;
     }
 
     /**
@@ -2688,7 +2912,7 @@ export class AstArena extends Arena {
     getFraction(id: number): number {
         const child: number = this.firstChild[id];
 
-        return child != 0 && this.dataTypes[child] == EnumToken.FractionTokenType ? child : 0;
+        return child !== 0 && this.dataTypes[child] === EnumToken.FractionTokenType ? child : 0;
     }
 
     /**
@@ -2699,11 +2923,11 @@ export class AstArena extends Arena {
     setFraction(id: number, fraction: number | null): void {
         const child: number = this.getFraction(id);
 
-        if (child != 0) {
+        if (child !== 0) {
             this.detach(child);
         }
 
-        if (fraction != null && fraction != 0) {
+        if (fraction != null && fraction !== 0) {
             // inlined: this.appendChildren(id, fraction)
             this.appendChildList(id, [fraction]);
             this.numericValue[id] =
@@ -2767,13 +2991,13 @@ export class AstArena extends Arena {
      * @param tokens
      */
     replaceToken(id: number, ...tokens: number[]): void {
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return;
         }
 
         const index: number = tokens.indexOf(id);
 
-        if (index == -1) {
+        if (index === -1) {
             this.insertBefore(id, ...tokens);
             this.detach(id);
             return;
@@ -2789,7 +3013,7 @@ export class AstArena extends Arena {
      * @param token
      */
     take(token: number): number {
-        return this.parents[token] == 0 ? token : this.clone(token, true);
+        return this.parents[token] === 0 ? token : this.clone(token, true);
     }
 
     /**
@@ -2823,9 +3047,9 @@ export class AstArena extends Arena {
         this.colorType[id] = 0;
         this.name[id] = 0;
 
-        if (typeof val == "string") {
+        if (typeof val === "string") {
             this.stringValue[id] = this.internString(val);
-        } else if (typeof val == "number") {
+        } else if (typeof val === "number") {
             this.numericValue[id] = val;
         }
 
@@ -2946,7 +3170,7 @@ export class AstArena extends Arena {
             node.state = flags & EnumAstNodeStatus.StateMask;
         }
 
-        if ((flags & EnumAstNodeStatus.HasValues) == 0 && this.firstToken[id] != 0) {
+        if ((flags & EnumAstNodeStatus.HasValues) === 0 && this.firstToken[id] !== 0) {
             node.tokens = [];
 
             for (const token of this.tokens(id)) {
@@ -2977,41 +3201,41 @@ export class AstArena extends Arena {
         const typ: EnumToken = this.dataTypes[id];
         const token: Record<string, any> = { typ };
 
-        if (this.name[id] != 0) {
+        if (this.name[id] !== 0) {
             token.nam = this.strings[this.name[id]];
         }
 
-        if (typ == EnumToken.BinaryExpressionTokenType) {
+        if (typ === EnumToken.BinaryExpressionTokenType) {
             token.op = this.numericValue[id];
-        } else if (typ == EnumToken.UnaryExpressionTokenType) {
+        } else if (typ === EnumToken.UnaryExpressionTokenType) {
             token.sign = this.numericValue[id];
-            token.val = this.firstChild[id] == 0 ? null : this.tokenToObject(this.firstChild[id]);
-        } else if (typ == EnumToken.FractionTokenType) {
+            token.val = this.firstChild[id] === 0 ? null : this.tokenToObject(this.firstChild[id]);
+        } else if (typ === EnumToken.FractionTokenType) {
             token.l = this.tokenToObject(this.firstChild[id]);
             token.r = this.tokenToObject(this.lastChild[id]);
         } else if (numericTokenTypes.has(typ)) {
             const fraction: number = this.getFraction(id);
 
-            token.val = fraction == 0 ? this.numericValue[id] : this.tokenToObject(fraction);
-        } else if (this.stringValue[id] != 0 || typ == EnumToken.IdenTokenType || typ == EnumToken.StringTokenType) {
+            token.val = fraction === 0 ? this.numericValue[id] : this.tokenToObject(fraction);
+        } else if (this.stringValue[id] !== 0 || typ === EnumToken.IdenTokenType || typ === EnumToken.StringTokenType) {
             token.val = this.strings[this.stringValue[id]];
         }
 
-        if (this.unit[id] != 0) {
-            if (typ == EnumToken.ColorTokenType) {
+        if (this.unit[id] !== 0) {
+            if (typ === EnumToken.ColorTokenType) {
                 token.cal = this.strings[this.unit[id]];
-            } else if (typ == EnumToken.MatchExpressionTokenType) {
+            } else if (typ === EnumToken.MatchExpressionTokenType) {
                 token.attr = this.strings[this.unit[id]];
             } else {
                 token.unit = this.strings[this.unit[id]];
             }
         }
 
-        if (typ == EnumToken.ColorTokenType && this.colorType[id] != ColorType.NONE) {
+        if (typ === EnumToken.ColorTokenType && this.colorType[id] !== ColorType.NONE) {
             token.kin = this.colorType[id];
         }
 
-        if (this.firstToken[id] != 0) {
+        if (this.firstToken[id] !== 0) {
             const tokens: PlainToken[] = [];
 
             for (const child of this.tokens(id)) {
@@ -3019,9 +3243,9 @@ export class AstArena extends Arena {
             }
 
             if (
-                typ == EnumToken.DeclarationNodeType ||
-                typ == EnumToken.CssVariableTokenType ||
-                typ == EnumToken.CssVariableImportTokenType
+                typ === EnumToken.DeclarationNodeType ||
+                typ === EnumToken.CssVariableTokenType ||
+                typ === EnumToken.CssVariableImportTokenType
             ) {
                 token.val = tokens;
             } else {
@@ -3087,13 +3311,13 @@ export class AstArena extends Arena {
             this.errors.set(target, this.errors.get(id)!);
         }
 
-        const isNode: boolean = (flags & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) != 0;
+        const isNode: boolean = (flags & (EnumAstNodeStatus.HasChildren | EnumAstNodeStatus.HasValues)) !== 0;
 
         // declaration values are cloned only when requested
-        if (!isNode || deep || (flags & EnumAstNodeStatus.HasValues) == 0) {
+        if (!isNode || deep || (flags & EnumAstNodeStatus.HasValues) === 0) {
             let token: number = this.firstToken[id];
 
-            while (token != 0) {
+            while (token !== 0) {
                 this.appendToken(target, this.clone(token, true, cloneMap));
                 token = this.nextSibling[token];
             }
@@ -3102,7 +3326,7 @@ export class AstArena extends Arena {
         if (!isNode || deep) {
             let child: number = this.firstChild[id];
 
-            while (child != 0) {
+            while (child !== 0) {
                 this.appendChild(target, this.clone(child, true, cloneMap));
                 child = this.nextSibling[child];
             }
@@ -3157,15 +3381,15 @@ export class AstArena extends Arena {
 
         let token: number = source.firstToken[id];
 
-        while (token != 0) {
+        while (token !== 0) {
             this.appendToken(target, this.import(source, token));
             token = source.nextSibling[token];
         }
 
-        if (deep || (flags & EnumAstNodeStatus.HasChildren) == 0) {
+        if (deep || (flags & EnumAstNodeStatus.HasChildren) === 0) {
             let child: number = source.firstChild[id];
 
-            while (child != 0) {
+            while (child !== 0) {
                 this.appendChild(target, this.import(source, child));
                 child = source.nextSibling[child];
             }
@@ -3182,11 +3406,11 @@ export class AstArena extends Arena {
         let index: number = 0;
         let child: number = this.previousSibling[id];
 
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return -1;
         }
 
-        while (child != 0) {
+        while (child !== 0) {
             index++;
             child = this.previousSibling[child];
         }
@@ -3201,7 +3425,7 @@ export class AstArena extends Arena {
      */
     insertBefore(reference: number, ...nodes: number[]): void {
         for (const node of nodes) {
-            if (node == reference || node == 0) {
+            if (node === reference || node === 0) {
                 continue;
             }
 
@@ -3218,7 +3442,7 @@ export class AstArena extends Arena {
      */
     insertAfter(reference: number, ...nodes: number[]): void {
         for (const node of nodes) {
-            if (node == reference || node == 0) {
+            if (node === reference || node === 0) {
                 continue;
             }
 
@@ -3235,7 +3459,7 @@ export class AstArena extends Arena {
     prependChildren(id: number, ...nodes: number[]): void {
         const first: number = this.firstChild[id];
 
-        if (first == 0) {
+        if (first === 0) {
             this.appendChildList(id, nodes);
         } else {
             this.insertBefore(first, ...nodes);
@@ -3250,13 +3474,13 @@ export class AstArena extends Arena {
      * @param nodes
      */
     replaceChild(id: number, ...nodes: number[]): void {
-        if (this.parents[id] == 0) {
+        if (this.parents[id] === 0) {
             return;
         }
 
         const index: number = nodes.indexOf(id);
 
-        if (index == -1) {
+        if (index === -1) {
             this.insertBefore(id, ...nodes);
             this.detach(id);
             return;
@@ -3271,7 +3495,7 @@ export class AstArena extends Arena {
      * @param id
      */
     hasChildren(id: number): boolean {
-        return (this.flags[id] & EnumAstNodeStatus.HasChildren) != 0;
+        return (this.flags[id] & EnumAstNodeStatus.HasChildren) !== 0;
     }
 
     /**
@@ -3330,18 +3554,21 @@ export class AstArena extends Arena {
 
         let node: AstNode = this.firstChild[ast];
 
-        while (node != 0) {
+        while (node !== 0) {
             const next: AstNode = this.nextSibling[node];
             const typ: EnumToken = this.dataTypes[node];
 
             if (typ === EnumToken.RuleNodeType) {
                 // the expanded rules are inserted after the rule
                 this.expandRule(node, ast, next);
-            } else if (typ == EnumToken.AtRuleNodeType && this.flags[node] & EnumAstNodeStatus.HasChildren) {
+            } else if (typ === EnumToken.AtRuleNodeType && this.flags[node] & EnumAstNodeStatus.HasChildren) {
                 let j: AstNode = this.lastChild[node];
 
-                while (j != 0) {
-                    if (this.dataTypes[j] == EnumToken.RuleNodeType || this.dataTypes[j] == EnumToken.AtRuleNodeType) {
+                while (j !== 0) {
+                    if (
+                        this.dataTypes[j] === EnumToken.RuleNodeType ||
+                        this.dataTypes[j] === EnumToken.AtRuleNodeType
+                    ) {
                         this.expand(node);
                         break;
                     }
@@ -3367,8 +3594,8 @@ export class AstArena extends Arena {
 
         // inlined: this.walkValues(tokens)
         for (const t of new ValueWalker(this, tokens)) {
-            if (this.dataTypes[t] == EnumToken.NestingSelectorTokenType) {
-                if (tokens.length == 2) {
+            if (this.dataTypes[t] === EnumToken.NestingSelectorTokenType) {
+                if (tokens.length === 2) {
                     this.resetToken(
                         t,
                         EnumToken.LiteralTokenType,
@@ -3440,7 +3667,7 @@ export class AstArena extends Arena {
                     this.optimized[id] = node.optimized;
                 }
 
-                if (typeof node.val == "string") {
+                if (typeof node.val === "string") {
                     this.stringValue[id] = this.internString(node.val);
                 }
 
@@ -3466,7 +3693,7 @@ export class AstArena extends Arena {
 
                 if (Array.isArray(node.val)) {
                     for (const token of node.val) {
-                        this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
+                        this.appendToken(id, typeof token === "number" ? token : this.fromObject(token));
                     }
                 }
 
@@ -3475,7 +3702,7 @@ export class AstArena extends Arena {
 
         if (Array.isArray(node.tokens)) {
             for (const token of node.tokens) {
-                this.appendToken(id, typeof token == "number" ? token : this.fromObject(token));
+                this.appendToken(id, typeof token === "number" ? token : this.fromObject(token));
             }
         }
 
@@ -3498,7 +3725,7 @@ export class AstArena extends Arena {
         if (Array.isArray(node.chi) && this.flags[id] & EnumAstNodeStatus.HasChildren) {
             for (const child of node.chi) {
                 // inlined: this.appendChildren(id, typeof child == "number" ? child : this.fromObject(child))
-                this.appendChildList(id, [typeof child == "number" ? child : this.fromObject(child)]);
+                this.appendChildList(id, [typeof child === "number" ? child : this.fromObject(child)]);
             }
         }
 
@@ -3516,61 +3743,61 @@ export class AstArena extends Arena {
 
         this.dataTypes[id] = typ;
 
-        if (typeof plain.nam == "string") {
+        if (typeof plain.nam === "string") {
             this.name[id] = this.internString(plain.nam);
         }
 
-        if (typeof plain.unit == "string") {
+        if (typeof plain.unit === "string") {
             this.unit[id] = this.internString(plain.unit);
         }
 
-        if (typeof plain.kin == "number") {
+        if (typeof plain.kin === "number") {
             // inlined: this.setColorType(id, plain.kin)
             this.colorType[id] = plain.kin;
         }
 
-        if (typeof plain.cal == "string") {
+        if (typeof plain.cal === "string") {
             this.unit[id] = this.internString(plain.cal);
         }
 
-        if (typeof plain.attr == "string") {
+        if (typeof plain.attr === "string") {
             this.unit[id] = this.internString(plain.attr);
         }
 
-        if (typ == EnumToken.BinaryExpressionTokenType) {
+        if (typ === EnumToken.BinaryExpressionTokenType) {
             this.numericValue[id] = plain.op;
-        } else if (typ == EnumToken.UnaryExpressionTokenType) {
+        } else if (typ === EnumToken.UnaryExpressionTokenType) {
             this.numericValue[id] = plain.sign;
             // inlined: this.appendChildren(id, typeof plain.val == "number" ? plain.val : this.fromObject(plain.val))
-            this.appendChildList(id, [typeof plain.val == "number" ? plain.val : this.fromObject(plain.val)]);
-        } else if (typ == EnumToken.FractionTokenType) {
+            this.appendChildList(id, [typeof plain.val === "number" ? plain.val : this.fromObject(plain.val)]);
+        } else if (typ === EnumToken.FractionTokenType) {
             // inlined: this.appendChildren(id, typeof plain.l == "number" ? plain.l : this.fromObject(plain.l), typeof plain.r == "number" ? plain.r : this.fromObject(plain.r))
             this.appendChildList(id, [
-                typeof plain.l == "number" ? plain.l : this.fromObject(plain.l),
-                typeof plain.r == "number" ? plain.r : this.fromObject(plain.r),
+                typeof plain.l === "number" ? plain.l : this.fromObject(plain.l),
+                typeof plain.r === "number" ? plain.r : this.fromObject(plain.r),
             ]);
-        } else if (typeof plain.val == "string") {
+        } else if (typeof plain.val === "string") {
             if (numericTokenTypes.has(typ)) {
                 // numeric value as a string
                 this.numericValue[id] = +plain.val;
             } else {
                 this.stringValue[id] = this.internString(plain.val);
             }
-        } else if (typeof plain.val == "number") {
+        } else if (typeof plain.val === "number") {
             this.numericValue[id] = plain.val;
-        } else if (plain.val != null && typeof plain.val == "object" && !Array.isArray(plain.val)) {
+        } else if (plain.val != null && typeof plain.val === "object" && !Array.isArray(plain.val)) {
             // fraction value
             this.setFraction(id, this.fromObject(plain.val));
-        } else if (Array.isArray(plain.val) && typ != EnumToken.MediaRangeQueryTokenType) {
+        } else if (Array.isArray(plain.val) && typ !== EnumToken.MediaRangeQueryTokenType) {
             // declaration like tokens
             for (const child of plain.val) {
-                this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
+                this.appendToken(id, typeof child === "number" ? child : this.fromObject(child));
             }
         }
 
         if (Array.isArray(plain.chi)) {
             for (const child of plain.chi) {
-                this.appendToken(id, typeof child == "number" ? child : this.fromObject(child));
+                this.appendToken(id, typeof child === "number" ? child : this.fromObject(child));
             }
         }
 
@@ -3594,7 +3821,7 @@ export class AstArena extends Arena {
                 const fieldTokens: number[] = [];
 
                 for (const value of values) {
-                    fieldTokens.push(typeof value == "number" ? value : this.fromObject(value));
+                    fieldTokens.push(typeof value === "number" ? value : this.fromObject(value));
                 }
 
                 // inlined: this.setField(id, field, ...fieldTokens)
@@ -3626,21 +3853,21 @@ export class AstArena extends Arena {
         const ast: AstRule = node;
         const sel: string = this.strings[this.name[ast]];
         const place = (child: AstNode): void => {
-            if (before == 0) {
+            if (before === 0) {
                 this.appendChild(parent, child);
             } else {
                 this.insertBefore(before, child);
             }
         };
 
-        if (this.dataTypes[ast] == EnumToken.RuleNodeType) {
+        if (this.dataTypes[ast] === EnumToken.RuleNodeType) {
             let child: AstNode = this.firstChild[ast];
 
-            while (child != 0) {
+            while (child !== 0) {
                 const next: AstNode = this.nextSibling[child];
                 const typ: EnumToken = this.dataTypes[child];
 
-                if (typ == EnumToken.RuleNodeType) {
+                if (typ === EnumToken.RuleNodeType) {
                     const rule: AstRule = child;
                     const ruleSel: string = this.strings[this.name[rule]];
 
@@ -3649,7 +3876,9 @@ export class AstArena extends Arena {
 
                         const arSelf: string = splitRule(sel)
                             .filter((r: string[]): boolean =>
-                                r.every((t: string): boolean => t != ":before" && t != ":after" && !t.startsWith("::")),
+                                r.every(
+                                    (t: string): boolean => t !== ":before" && t !== ":after" && !t.startsWith("::"),
+                                ),
                             )
                             .reduce(
                                 (acc: string[], curr: string[]): string[] => acc.concat([curr.join("")]),
@@ -3657,7 +3886,7 @@ export class AstArena extends Arena {
                             )
                             .join(",");
 
-                        if (arSelf.length == 0) {
+                        if (arSelf.length === 0) {
                             this.detach(rule);
                             child = next;
                             continue;
@@ -3689,11 +3918,11 @@ export class AstArena extends Arena {
                         // pseudo elements cannot be used with '&'
                         // https://www.w3.org/TR/css-nesting-1/#example-7145ff1e
                         const rules: string[][] = splitRule(sel).filter((r: string[]): boolean =>
-                            r.every((t: string): boolean => t != ":before" && t != ":after" && !t.startsWith("::")),
+                            r.every((t: string): boolean => t !== ":before" && t !== ":after" && !t.startsWith("::")),
                         );
                         const parentSelector: boolean = !sel.includes("&");
 
-                        if (rules.length == 0) {
+                        if (rules.length === 0) {
                             this.detach(rule);
                             child = next;
                             continue;
@@ -3703,12 +3932,12 @@ export class AstArena extends Arena {
                             const s: string = sel.join("");
 
                             if (s.includes("&") || parentSelector) {
-                                if (s.indexOf("&", 1) == -1) {
-                                    if (s.at(0) == "&") {
-                                        if (s.at(1) == " ") {
+                                if (s.indexOf("&", 1) === -1) {
+                                    if (s.at(0) === "&") {
+                                        if (s.at(1) === " ") {
                                             childSelectorCompound.push(s.slice(2));
                                         } else {
-                                            if (s == "&" || parentSelector) {
+                                            if (s === "&" || parentSelector) {
                                                 withCompound.push(s);
                                             }
                                         }
@@ -3728,7 +3957,7 @@ export class AstArena extends Arena {
                                 : rules[0].join("");
 
                         if (childSelectorCompound.length > 0) {
-                            if (childSelectorCompound.length == 1) {
+                            if (childSelectorCompound.length === 1) {
                                 selectors.push(this.replaceCompound("& " + childSelectorCompound[0].trim(), selector));
                             } else {
                                 selectors.push(
@@ -3746,25 +3975,25 @@ export class AstArena extends Arena {
                         }
 
                         if (withCompound.length > 0) {
-                            if (withCompound.every((t) => t[0] == "&" && t.indexOf("&", 1) == -1)) {
+                            if (withCompound.every((t) => t[0] === "&" && t.indexOf("&", 1) === -1)) {
                                 withoutCompound.push(...withCompound.map((t) => t.slice(1)));
                                 withCompound.length = 0;
                             }
                         }
 
                         if (withoutCompound.length > 0) {
-                            if (withoutCompound.length == 1) {
+                            if (withoutCompound.length === 1) {
                                 const useIs: boolean =
-                                    rules.length == 1 &&
+                                    rules.length === 1 &&
                                     selector.match(/^[a-zA-Z.:]/) != null &&
                                     selector.includes(" ") &&
-                                    withoutCompound.length == 1 &&
+                                    withoutCompound.length === 1 &&
                                     withoutCompound[0].match(/^[a-zA-Z]+$/) != null;
                                 const compound = useIs ? ":is(&)" : "&";
 
                                 selectors.push(
                                     this.replaceCompound(
-                                        rules.length == 1
+                                        rules.length === 1
                                             ? useIs
                                                 ? withoutCompound[0] + ":is(&)"
                                                 : selector.match(/^[.:]/) && withoutCompound[0].match(/^[a-zA-Z]+$/)
@@ -3795,7 +4024,7 @@ export class AstArena extends Arena {
                         }
 
                         if (withCompound.length > 0) {
-                            if (withCompound.length == 1) {
+                            if (withCompound.length === 1) {
                                 selectors.push(this.replaceCompound(withCompound[0], selector));
                             }
                         }
@@ -3803,7 +4032,7 @@ export class AstArena extends Arena {
                         // inlined: this.setSelector(rule, selectors.reduce((acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr), ""))
                         this.name[rule] = this.internString(
                             selectors.reduce(
-                                (acc, curr) => (curr.length == 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr),
+                                (acc, curr) => (curr.length === 0 ? acc : acc + (acc.length > 0 ? "," : "") + curr),
                                 "",
                             ),
                         );
@@ -3811,7 +4040,7 @@ export class AstArena extends Arena {
 
                     place(rule);
                     this.expandRule(rule, parent, before);
-                } else if (typ == EnumToken.AtRuleNodeType) {
+                } else if (typ === EnumToken.AtRuleNodeType) {
                     const astAtRule: AstAtRule = child;
                     const atRuleName: string = this.strings[this.name[astAtRule]];
 
@@ -3825,9 +4054,9 @@ export class AstArena extends Arena {
 
                         let hasNesting: boolean = false;
 
-                        for (let t = this.firstChild[astAtRule]; t != 0; t = this.nextSibling[t]) {
+                        for (let t = this.firstChild[astAtRule]; t !== 0; t = this.nextSibling[t]) {
                             if (
-                                this.dataTypes[t] == EnumToken.RuleNodeType &&
+                                this.dataTypes[t] === EnumToken.RuleNodeType &&
                                 this.strings[this.name[t]].includes("&")
                             ) {
                                 hasNesting = true;
@@ -3854,9 +4083,9 @@ export class AstArena extends Arena {
                         this.moveChildren(astAtRule, clone);
                         this.expandRule(clone, astAtRule, 0);
 
-                        if (this.firstChild[clone] != 0) {
+                        if (this.firstChild[clone] !== 0) {
                             // the rule declarations are wrapped in the clone, before the expanded nodes
-                            if (this.firstChild[astAtRule] == 0) {
+                            if (this.firstChild[astAtRule] === 0) {
                                 this.appendChild(astAtRule, clone);
                             } else {
                                 this.insertBefore(this.firstChild[astAtRule], clone);
@@ -3868,10 +4097,10 @@ export class AstArena extends Arena {
                         // the expanded at-rules are moved after the at-rule
                         let r: AstNode = this.firstChild[astAtRule];
 
-                        while (r != 0) {
+                        while (r !== 0) {
                             const nextRule: AstNode = this.nextSibling[r];
 
-                            if (this.dataTypes[r] == EnumToken.AtRuleNodeType) {
+                            if (this.dataTypes[r] === EnumToken.AtRuleNodeType) {
                                 if (this.flags[r] & EnumAstNodeStatus.HasChildren) {
                                     const val: string = this.strings[this.stringValue[astAtRule]];
                                     const rVal: string = this.strings[this.stringValue[r]];
@@ -3882,7 +4111,7 @@ export class AstArena extends Arena {
                                         if (atRuleName === "media" && rName === "media") {
                                             // inlined: this.setValueString(r, val + " and " + rVal)
                                             this.stringValue[r] = this.internString(val + " and " + rVal);
-                                        } else if (atRuleName == "layer" && rName == "layer") {
+                                        } else if (atRuleName === "layer" && rName === "layer") {
                                             // inlined: this.setValueString(r, val + "." + rVal)
                                             this.stringValue[r] = this.internString(val + "." + rVal);
                                         }
@@ -3898,7 +4127,7 @@ export class AstArena extends Arena {
                         }
                     }
 
-                    if (this.firstChild[astAtRule] == 0) {
+                    if (this.firstChild[astAtRule] === 0) {
                         this.detach(astAtRule);
                     }
                 }
@@ -3907,30 +4136,36 @@ export class AstArena extends Arena {
             }
         }
 
-        if (this.firstChild[ast] == 0) {
+        if (this.firstChild[ast] === 0) {
             this.detach(ast);
         }
     }
 
+    /**
+     *
+     * @param selector
+     * @param replace
+     * @protected
+     */
     protected replaceCompoundLiteral(selector: string, replace: string): string {
         const tokens: string[] = [""];
 
         let i: number = 0;
 
         for (; i < selector.length; i++) {
-            if (selector.charAt(i) == "&") {
+            if (selector.charAt(i) === "&") {
                 tokens.push("&", "");
             }
         }
 
         return tokens
             .sort((a, b) => {
-                if (a == "&") {
+                if (a === "&") {
                     return 1;
                 }
 
-                return b == "&" ? -1 : 0;
+                return b === "&" ? -1 : 0;
             })
-            .reduce((acc: string, curr: string): string => acc + (curr == "&" ? replace : curr), "");
+            .reduce((acc: string, curr: string): string => acc + (curr === "&" ? replace : curr), "");
     }
 }

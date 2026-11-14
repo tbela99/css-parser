@@ -19,7 +19,9 @@ function getColorType(arena, color) {
             return null;
         }
         return arena.colorType[color] === ColorType.COLOR_MIX
-            ? ColorType[arena.strings[arena.stringValue[token]]?.toUpperCase?.()?.replace?.("-", "_")]
+            ? ColorType[arena.strings[arena.stringValue[token]]
+                ?.toUpperCase?.()
+                ?.replace?.("-", "_")]
             : getColorType(arena, token);
     }
     return arena.colorType[color];

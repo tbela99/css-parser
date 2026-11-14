@@ -24,7 +24,7 @@ import { ValueWalker } from "../walk.ts";
 function inlineExpression(arena: AstArena, token: Token): Token[] {
     const result: Token[] = [];
 
-    if (arena.dataTypes[token] == EnumToken.BinaryExpressionTokenType) {
+    if (arena.dataTypes[token] === EnumToken.BinaryExpressionTokenType) {
         const chi: Token[] = inlineExpression(arena, arena.field(token, TokenField.L));
 
         chi.push(arena.createToken(arena.numericValue[token] as EnumToken));
@@ -48,11 +48,11 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
         const parentValue: Token = arena.getValueParent(value) || node;
 
         if (
-            arena.dataTypes[value] == EnumToken.BinaryExpressionTokenType &&
+            arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType &&
             parentValue != null &&
-            parentValue != node &&
+            parentValue !== node &&
             // the token belongs to the parent token list (function arguments)
-            arena.parents[value] == parentValue
+            arena.parents[value] === parentValue
         ) {
             arena.replaceToken(value, ...inlineExpression(arena, value));
         }
@@ -63,22 +63,22 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
         const typ: EnumToken = arena.dataTypes[value];
 
         if (
-            typ == EnumToken.MathFunctionTokenType ||
-            (typ == EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] == "var")
+            typ === EnumToken.MathFunctionTokenType ||
+            (typ === EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] === "var")
         ) {
             const first: Token = arena.firstToken[value];
 
             if (
-                first != 0 &&
-                arena.nextSibling[first] == 0 &&
-                arena.dataTypes[first] == EnumToken.DashedIdenTokenType
+                first !== 0 &&
+                arena.nextSibling[first] === 0 &&
+                arena.dataTypes[first] === EnumToken.DashedIdenTokenType
             ) {
                 const info: VariableScopeInfo = <VariableScopeInfo>(
                     variableScope.get(arena.strings[arena.stringValue[first]])
                 );
 
                 // the variable declaration may have been released
-                if (info?.replaceable && arena.name[info.node] != 0 && arena.parents[value] != 0) {
+                if (info?.replaceable && arena.name[info.node] !== 0 && arena.parents[value] !== 0) {
                     arena.replaceToken(
                         value,
                         ...arena.tokens(info.node).map((t: Token): Token => arena.clone(t, true)),
@@ -134,14 +134,14 @@ export class InlineCssVariablesFeature {
 
         // [':root', 'html']
         const isRoot: boolean =
-            arena.dataTypes[parent] == EnumToken.StyleSheetNodeType &&
-            arena.dataTypes[ast] == EnumToken.RuleNodeType &&
+            arena.dataTypes[parent] === EnumToken.StyleSheetNodeType &&
+            arena.dataTypes[ast] === EnumToken.RuleNodeType &&
             (arena.raw[ast] ?? splitRule(arena.strings[arena.name[ast]])).some((segment) =>
-                segment.some((s) => s == ":root" || s == "html"),
+                segment.some((s) => s === ":root" || s === "html"),
             );
         const variableScope = context.variableScope;
 
-        for (let node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+        for (let node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType) {
                 continue;
             }
@@ -170,8 +170,8 @@ export class InlineCssVariablesFeature {
                 // inlined: arena.walkValues(node)
                 for (const value of new ValueWalker(arena, node)) {
                     if (
-                        arena.dataTypes[value] == EnumToken.MathFunctionTokenDefType ||
-                        (arena.dataTypes[value] == EnumToken.WildCardFunctionTokenType &&
+                        arena.dataTypes[value] === EnumToken.MathFunctionTokenDefType ||
+                        (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
                             (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||
                                 arena.strings[arena.stringValue[value]] === "var"))
                     ) {
@@ -209,7 +209,7 @@ export class InlineCssVariablesFeature {
             if (info.replaceable) {
                 // drop declarations from :root{}
                 for (const parent of info.parent) {
-                    if (arena.parents[info.node] == parent) {
+                    if (arena.parents[info.node] === parent) {
                         const comment: AstNode = arena.createComment(
                             EnumToken.CommentTokenType,
                             `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderValue(arena, curr, { convertColor: false }), "")} */`,

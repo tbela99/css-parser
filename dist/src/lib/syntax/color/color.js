@@ -45,13 +45,16 @@ import { equalsIgnoreCase } from '../../parser/utils/text.js';
  * ```
  */
 function convertColor(arena, token, to) {
-    if (arena.colorType[token] == ColorType.SYS ||
-        arena.colorType[token] == ColorType.DPSYS ||
-        (isIdentColor(arena, token) && "currentcolor" == arena.strings[arena.stringValue[token]])) {
+    if (arena.colorType[token] === ColorType.SYS ||
+        arena.colorType[token] === ColorType.DPSYS ||
+        (isIdentColor(arena, token) && "currentcolor" === arena.strings[arena.stringValue[token]])) {
         return token;
     }
-    if (arena.colorType[token] == ColorType.ALPHA) {
-        const args = arena.tokens(token).filter((token) => arena.dataTypes[token] !== EnumToken.WhitespaceTokenType && arena.dataTypes[token] !== EnumToken.CommentTokenType);
+    if (arena.colorType[token] === ColorType.ALPHA) {
+        const args = arena
+            .tokens(token)
+            .filter((token) => arena.dataTypes[token] !== EnumToken.WhitespaceTokenType &&
+            arena.dataTypes[token] !== EnumToken.CommentTokenType);
         if (args.length > 1 &&
             arena.dataTypes[args[args.length - 2]] === EnumToken.LiteralTokenType &&
             "/" === arena.strings[arena.stringValue[args[args.length - 2]]]) {
@@ -64,12 +67,13 @@ function convertColor(arena, token, to) {
         }
         token = result;
     }
-    if (arena.colorType[token] == ColorType.COLOR_MIX && to != ColorType.COLOR_MIX) {
+    if (arena.colorType[token] === ColorType.COLOR_MIX && to !== ColorType.COLOR_MIX) {
         const children = arena.tokens(token).reduce((acc, t) => {
             if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
                 acc.push([]);
             }
-            else if (arena.dataTypes[t] !== EnumToken.WhitespaceTokenType && arena.dataTypes[t] !== EnumToken.CommentTokenType) {
+            else if (arena.dataTypes[t] !== EnumToken.WhitespaceTokenType &&
+                arena.dataTypes[t] !== EnumToken.CommentTokenType) {
                 acc[acc.length - 1].push(t);
             }
             return acc;
@@ -80,10 +84,10 @@ function convertColor(arena, token, to) {
         }
         token = result;
     }
-    if (arena.strings[arena.unit[token]] == "rel" &&
+    if (arena.strings[arena.unit[token]] === "rel" &&
         ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))) {
         const chi = getColorComponents(arena, token);
-        const offset = arena.strings[arena.stringValue[token]] == "color" ? 2 : 1;
+        const offset = arena.strings[arena.stringValue[token]] === "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
@@ -94,40 +98,40 @@ function convertColor(arena, token, to) {
                 return null;
             }
             const name = arena.strings[arena.stringValue[token]];
-            const tk = arena.createColor(name, ColorType[name.toUpperCase().replaceAll("-", "_")], name == "color" ? [arena.clone(chi[offset])] : []);
+            const tk = arena.createColor(name, ColorType[name.toUpperCase().replaceAll("-", "_")], name === "color" ? [arena.clone(chi[offset])] : []);
             const seen = new Set();
             for (const t of Object.values(components)) {
                 // a component token may be used more than once: rgb(from #ff0 r g r)
                 // inlined: arena.take(t)
-                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : (arena.parents[t] == 0 ? t : arena.clone(t, true)));
+                arena.appendToken(tk, seen.has(t) ? arena.clone(t, true) : arena.parents[t] === 0 ? t : arena.clone(t, true));
                 seen.add(t);
             }
             arena.copyLocation(tk, token);
             token = tk;
         }
     }
-    if (arena.colorType[token] == to) {
-        if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+    if (arena.colorType[token] === to) {
+        if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
             const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
             // inlined: arena.setStr(token, val)
             arena.stringValue[token] = arena.internString(val);
-            arena.colorType[token] = val[0] == "#" ? ColorType.HEX : ColorType.LIT;
+            arena.colorType[token] = val[0] === "#" ? ColorType.HEX : ColorType.LIT;
         }
         return token;
     }
-    if (arena.colorType[token] == ColorType.COLOR) {
+    if (arena.colorType[token] === ColorType.COLOR) {
         const colorSpace = arena.findToken(token, (arena, t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
         if (colorSpace != null &&
-            arena.strings[arena.stringValue[colorSpace]] == ColorType[to].toLowerCase().replaceAll("_", "-")) {
+            arena.strings[arena.stringValue[colorSpace]] === ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of arena.tokens(token)) {
-                if (arena.dataTypes[chi] == EnumToken.NumberTokenType && !arena.hasFraction(chi)) {
+                if (arena.dataTypes[chi] === EnumToken.NumberTokenType && !arena.hasFraction(chi)) {
                     arena.numericValue[chi] = getNumber(arena, chi);
                 }
             }
             return token;
         }
     }
-    if (to == ColorType.HSL) {
+    if (to === ColorType.HSL) {
         switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
@@ -151,7 +155,7 @@ function convertColor(arena, token, to) {
                 return color2HslToken(arena, token);
         }
     }
-    else if (to == ColorType.HWB) {
+    else if (to === ColorType.HWB) {
         switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
@@ -176,7 +180,7 @@ function convertColor(arena, token, to) {
                 return color2hwbToken(arena, token);
         }
     }
-    else if (to == ColorType.DEVICE_CMYK) {
+    else if (to === ColorType.DEVICE_CMYK) {
         switch (arena.colorType[token]) {
             case ColorType.RGB:
             case ColorType.RGBA:
@@ -201,12 +205,12 @@ function convertColor(arena, token, to) {
                 return color2cmykToken(arena, token);
         }
     }
-    else if (to == ColorType.HEX || to == ColorType.LIT) {
+    else if (to === ColorType.HEX || to === ColorType.LIT) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT: {
                 const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
-                return arena.createColor(val, val[0] == "#" ? ColorType.HEX : ColorType.LIT);
+                return arena.createColor(val, val[0] === "#" ? ColorType.HEX : ColorType.LIT);
             }
             case ColorType.HSL:
                 return hsl2HexToken(arena, token);
@@ -229,7 +233,7 @@ function convertColor(arena, token, to) {
                 return rgb2HexToken(arena, token);
         }
     }
-    else if (to == ColorType.RGB) {
+    else if (to === ColorType.RGB) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -252,7 +256,7 @@ function convertColor(arena, token, to) {
                 return color2RgbToken(arena, token);
         }
     }
-    else if (to == ColorType.LAB) {
+    else if (to === ColorType.LAB) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -277,7 +281,7 @@ function convertColor(arena, token, to) {
                 return color2labToken(arena, token);
         }
     }
-    else if (to == ColorType.LCH) {
+    else if (to === ColorType.LCH) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -302,7 +306,7 @@ function convertColor(arena, token, to) {
                 return color2lchToken(arena, token);
         }
     }
-    else if (to == ColorType.OKLAB) {
+    else if (to === ColorType.OKLAB) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -327,7 +331,7 @@ function convertColor(arena, token, to) {
                 return color2oklabToken(arena, token);
         }
     }
-    else if (to == ColorType.OKLCH) {
+    else if (to === ColorType.OKLCH) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT:
@@ -512,7 +516,7 @@ function color2srgbvalues(arena, token) {
             values = xyzd502srgb(values[0], values[1], values[2], values[3]);
             break;
     }
-    if (values.length == 4) {
+    if (values.length === 4) {
         values[3] = values[3];
     }
     return values;
@@ -528,7 +532,7 @@ function values2colortoken(arena, values, to) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     const colorSpace = ColorType[to].toLowerCase().replaceAll("_", "-");
@@ -543,18 +547,18 @@ function values2colortoken(arena, values, to) {
  */
 function getNumber(arena, token) {
     const typ = arena.dataTypes[token];
-    if (typ == EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] == "none") {
+    if (typ === EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] === "none") {
         return 0;
     }
     let val;
     const fraction = arena.getFraction(token);
-    if (fraction != 0) {
+    if (fraction !== 0) {
         val = arena.numericValue[arena.firstChild[fraction]] / arena.numericValue[arena.lastChild[fraction]];
     }
     else {
         val = arena.numericValue[token];
     }
-    return typ == EnumToken.PercentageTokenType ? val / 100 : val;
+    return typ === EnumToken.PercentageTokenType ? val / 100 : val;
 }
 /**
  * convert angle to turn
@@ -563,13 +567,13 @@ function getNumber(arena, token) {
  */
 function getAngle(arena, token) {
     const typ = arena.dataTypes[token];
-    if (typ == EnumToken.IdenTokenType) {
-        if (arena.strings[arena.stringValue[token]] == "none") {
+    if (typ === EnumToken.IdenTokenType) {
+        if (arena.strings[arena.stringValue[token]] === "none") {
             return 0;
         }
     }
     const val = getNumber(arena, token);
-    if (typ == EnumToken.AngleTokenType) {
+    if (typ === EnumToken.AngleTokenType) {
         switch (arena.strings[arena.unit[token]]) {
             case "deg":
                 return val / 360;

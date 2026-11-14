@@ -29,7 +29,7 @@ export class LineMap {
         const column: number = offset - this.lineStarts[line];
 
         // [line, column]
-        return [line + 1, line == 0 ? column + 1 : column];
+        return [line + 1, line === 0 ? column + 1 : column];
     }
 
     /**

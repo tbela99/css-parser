@@ -37,7 +37,8 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
             if (arena.dataTypes[stream[k]] === EnumToken.EndParensTokenType) {
                 matchCount--;
             }
-            else if (arena.dataTypes[stream[k]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[k]])) {
+            else if (arena.dataTypes[stream[k]] === EnumToken.StartParensTokenType ||
+                tokensfuncDefMap.has(arena.dataTypes[stream[k]])) {
                 matchCount++;
             }
             if (matchCount === 0) {
@@ -61,13 +62,17 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
                     syntax: "@import",
                     node: stream[0],
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[0]))
-                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[0]))],
+                    location: [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[0])),
+                    ],
                 },
             ],
         };
     }
     while (index + 1 < prelude.length &&
-        (arena.dataTypes[stream[index]] == EnumToken.WhitespaceTokenType || arena.dataTypes[stream[index]] == EnumToken.CommentTokenType)) {
+        (arena.dataTypes[stream[index]] === EnumToken.WhitespaceTokenType ||
+            arena.dataTypes[stream[index]] === EnumToken.CommentTokenType)) {
         tokens.push(stream[index++]);
     }
     // layer | layer(<layer-name>)
@@ -91,14 +96,17 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
                         syntax: "@import",
                         node: stream[index],
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index])),
+                        ],
                     },
                 ],
             };
         }
         else if (arena.dataTypes[stream[index]] === EnumToken.IdenTokenType) {
             tokens.push(stream[index++]);
-            while (arena.dataTypes[stream[index]] == EnumToken.ClassSelectorTokenType) {
+            while (arena.dataTypes[stream[index]] === EnumToken.ClassSelectorTokenType) {
                 tokens.push(stream[index++]);
             }
             i = tokens.indexOf(stack[stack.length - 1]);
@@ -117,13 +125,17 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
                         syntax: "@import",
                         node: stream[index],
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[index]))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index]))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[index])),
+                        ],
                     },
                 ],
             };
         }
     }
-    while (arena.dataTypes[stream[index]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[index]] === EnumToken.CommentTokenType) {
+    while (arena.dataTypes[stream[index]] === EnumToken.WhitespaceTokenType ||
+        arena.dataTypes[stream[index]] === EnumToken.CommentTokenType) {
         tokens.push(stream[index++]);
     }
     // supports([ <supports-condition> | <declaration> ])
@@ -137,7 +149,8 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
         // else {
         // match the next ')'
         while (index < stream.length && matchCount > 0) {
-            if (arena.dataTypes[stream[index]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[index]])) {
+            if (arena.dataTypes[stream[index]] === EnumToken.StartParensTokenType ||
+                tokensfuncDefMap.has(arena.dataTypes[stream[index]])) {
                 matchCount++;
             }
             else if (arena.dataTypes[stream[index]] === EnumToken.EndParensTokenType) {

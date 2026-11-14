@@ -286,7 +286,7 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     [qx, qy, qz] = toZero([qx, qy, qz]);
 
     let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
-        if (acc == 0 || (curr > 0 && curr < acc)) {
+        if (acc === 0 || (curr > 0 && curr < acc)) {
             acc = curr;
         }
 

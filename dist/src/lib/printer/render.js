@@ -275,7 +275,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
     options = resolveRenderOptions(options);
     const expandNesting = options.expandNestingRules &&
         [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(arena.dataTypes[data]) &&
-        (arena.flags[data] & EnumAstNodeStatus.HasChildren) != 0;
+        (arena.flags[data] & EnumAstNodeStatus.HasChildren) !== 0;
     // temporary stylesheet holding the rendered copy
     let sheet = 0;
     if (options.withParents || expandNesting) {
@@ -286,7 +286,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
         data = arena.clone(data, true);
         if (options.withParents) {
             // wrap the node into shallow copies of its ancestors
-            while (parent != 0) {
+            while (parent !== 0) {
                 const clone = arena.clone(parent, false);
                 arena.appendChild(clone, data);
                 data = clone;
@@ -345,7 +345,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
     if (ownMemo) {
         RenderMemo.release(cache.memo);
     }
-    if (sheet != 0) {
+    if (sheet !== 0) {
         // drop the temporary stylesheet. the tokens allocated while rendering (color conversion, gradients, ...)
         // are not attached to the tree either: the memory is not reclaimed, the ids are never reused
         arena.detach(data);
@@ -397,7 +397,7 @@ function updateSourceMap(arena, node, options, cache, sourcemaps, sourceLocation
         // generated position, see LineMap.getOffsets()
         const line = linesMap.search(sourceLocation.end);
         const newLine = line + 1;
-        const newColumn = sourceLocation.end - linesMap.lineStarts[line] + (line == 0 ? 1 : 0);
+        const newColumn = sourceLocation.end - linesMap.lineStarts[line] + (line === 0 ? 1 : 0);
         let records = null;
         // inlined: source.getFileName()
         let sourceFileName = source.file || null;
@@ -480,15 +480,15 @@ function move(sourceLocation, linesMap, str, start, end) {
     for (; i < j; i++) {
         codepoint = str.charCodeAt(i);
         sourceLocation.end++;
-        if (codepoint == 0xa || // \n
-            codepoint == 0xb || // \v
-            codepoint == 0xc || // \f
-            codepoint == 0xd || // \r
-            codepoint == 0x2028 || // \u2028
-            codepoint == 0x2029 // \u2029
+        if (codepoint === 0xa || // \n
+            codepoint === 0xb || // \v
+            codepoint === 0xc || // \f
+            codepoint === 0xd || // \r
+            codepoint === 0x2028 || // \u2028
+            codepoint === 0x2029 // \u2029
         ) {
-            if (codepoint == 0xd && i + 1 < str.length && str.charCodeAt(i + 1) == 0xa) ;
-            else if (codepoint == 0xa && i > 0 && str.charCodeAt(i - 1) == 0xd) ;
+            if (codepoint === 0xd && i + 1 < str.length && str.charCodeAt(i + 1) === 0xa) ;
+            else if (codepoint === 0xa && i > 0 && str.charCodeAt(i - 1) === 0xd) ;
             else {
                 // inlined: linesMap.addLineStart(sourceLocation.end)
                 linesMap.lineStarts.push(sourceLocation.end);
@@ -538,7 +538,7 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             return !options.removeComments || (options.preserveLicense && val.startsWith("/*!")) ? val : "";
         }
         case EnumToken.StyleSheetNodeType:
-            for (let node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
+            for (let node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
                 str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level, indents);
                 if (str === "") {
                     continue;
@@ -556,7 +556,7 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
         case EnumToken.RuleNodeType:
         case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType: {
-            const isAtRule = typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType;
+            const isAtRule = typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType;
             const nam = arena.strings[arena.name[data]];
             const val = arena.strings[arena.stringValue[data]];
             if (isAtRule && !(arena.flags[data] & EnumAstNodeStatus.HasChildren)) {
@@ -574,22 +574,22 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             }
             let node;
             let nodeType;
-            let recordDeclarationSourceMap = typ == EnumToken.AtRuleNodeType;
+            let recordDeclarationSourceMap = typ === EnumToken.AtRuleNodeType;
             // rendering of the last child, without its trailing semicolon, appended to the children when the next child
             // is rendered. the trailing semicolon of the last child is dropped: it is known from the type of the child,
             // the rendered strings are not read (reading a concatenated string flattens it)
             let last = "";
             let semicolon = false;
-            for (node = arena.firstChild[data]; node != 0; node = arena.nextSibling[node]) {
+            for (node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
                 nodeType = arena.dataTypes[node];
-                if (nodeType == EnumToken.CommentNodeType) {
+                if (nodeType === EnumToken.CommentNodeType) {
                     const comment = arena.strings[arena.stringValue[node]];
                     str =
                         options.removeComments && (!options.preserveLicense || !comment.startsWith("/*!"))
                             ? ""
                             : comment;
                 }
-                else if (nodeType == EnumToken.DeclarationNodeType) {
+                else if (nodeType === EnumToken.DeclarationNodeType) {
                     // the semicolon is not part of the rendered declaration
                     str = renderDeclaration(arena, node, options, cache, reducer);
                 }
@@ -610,17 +610,17 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                 }
                 str = options.newLine + indentSub + str;
                 children += semicolon ? last + ";" : last;
-                if (nodeType == EnumToken.DeclarationNodeType) {
+                if (nodeType === EnumToken.DeclarationNodeType) {
                     last = str;
                     semicolon = true;
                 }
                 else {
                     // comments are flat strings
-                    semicolon = str.charCodeAt(str.length - 1) == 0x3b;
+                    semicolon = str.charCodeAt(str.length - 1) === 0x3b;
                     last = semicolon ? str.slice(0, -1) : str;
                 }
                 if (sourcemaps != null) {
-                    if (nodeType == EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
+                    if (nodeType === EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
                         // if declaration is child of at-rule, then record it
                         // .rule {
                         //     @media screen {
@@ -632,7 +632,7 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
                     else {
                         move(sourceLocation, linesMap, str);
                     }
-                    if (nodeType == EnumToken.DeclarationNodeType) {
+                    if (nodeType === EnumToken.DeclarationNodeType) {
                         // the semicolon
                         sourceLocation.end++;
                     }
@@ -679,7 +679,7 @@ function endsWithSemicolon(arena, node, rendered) {
             return false;
         default:
             // comments: flat strings
-            return rendered.charCodeAt(rendered.length - 1) == 0x3b;
+            return rendered.charCodeAt(rendered.length - 1) === 0x3b;
     }
 }
 function renderTokenList(tokens, reducer) {
@@ -727,7 +727,7 @@ function renderDeclarationValue(arena, node, minifyValues, reducer) {
     let rendered = "";
     let token = arena.firstToken[node];
     if (!minifyValues) {
-        for (; token != 0; token = arena.nextSibling[token]) {
+        for (; token !== 0; token = arena.nextSibling[token]) {
             rendered = reducer(rendered, token);
         }
         return rendered;
@@ -737,37 +737,37 @@ function renderDeclarationValue(arena, node, minifyValues, reducer) {
     let pending = 0;
     let check = true;
     let dropWhitespace = false;
-    for (; token != 0; token = arena.nextSibling[token]) {
+    for (; token !== 0; token = arena.nextSibling[token]) {
         const type = dataTypes[token];
         if (dropWhitespace) {
             dropWhitespace = false;
-            if (type == EnumToken.WhitespaceTokenType) {
+            if (type === EnumToken.WhitespaceTokenType) {
                 continue;
             }
         }
         if (!check) {
             check = true;
         }
-        else if (type == EnumToken.ImportantTokenType &&
-            pending != 0 &&
+        else if (type === EnumToken.ImportantTokenType &&
+            pending !== 0 &&
             dataTypes[pending] === EnumToken.WhitespaceTokenType) {
             pending = 0;
             check = false;
         }
         else if (tokensfuncSet.has(type) &&
             // color keywords and hex colors are not functions
-            (type != EnumToken.ColorTokenType || arena.firstToken[token] != 0) &&
-            type != EnumToken.WildCardFunctionTokenType &&
-            arena.nextSibling[token] != 0 &&
-            dataTypes[arena.nextSibling[token]] == EnumToken.WhitespaceTokenType) {
+            (type !== EnumToken.ColorTokenType || arena.firstToken[token] !== 0) &&
+            type !== EnumToken.WildCardFunctionTokenType &&
+            arena.nextSibling[token] !== 0 &&
+            dataTypes[arena.nextSibling[token]] === EnumToken.WhitespaceTokenType) {
             dropWhitespace = true;
         }
-        if (pending != 0) {
+        if (pending !== 0) {
             rendered = reducer(rendered, pending);
         }
         pending = token;
     }
-    return pending == 0 ? rendered : reducer(rendered, pending);
+    return pending === 0 ? rendered : reducer(rendered, pending);
 }
 /**
  * shared default arguments of {@link renderValue}: no object is created per call. the cache is only written when
@@ -784,7 +784,7 @@ const defaultCache = Object.create(null);
  */
 function createReducer(arena, options, cache, errors) {
     const reducer = (acc, curr) => {
-        if (arena.dataTypes[curr] == EnumToken.CommentTokenType && options.removeComments) {
+        if (arena.dataTypes[curr] === EnumToken.CommentTokenType && options.removeComments) {
             if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
                 return acc;
             }
@@ -806,11 +806,11 @@ function createReducer(arena, options, cache, errors) {
  */
 function renderReduced(arena, first, options, cache, reducer, errors) {
     let result = "";
-    for (let token = first; token != 0; token = arena.nextSibling[token]) {
+    for (let token = first; token !== 0; token = arena.nextSibling[token]) {
         if (reducer != null) {
             result = reducer(result, token);
         }
-        else if (arena.dataTypes[token] == EnumToken.CommentTokenType && options.removeComments) {
+        else if (arena.dataTypes[token] === EnumToken.CommentTokenType && options.removeComments) {
             if (options.preserveLicense && arena.strings[arena.stringValue[token]].startsWith("/*!")) {
                 result += arena.strings[arena.stringValue[token]];
             }
@@ -832,7 +832,7 @@ function renderReduced(arena, first, options, cache, reducer, errors) {
  */
 function renderList(arena, first, options, cache, reducer, errors) {
     let result = "";
-    for (let token = first; token != 0; token = arena.nextSibling[token]) {
+    for (let token = first; token !== 0; token = arena.nextSibling[token]) {
         result += renderValue(arena, token, options, cache, reducer);
     }
     return result;
@@ -870,7 +870,7 @@ function renderColor(arena, token, options, cache, reducer, errors) {
         if (value != null) {
             token = value;
         }
-        if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+        if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
             return reduceHexValue(arena.strings[arena.stringValue[token]]);
         }
     }
@@ -879,10 +879,10 @@ function renderColor(arena, token, options, cache, reducer, errors) {
         arena.colorType[token] === ColorType.NON_STD) {
         return arena.strings[arena.stringValue[token]];
     }
-    if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+    if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
         return arena.strings[arena.stringValue[token]];
     }
-    if (arena.firstToken[token] == 0) {
+    if (arena.firstToken[token] === 0) {
         // rendered like a function (no argument)
         return ((arena.strings[arena.stringValue[token]] ?? "") +
             "(" +
@@ -893,32 +893,32 @@ function renderColor(arena, token, options, cache, reducer, errors) {
     const count = arena.tokenCount(token);
     const isLegacy = legacyColorFunctions.has(fnName);
     const hasAlpha = alphaColorFunctions.has(fnName);
-    const useAlpha = (hasAlpha && count == (isLegacy ? 7 : 4)) || ("color" == fnName && count == 5);
+    const useAlpha = (hasAlpha && count === (isLegacy ? 7 : 4)) || ("color" === fnName && count === 5);
     let result = "";
     let index = 0;
-    for (let curr = arena.firstToken[token]; curr != 0; curr = arena.nextSibling[curr], index++) {
+    for (let curr = arena.firstToken[token]; curr !== 0; curr = arena.nextSibling[curr], index++) {
         if (trailingSeparator.test(result)) {
-            if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+            if (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType) {
                 result = result.trimEnd();
                 continue;
             }
             result = result.trimStart() + renderValue(arena, curr, options, cache);
             continue;
         }
-        if (isLegacy && arena.dataTypes[curr] == EnumToken.CommaTokenType) {
+        if (isLegacy && arena.dataTypes[curr] === EnumToken.CommaTokenType) {
             result = result.trimEnd() + " ";
         }
-        else if (arena.dataTypes[curr] == EnumToken.WhitespaceTokenType) {
+        else if (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType) {
             result = result.trimEnd() + " ";
         }
-        else if (arena.dataTypes[curr] == EnumToken.CommaTokenType ||
-            (arena.dataTypes[curr] == EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] == "/")) {
-            result = result.trimEnd() + (arena.dataTypes[curr] == EnumToken.CommaTokenType ? "," : "/");
+        else if (arena.dataTypes[curr] === EnumToken.CommaTokenType ||
+            (arena.dataTypes[curr] === EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] === "/")) {
+            result = result.trimEnd() + (arena.dataTypes[curr] === EnumToken.CommaTokenType ? "," : "/");
         }
         else {
             result =
                 result.trimEnd() +
-                    (useAlpha && index == count - 1 ? "/" : " ") +
+                    (useAlpha && index === count - 1 ? "/" : " ") +
                     renderValue(arena, curr, options, cache);
         }
     }
@@ -936,9 +936,9 @@ function renderColor(arena, token, options, cache, reducer, errors) {
  * @private
  */
 function renderValue(arena, token, options = defaultRenderOptions, cache = defaultCache, reducer, errors) {
-    if (arena.dataTypes[token] == EnumToken.ColorTokenType ||
-        arena.firstToken[token] != 0 ||
-        arena.firstChild[token] != 0) {
+    if (arena.dataTypes[token] === EnumToken.ColorTokenType ||
+        arena.firstToken[token] !== 0 ||
+        arena.firstChild[token] !== 0) {
         const memo = getRenderMemo(cache, options);
         if (memo != null) {
             const slot = memo.constructs.token(arena, token);
@@ -1000,16 +1000,16 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             const r = (arena.getChildAt(token, TokenField.R) == null ? null : arena.fieldTokens(token, TokenField.R))[0];
             if (EnumToken.Mul === op || EnumToken.Div === op) {
                 let result = "";
-                if (arena.dataTypes[l] == EnumToken.BinaryExpressionTokenType &&
-                    (arena.numericValue[l] == EnumToken.Add || arena.numericValue[l] == EnumToken.Sub)) {
+                if (arena.dataTypes[l] === EnumToken.BinaryExpressionTokenType &&
+                    (arena.numericValue[l] === EnumToken.Add || arena.numericValue[l] === EnumToken.Sub)) {
                     result = "(" + renderValue(arena, l, options, cache) + ")";
                 }
                 else {
                     result = renderValue(arena, l, options, cache);
                 }
-                result += op == EnumToken.Mul ? "*" : "/";
-                if (arena.dataTypes[r] == EnumToken.BinaryExpressionTokenType &&
-                    (arena.numericValue[r] == EnumToken.Add || arena.numericValue[r] == EnumToken.Sub)) {
+                result += op === EnumToken.Mul ? "*" : "/";
+                if (arena.dataTypes[r] === EnumToken.BinaryExpressionTokenType &&
+                    (arena.numericValue[r] === EnumToken.Add || arena.numericValue[r] === EnumToken.Sub)) {
                     result += "(" + renderValue(arena, r, options, cache) + ")";
                 }
                 else {
@@ -1018,7 +1018,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 return result;
             }
             return (renderValue(arena, l, options, cache) +
-                (op == EnumToken.Add ? " + " : " - ") +
+                (op === EnumToken.Add ? " + " : " - ") +
                 renderValue(arena, r, options, cache));
         }
         case EnumToken.FractionTokenType: {
@@ -1027,7 +1027,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             // inlined: arena.denominator(token)
             const denominator = arena.lastChild[token];
             const fraction = renderValue(arena, numerator) + "/" + renderValue(arena, denominator);
-            if (arena.numericValue[denominator] != 0) {
+            if (arena.numericValue[denominator] !== 0) {
                 const value = minifyNumber(arena.numericValue[numerator] / arena.numericValue[denominator]);
                 if (value.length <= fraction.length) {
                     return value;
@@ -1048,10 +1048,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.WrappedValuesTokenType:
             return "{" + renderList(arena, arena.firstToken[token], options, cache) + "}";
         case EnumToken.ColorTokenType: {
-            if (arena.colorType[token] == ColorType.LIGHT_DARK ||
-                (arena.firstToken[token] != 0 && options.convertColor === false && arena.tokenCount(token) == 2)) {
+            if (arena.colorType[token] === ColorType.LIGHT_DARK ||
+                (arena.firstToken[token] !== 0 && options.convertColor === false && arena.tokenCount(token) === 2)) {
                 let result = "";
-                for (let curr = arena.firstToken[token]; curr != 0; curr = arena.nextSibling[curr]) {
+                for (let curr = arena.firstToken[token]; curr !== 0; curr = arena.nextSibling[curr]) {
                     if (arena.dataTypes[curr] === EnumToken.IdenTokenType) {
                         // the token is updated in place
                         parseColor(arena, curr);
@@ -1068,7 +1068,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 if (arena.dataTypes[arena.firstToken[token]] === EnumToken.BadUrlTokenType) {
                     return "url()";
                 }
-                for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+                for (let child = arena.firstToken[token]; child !== 0; child = arena.nextSibling[child]) {
                     if (arena.dataTypes[child] === EnumToken.StringTokenType) {
                         const val = arena.strings[arena.stringValue[child]];
                         if (val.slice(1, 5) !== "data:" && urlTokenMatcher.test(val)) {
@@ -1095,11 +1095,11 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                             let j;
                             let key;
                             for (i = 0; i < slice.length; i++) {
-                                if (arena.dataTypes[slice[i]] == EnumToken.ColorTokenType ||
+                                if (arena.dataTypes[slice[i]] === EnumToken.ColorTokenType ||
                                     arena.dataTypes[slice[i]] === EnumToken.CommaTokenType) {
                                     break;
                                 }
-                                if (arena.dataTypes[slice[i]] == EnumToken.IdenTokenType &&
+                                if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
                                     equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "to")) {
                                     k = i + 1;
                                     while (k < slice.length &&
@@ -1134,7 +1134,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                                 if (key === "bottom") {
                                                     // to bottom -> 180deg is the default angle and will be removed
                                                     while (k < slice.length &&
-                                                        arena.dataTypes[slice[k]] != EnumToken.CommaTokenType) {
+                                                        arena.dataTypes[slice[k]] !== EnumToken.CommaTokenType) {
                                                         k++;
                                                     }
                                                     slice.splice(i, k - i + 1);
@@ -1147,7 +1147,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                         }
                                     }
                                 }
-                                else if (arena.dataTypes[slice[i]] == EnumToken.AngleTokenType) {
+                                else if (arena.dataTypes[slice[i]] === EnumToken.AngleTokenType) {
                                     if ((180 - arena.numericValue[toDegrees(arena, slice[i])]) % 360 === 0) {
                                         k = i + 1;
                                         // while (k < slice.length && arena.dataTypes[slice[k]] !== EnumToken.CommaTokenType) {
@@ -1408,7 +1408,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                     i++;
                                 }
                                 else if (arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType &&
-                                    arena.dataTypes[slice[i]] != EnumToken.IdenTokenType) {
+                                    arena.dataTypes[slice[i]] !== EnumToken.IdenTokenType) {
                                     angles.push(slice[i++]);
                                 }
                                 while (i < slice.length &&
@@ -1530,13 +1530,13 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.GeneralEnclosedFunctionTokenType:
         case EnumToken.CustomFunctionTokenType:
         case EnumToken.WildCardFunctionTokenType:
-            if (arena.dataTypes[token] == EnumToken.MathFunctionTokenType && arena.tokenCount(token) == 1) {
+            if (arena.dataTypes[token] === EnumToken.MathFunctionTokenType && arena.tokenCount(token) === 1) {
                 // a single argument
                 const first = arena.firstToken[token];
                 const firstType = arena.dataTypes[first];
-                if (firstType != EnumToken.BinaryExpressionTokenType &&
-                    firstType != EnumToken.FractionTokenType &&
-                    firstType != EnumToken.IdenTokenType &&
+                if (firstType !== EnumToken.BinaryExpressionTokenType &&
+                    firstType !== EnumToken.FractionTokenType &&
+                    firstType !== EnumToken.IdenTokenType &&
                     !arena.hasFraction(first)) {
                     return (arena.strings[arena.stringValue[token]] +
                         "(" +
@@ -1621,12 +1621,12 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 ? renderValue(arena, arena.getFraction(token), options, cache)
                 : minifyNumber(arena.numericValue[token]);
             let unit = arena.strings[arena.unit[token]];
-            if (arena.dataTypes[token] == EnumToken.AngleTokenType && !val.includes("/")) {
+            if (arena.dataTypes[token] === EnumToken.AngleTokenType && !val.includes("/")) {
                 const angle = getAngle(arena, token);
                 let v;
                 let value = val + unit;
                 for (const u of angleUnits) {
-                    if (arena.strings[arena.unit[token]] == u) {
+                    if (arena.strings[arena.unit[token]] === u) {
                         continue;
                     }
                     switch (u) {
@@ -1666,20 +1666,20 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 }
             }
             if (val === "0") {
-                if (arena.dataTypes[token] == EnumToken.TimeTokenType) {
+                if (arena.dataTypes[token] === EnumToken.TimeTokenType) {
                     return "0s";
                 }
-                if (arena.dataTypes[token] == EnumToken.FrequencyTokenType) {
+                if (arena.dataTypes[token] === EnumToken.FrequencyTokenType) {
                     return "0Hz";
                 }
                 // @ts-ignore
-                if (arena.dataTypes[token] == EnumToken.ResolutionTokenType) {
+                if (arena.dataTypes[token] === EnumToken.ResolutionTokenType) {
                     return "0x";
                 }
                 return "0";
             }
-            if (arena.dataTypes[token] == EnumToken.TimeTokenType) {
-                if (unit == "ms") {
+            if (arena.dataTypes[token] === EnumToken.TimeTokenType) {
+                if (unit === "ms") {
                     // @ts-ignore
                     const v = minifyNumber(val / 1000);
                     if (v.length + 1 <= val.length) {
@@ -1689,17 +1689,17 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 }
                 return val + "s";
             }
-            if (arena.dataTypes[token] == EnumToken.ResolutionTokenType && unit == "dppx") {
+            if (arena.dataTypes[token] === EnumToken.ResolutionTokenType && unit === "dppx") {
                 unit = "x";
             }
             return val.includes("/") ? val.replace("/", unit + "/") : minifyNumber(toPrecisionValue(val)) + unit;
         case EnumToken.FlexTokenType:
         case EnumToken.PercentageTokenType:
-            const uni = arena.dataTypes[token] == EnumToken.PercentageTokenType ? "%" : "fr";
+            const uni = arena.dataTypes[token] === EnumToken.PercentageTokenType ? "%" : "fr";
             const perc = arena.hasFraction(token)
                 ? renderValue(arena, arena.getFraction(token), options, cache)
                 : minifyNumber(arena.numericValue[token]);
-            return options.minifyValues && perc == "0"
+            return options.minifyValues && perc === "0"
                 ? "0"
                 : perc.includes("/")
                     ? perc.replace("/", uni + "/")
@@ -1725,7 +1725,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.PseudoClassTokenType:
         case EnumToken.PseudoElementTokenType:
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
-            if (arena.dataTypes[token] == EnumToken.PseudoElementTokenType &&
+            if (arena.dataTypes[token] === EnumToken.PseudoElementTokenType &&
                 pseudoElements.includes(arena.strings[arena.stringValue[token]].slice(1))) {
                 return arena.strings[arena.stringValue[token]].slice(1);
             }
@@ -1777,12 +1777,12 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.MediaQueryConditionTokenType: {
             const op = arena.field(token, TokenField.Op);
             const opType = arena.dataTypes[op];
-            const indent = opType == EnumToken.LtTokenType ||
-                opType == EnumToken.GtTokenType ||
-                opType == EnumToken.ColonTokenType ||
-                opType == EnumToken.DelimTokenType ||
-                opType == EnumToken.LteTokenType ||
-                opType == EnumToken.GteTokenType
+            const indent = opType === EnumToken.LtTokenType ||
+                opType === EnumToken.GtTokenType ||
+                opType === EnumToken.ColonTokenType ||
+                opType === EnumToken.DelimTokenType ||
+                opType === EnumToken.LteTokenType ||
+                opType === EnumToken.GteTokenType
                 ? ""
                 : " ";
             return (renderField(arena, token, TokenField.L, options, cache, reducer) +
@@ -1831,15 +1831,15 @@ function renderToken(arena, token, options, cache, reducer, errors) {
 function filterValues(arena, values) {
     let i = 0;
     for (; i < values.length; i++) {
-        if (arena.dataTypes[values[i]] == EnumToken.ImportantTokenType &&
+        if (arena.dataTypes[values[i]] === EnumToken.ImportantTokenType &&
             arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
             values.splice(i - 1, 1);
         }
         else if (tokensfuncSet.has(arena.dataTypes[values[i]]) &&
             // color keywords and hex colors are not functions
-            (arena.dataTypes[values[i]] != EnumToken.ColorTokenType || arena.firstToken[values[i]] != 0) &&
-            arena.dataTypes[values[i]] != EnumToken.WildCardFunctionTokenType &&
-            arena.dataTypes[values[i + 1]] == EnumToken.WhitespaceTokenType) {
+            (arena.dataTypes[values[i]] !== EnumToken.ColorTokenType || arena.firstToken[values[i]] !== 0) &&
+            arena.dataTypes[values[i]] !== EnumToken.WildCardFunctionTokenType &&
+            arena.dataTypes[values[i + 1]] === EnumToken.WhitespaceTokenType) {
             values.splice(i + 1, 1);
         }
     }

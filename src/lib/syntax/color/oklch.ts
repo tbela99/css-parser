@@ -110,7 +110,7 @@ function oklchToken(arena: AstArena, values: number[]): Token | null {
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
 
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -219,7 +219,7 @@ export function getOKLCHComponents(arena: AstArena, token: Token): number[] | nu
     t = components[1];
 
     // @ts-ignore
-    const c: number = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const c: number = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 0.4 : 1);
 
     // @ts-ignore
     t = components[2];
@@ -231,7 +231,7 @@ export function getOKLCHComponents(arena: AstArena, token: Token): number[] | nu
     t = components[3];
 
     const alpha: number =
-        t == null || (arena.dataTypes[t] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] == "none")
+        t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none")
             ? 1
             : getNumber(arena, t);
 

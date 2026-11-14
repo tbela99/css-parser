@@ -300,8 +300,20 @@ var atRules = {
 	}
 };
 var declarations = {
+	"-moz-appearance": {
+		syntax: "none | button | button-arrow-down | button-arrow-next | button-arrow-previous | button-arrow-up | button-bevel | button-focus | caret | checkbox | checkbox-container | checkbox-label | checkmenuitem | dualbutton | groupbox | listbox | listitem | menuarrow | menubar | menucheckbox | menuimage | menuitem | menuitemtext | menulist | menulist-button | menulist-text | menulist-textfield | menupopup | menuradio | menuseparator | meterbar | meterchunk | progressbar | progressbar-vertical | progresschunk | progresschunk-vertical | radio | radio-container | radio-label | radiomenuitem | range | range-thumb | resizer | resizerpanel | scale-horizontal | scalethumbend | scalethumb-horizontal | scalethumbstart | scalethumbtick | scalethumb-vertical | scale-vertical | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | separator | sheet | spinner | spinner-downbutton | spinner-textfield | spinner-upbutton | splitter | statusbar | statusbarpanel | tab | tabpanel | tabpanels | tab-scroll-arrow-back | tab-scroll-arrow-forward | textfield | textfield-multiline | toolbar | toolbarbutton | toolbarbutton-dropdown | toolbargripper | toolbox | tooltip | treeheader | treeheadercell | treeheadersortarrow | treeitem | treeline | treetwisty | treetwistyopen | treeview | -moz-mac-unified-toolbar | -moz-win-borderless-glass | -moz-win-browsertabbar-toolbox | -moz-win-communicationstext | -moz-win-communications-toolbox | -moz-win-exclude-glass | -moz-win-glass | -moz-win-mediatext | -moz-win-media-toolbox | -moz-window-button-box | -moz-window-button-box-maximized | -moz-window-button-close | -moz-window-button-maximize | -moz-window-button-minimize | -moz-window-button-restore | -moz-window-frame-bottom | -moz-window-frame-left | -moz-window-frame-right | -moz-window-titlebar | -moz-window-titlebar-maximized"
+	},
 	"-moz-background-clip": {
 		syntax: "padding | border"
+	},
+	"-moz-binding": {
+		syntax: "<url> | none"
+	},
+	"-moz-border-bottom-colors": {
+		syntax: "<color>+ | none"
+	},
+	"-moz-border-left-colors": {
+		syntax: "<color>+ | none"
 	},
 	"-moz-border-radius-bottomleft": {
 		syntax: "<'border-bottom-left-radius'>"
@@ -315,20 +327,104 @@ var declarations = {
 	"-moz-border-radius-topright": {
 		syntax: "<'border-bottom-right-radius'>"
 	},
+	"-moz-border-right-colors": {
+		syntax: "<color>+ | none"
+	},
+	"-moz-border-top-colors": {
+		syntax: "<color>+ | none"
+	},
+	"-moz-context-properties": {
+		syntax: "none | [ fill | fill-opacity | stroke | stroke-opacity ]#"
+	},
 	"-moz-control-character-visibility": {
 		syntax: "visible | hidden"
+	},
+	"-moz-float-edge": {
+		syntax: "border-box | content-box | margin-box | padding-box"
+	},
+	"-moz-force-broken-image-icon": {
+		syntax: "0 | 1"
+	},
+	"-moz-orient": {
+		syntax: "inline | block | horizontal | vertical"
 	},
 	"-moz-osx-font-smoothing": {
 		syntax: "auto | grayscale"
 	},
+	"-moz-outline-radius": {
+		syntax: "<outline-radius>{1,4} [ / <outline-radius>{1,4} ]?"
+	},
+	"-moz-outline-radius-bottomleft": {
+		syntax: "<outline-radius>"
+	},
+	"-moz-outline-radius-bottomright": {
+		syntax: "<outline-radius>"
+	},
+	"-moz-outline-radius-topleft": {
+		syntax: "<outline-radius>"
+	},
+	"-moz-outline-radius-topright": {
+		syntax: "<outline-radius>"
+	},
 	"-moz-padding-start": {
 		syntax: "<'padding-top'>"
+	},
+	"-moz-stack-sizing": {
+		syntax: "ignore | stretch-to-fit"
+	},
+	"-moz-text-blink": {
+		syntax: "none | blink"
+	},
+	"-moz-user-focus": {
+		syntax: "ignore | normal | select-after | select-before | select-menu | select-same | select-all | none"
+	},
+	"-moz-user-input": {
+		syntax: "auto | none | enabled | disabled"
+	},
+	"-moz-user-modify": {
+		syntax: "read-only | read-write | write-only"
 	},
 	"-moz-user-select": {
 		syntax: "none | text | all | -moz-none | auto"
 	},
+	"-moz-window-dragging": {
+		syntax: "drag | no-drag"
+	},
+	"-moz-window-shadow": {
+		syntax: "default | menu | tooltip | sheet | none"
+	},
+	"-ms-accelerator": {
+		syntax: "false | true"
+	},
+	"-ms-block-progression": {
+		syntax: "tb | rl | bt | lr"
+	},
+	"-ms-content-zoom-chaining": {
+		syntax: "none | chained"
+	},
+	"-ms-content-zoom-limit": {
+		syntax: "<'-ms-content-zoom-limit-min'> <'-ms-content-zoom-limit-max'>"
+	},
+	"-ms-content-zoom-limit-max": {
+		syntax: "<percentage>"
+	},
+	"-ms-content-zoom-limit-min": {
+		syntax: "<percentage>"
+	},
+	"-ms-content-zoom-snap": {
+		syntax: "<'-ms-content-zoom-snap-type'> || <'-ms-content-zoom-snap-points'>"
+	},
+	"-ms-content-zoom-snap-points": {
+		syntax: "snapInterval( <percentage>, <percentage> ) | snapList( <percentage># )"
+	},
+	"-ms-content-zoom-snap-type": {
+		syntax: "none | proximity | mandatory"
+	},
+	"-ms-content-zooming": {
+		syntax: "none | zoom"
+	},
 	"-ms-filter": {
-		syntax: "<string>"
+		syntax: " <string>"
 	},
 	"-ms-flex-align": {
 		syntax: "start | end | center | baseline | stretch"
@@ -354,26 +450,251 @@ var declarations = {
 	"-ms-flex-preferred-size": {
 		syntax: "<'flex-basis'>"
 	},
+	"-ms-flow-from": {
+		syntax: "[ none | <custom-ident> ]#"
+	},
+	"-ms-flow-into": {
+		syntax: "[ none | <custom-ident> ]#"
+	},
 	"-ms-grid-column-align": {
 		syntax: "start | end | center | stretch"
+	},
+	"-ms-grid-columns": {
+		syntax: "none | <track-list> | <auto-track-list>"
 	},
 	"-ms-grid-row-align": {
 		syntax: "start | end | center | stretch"
 	},
+	"-ms-grid-rows": {
+		syntax: "none | <track-list> | <auto-track-list>"
+	},
+	"-ms-high-contrast-adjust": {
+		syntax: "auto | none"
+	},
+	"-ms-hyphenate-limit-chars": {
+		syntax: "auto | <integer>{1,3}"
+	},
 	"-ms-hyphenate-limit-last": {
 		syntax: "none | always | column | page | spread"
+	},
+	"-ms-hyphenate-limit-lines": {
+		syntax: "no-limit | <integer>"
+	},
+	"-ms-hyphenate-limit-zone": {
+		syntax: "<percentage> | <length>"
+	},
+	"-ms-ime-align": {
+		syntax: "auto | after"
 	},
 	"-ms-interpolation-mode": {
 		syntax: "nearest-neighbor | bicubic"
 	},
 	"-ms-overflow-style": {
-		syntax: "auto | none | scrollbar | -ms-autohiding-scrollbar"
+		syntax: " auto | none | scrollbar | -ms-autohiding-scrollbar"
+	},
+	"-ms-scroll-chaining": {
+		syntax: "chained | none"
+	},
+	"-ms-scroll-limit": {
+		syntax: "<'-ms-scroll-limit-x-min'> <'-ms-scroll-limit-y-min'> <'-ms-scroll-limit-x-max'> <'-ms-scroll-limit-y-max'>"
+	},
+	"-ms-scroll-limit-x-max": {
+		syntax: "auto | <length>"
+	},
+	"-ms-scroll-limit-x-min": {
+		syntax: "<length>"
+	},
+	"-ms-scroll-limit-y-max": {
+		syntax: "auto | <length>"
+	},
+	"-ms-scroll-limit-y-min": {
+		syntax: "<length>"
+	},
+	"-ms-scroll-rails": {
+		syntax: "none | railed"
+	},
+	"-ms-scroll-snap-points-x": {
+		syntax: "snapInterval( <length-percentage>, <length-percentage> ) | snapList( <length-percentage># )"
+	},
+	"-ms-scroll-snap-points-y": {
+		syntax: "snapInterval( <length-percentage>, <length-percentage> ) | snapList( <length-percentage># )"
+	},
+	"-ms-scroll-snap-type": {
+		syntax: "none | proximity | mandatory"
+	},
+	"-ms-scroll-snap-x": {
+		syntax: "<'-ms-scroll-snap-type'> <'-ms-scroll-snap-points-x'>"
+	},
+	"-ms-scroll-snap-y": {
+		syntax: "<'-ms-scroll-snap-type'> <'-ms-scroll-snap-points-y'>"
+	},
+	"-ms-scroll-translation": {
+		syntax: "none | vertical-to-horizontal"
+	},
+	"-ms-scrollbar-3dlight-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-arrow-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-base-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-darkshadow-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-face-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-highlight-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-shadow-color": {
+		syntax: "<color>"
+	},
+	"-ms-scrollbar-track-color": {
+		syntax: "<color>"
+	},
+	"-ms-text-autospace": {
+		syntax: "none | ideograph-alpha | ideograph-numeric | ideograph-parenthesis | ideograph-space"
+	},
+	"-ms-touch-select": {
+		syntax: "grippers | none"
+	},
+	"-ms-user-select": {
+		syntax: "none | element | text"
+	},
+	"-ms-wrap-flow": {
+		syntax: "auto | both | start | end | maximum | clear"
+	},
+	"-ms-wrap-margin": {
+		syntax: "<length>"
+	},
+	"-ms-wrap-through": {
+		syntax: "wrap | none"
+	},
+	"-webkit-align-content": {
+		alias: "align-content"
+	},
+	"-webkit-align-items": {
+		alias: "align-items"
+	},
+	"-webkit-align-self": {
+		alias: "align-self"
+	},
+	"-webkit-animation": {
+		alias: "animation"
+	},
+	"-webkit-animation-delay": {
+		alias: "animation-delay"
+	},
+	"-webkit-animation-direction": {
+		alias: "animation-direction"
+	},
+	"-webkit-animation-duration": {
+		alias: "animation-duration"
+	},
+	"-webkit-animation-fill-mode": {
+		alias: "animation-fill-mode"
+	},
+	"-webkit-animation-iteration-count": {
+		alias: "animation-iteration-count"
+	},
+	"-webkit-animation-name": {
+		alias: "animation-name"
+	},
+	"-webkit-animation-play-state": {
+		alias: "animation-play-state"
+	},
+	"-webkit-animation-timing-function": {
+		alias: "animation-timing-function"
 	},
 	"-webkit-appearance": {
-		syntax: "none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
+		syntax: "<'appearance'> | none | button | button-bevel | caps-lock-indicator | caret | checkbox | default-button | inner-spin-button | listbox | listitem | media-controls-background | media-controls-fullscreen-background | media-current-time-display | media-enter-fullscreen-button | media-exit-fullscreen-button | media-fullscreen-button | media-mute-button | media-overlay-play-button | media-play-button | media-seek-back-button | media-seek-forward-button | media-slider | media-sliderthumb | media-time-remaining-display | media-toggle-closed-captions-button | media-volume-slider | media-volume-slider-container | media-volume-sliderthumb | menulist | menulist-button | menulist-text | menulist-textfield | meter | progress-bar | progress-bar-value | push-button | radio | scrollbarbutton-down | scrollbarbutton-left | scrollbarbutton-right | scrollbarbutton-up | scrollbargripper-horizontal | scrollbargripper-vertical | scrollbarthumb-horizontal | scrollbarthumb-vertical | scrollbartrack-horizontal | scrollbartrack-vertical | searchfield | searchfield-cancel-button | searchfield-decoration | searchfield-results-button | searchfield-results-decoration | slider-horizontal | slider-vertical | sliderthumb-horizontal | sliderthumb-vertical | square-button | textarea | textfield | -apple-pay-button"
+	},
+	"-webkit-backface-visibility": {
+		alias: "backface-visibility"
 	},
 	"-webkit-background-clip": {
-		syntax: " [ <visual-box> | border | padding | content | text ]#"
+		syntax: "<'background-clip'> | [ <bg-clip> | border | padding | content | text ]#"
+	},
+	"-webkit-background-origin": {
+		alias: "background-origin"
+	},
+	"-webkit-background-size": {
+		alias: "background-size"
+	},
+	"-webkit-border-after": {
+		syntax: "<'border-top'>"
+	},
+	"-webkit-border-after-color": {
+		syntax: "<'border-top-color'>"
+	},
+	"-webkit-border-after-style": {
+		syntax: "<'border-top-style'>"
+	},
+	"-webkit-border-after-width": {
+		syntax: "<'border-top-width'>"
+	},
+	"-webkit-border-before": {
+		syntax: "<'border-top'>"
+	},
+	"-webkit-border-before-color": {
+		syntax: "<'border-top-color'>"
+	},
+	"-webkit-border-before-style": {
+		syntax: "<'border-top-style'>"
+	},
+	"-webkit-border-before-width": {
+		syntax: "<'border-top-width'>"
+	},
+	"-webkit-border-bottom-left-radius": {
+		alias: "border-bottom-left-radius"
+	},
+	"-webkit-border-bottom-right-radius": {
+		alias: "border-bottom-right-radius"
+	},
+	"-webkit-border-end": {
+		syntax: "<'border-top'>"
+	},
+	"-webkit-border-end-color": {
+		syntax: "<'border-top-color'>"
+	},
+	"-webkit-border-end-style": {
+		syntax: "<'border-top-style'>"
+	},
+	"-webkit-border-end-width": {
+		syntax: "<'border-top-width'>"
+	},
+	"-webkit-border-radius": {
+		alias: "border-radius"
+	},
+	"-webkit-border-start": {
+		syntax: "<'border-top'>"
+	},
+	"-webkit-border-start-color": {
+		syntax: "<'border-top-color'>"
+	},
+	"-webkit-border-start-style": {
+		syntax: "<'border-top-style'>"
+	},
+	"-webkit-border-start-width": {
+		syntax: "<'border-top-width'>"
+	},
+	"-webkit-border-top-left-radius": {
+		alias: "border-top-left-radius"
+	},
+	"-webkit-border-top-right-radius": {
+		alias: "border-top-right-radius"
+	},
+	"-webkit-box-reflect": {
+		syntax: "[ above | below | right | left ]? <length>? <image>?"
+	},
+	"-webkit-box-shadow": {
+		alias: "box-shadow"
+	},
+	"-webkit-box-sizing": {
+		alias: "box-sizing"
 	},
 	"-webkit-column-break-after": {
 		syntax: "always | auto | avoid"
@@ -384,8 +705,35 @@ var declarations = {
 	"-webkit-column-break-inside": {
 		syntax: "always | auto | avoid"
 	},
+	"-webkit-filter": {
+		alias: "filter"
+	},
+	"-webkit-flex": {
+		alias: "flex"
+	},
+	"-webkit-flex-basis": {
+		alias: "flex-basis"
+	},
+	"-webkit-flex-direction": {
+		alias: "flex-direction"
+	},
+	"-webkit-flex-flow": {
+		alias: "flex-flow"
+	},
+	"-webkit-flex-grow": {
+		alias: "flex-grow"
+	},
+	"-webkit-flex-shrink": {
+		alias: "flex-shrink"
+	},
+	"-webkit-flex-wrap": {
+		alias: "flex-wrap"
+	},
 	"-webkit-font-smoothing": {
 		syntax: "auto | none | antialiased | subpixel-antialiased"
+	},
+	"-webkit-justify-content": {
+		alias: "justify-content"
 	},
 	"-webkit-line-clamp": {
 		syntax: "none | <integer [1,∞]>"
@@ -393,17 +741,89 @@ var declarations = {
 	"-webkit-margin-end": {
 		syntax: "<'margin-block-end'>"
 	},
+	"-webkit-mask": {
+		syntax: "<'mask'> | [ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <geometry-box> | border | padding | content | text ] || [ <geometry-box> | no-clip | border | padding | content | text ] || [ <compositing-operator> | <composite-style> ] || <masking-mode> ]#"
+	},
+	"-webkit-mask-attachment": {
+		syntax: "<attachment>#"
+	},
 	"-webkit-mask-box-image": {
-		syntax: "[ <url> | <gradient> | none ] [ <length-percentage>{4} <-webkit-mask-box-repeat>{2} ]?"
+		syntax: "<'mask-border'> | [ <url> | <gradient> | none ] [ <length-percentage>{4} <-webkit-mask-box-repeat>{2} ]?"
+	},
+	"-webkit-mask-box-image-outset": {
+		alias: "mask-border-outset"
+	},
+	"-webkit-mask-box-image-repeat": {
+		alias: "mask-border-repeat"
+	},
+	"-webkit-mask-box-image-slice": {
+		alias: "mask-border-slice"
+	},
+	"-webkit-mask-box-image-source": {
+		alias: "mask-border-source"
+	},
+	"-webkit-mask-box-image-width": {
+		alias: "mask-border-width"
+	},
+	"-webkit-mask-clip": {
+		syntax: "<'mask-clip'> | [ <coord-box> | no-clip | border | padding | content | text ]#"
+	},
+	"-webkit-mask-composite": {
+		syntax: "<'mask-composite'> | [ <compositing-operator> | <composite-style> ]#"
+	},
+	"-webkit-mask-image": {
+		alias: "mask-image"
+	},
+	"-webkit-mask-origin": {
+		syntax: "<'mask-origin'> | [ <coord-box> | border | padding | content ]#"
+	},
+	"-webkit-mask-position": {
+		alias: "mask-position"
+	},
+	"-webkit-mask-position-x": {
+		syntax: "[ <length-percentage> | left | center | right ]#"
+	},
+	"-webkit-mask-position-y": {
+		syntax: "[ <length-percentage> | top | center | bottom ]#"
+	},
+	"-webkit-mask-repeat": {
+		alias: "mask-repeat"
+	},
+	"-webkit-mask-repeat-x": {
+		syntax: "repeat | no-repeat | space | round"
+	},
+	"-webkit-mask-repeat-y": {
+		syntax: "repeat | no-repeat | space | round"
+	},
+	"-webkit-mask-size": {
+		alias: "mask-size"
+	},
+	"-webkit-order": {
+		alias: "order"
+	},
+	"-webkit-overflow-scrolling": {
+		syntax: "auto | touch"
+	},
+	"-webkit-perspective": {
+		alias: "perspective"
+	},
+	"-webkit-perspective-origin": {
+		alias: "perspective-origin"
 	},
 	"-webkit-print-color-adjust": {
 		syntax: "economy | exact"
+	},
+	"-webkit-tap-highlight-color": {
+		syntax: "<color>"
 	},
 	"-webkit-text-fill-color": {
 		syntax: "<color>"
 	},
 	"-webkit-text-security": {
 		syntax: "none | circle | disc | square"
+	},
+	"-webkit-text-size-adjust": {
+		alias: "text-size-adjust"
 	},
 	"-webkit-text-stroke": {
 		syntax: "<line-width> || <color>"
@@ -414,8 +834,38 @@ var declarations = {
 	"-webkit-text-stroke-width": {
 		syntax: "<line-width>"
 	},
+	"-webkit-touch-callout": {
+		syntax: "default | none"
+	},
+	"-webkit-transform": {
+		alias: "transform"
+	},
+	"-webkit-transform-origin": {
+		alias: "transform-origin"
+	},
+	"-webkit-transform-style": {
+		alias: "transform-style"
+	},
+	"-webkit-transition": {
+		alias: "transition"
+	},
+	"-webkit-transition-delay": {
+		alias: "transition-delay"
+	},
+	"-webkit-transition-duration": {
+		alias: "transition-duration"
+	},
+	"-webkit-transition-property": {
+		alias: "transition-property"
+	},
+	"-webkit-transition-timing-function": {
+		alias: "transition-timing-function"
+	},
 	"-webkit-user-drag": {
 		syntax: "none | element | auto"
+	},
+	"-webkit-user-modify": {
+		syntax: "read-only | read-write | read-write-plaintext-only"
 	},
 	"-webkit-user-select": {
 		syntax: "auto | text | none | contain | all"
@@ -431,6 +881,9 @@ var declarations = {
 	},
 	"align-self": {
 		syntax: "auto | <overflow-position>? [ normal | <self-position> ]| stretch | <baseline-position> | anchor-center"
+	},
+	"align-tracks": {
+		syntax: "[ normal | <baseline-position> | <content-distribution> | <overflow-position>? <content-position> ]#"
 	},
 	"alignment-baseline": {
 		syntax: "baseline | <baseline-metric>"
@@ -577,7 +1030,7 @@ var declarations = {
 		syntax: "<url>+"
 	},
 	"block-ellipsis": {
-		syntax: "no-ellipsis | ellipsis | <string>"
+		syntax: "no-ellipsis | auto | <string>"
 	},
 	"block-size": {
 		syntax: "auto | <box-size> | <anchor-size()>"
@@ -858,8 +1311,32 @@ var declarations = {
 	bottom: {
 		syntax: "auto | <length-percentage> | <anchor()> | <anchor-size()>"
 	},
+	"box-align": {
+		syntax: "start | center | end | baseline | stretch"
+	},
 	"box-decoration-break": {
 		syntax: "slice | clone"
+	},
+	"box-direction": {
+		syntax: "normal | reverse | inherit"
+	},
+	"box-flex": {
+		syntax: "<number>"
+	},
+	"box-flex-group": {
+		syntax: "<integer>"
+	},
+	"box-lines": {
+		syntax: "single | multiple"
+	},
+	"box-ordinal-group": {
+		syntax: "<integer>"
+	},
+	"box-orient": {
+		syntax: "horizontal | vertical | inline-axis | block-axis | inherit"
+	},
+	"box-pack": {
+		syntax: "start | center | end | justify"
 	},
 	"box-shadow": {
 		syntax: "<spread-shadow>#"
@@ -997,7 +1474,7 @@ var declarations = {
 		syntax: "none | <integer [1,∞]> | all | auto"
 	},
 	"column-width": {
-		syntax: "auto | <box-size> | auto | <box-size>"
+		syntax: "auto | <box-size>"
 	},
 	"column-wrap": {
 		syntax: "auto | nowrap | wrap"
@@ -1036,43 +1513,43 @@ var declarations = {
 		syntax: "normal | [ [ size | inline-size ] || scroll-state ]"
 	},
 	content: {
-		syntax: "normal | none | [ <content-replacement> | <content-list> ] [/ <alt-text> ]? | <element()>"
+		syntax: "normal | none | [ <content-replacement> | [ [ <string> | <image> | <attr()> | contents | <quote> | <leader()> | <target> | <string()> | <content()> | <counter> | <symbolic-counter-style> ]+ ] ] [/ [ <string> | <counter> | <attr()> ]+ ]? | <element()>"
 	},
 	"content-visibility": {
 		syntax: "visible | auto | hidden"
 	},
 	"continue": {
-		syntax: "normal | discard | collapse | -webkit-legacy | overflow | paginate | fragments"
+		syntax: "auto | discard | collapse | -webkit-legacy | overflow | paginate | fragments"
 	},
 	"copy-into": {
 		syntax: "none | [ [ <custom-ident> <content-level>] [, <custom-ident> <content-level>]* ]?"
 	},
 	corner: {
-		syntax: "<'corner-shape'> || <'border-radius'>"
+		syntax: "<'border-radius'> || <'corner-shape'>"
 	},
 	"corner-block-end": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-block-end-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-block-start": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-block-start-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-bottom": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-bottom-left": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-bottom-left-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-bottom-right": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-bottom-right-shape": {
 		syntax: "<corner-shape-value>"
@@ -1081,37 +1558,37 @@ var declarations = {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-end-end": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-end-end-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-end-start": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-end-start-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-inline-end": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-inline-end-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-inline-start": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-inline-start-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-left": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-left-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
 	},
 	"corner-right": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-right-shape": {
 		syntax: "<'corner-top-left-shape'>{1,2}"
@@ -1120,28 +1597,28 @@ var declarations = {
 		syntax: "<'corner-top-left-shape'>{1,4}"
 	},
 	"corner-start-end": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-start-end-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-start-start": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-start-start-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-top": {
-		syntax: "<'corner-top-shape'> || <'border-top-radius'>"
+		syntax: "<'border-top-radius'> || <'corner-top-shape'>"
 	},
 	"corner-top-left": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-top-left-shape": {
 		syntax: "<corner-shape-value>"
 	},
 	"corner-top-right": {
-		syntax: "<'corner-top-left-shape'> || <'border-top-left-radius'>"
+		syntax: "<'border-top-left-radius'> || <'corner-top-left-shape'>"
 	},
 	"corner-top-right-shape": {
 		syntax: "<corner-shape-value>"
@@ -1201,7 +1678,7 @@ var declarations = {
 		syntax: "none | <dashed-ident>#"
 	},
 	"event-trigger-source": {
-		syntax: "[ none | <event-function>+ [ / <event-function>+ ]? ]#"
+		syntax: "[ none | <event-trigger-event>+ [ / <event-trigger-event>+ ]? ]#"
 	},
 	"field-sizing": {
 		syntax: "fixed | content"
@@ -1238,9 +1715,6 @@ var declarations = {
 	},
 	filter: {
 		syntax: "none | <filter-value-list> | <-ms-filter-function-list>"
-	},
-	"fit-tolerance": {
-		syntax: "normal | <length-percentage [0,∞]> | infinite"
 	},
 	flex: {
 		syntax: "none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]"
@@ -1290,6 +1764,9 @@ var declarations = {
 	"flow-into": {
 		syntax: "none | <custom-ident> [element | content]?"
 	},
+	"flow-tolerance": {
+		syntax: "normal | <length-percentage [0,∞]> | infinite"
+	},
 	font: {
 		syntax: "[ [ <'font-style'> || <font-variant-css2> || <'font-weight'> || <font-width-css3> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'># ] | <system-font-family-name> | [ <'font-size'> [ / <'line-height'> ]? <'font-family'># ]"
 	},
@@ -1316,6 +1793,9 @@ var declarations = {
 	},
 	"font-size-adjust": {
 		syntax: "none | [ ex-height | cap-height | ch-width | ic-width | ic-height ]? [ from-font | <number [0,∞]> ]"
+	},
+	"font-smooth": {
+		syntax: "auto | never | always | <absolute-size> | <length>"
 	},
 	"font-style": {
 		syntax: "normal | italic | left | right | oblique <angle [-90deg,90deg]>?"
@@ -1470,6 +1950,9 @@ var declarations = {
 	"image-resolution": {
 		syntax: "[ from-image || <resolution> ] && snap?"
 	},
+	"ime-mode": {
+		syntax: "auto | normal | active | inactive | disabled"
+	},
 	"initial-letter": {
 		syntax: "normal | <number [1,∞]> <integer [1,∞]> | <number [1,∞]> && [ drop | raise ]?"
 	},
@@ -1536,6 +2019,9 @@ var declarations = {
 	"justify-self": {
 		syntax: "auto | <overflow-position>? [ normal | <self-position> | left | right ] | stretch | <baseline-position> | anchor-center"
 	},
+	"justify-tracks": {
+		syntax: "[ normal | <content-distribution> | <overflow-position>? [ <content-position> | left | right ] ]#"
+	},
 	kerning: {
 		syntax: "auto | <svg-length>"
 	},
@@ -1552,7 +2038,7 @@ var declarations = {
 		syntax: "auto | loose | normal | strict | anywhere"
 	},
 	"line-clamp": {
-		syntax: "none | [<'max-lines'> || <'block-ellipsis'>] -webkit-legacy?"
+		syntax: "none | [<integer [1,∞]> || <'block-ellipsis'>] -webkit-legacy?"
 	},
 	"line-fit-edge": {
 		syntax: "leading | <text-edge>"
@@ -1692,6 +2178,9 @@ var declarations = {
 	"mask-type": {
 		syntax: "luminance | alpha"
 	},
+	"masonry-auto-flow": {
+		syntax: "[ pack | next ] || [ definite-first | ordered ]"
+	},
 	"math-depth": {
 		syntax: "auto-add | add(<integer>) | <integer>"
 	},
@@ -1711,7 +2200,7 @@ var declarations = {
 		syntax: "none | <box-size> | <anchor-size()>"
 	},
 	"max-lines": {
-		syntax: "auto || <integer [1,∞]>"
+		syntax: "none | <integer [1,∞]>"
 	},
 	"max-size": {
 		syntax: "<'max-width'> <'max-height'>?"
@@ -1811,6 +2300,9 @@ var declarations = {
 	},
 	"overflow-block": {
 		syntax: "visible | hidden | clip | scroll | auto | <-non-standard-overflow>"
+	},
+	"overflow-clip-box": {
+		syntax: "padding-box | content-box"
 	},
 	"overflow-clip-margin": {
 		syntax: "<visual-box> || <length>"
@@ -1924,7 +2416,7 @@ var declarations = {
 		syntax: "normal | [ fill || stroke || markers ]"
 	},
 	"path-length": {
-		syntax: "none | <length [0,∞]>"
+		syntax: "none | <length> [0,∞]"
 	},
 	pause: {
 		syntax: "<'pause-before'> <'pause-after'>?"
@@ -1990,7 +2482,7 @@ var declarations = {
 		syntax: "economy | exact"
 	},
 	quotes: {
-		syntax: "auto | none | bikeshed-this | [ <string> <string> ]+"
+		syntax: "auto | none | match-parent | [ <string> <string> ]+"
 	},
 	r: {
 		syntax: "<length-percentage>"
@@ -2208,11 +2700,29 @@ var declarations = {
 	"scroll-snap-align": {
 		syntax: "[ none | start | end | center ]{1,2}"
 	},
+	"scroll-snap-coordinate": {
+		syntax: "none | <position>#"
+	},
+	"scroll-snap-destination": {
+		syntax: "<position>"
+	},
+	"scroll-snap-points-x": {
+		syntax: "none | repeat( <length-percentage> )"
+	},
+	"scroll-snap-points-y": {
+		syntax: "none | repeat( <length-percentage> )"
+	},
 	"scroll-snap-stop": {
 		syntax: "normal | always"
 	},
 	"scroll-snap-type": {
 		syntax: "none | [ x | y | block | inline | both | pair ] [ mandatory | proximity ]?"
+	},
+	"scroll-snap-type-x": {
+		syntax: "none | mandatory | proximity"
+	},
+	"scroll-snap-type-y": {
+		syntax: "none | mandatory | proximity"
 	},
 	"scroll-target-group": {
 		syntax: "none | auto"
@@ -2482,7 +2992,7 @@ var declarations = {
 		syntax: "none | all | <dashed-ident>#"
 	},
 	"timeline-trigger": {
-		syntax: "none | [ <'timeline-trigger-name'> <'timeline-trigger-source'> [ <'timeline-trigger-range'> ]? ]#"
+		syntax: "none | [ <'timeline-trigger-name'> <'timeline-trigger-source'> <'timeline-trigger-activation-range'> [ / <'timeline-trigger-active-range'> ]? ]#"
 	},
 	"timeline-trigger-activation-range": {
 		syntax: "[ <'timeline-trigger-activation-range-start'> <'timeline-trigger-activation-range-end'>? ]#"
@@ -2504,9 +3014,6 @@ var declarations = {
 	},
 	"timeline-trigger-name": {
 		syntax: "none | <dashed-ident>#"
-	},
-	"timeline-trigger-range": {
-		syntax: "[ <'timeline-trigger-activation-range'> [ / <'timeline-trigger-active-range'> ]? ]#"
 	},
 	"timeline-trigger-source": {
 		syntax: "[ none | auto | [ <dashed-ident> | <scroll()> | <view()> ]+ ]#"
@@ -3281,6 +3788,75 @@ var selectors = {
 	":-webkit-any()": {
 		syntax: ":-webkit-any( <forgiving-selector-list> )"
 	},
+	"::-moz-progress-bar": {
+		syntax: "::-moz-progress-bar"
+	},
+	"::-moz-range-progress": {
+		syntax: "::-moz-range-progress"
+	},
+	"::-moz-range-thumb": {
+		syntax: "::-moz-range-thumb"
+	},
+	"::-moz-range-track": {
+		syntax: "::-moz-range-track"
+	},
+	"::-ms-browse": {
+		syntax: "::-ms-browse"
+	},
+	"::-ms-check": {
+		syntax: "::-ms-check"
+	},
+	"::-ms-clear": {
+		syntax: "::-ms-clear"
+	},
+	"::-ms-expand": {
+		syntax: "::-ms-expand"
+	},
+	"::-ms-fill": {
+		syntax: "::-ms-fill"
+	},
+	"::-ms-fill-lower": {
+		syntax: "::-ms-fill-lower"
+	},
+	"::-ms-fill-upper": {
+		syntax: "::-ms-fill-upper"
+	},
+	"::-ms-reveal": {
+		syntax: "::-ms-reveal"
+	},
+	"::-ms-thumb": {
+		syntax: "::-ms-thumb"
+	},
+	"::-ms-ticks-after": {
+		syntax: "::-ms-ticks-after"
+	},
+	"::-ms-ticks-before": {
+		syntax: "::-ms-ticks-before"
+	},
+	"::-ms-tooltip": {
+		syntax: "::-ms-tooltip"
+	},
+	"::-ms-track": {
+		syntax: "::-ms-track"
+	},
+	"::-ms-value": {
+		syntax: "::-ms-value"
+	},
+	"::-webkit-progress-bar": {
+		syntax: "::-webkit-progress-bar"
+	},
+	"::-webkit-progress-inner-value": {
+		syntax: "::-webkit-progress-inner-value"
+	},
+	"::-webkit-progress-value": {
+		syntax: "::-webkit-progress-value"
+	},
+	"::-webkit-slider-runnable-track": {
+		syntax: "::-webkit-slider-runnable-track"
+	},
+	"::-webkit-slider-thumb": {
+		syntax: "::-webkit-slider-thumb"
+	},
 	"::after": {
 		syntax: "::after"
 	},
@@ -3339,10 +3915,7 @@ var selectors = {
 		syntax: "::grammar-error"
 	},
 	"::highlight()": {
-		syntax: "::highlight(<highlight-name-selector>)"
-	},
-	"::interest-button": {
-		syntax: "::interest-button"
+		syntax: "::highlight(<custom-ident>)"
 	},
 	"::marker": {
 		syntax: "::marker"
@@ -3716,6 +4289,9 @@ var selectors = {
 	":target-current": {
 		syntax: ":target-current"
 	},
+	":target-within": {
+		syntax: ":target-within"
+	},
 	":unchecked": {
 		syntax: ":unchecked"
 	},
@@ -3898,17 +4474,11 @@ var syntaxes = {
 	"calc()": {
 		syntax: "calc( <calc-sum> )"
 	},
-	"change()": {
-		syntax: "change()"
-	},
 	"circle()": {
 		syntax: "circle( <radial-size>? [ at <position> ]? )"
 	},
 	"clamp()": {
 		syntax: "clamp( [ <calc-sum> | none ], <calc-sum>, [ <calc-sum> | none ] )"
-	},
-	"click()": {
-		syntax: "click()"
 	},
 	"color-interpolate()": {
 		syntax: "color-interpolate( [ <progress-source> && [ by <easing-function> ]? && <easing-function>? && <color-interpolation-method>? ] , <input-position>{1,2} : <color>, [ [ <easing-function> || <color-interpolation-method> ]?, <input-position>{1,2} : <color> ]#? )"
@@ -3924,6 +4494,9 @@ var syntaxes = {
 	},
 	"composes-selector": {
 		syntax: "<ident>+ [from [global&&<string>]]?"
+	},
+	"composite-style": {
+		syntax: "clear | copy | source-over | source-in | source-out | source-atop | destination-over | destination-in | destination-out | destination-atop | xor"
 	},
 	"conic-gradient()": {
 		syntax: "conic-gradient( [ <conic-gradient-syntax> ] )"
@@ -3957,9 +4530,6 @@ var syntaxes = {
 	},
 	"cycle()": {
 		syntax: "cycle( <whole-value># )"
-	},
-	"dblclick()": {
-		syntax: "dblclick()"
 	},
 	declaration: {
 		syntax: "<ident-token> : <declaration-value>? [ '!' important ]?"
@@ -4002,12 +4572,6 @@ var syntaxes = {
 	},
 	"fit-content()": {
 		syntax: "fit-content( <length-percentage> )"
-	},
-	"focusin()": {
-		syntax: "focusin()"
-	},
-	"focusout()": {
-		syntax: "focusout()"
 	},
 	"font-feature-custom-ident": {
 		syntax: "<integer>"
@@ -4099,9 +4663,6 @@ var syntaxes = {
 	"inherit()": {
 		syntax: "inherit( <custom-property-name>, <declaration-value>? )"
 	},
-	"input()": {
-		syntax: "input()"
-	},
 	"inset-area": {
 		syntax: "[ [ left | center | right | span-left | span-right | x-start | x-end | span-x-start | span-x-end | x-self-start | x-self-end | span-x-self-start | span-x-self-end | span-all ] || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end | y-self-start | y-self-end | span-y-self-start | span-y-self-end | span-all ] | [ block-start | center | block-end | span-block-start | span-block-end | span-all ] || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ] | [ self-block-start | self-block-end | span-self-block-start | span-self-block-end | span-all ] || [ self-inline-start | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ] | [ start | center | end | span-start | span-end | span-all ]{1,2} | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2} ]"
 	},
@@ -4125,9 +4686,6 @@ var syntaxes = {
 	},
 	"keyframe-selectors": {
 		syntax: "<keyframe-selector>#"
-	},
-	"keypress()": {
-		syntax: "keypress( <string>? )"
 	},
 	"lab()": {
 		syntax: "lab([from <color>]? [<percentage> | <number> | none] [<percentage> | <number> | none] [<percentage> | <number> | none] [ / [<alpha-value> | none] ]? ) | lab(from <color> <relative-lab-component>{3} [ / [ <alpha-value> | none ] ]? )"
@@ -4198,6 +4756,9 @@ var syntaxes = {
 	"opacity()": {
 		syntax: "opacity( [ <number> | <percentage> ]? )"
 	},
+	"outline-radius": {
+		syntax: "<length> | <percentage>"
+	},
 	"paint()": {
 		syntax: "paint( <ident>, <declaration-value>? )"
 	},
@@ -4215,18 +4776,6 @@ var syntaxes = {
 	},
 	"pointer()": {
 		syntax: "pointer( [ <pointer-source> || <pointer-axis> ]? )"
-	},
-	"pointerdown()": {
-		syntax: "pointerdown()"
-	},
-	"pointerenter()": {
-		syntax: "pointerenter()"
-	},
-	"pointerleave()": {
-		syntax: "pointerleave()"
-	},
-	"pointerup()": {
-		syntax: "pointerup()"
 	},
 	"polygon()": {
 		syntax: "polygon( <'fill-rule'>? [ round <length> ]? , [<length-percentage> <length-percentage>]# )"
@@ -4530,9 +5079,6 @@ var types = {
 	"alpha-value": {
 		syntax: "<number> | <percentage> | none"
 	},
-	"alt-text": {
-		syntax: "[ <string> | <counter> | <attr()> ]+"
-	},
 	"anchor-name": {
 		syntax: "<dashed-ident>"
 	},
@@ -4666,7 +5212,7 @@ var types = {
 		syntax: "<slash-separated-border-radius-syntax> | <legacy-border-radius-syntax>"
 	},
 	"box-size": {
-		syntax: "<length-percentage [0,∞]> | stretch | contain | min-content | max-content | fit-content | stretch(<length-percentage [0,∞]>) | fit-content(<length-percentage [0,∞]>) | <calc-size()>"
+		syntax: "<length-percentage [0,∞]> | stretch | contain | min-content | max-content | fit-content | fit-content(<length-percentage [0,∞]>) | <calc-size()>"
 	},
 	"calc-keyword": {
 		syntax: "e | pi | infinity | -infinity | NaN"
@@ -4687,7 +5233,7 @@ var types = {
 		syntax: "[ <image> | <color> ] && <percentage [0,100]>?"
 	},
 	"class-selector": {
-		syntax: "'.' <ident-token> '*'?"
+		syntax: "'.' <ident-token>"
 	},
 	"clip-source": {
 		syntax: "<url>"
@@ -4792,10 +5338,10 @@ var types = {
 		syntax: "element | content | text | <attr()> | <counter>"
 	},
 	"content-list": {
-		syntax: "[ <string> | <image> | <attr()> | contents | <quote> | <leader()> | <target> | <string()> | <content()> | <counter> | <symbolic-glyph> ]+"
+		syntax: "[ <string> | <counter()> | <counters()> | <content()> | <attr()> ]+"
 	},
 	"content-position": {
-		syntax: "center | start | end | flow-start | flow-end | flex-start | flex-end"
+		syntax: "center | start | end | flex-start | flex-end"
 	},
 	"content-replacement": {
 		syntax: "<image>"
@@ -4902,8 +5448,8 @@ var types = {
 	"env-args": {
 		syntax: "env( <declaration-value>, <declaration-value>? )"
 	},
-	"event-function": {
-		syntax: "<click()> | <dblclick()> | <pointerenter()> | <pointerleave()> | <pointerup()> | <pointerdown()> | <keypress()> | <focusin()> | <focusout()> | <input()> | <change()>"
+	"event-trigger-event": {
+		syntax: "activate | interest | click | touch | dblclick | keypress(<string>) | ..."
 	},
 	"explicit-track-list": {
 		syntax: "[ <line-names>? <track-size> ]+ <line-names>?"
@@ -5012,9 +5558,6 @@ var types = {
 	},
 	"grid-line": {
 		syntax: "auto | <custom-ident> | [ [ <integer [-∞,-1]> | <integer [1,∞]> ] && <custom-ident>? ] | [ span && [ <integer [1,∞]> || <custom-ident> ] ]"
-	},
-	"highlight-name-selector": {
-		syntax: "'*' | <custom-ident>"
 	},
 	"historical-lig-values": {
 		syntax: "[ historical-ligatures | no-historical-ligatures ]"
@@ -5572,7 +6115,7 @@ var types = {
 		syntax: "<complex-selector-list>"
 	},
 	"self-position": {
-		syntax: "center | start | end | self-start | self-end | flow-start | flow-end | flex-start | flex-end"
+		syntax: "center | start | end | self-start | self-end | flex-start | flex-end"
 	},
 	shadow: {
 		syntax: "<color>? && [ <length>{2} [ <length [0,∞]> <length>? ]? ] && inset?"
@@ -5718,7 +6261,7 @@ var types = {
 	symbol: {
 		syntax: "<string> | <image> | <custom-ident>"
 	},
-	"symbolic-glyph": {
+	"symbolic-counter-style": {
 		syntax: "disc | circle | square | disclosure-open | disclosure-closed"
 	},
 	"symbols-type": {

@@ -15,7 +15,7 @@ function eq(a, b) {
     if (a == null || b == null) {
         return a == b;
     }
-    if (typeof a != "object" || typeof b != "object") {
+    if (typeof a !== "object" || typeof b !== "object") {
         return a === b;
     }
     if (a.constructor != b.constructor) {
@@ -35,7 +35,7 @@ function eq(a, b) {
     }
     const k1 = Object.keys(a);
     const k2 = Object.keys(b);
-    if (k1.length != k2.length) {
+    if (k1.length !== k2.length) {
         return false;
     }
     let key;
@@ -54,14 +54,14 @@ function eq(a, b) {
  * @param b
  */
 function eqToken(arena, a, b) {
-    if (a == b) {
+    if (a === b) {
         return true;
     }
-    if (arena.dataTypes[a] != arena.dataTypes[b] ||
-        arena.name[a] != arena.name[b] ||
-        arena.stringValue[a] != arena.stringValue[b] ||
-        arena.unit[a] != arena.unit[b] ||
-        arena.colorType[a] != arena.colorType[b]) {
+    if (arena.dataTypes[a] !== arena.dataTypes[b] ||
+        arena.name[a] !== arena.name[b] ||
+        arena.stringValue[a] !== arena.stringValue[b] ||
+        arena.unit[a] !== arena.unit[b] ||
+        arena.colorType[a] !== arena.colorType[b]) {
         return false;
     }
     const x = arena.numericValue[a];
@@ -72,26 +72,26 @@ function eqToken(arena, a, b) {
     }
     let ta = arena.firstToken[a];
     let tb = arena.firstToken[b];
-    while (ta != 0 && tb != 0) {
+    while (ta !== 0 && tb !== 0) {
         if (!eqToken(arena, ta, tb)) {
             return false;
         }
         ta = arena.nextSibling[ta];
         tb = arena.nextSibling[tb];
     }
-    if (ta != tb) {
+    if (ta !== tb) {
         return false;
     }
     ta = arena.firstChild[a];
     tb = arena.firstChild[b];
-    while (ta != 0 && tb != 0) {
+    while (ta !== 0 && tb !== 0) {
         if (!eqToken(arena, ta, tb)) {
             return false;
         }
         ta = arena.nextSibling[ta];
         tb = arena.nextSibling[tb];
     }
-    return ta == tb;
+    return ta === tb;
 }
 
 export { eq, eqToken };

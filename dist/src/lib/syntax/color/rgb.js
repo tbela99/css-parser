@@ -71,7 +71,7 @@ function color2RgbToken(arena, token) {
     if (values == null) {
         return null;
     }
-    return rgb2RgbToken(arena, values.map((t, index) => (index == 3 ? t : srgb2rgb(t))));
+    return rgb2RgbToken(arena, values.map((t, index) => (index === 3 ? t : srgb2rgb(t))));
 }
 function rgb2RgbToken(arena, values) {
     const chi = [
@@ -79,21 +79,21 @@ function rgb2RgbToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("rgb", ColorType.RGB, chi);
 }
 function hex2rgbvalues(arena, token) {
-    const value = expandHexValue(arena.colorType[token] == ColorType.LIT
+    const value = expandHexValue(arena.colorType[token] === ColorType.LIT
         ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
         : arena.strings[arena.stringValue[token]]);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16));
     }
-    if (rgb.length == 4) {
-        if (rgb[3] == 255) {
+    if (rgb.length === 4) {
+        if (rgb[3] === 255) {
             rgb.pop();
         }
         else {
@@ -103,7 +103,7 @@ function hex2rgbvalues(arena, token) {
     return rgb;
 }
 function hwb2rgbvalues(arena, token) {
-    return hwb2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return hwb2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 function hsl2rgbvalues(arena, token) {
     let { h, s, l, a } = hslvalues(arena, token) ?? {};
@@ -112,29 +112,29 @@ function hsl2rgbvalues(arena, token) {
     }
     return hslvalues2srgbvalues(h, s, l)
         .map((t) => minmax(Math.round(t * 255), 0, 255))
-        .concat(a == 1 || a == null ? [] : [a]);
+        .concat(a === 1 || a == null ? [] : [a]);
 }
 function hsl2srgbvalues(arena, token) {
     let { h, s, l, a } = hslvalues(arena, token) ?? {};
     if (h == null || s == null || l == null) {
         return null;
     }
-    return hslvalues2srgbvalues(h, s, l).concat(a == 1 || a == null ? [] : [a]);
+    return hslvalues2srgbvalues(h, s, l).concat(a === 1 || a == null ? [] : [a]);
 }
 function cmyk2rgbvalues(arena, token) {
-    return cmyk2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return cmyk2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 function oklab2rgbvalues(arena, token) {
-    return oklab2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return oklab2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 function oklch2rgbvalues(arena, token) {
-    return oklch2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return oklch2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 function lab2rgbvalues(arena, token) {
-    return lab2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return lab2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 function lch2rgbvalues(arena, token) {
-    return lch2srgbvalues(arena, token)?.map?.((t, index) => (index == 3 ? t : srgb2rgb(t))) ?? null;
+    return lch2srgbvalues(arena, token)?.map?.((t, index) => (index === 3 ? t : srgb2rgb(t))) ?? null;
 }
 
 export { cmyk2RgbToken, cmyk2rgbvalues, color2RgbToken, hex2RgbToken, hex2rgbvalues, hsl2RgbToken, hsl2rgbvalues, hsl2srgbvalues, hwb2RgbToken, hwb2rgbvalues, lab2RgbToken, lab2rgbvalues, lch2RgbToken, lch2rgbvalues, oklab2RgbToken, oklab2rgbvalues, oklch2RgbToken, oklch2rgbvalues, srgb2rgb };

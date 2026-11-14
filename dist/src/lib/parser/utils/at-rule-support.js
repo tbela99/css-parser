@@ -33,20 +33,20 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
     ]);
     for (; i < stream.length; i++) {
         tokens.push(stream[i]);
-        if (arena.dataTypes[stream[i]] == EnumToken.ColonTokenType) {
-            if (arena.dataTypes[stream[i + 1]] == EnumToken.IdenTokenType) {
+        if (arena.dataTypes[stream[i]] === EnumToken.ColonTokenType) {
+            if (arena.dataTypes[stream[i + 1]] === EnumToken.IdenTokenType) {
                 const val = arena.strings[arena.stringValue[stream[i + 1]]];
                 arena.dataTypes[stream[i]] = pseudoElements.includes(val)
                     ? EnumToken.PseudoElementTokenType
                     : EnumToken.PseudoClassTokenType;
                 // inlined: arena.setStr(stream[i], ":" + val)
-                arena.stringValue[stream[i]] = arena.internString((":" + val));
+                arena.stringValue[stream[i]] = arena.internString(":" + val);
                 // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
                 arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
                 stream.splice(i + 1, 1);
                 continue;
             }
-            if (arena.dataTypes[stream[i + 1]] == EnumToken.FunctionTokenDefType) {
+            if (arena.dataTypes[stream[i + 1]] === EnumToken.FunctionTokenDefType) {
                 val = ":" + arena.strings[arena.stringValue[stream[i + 1]]];
                 arena.dataTypes[stream[i]] =
                     val + "()" in getSyntaxConfig().selectors
@@ -74,13 +74,15 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
         if (expectAndOr) {
             let k = i;
             while (k < stream.length &&
-                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)) {
+                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)) {
                 tokens.push(stream[k]);
                 k++;
             }
             expectAndOr = false;
         }
-        if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+        if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
             scopes.push((scope = new Set()));
             stack.push(stream[i]);
             continue;
@@ -155,7 +157,8 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                         stack.pop();
                     }
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (arena.dataTypes[stack.at(-1)] === EnumToken.AndTokenType || arena.dataTypes[stack.at(-1)] === EnumToken.OrTokenType) {
+                    if (arena.dataTypes[stack.at(-1)] === EnumToken.AndTokenType ||
+                        arena.dataTypes[stack.at(-1)] === EnumToken.OrTokenType) {
                         const index = tokens.indexOf(stack.at(-1));
                         const index2 = stack.length > 1 ? tokens.indexOf(stack.at(-2)) + 1 : 0;
                         const op = stack[stack.length - 1];

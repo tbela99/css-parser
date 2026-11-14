@@ -1,11 +1,11 @@
 # Changelog
 
-# v2.1.0
+# Unreleased
 
 declarations:
 
 - [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
-- [x] renamed the vendor prefixed legacy name aliases to the standard property: `-webkit-align-content` to `align-content`, `-webkit-transition` to `transition`, `-webkit-transform` to `transform`, `-webkit-animation-*` to `animation-*`, `-webkit-mask-*` to `mask-*`, ... (56 properties, see `renamedStandardProperties`). `-webkit-transform: none; transform: none` is rendered `transform: none`
+- [x] the vendor prefixed legacy name aliases are not renamed: they are validated with the syntax of the standard property (`-webkit-align-content` with the syntax of `align-content`). the syntax file stores them as aliases: `"-webkit-align-content": { "alias": "align-content" }`. the vendor prefixed properties with a legacy syntax have their own syntax: the syntax of the standard property or the legacy syntax of the csstree patch (`-webkit-appearance: <'appearance'> | none | button | button-bevel | ...`, `-webkit-mask-box-image`), or the legacy values of `scripts/local-patch.json` (`-webkit-mask`, `-webkit-mask-clip: [ <coord-box> | no-clip | border | padding | content | text ]#`, `-webkit-mask-origin`, `-webkit-mask-composite`, `-webkit-background-clip`)
 
 validation
 
@@ -34,7 +34,7 @@ validation
 - [x] `npm run syntax-update` prints a summary of the changes between the previous and the new syntax file (added, removed and changed declarations, types and functions, selectors, at-rules, descriptors, media features, units and languages) and appends it to `SYNTAX-CHANGES.md`, ignored by git
 - [x] `npm run syntax-update` reports the removed definitions grouped by origin, with the url of the file that provided them: legacy mdn-data, mdn-data patch (csstree), `local-patch.json` or removed from webref. the origins are saved in `src/data/validation.origins.json`
 - [x] the syntaxes are generated from the consolidated css definitions of `@webref/css`, pulled from a versioned url (`https://cdn.jsdelivr.net/npm/@webref/css@8.7.8/css.json`, updated manually: a new version may introduce breaking changes): the definitions of the latest level of a spec are used, the extensions and the descriptors defined by other specs are merged
-- [x] the renamed properties (the legacy name aliases, vendor prefixed or not) are removed from the syntax file and reported as renamed, the parser renames them: `font-stretch` -> `font-width`, `grid-gap` -> `gap`, `word-wrap` -> `overflow-wrap`, `-webkit-align-content` -> `align-content`, ... `renamedStandardProperties` is updated manually: the report flags the renamed properties it does not contain (`-webkit-appearance`, `-webkit-background-clip`, `-webkit-mask-box-image`)
+- [x] the renamed properties (the legacy name aliases that are not vendor prefixed) are removed from the syntax file and reported as renamed, the parser renames them: `font-stretch` -> `font-width`, `grid-gap` -> `gap`, `grid-row-gap` -> `row-gap`, `grid-column-gap` -> `column-gap`, `word-wrap` -> `overflow-wrap`. `renamedStandardProperties` is updated manually: the report flags the renamed properties it does not contain
 - [x] the at-rule descriptors defined by another spec are merged: `@font-face/size-adjust`
 - [x] the value types are stored without their angle brackets (`types.color` for `<color>`)
 

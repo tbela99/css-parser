@@ -65,11 +65,11 @@ function createAtRule(
         null,
     );
 
-    if (arena.parents[declaration] != 0) {
+    if (arena.parents[declaration] !== 0) {
         parent = arena.parents[declaration];
     }
 
-    if (parent != 0) {
+    if (parent !== 0) {
         arena.copyLocation(atRule, parent);
     }
 
@@ -87,8 +87,8 @@ function conditionLeft(arena: AstArena, condition: Token): Token | null {
             .fieldTokens(condition, TokenField.L)
             .find(
                 (t: Token) =>
-                    arena.dataTypes[t] != EnumToken.CommentTokenType &&
-                    arena.dataTypes[t] != EnumToken.WhitespaceTokenType,
+                    arena.dataTypes[t] !== EnumToken.CommentTokenType &&
+                    arena.dataTypes[t] !== EnumToken.WhitespaceTokenType,
             ) ?? null
     );
 }
@@ -127,7 +127,7 @@ function substituteIfElseNode(
 
     // map a token or the declaration itself to its clone
     const mapped = (target: AstNode | Token): AstNode | Token =>
-        target == declaration ? clonedDeclaration : (nodeMap.get(target) as Token);
+        target === declaration ? clonedDeclaration : (nodeMap.get(target) as Token);
 
     if (arena.dataTypes[node] === EnumToken.IfElseConditionTokenType) {
         //
@@ -147,11 +147,11 @@ function substituteIfElseNode(
             ) {
                 arena.replaceToken(mapped(targetWrapper) as Token, ...conditionValue(arena, elseCondition, nodeMap));
 
-                if (targetParentWrapper != declaration) {
+                if (targetParentWrapper !== declaration) {
                     const siblings: Token[] = arena.tokens(targetParentWrapper);
                     let index: number = siblings.indexOf(targetWrapper);
 
-                    if (index != -1) {
+                    if (index !== -1) {
                         let i: number;
                         let siblingWrapper: Token;
                         let left: Token | null = conditionLeft(arena, arena.field(node, TokenField.L));
@@ -203,7 +203,7 @@ function substituteIfElseNode(
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
             arena.replaceToken(
-                mapped(targetWrapper == declaration ? node : targetWrapper) as Token,
+                mapped(targetWrapper === declaration ? node : targetWrapper) as Token,
                 ...conditionValue(arena, node, nodeMap),
             );
 
@@ -243,7 +243,7 @@ function substituteIfElseNode(
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
             const isWildCard: boolean =
-                targetWrapper != declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
+                targetWrapper !== declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
 
             arena.replaceToken(
                 mapped(isWildCard ? targetWrapper : node) as Token,
@@ -281,7 +281,7 @@ function processNode(
     const stack: AstNode[] = [declarationNode];
 
     // the generated nodes are detached: remember the parent for the location of the generated at-rules
-    if (arena.parents[declarationNode] != 0) {
+    if (arena.parents[declarationNode] !== 0) {
         parent = arena.parents[declarationNode];
     }
 
@@ -299,7 +299,7 @@ function processNode(
         // the parent of a detached token is the declaration
         const parentWrapper: AstNode | Token = arena.getValueParent(value) || declaration;
         const grandParent: AstNode | Token =
-            parentWrapper == declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
+            parentWrapper === declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
 
         if (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType) {
             const conditions: Token[] = arena.tokens(value);
@@ -314,12 +314,12 @@ function processNode(
         }
 
         // the node is substituted: release it unless it is the node being replaced
-        if (astNode != declarationNode) {
+        if (astNode !== declarationNode) {
             arena.detach(astNode);
         }
     }
 
-    if (result.length > 0 && arena.parents[declarationNode] != 0) {
+    if (result.length > 0 && arena.parents[declarationNode] !== 0) {
         arena.replaceChild(declarationNode, ...result);
 
         if (!result.includes(declarationNode)) {

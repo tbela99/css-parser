@@ -53,7 +53,7 @@ function lrec20202rec2020(r, g, b, a) {
         }
         return 4.5 * val;
     })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 function lrec20202xyz(r, g, b, a) {
     // convert an array of linear-light rec2020 values to CIE XYZ

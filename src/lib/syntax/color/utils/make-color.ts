@@ -1,8 +1,8 @@
-import type {Token} from "../../../../@types/index.d.ts";
-import type {AstArena} from "../../../ast/arena.ts";
-import {ColorType, EnumToken} from "../../../ast/types.ts";
-import {equalsIgnoreCase} from "../../../parser/utils/text.ts";
-import {getNumber, minmax} from "../color.ts";
+import type { Token } from "../../../../@types/index.d.ts";
+import type { AstArena } from "../../../ast/arena.ts";
+import { ColorType, EnumToken } from "../../../ast/types.ts";
+import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
+import { getNumber, minmax } from "../color.ts";
 
 /**
  * Create a color token
@@ -20,7 +20,8 @@ export function makeColor(arena: AstArena, kind: ColorType, components: Token[],
     const alphaValue =
         alpha == null
             ? 1
-            : arena.dataTypes[alpha] === EnumToken.IdenTokenType && equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
+            : arena.dataTypes[alpha] === EnumToken.IdenTokenType &&
+                equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
               ? 0
               : minmax(getNumber(arena, alpha), 0, 1);
 
@@ -29,7 +30,7 @@ export function makeColor(arena: AstArena, kind: ColorType, components: Token[],
     // the components may belong to another color token: a token belongs to one token list
     for (let i = 0; i < components.length; i++) {
         // inlined: arena.take(components[i])
-        components[i] = arena.parents[components[i]] == 0 ? components[i] : arena.clone(components[i], true);
+        components[i] = arena.parents[components[i]] === 0 ? components[i] : arena.clone(components[i], true);
     }
 
     if (alphaValue !== 1) {

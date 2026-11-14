@@ -1,7 +1,6 @@
 import type {
     AstNode,
     LoadResult,
-    ParseInfo,
     ParseInputFileOptions,
     ParseInputOptions,
     ParseInputStreamOptions,
@@ -12,18 +11,19 @@ import type {
     RenderResult,
     TransformOptions,
     TransformResult,
-    TransformSyncOptions,
+    TransformSyncOptions
 } from "./@types/index.d.ts";
 
-import {doParse, doParseSync} from "./lib/parser/parse.ts";
-import {doRender} from "./lib/printer/render.ts";
-import type {AstArena} from "./lib/ast/arena.ts";
-import {ModuleScopeEnumOptions} from "./lib/ast/types.ts";
-import {Tokenizer} from "./lib/parser/tokenize.ts";
-import {dirname, matchUrl, resolve} from "./lib/fs/resolve.ts";
-import {ResponseType} from "./types.ts";
-import {SourceFile} from "./lib/parser/source.ts";
-import {parseResult, validateSyncArguments} from "./utils/sync.ts";
+import { doParse, doParseSync } from "./lib/parser/parse.ts";
+import { doRender } from "./lib/printer/render.ts";
+import type { AstArena } from "./lib/ast/arena.ts";
+import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
+import { createParseInfo, Tokenizer } from "./lib/parser/tokenize.ts";
+import { type CssInput, isCssInput } from "./lib/parser/input.ts";
+import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import { ResponseType } from "./types.ts";
+import { SourceFile } from "./lib/parser/source.ts";
+import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
 export type * from "./@types/index.d.ts";
 export type * from "./@types/ast.d.ts";
@@ -63,6 +63,7 @@ export {
 } from "./lib/ast/types.ts";
 export { SourceMap } from "./lib/printer/sourcemap/sourcemap.ts";
 export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
+export type { CssInput } from "./lib/parser/input.ts";
 
 export { FeatureWalkMode } from "./lib/ast/features/type.ts";
 export { dirname, resolve, ResponseType };
@@ -92,13 +93,13 @@ export async function load(
     currentDirectory: string = ".",
     responseType: boolean | ResponseType = false,
 ): Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>> {
-    if (typeof responseType == "boolean") {
+    if (typeof responseType === "boolean") {
         responseType = responseType ? ResponseType.ReadableStream : ResponseType.Text;
     }
 
     let t: URL;
 
-    if (typeof url == "object") {
+    if (typeof url === "object") {
         t = new URL(url.absolute, self.origin);
     } else if (matchUrl.test(url)) {
         t = new URL(url);
@@ -109,20 +110,20 @@ export async function load(
         t = new URL(path, self.origin);
     }
 
-    return fetch(t, t.origin != self.origin ? { mode: "cors" } : {}).then(async (response: Response) => {
+    return fetch(t, t.origin !== self.origin ? { mode: "cors" } : {}).then(async (response: Response) => {
         if (!response.ok) {
             throw new Error(`${response.status} ${response.statusText} ${response.url}`);
         }
 
-        if (responseType == ResponseType.ArrayBuffer) {
+        if (responseType === ResponseType.ArrayBuffer) {
             return response.arrayBuffer();
         }
 
-        if (responseType == ResponseType.JSON) {
+        if (responseType === ResponseType.JSON) {
             return response.json();
         }
 
-        return responseType == ResponseType.ReadableStream ? response.body : response.text();
+        return responseType === ResponseType.ReadableStream ? response.body : response.text();
     }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 
@@ -211,7 +212,7 @@ export function render(
  *
  */
 
-export function parseSync(stream: string, options?: ParserSyncOptions): ParseResult;
+export function parseSync(stream: CssInput, options?: ParserSyncOptions): ParseResult;
 
 /**
  * Parse CSS string
@@ -263,13 +264,13 @@ export function parseSync(options: ParseInputOptions & ParserSyncOptions): Parse
  */
 
 export function parseSync(
-    ...args: [string, ParserSyncOptions?] | [options: ParseInputOptions & ParserSyncOptions]
+    ...args: [CssInput, ParserSyncOptions?] | [options: ParseInputOptions & ParserSyncOptions]
 ): ParseResult {
     let options: (ParseInputOptions & ParserSyncOptions) | ParserSyncOptions;
-    let stream: string;
+    let stream: CssInput;
 
-    if (typeof args[0] === "string") {
-        stream = args[0] as string;
+    if (isCssInput(args[0])) {
+        stream = args[0];
         options = args[1] as ParserSyncOptions;
     } else {
         const { input, ...opt } = args[0] as ParseInputOptions & ParserSyncOptions;
@@ -299,21 +300,12 @@ export function parseSync(
     options.src = resolve(options.src!, options.cwd).relative;
 
     if (options.source == null) {
-        const source = new SourceFile(typeof stream == "string" ? stream : "", [], options.src);
+        const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
         options.sourcesMap.set(source.id, source);
         options.source = source;
     }
 
-    options.parseInfo = {
-        stream,
-        buffer: "",
-        src: options.src ?? "",
-        offset: 0,
-        time: 0,
-        source: options.source,
-        position: 0,
-        currentPosition: 0,
-    } as ParseInfo;
+    options.parseInfo = createParseInfo(stream, options.source);
 
     const result = doParseSync(new Tokenizer(options.parseInfo), options);
     return options.module == null && options.inputSourceMap == null && !options.sourcemap
@@ -337,7 +329,7 @@ export function parseSync(
  * ```
  *
  */
-export function transformSync(css: string, options?: TransformSyncOptions): TransformResult;
+export function transformSync(css: CssInput, options?: TransformSyncOptions): TransformResult;
 
 /**
  * Transform CSS
@@ -372,12 +364,12 @@ export function transformSync(options: ParseInputOptions & TransformSyncOptions)
  * @param args
  */
 export function transformSync(
-    ...args: [string, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
+    ...args: [CssInput, TransformSyncOptions?] | [ParseInputOptions & TransformSyncOptions]
 ): TransformResult {
     let options: (ParseInputOptions & TransformSyncOptions) | TransformSyncOptions;
-    let stream: string | ReadableStream<Uint8Array>;
+    let stream: CssInput;
 
-    if (typeof args[0] === "string") {
+    if (isCssInput(args[0])) {
         stream = args[0];
         options = args[1] as ParserSyncOptions;
     } else {
@@ -398,9 +390,9 @@ export function transformSync(
     let importMapping: Record<string, Record<string, string>> | null = null;
 
     if (
-        (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
-        (typeof options.module == "object" &&
-            typeof options.module.scoped == "number" &&
+        (typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+        (typeof options.module === "object" &&
+            typeof options.module.scoped === "number" &&
             options.module.scoped & ModuleScopeEnumOptions.ICSS)
     ) {
         mapping = parseResult.mapping as Record<string, string>;
@@ -460,7 +452,7 @@ export function transformSync(
  * ```
  */
 
-export async function parse(stream: string | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
+export async function parse(stream: CssInput | ReadableStream<Uint8Array>, options?: ParserOptions): Promise<ParseResult>;
 
 /**
  * Parse CSS
@@ -554,13 +546,13 @@ export async function parse(options: ParseInputStreamOptions & ParserOptions): P
  */
 export async function parse(
     ...args:
-        | [stream: string | ReadableStream<Uint8Array>, options?: ParserOptions]
+        | [stream: CssInput | ReadableStream<Uint8Array>, options?: ParserOptions]
         | [options: (ParseInputFileOptions | ParseInputStreamOptions) & ParserOptions]
 ): Promise<ParseResult> {
     let options: ((ParseInputFileOptions | ParseInputStreamOptions) & ParserOptions) | ParserOptions;
-    let stream: string | ReadableStream<Uint8Array>;
+    let stream: CssInput | ReadableStream<Uint8Array>;
 
-    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+    if (isCssInput(args[0]) || args[0] instanceof ReadableStream) {
         stream = args[0];
         options = args[1] as ParserOptions;
     } else {
@@ -570,13 +562,20 @@ export async function parse(
         options = opt;
         if (file != null) {
             return Promise.resolve(
-                ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
-                    file,
-                    "",
-                    (options as ParseInputFileOptions).asStream ?? false,
-                ),
+                (options.load != null
+                    ? (options.load as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+                          file,
+                          "",
+                          (options as ParseInputFileOptions).asStream ?? false,
+                      )
+                    : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
+                      load(
+                          file,
+                          "",
+                          (options as ParseInputFileOptions).asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer,
+                      )),
                 // @ts-expect-error
-            ).then((stream: string | ReadableStream<Uint8Array>) =>
+            ).then((stream: CssInput | ReadableStream<Uint8Array>) =>
                 parse(stream, { src: (options as ParseInputFileOptions).file, ...options }),
             );
         } else {
@@ -589,7 +588,8 @@ export async function parse(
     options.sourcesMap ??= new Map();
 
     Object.assign(options, {
-        load,
+        // a custom loader is used to load the imported files
+        load: options.load ?? load,
         resolve,
         dirname,
         cwd:
@@ -606,15 +606,7 @@ export async function parse(
         options.source = source;
     }
 
-    options.parseInfo = {
-        stream,
-        buffer: "",
-        offset: 0,
-        time: 0,
-        source: options.source,
-        position: 0,
-        currentPosition: 0,
-    } as ParseInfo;
+    options.parseInfo = createParseInfo(stream, options.source);
 
     return doParse(
         stream instanceof ReadableStream
@@ -657,7 +649,7 @@ export async function parse(
  * ```
  */
 export async function transform(
-    css: string | ReadableStream<Uint8Array>,
+    css: CssInput | ReadableStream<Uint8Array>,
     options: TransformOptions,
 ): Promise<TransformResult>;
 
@@ -730,13 +722,13 @@ export async function transform(options: ParseInputFileOptions & TransformOption
  */
 export async function transform(
     ...args:
-        | [string | ReadableStream<Uint8Array>, TransformOptions]
+        | [CssInput | ReadableStream<Uint8Array>, TransformOptions]
         | [(ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions]
 ): Promise<TransformResult> {
     let options: ((ParseInputFileOptions | ParseInputStreamOptions) & TransformOptions) | TransformOptions;
-    let stream: string | ReadableStream<Uint8Array>;
+    let stream: CssInput | ReadableStream<Uint8Array>;
 
-    if (typeof args[0] === "string" || args[0] instanceof ReadableStream) {
+    if (isCssInput(args[0]) || args[0] instanceof ReadableStream) {
         stream = args[0];
         options = args[1] as ParserOptions;
     } else {
@@ -746,13 +738,20 @@ export async function transform(
         options = opt;
         if (file != null) {
             return Promise.resolve(
-                ((options.load ?? load) as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
-                    file,
-                    "",
-                    (options as ParseInputFileOptions).asStream ?? false,
-                ),
+                (options.load != null
+                    ? (options.load as (file: string, currentFile: string, asStream: boolean) => LoadResult)(
+                          file,
+                          "",
+                          (options as ParseInputFileOptions).asStream ?? false,
+                      )
+                    : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
+                      load(
+                          file,
+                          "",
+                          (options as ParseInputFileOptions).asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer,
+                      )),
                 // @ts-expect-error
-            ).then((stream: string | ReadableStream<Uint8Array>) =>
+            ).then((stream: CssInput | ReadableStream<Uint8Array>) =>
                 transform(stream, { src: (options as ParseInputFileOptions).file, ...options }),
             );
         } else {
@@ -768,9 +767,9 @@ export async function transform(
         let importMapping: Record<string, Record<string, string>> | null = null;
 
         if (
-            (typeof options.module == "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
-            (typeof options.module == "object" &&
-                typeof options.module.scoped == "number" &&
+            (typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
+            (typeof options.module === "object" &&
+                typeof options.module.scoped === "number" &&
                 options.module.scoped & ModuleScopeEnumOptions.ICSS)
         ) {
             mapping = parseResult.mapping as Record<string, string>;

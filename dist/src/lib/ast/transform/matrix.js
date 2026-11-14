@@ -11,13 +11,13 @@ import { eq } from '../../parser/utils/eq.js';
 import { getNumber } from '../../syntax/color/color.js';
 
 function parseMatrix(arena, mat) {
-    if (arena.dataTypes[mat] == EnumToken.IdenTokenType) {
-        return arena.strings[arena.stringValue[mat]] == "none" ? identity() : null;
+    if (arena.dataTypes[mat] === EnumToken.IdenTokenType) {
+        return arena.strings[arena.stringValue[mat]] === "none" ? identity() : null;
     }
-    const children = arena.tokens(mat).filter((t) => arena.dataTypes[t] == EnumToken.NumberTokenType || arena.dataTypes[t] == EnumToken.IdenTokenType);
+    const children = arena.tokens(mat).filter((t) => arena.dataTypes[t] === EnumToken.NumberTokenType || arena.dataTypes[t] === EnumToken.IdenTokenType);
     const values = [];
     for (const child of children) {
-        if (arena.dataTypes[child] != EnumToken.NumberTokenType) {
+        if (arena.dataTypes[child] !== EnumToken.NumberTokenType) {
             return null;
         }
         // @ts-ignore

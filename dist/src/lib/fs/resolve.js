@@ -29,7 +29,7 @@ function dirname(path) {
     let parts = [""];
     for (; i < path.length; i++) {
         const chr = path.charAt(i);
-        if (chr == "/") {
+        if (chr === "/") {
             parts.push("");
         }
         else {
@@ -45,14 +45,14 @@ function dirname(path) {
  * @private
  */
 function splitPath(result) {
-    if (result.length == 0) {
+    if (result.length === 0) {
         return { parts: [], i: 0 };
     }
-    const parts = result == "/" ? [] : [""];
+    const parts = result === "/" ? [] : [""];
     let i = 0;
     for (; i < result.length; i++) {
         const chr = result.charAt(i);
-        if (chr == "/") {
+        if (chr === "/") {
             parts.push("");
         }
         // else if (chr == "?" || chr == "#") {
@@ -74,7 +74,7 @@ function splitPath(result) {
     return { parts, i };
 }
 /**
- * Nomalize path
+ * Normalize path
  * @param path
  * @private
  */
@@ -89,16 +89,16 @@ const normalize = memoize(function (path) {
     }
     for (; i < path.length; i++) {
         const chr = path.charAt(i);
-        if (chr == "/") {
-            if (parts.length == 0 || parts[parts.length - 1] !== "") {
+        if (chr === "/") {
+            if (parts.length === 0 || parts[parts.length - 1] !== "") {
                 parts.push("");
             }
         }
-        else if (chr == "?" || chr == "#") {
+        else if (chr === "?" || chr === "#") {
             break;
         }
         else {
-            if (parts.length == 0) {
+            if (parts.length === 0) {
                 parts.push("");
             }
             parts[parts.length - 1] += chr;
@@ -109,12 +109,12 @@ const normalize = memoize(function (path) {
         // if (parts[k] == ".") {
         //     parts.splice(k--, 1);
         // } else
-        if (k > 0 && parts[k] == "..") {
+        if (k > 0 && parts[k] === "..") {
             parts.splice(k - 1, 2);
             k -= 2;
         }
     }
-    return (path.charAt(0) == "/" ? "/" : "") + parts.join("/");
+    return (path.charAt(0) === "/" ? "/" : "") + parts.join("/");
 });
 /**
  * diff path
@@ -126,7 +126,7 @@ const diff = memoize(function (path1, path2) {
     let { parts } = splitPath(path1);
     const { parts: dirs } = splitPath(path2);
     for (const p of dirs) {
-        if (parts[0] == p) {
+        if (parts[0] === p) {
             parts.shift();
         }
         else {
@@ -163,7 +163,7 @@ const resolve = memoize(function (url, currentDirectory, cwd) {
     if (windowsPathnameRegexp.test(dir)) {
         dir = dir.replace(windowsPathnameRegexp, "");
     }
-    const absolute = dir == "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
+    const absolute = dir === "" || url.startsWith("/") || url.startsWith(dir) || windowsPathnameRegexp.test(url)
         ? resolvePath(url)
         : resolvePath(dir, url);
     return {

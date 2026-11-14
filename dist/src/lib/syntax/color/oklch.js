@@ -78,7 +78,7 @@ function oklchToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("oklch", ColorType.OKLCH, chi);
@@ -156,14 +156,14 @@ function getOKLCHComponents(arena, token) {
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 0.4 : 1);
+    const c = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 0.4 : 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
     const h = getAngle(arena, t) * 360;
     // @ts-ignore
     t = components[3];
-    const alpha = t == null || (arena.dataTypes[t] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] == "none")
+    const alpha = t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none")
         ? 1
         : getNumber(arena, t);
     return [l, c, h, alpha];

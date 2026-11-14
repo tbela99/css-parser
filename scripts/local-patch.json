@@ -169,8 +169,8 @@
       "syntax": "| rect( <top> <right> <bottom> <left> )"
     },
     "-webkit-background-clip": {
-      "comment": "webref (compat) reports <visual-box>#, the text value is widely supported",
-      "syntax": "[ <visual-box> | border | padding | content | text ]#"
+      "comment": "legacy syntax of the vendor prefixed alias of background-clip, extends <'background-clip'>: the legacy values (border, padding, content, text)",
+      "syntax": "[ <bg-clip> | border | padding | content | text ]#"
     },
     "-ms-overflow-style": {
       "syntax": "auto | none | scrollbar | -ms-autohiding-scrollbar"
@@ -229,6 +229,22 @@
     },
     "transform-origin": {
       "syntax": "[ left | center | right | top | bottom | <length-percentage> ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ] <length>? | [ [ center | left | right ] && [ center | top | bottom ] ] <length>?"
+    },
+    "-webkit-mask": {
+      "comment": "legacy syntax of the vendor prefixed alias of mask, extends <'mask'>: the legacy values border, padding, content, text (clip and origin), <composite-style>",
+      "syntax": "[ <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || [ <geometry-box> | border | padding | content | text ] || [ <geometry-box> | no-clip | border | padding | content | text ] || [ <compositing-operator> | <composite-style> ] || <masking-mode> ]#"
+    },
+    "-webkit-mask-clip": {
+      "comment": "legacy syntax of the vendor prefixed alias of mask-clip, extends <'mask-clip'>: the legacy values (border, padding, content, text)",
+      "syntax": "[ <coord-box> | no-clip | border | padding | content | text ]#"
+    },
+    "-webkit-mask-origin": {
+      "comment": "legacy syntax of the vendor prefixed alias of mask-origin, extends <'mask-origin'>: the legacy values (border, padding, content)",
+      "syntax": "[ <coord-box> | border | padding | content ]#"
+    },
+    "-webkit-mask-composite": {
+      "comment": "legacy syntax of the vendor prefixed alias of mask-composite, extends <'mask-composite'>: the legacy compositing operators",
+      "syntax": "[ <compositing-operator> | <composite-style> ]#"
     }
   },
   "selectors": {
@@ -636,6 +652,10 @@
     },
     "-legacy-radial-gradient-arguments": {
       "syntax": " <position>? , [ [ <-legacy-radial-gradient-shape> || <-legacy-radial-gradient-size> ] | [ <length> | <percentage> ]{2} ]? , <color-stop-list>"
+    },
+    "composite-style": {
+      "comment": "legacy compositing operators of -webkit-mask-composite (mdn-data)",
+      "syntax": "clear | copy | source-over | source-in | source-out | source-atop | destination-over | destination-in | destination-out | destination-atop | xor"
     }
   },
   "mediaFeatures": {

@@ -31,7 +31,7 @@ function prophotorgb2lin_ProPhoto(r, g, b, a = null) {
         }
         return v / 16;
     })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 function prophotorgb2xyz50(r, g, b, a = null) {
     [r, g, b, a] = prophotorgb2lin_ProPhoto(r, g, b, a);
@@ -40,7 +40,7 @@ function prophotorgb2xyz50(r, g, b, a = null) {
         0.2880748288194013 * r + 0.7118352342418731 * g + 0.0000899369387256 * b,
         0.8251046025104602 * b,
     ];
-    return xyz.concat(a == null || a == 1 ? [] : [a]);
+    return xyz.concat(a == null || a === 1 ? [] : [a]);
 }
 function xyz50_to_prophotorgb(x, y, z, a) {
     // @ts-ignore

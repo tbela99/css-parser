@@ -99,7 +99,7 @@ export function hwbToken(arena: AstArena, values: number[]): Token {
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
 
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -111,7 +111,7 @@ export function hwbToken(arena: AstArena, values: number[]): Token {
 
 export function rgb2hwbvalues(arena: AstArena, token: Token): number[] {
     const values = getColorComponents(arena, token)!.map((t: Token, index: number): number => {
-        if (index == 3) {
+        if (index === 3) {
             return getNumber(arena, t);
         }
 
@@ -219,7 +219,7 @@ export function hwbvalues(
 
     let a = null;
 
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
 
@@ -288,7 +288,7 @@ export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number |
 
     const hwb = [hue, w * 100, b * 100];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hwb.push(a);
     }
 

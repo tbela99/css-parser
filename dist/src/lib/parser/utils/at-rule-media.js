@@ -47,10 +47,10 @@ function parseMediaqueryList(arena, stream, options) {
             const scopes = [currentScope];
             const stack = [];
             const tokens = [];
-            let expectAndOrComma = false;
             i = 0;
             while (i < stream.length &&
-                (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === EnumToken.CommentTokenType)) {
+                (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[i]] === EnumToken.CommentTokenType)) {
                 tokens.push(stream[i]);
                 i++;
             }
@@ -69,7 +69,10 @@ function parseMediaqueryList(arena, stream, options) {
                             message: `expecting '<media-type>'`,
                             node: stream[i],
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                            location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                            location: [
+                                options.source.file,
+                                ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                            ],
                         });
                     }
                 }
@@ -80,22 +83,21 @@ function parseMediaqueryList(arena, stream, options) {
                         message: `expecting '('`,
                         node: stream[i],
                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                        ],
                     });
                 }
             }
             for (; i < stream.length; i++) {
                 tokens.push(stream[i]);
-                if (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[i]] === EnumToken.CommentTokenType) {
+                if (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[i]] === EnumToken.CommentTokenType) {
                     continue;
                 }
-                if (expectAndOrComma) {
-                    if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
-                        arena.strings[arena.stringValue[stream[i]]].toLowerCase();
-                    }
-                    expectAndOrComma = false;
-                }
-                if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+                if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
+                    tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
@@ -113,9 +115,10 @@ function parseMediaqueryList(arena, stream, options) {
                         {
                             const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
                             if (val === "and" || val === "or") {
-                                arena.dataTypes[stream[i]] = val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType;
+                                arena.dataTypes[stream[i]] =
+                                    val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType;
                                 if (val === "or" &&
-                                    scopes.length == 1 &&
+                                    scopes.length === 1 &&
                                     scopes[0].size > 0 &&
                                     !scopes[0].has(EnumToken.OrTokenType)) {
                                     success = false;
@@ -124,7 +127,10 @@ function parseMediaqueryList(arena, stream, options) {
                                         node: stream[i],
                                         message: `<or> is not allowed outside of parentheses`,
                                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                        location: [
+                                            options.source.file,
+                                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                                        ],
                                     });
                                     break;
                                 }
@@ -135,7 +141,10 @@ function parseMediaqueryList(arena, stream, options) {
                                         node: stream[i],
                                         message: `cannot mix <and> and <or> at the same level`,
                                         // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                                        location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                        location: [
+                                            options.source.file,
+                                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                                        ],
                                     });
                                 }
                                 currentScope.add(arena.dataTypes[stream[i]]);
@@ -178,19 +187,20 @@ function parseMediaqueryList(arena, stream, options) {
                                 const left = trimArray(arena, tokens.slice(index3 + 1, index2));
                                 const right = trimArray(arena, tokens.slice(index + 1, tokens.length - 1));
                                 const names = trimArray(arena, tokens.slice(index2 + 1, index));
-                                const filteredNames = names.filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType && arena.dataTypes[n] !== EnumToken.CommentTokenType);
+                                const filteredNames = names.filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType &&
+                                    arena.dataTypes[n] !== EnumToken.CommentTokenType);
                                 const name = arena.strings[arena.stringValue[filteredNames[0]]];
                                 const mfInfo = getMFInfo(name);
                                 for (const val of [left, right]) {
                                     if (options.computeCalcExpression) {
                                         if (mfInfo == null ||
-                                            (mfInfo.type != MediaFeatureType.KeywordType &&
-                                                mfInfo.type != MediaFeatureType.StringType)) {
+                                            (mfInfo.type !== MediaFeatureType.KeywordType &&
+                                                mfInfo.type !== MediaFeatureType.StringType)) {
                                             for (let l = 0; l < val.length; l++) {
                                                 if (arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
                                                     arena.strings[arena.stringValue[val[l]]] === "calc") {
                                                     const value = evaluate(arena, [val[l]]);
-                                                    if (value.length == 1) {
+                                                    if (value.length === 1) {
                                                         arena.copyLocation(value[0], val[l]);
                                                         val[l] = value[0];
                                                     }
@@ -225,7 +235,9 @@ function parseMediaqueryList(arena, stream, options) {
                                 // inlined: arena.setField(rangeQuery, TokenField.Op, prevToken)
                                 arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op), [prevToken]);
                                 // inlined: arena.setField(rangeQuery, TokenField.Op2, stack[stack.length - 1])
-                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [stack[stack.length - 1]]);
+                                arena.setTokenList(arena.fieldList(rangeQuery, TokenField.Op2), [
+                                    stack[stack.length - 1],
+                                ]);
                                 // inlined: arena.setField(rangeQuery, TokenField.R, ...right)
                                 arena.setTokenList(arena.fieldList(rangeQuery, TokenField.R), right);
                                 if (left.length > 0 && right.length > 0) {
@@ -245,19 +257,20 @@ function parseMediaqueryList(arena, stream, options) {
                             const index3 = tokens.indexOf(stack.at(-2));
                             let names = trimArray(arena, tokens.slice(index3 + 1, index2));
                             let values = trimArray(arena, tokens.slice(index2 + 1, tokens.length - 1));
-                            const filteredNames = (names).filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType && arena.dataTypes[n] !== EnumToken.CommentTokenType);
+                            const filteredNames = (names).filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType &&
+                                arena.dataTypes[n] !== EnumToken.CommentTokenType);
                             const name = arena.strings[arena.stringValue[filteredNames[0]]];
                             const mfInfo = getMFInfo(name);
                             if (options.computeCalcExpression) {
                                 if (mfInfo == null ||
-                                    (mfInfo.type != MediaFeatureType.KeywordType &&
-                                        mfInfo.type != MediaFeatureType.StringType)) {
+                                    (mfInfo.type !== MediaFeatureType.KeywordType &&
+                                        mfInfo.type !== MediaFeatureType.StringType)) {
                                     const val = values;
                                     for (let l = 0; l < val.length; l++) {
                                         if (arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
                                             arena.strings[arena.stringValue[val[l]]] === "calc") {
                                             const value = evaluate(arena, [val[l]]);
-                                            if (value.length == 1) {
+                                            if (value.length === 1) {
                                                 arena.copyLocation(value[0], val[l]);
                                                 val[l] = value[0];
                                             }
@@ -275,14 +288,18 @@ function parseMediaqueryList(arena, stream, options) {
                                     action: "drop",
                                     node: arr[0],
                                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(arr[0]))
-                                    location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(arr[0]))],
+                                    location: [
+                                        options.source.file,
+                                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(arr[0])),
+                                    ],
                                     message: `${mfValue.isValueAllowed === false ? "invalid <mf-name>" : "expected <mf-value>"}`,
                                 });
                                 break;
                             }
                             if (mfInfo?.type === MediaFeatureType.RatioType) {
                                 const val = values;
-                                const filteredValues = val.filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType && arena.dataTypes[n] !== EnumToken.CommentTokenType);
+                                const filteredValues = val.filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType &&
+                                    arena.dataTypes[n] !== EnumToken.CommentTokenType);
                                 if (filteredValues.length === 3) {
                                     if (options.computeCalcExpression) {
                                         const div = gcd(arena.numericValue[filteredValues[0]], arena.numericValue[filteredValues[2]]);
@@ -327,7 +344,10 @@ function parseMediaqueryList(arena, stream, options) {
                                 action: "drop",
                                 node: stream[i],
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(stream[i]))
-                                location: [options.source.file, ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i]))],
+                                location: [
+                                    options.source.file,
+                                    ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                                ],
                                 message: `unmatched ')'`,
                             });
                             break;
@@ -371,35 +391,35 @@ function parseMediaqueryList(arena, stream, options) {
                                 // media range query
                                 if (options.minify && arena.dataTypes[op] === EnumToken.AndTokenType) {
                                     const leftCondition = left.length === 1 &&
-                                        arena.dataTypes[left[0]] == EnumToken.ParensTokenType &&
-                                        arena.tokenCount(left[0]) == 1
+                                        arena.dataTypes[left[0]] === EnumToken.ParensTokenType &&
+                                        arena.tokenCount(left[0]) === 1
                                         ? arena.firstToken[left[0]]
                                         : null;
                                     const rightCondition = right.length === 1 &&
-                                        arena.dataTypes[right[0]] == EnumToken.ParensTokenType &&
-                                        arena.tokenCount(right[0]) == 1
+                                        arena.dataTypes[right[0]] === EnumToken.ParensTokenType &&
+                                        arena.tokenCount(right[0]) === 1
                                         ? arena.firstToken[right[0]]
                                         : null;
                                     if (leftCondition != null &&
                                         rightCondition != null &&
-                                        arena.dataTypes[leftCondition] == EnumToken.MediaQueryConditionTokenType &&
-                                        arena.dataTypes[rightCondition] == EnumToken.MediaQueryConditionTokenType) {
+                                        arena.dataTypes[leftCondition] === EnumToken.MediaQueryConditionTokenType &&
+                                        arena.dataTypes[rightCondition] === EnumToken.MediaQueryConditionTokenType) {
                                         const leftNames = arena.fieldTokens(leftCondition, TokenField.L);
                                         const rightNames = arena.fieldTokens(rightCondition, TokenField.L);
                                         const leftOp = arena.field(leftCondition, TokenField.Op);
                                         const rightOp = arena.field(rightCondition, TokenField.Op);
-                                        if (leftNames.length == 1 &&
-                                            arena.dataTypes[leftNames[0]] == EnumToken.IdenTokenType &&
-                                            (arena.dataTypes[leftOp] == EnumToken.GtTokenType ||
-                                                arena.dataTypes[leftOp] == EnumToken.GteTokenType) &&
-                                            rightNames.length == 1 &&
-                                            arena.dataTypes[rightNames[0]] == EnumToken.IdenTokenType &&
-                                            (arena.dataTypes[rightOp] == EnumToken.LtTokenType ||
-                                                arena.dataTypes[rightOp] == EnumToken.LteTokenType) &&
+                                        if (leftNames.length === 1 &&
+                                            arena.dataTypes[leftNames[0]] === EnumToken.IdenTokenType &&
+                                            (arena.dataTypes[leftOp] === EnumToken.GtTokenType ||
+                                                arena.dataTypes[leftOp] === EnumToken.GteTokenType) &&
+                                            rightNames.length === 1 &&
+                                            arena.dataTypes[rightNames[0]] === EnumToken.IdenTokenType &&
+                                            (arena.dataTypes[rightOp] === EnumToken.LtTokenType ||
+                                                arena.dataTypes[rightOp] === EnumToken.LteTokenType) &&
                                             equalsIgnoreCase(arena.strings[arena.stringValue[leftNames[0]]], arena.strings[arena.stringValue[rightNames[0]]])) {
                                             const rangeQuery = arena.createToken(EnumToken.MediaRangeQueryTokenType);
                                             arena.dataTypes[leftOp] =
-                                                arena.dataTypes[leftOp] == EnumToken.GteTokenType
+                                                arena.dataTypes[leftOp] === EnumToken.GteTokenType
                                                     ? EnumToken.LteTokenType
                                                     : EnumToken.LtTokenType;
                                             // inlined: arena.setField(rangeQuery, TokenField.L, ...arena.fieldTokens(leftCondition, TokenField.R))
@@ -421,7 +441,6 @@ function parseMediaqueryList(arena, stream, options) {
                                         }
                                     }
                                 }
-                                expectAndOrComma = true;
                             }
                         }
                         break;
@@ -443,7 +462,7 @@ function parseMediaqueryList(arena, stream, options) {
     stream.length = 0;
     let hasPart = false;
     for (const part of parts) {
-        if (part.length == 0) {
+        if (part.length === 0) {
             continue;
         }
         if (hasPart) {

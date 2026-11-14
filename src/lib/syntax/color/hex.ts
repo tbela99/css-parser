@@ -12,19 +12,19 @@ function toHexString(acc: string, value: number): string {
 }
 
 export function reduceHexValue(value: string): string {
-    if (value[0] != "#") {
+    if (value[0] !== "#") {
         value = COLORS_NAMES[value.toLowerCase()] ?? value;
     }
 
     const named_color: string = NAMES_COLORS[expandHexValue(value)];
 
-    if (value.length == 7) {
-        if (value[1] == value[2] && value[3] == value[4] && value[5] == value[6]) {
+    if (value.length === 7) {
+        if (value[1] === value[2] && value[3] === value[4] && value[5] === value[6]) {
             value = `#${value[1]}${value[3]}${value[5]}`;
         }
-    } else if (value.length == 9) {
-        if (value[1] == value[2] && value[3] == value[4] && value[5] == value[6] && value[7] == value[8]) {
-            value = `#${value[1]}${value[3]}${value[5]}${value[7] == "f" ? "" : value[7]}`;
+    } else if (value.length === 9) {
+        if (value[1] === value[2] && value[3] === value[4] && value[5] === value[6] && value[7] === value[8]) {
+            value = `#${value[1]}${value[3]}${value[5]}${value[7] === "f" ? "" : value[7]}`;
         }
 
         if (value.endsWith("ff")) {
@@ -36,11 +36,11 @@ export function reduceHexValue(value: string): string {
 }
 
 export function expandHexValue(value: string): string {
-    if (value.length == 4) {
+    if (value.length === 4) {
         return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
     }
 
-    if (value.length == 5) {
+    if (value.length === 5) {
         return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}${value[4]}${value[4]}`;
     }
 
@@ -150,7 +150,7 @@ export function lch2HexToken(arena: AstArena, token: Token): Token | null {
 function hexToken(arena: AstArena, value: string): Token {
     value = reduceHexValue(value);
 
-    return arena.createColor(value, value[0] == "#" ? ColorType.HEX : ColorType.LIT);
+    return arena.createColor(value, value[0] === "#" ? ColorType.HEX : ColorType.LIT);
 }
 
 export function rgb2hexvalues(arena: AstArena, token: Token): string | null {
@@ -167,15 +167,15 @@ export function rgb2hexvalues(arena: AstArena, token: Token): string | null {
         t = components[i];
 
         value += (
-            arena.dataTypes[t] == EnumToken.Iden && arena.strings[arena.stringValue[t]] == "none"
+            arena.dataTypes[t] === EnumToken.Iden && arena.strings[arena.stringValue[t]] === "none"
                 ? "0"
-                : Math.round(getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1))
+                : Math.round(getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1))
         )
             .toString(16)
             .padStart(2, "0");
     }
 
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
 
@@ -201,7 +201,7 @@ export function hsl2hexvalues(arena: AstArena, token: Token): string | null {
         return null;
     }
 
-    if (t.length == 4) {
+    if (t.length === 4) {
         t[3] = srgb2rgb(t[3]);
     }
 
@@ -215,7 +215,7 @@ export function hwb2hexvalues(arena: AstArena, token: Token): string | null {
         return null;
     }
 
-    if (t.length == 4) {
+    if (t.length === 4) {
         t[3] = srgb2rgb(t[3]);
     }
 
@@ -229,7 +229,7 @@ export function cmyk2hexvalues(arena: AstArena, token: Token): string | null {
         return null;
     }
 
-    if (t.length == 4) {
+    if (t.length === 4) {
         t[3] = srgb2rgb(t[3]);
     }
 

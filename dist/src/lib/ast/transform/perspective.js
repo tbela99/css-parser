@@ -9,7 +9,7 @@ import { identity, multiply } from './utils.js';
 
 function perspective(x, from) {
     const matrix = identity();
-    matrix[2 * 4 + 3] = x == "none" ? 0 : x == 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+    matrix[2 * 4 + 3] = x == "none" ? 0 : x === 0 ? Number.NEGATIVE_INFINITY : -1 / x;
     return multiply(from, matrix);
 }
 

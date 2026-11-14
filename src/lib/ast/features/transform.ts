@@ -46,13 +46,13 @@ export class TransformCssFeature {
 
         let node: AstNode | AstDeclaration;
 
-        for (node = arena.firstChild[ast]; node != 0; node = arena.nextSibling[node]) {
+        for (node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.flags[node] & (EnumAstNodeStatus.Invalid | EnumAstNodeStatus.ValidationFailed)) {
                 continue;
             }
 
             if (
-                arena.dataTypes[node] != EnumToken.DeclarationNodeType ||
+                arena.dataTypes[node] !== EnumToken.DeclarationNodeType ||
                 !transformProperty.test(arena.strings[arena.name[node]])
             ) {
                 continue;
@@ -62,7 +62,7 @@ export class TransformCssFeature {
 
             for (const child of arena.tokens(node)) {
                 children.push(
-                    arena.dataTypes[child] == EnumToken.TransformFunctionTokenType
+                    arena.dataTypes[child] === EnumToken.TransformFunctionTokenType
                         ? minifyTransformFunctions(arena, child)
                         : child,
                 );

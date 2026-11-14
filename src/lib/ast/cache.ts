@@ -21,7 +21,7 @@
  * @module
  * @internal
  */
-import type {Arena} from "./arena.ts";
+import type { Arena } from "./arena.ts";
 
 /**
  * flags of the header of a serialized token: the fields that follow the header. the header is never negative
@@ -112,6 +112,10 @@ export class StructuralMemo<T> {
      */
     private pool: Int32Array = new Int32Array(1024);
     /**
+     * length of the pool: the length of a typed array is a getter
+     */
+    private poolLength: number = 1024;
+    /**
      * used length of the pool
      */
     private poolSize: number = 0;
@@ -146,13 +150,13 @@ export class StructuralMemo<T> {
     list(arena: Arena, first: number, prefix: number = 0): number {
         let used: number = this.poolSize;
 
-        if (used + 1 > this.pool.length) {
+        if (used + 1 > this.poolLength) {
             this.growPool(used + 1);
         }
 
         this.pool[used++] = prefix;
 
-        for (let token = first; token != 0; token = arena.nextSibling[token]) {
+        for (let token = first; token !== 0; token = arena.nextSibling[token]) {
             used = this.serialize(arena, token, used);
         }
 
@@ -210,7 +214,7 @@ export class StructuralMemo<T> {
      */
     private serialize(arena: Arena, token: number, used: number): number {
         // header, 5 fields, end marker
-        let buffer: Int32Array = used + 7 > this.pool.length ? this.growPool(used + 7) : this.pool;
+        let buffer: Int32Array = used + 7 > this.poolLength ? this.growPool(used + 7) : this.pool;
         const name: number = arena.name[token];
         const str: number = arena.stringValue[token];
         const unit: number = arena.unit[token];
@@ -221,17 +225,17 @@ export class StructuralMemo<T> {
         let header: number = arena.dataTypes[token] | (arena.colorType[token] << 8);
         const index: number = used++;
 
-        if (name != 0) {
+        if (name !== 0) {
             header |= Field.Name;
             buffer[used++] = name;
         }
 
-        if (str != 0) {
+        if (str !== 0) {
             header |= Field.String;
             buffer[used++] = str;
         }
 
-        if (unit != 0) {
+        if (unit !== 0) {
             header |= Field.Unit;
             buffer[used++] = unit;
         }
@@ -253,31 +257,31 @@ export class StructuralMemo<T> {
             }
         }
 
-        if (firstToken != 0) {
+        if (firstToken !== 0) {
             header |= Field.Tokens;
         }
 
-        if (firstChild != 0) {
+        if (firstChild !== 0) {
             header |= Field.Children;
         }
 
         buffer[index] = header;
 
-        if (firstToken != 0) {
-            for (let child: number = firstToken; child != 0; child = arena.nextSibling[child]) {
+        if (firstToken !== 0) {
+            for (let child: number = firstToken; child !== 0; child = arena.nextSibling[child]) {
                 used = this.serialize(arena, child, used);
             }
 
-            buffer = used + 1 > this.pool.length ? this.growPool(used + 1) : this.pool;
+            buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
             buffer[used++] = End;
         }
 
-        if (firstChild != 0) {
-            for (let child: number = firstChild; child != 0; child = arena.nextSibling[child]) {
+        if (firstChild !== 0) {
+            for (let child: number = firstChild; child !== 0; child = arena.nextSibling[child]) {
                 used = this.serialize(arena, child, used);
             }
 
-            buffer = used + 1 > this.pool.length ? this.growPool(used + 1) : this.pool;
+            buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
             buffer[used++] = End;
         }
 
@@ -290,6 +294,7 @@ export class StructuralMemo<T> {
      */
     private growPool(size: number): Int32Array {
         this.pool = grow(this.pool, size);
+        this.poolLength = this.pool.length;
         return this.pool;
     }
 
@@ -319,20 +324,20 @@ export class StructuralMemo<T> {
         let index: number = hash & mask;
         let slot: number;
 
-        while ((slot = table[index]) != 0) {
+        while ((slot = table[index]) !== 0) {
             slot--;
 
             const meta: number = slot * 3;
 
-            if (this.slots[meta] == hash && this.slots[meta + 2] == length) {
+            if (this.slots[meta] === hash && this.slots[meta + 2] === length) {
                 const offset: number = this.slots[meta + 1];
                 let i: number = 0;
 
-                while (i < length && pool[offset + i] == pool[base + i]) {
+                while (i < length && pool[offset + i] === pool[base + i]) {
                     i++;
                 }
 
-                if (i == length) {
+                if (i === length) {
                     this.hits++;
                     return slot;
                 }
@@ -344,7 +349,7 @@ export class StructuralMemo<T> {
         // insert: the serialized key is kept in the pool
         slot = this.size++;
 
-        if (slot * 3 == this.slots.length) {
+        if (slot * 3 === this.slots.length) {
             this.slots = grow(this.slots, slot * 3 + 3);
         }
 
@@ -371,7 +376,7 @@ export class StructuralMemo<T> {
         for (let slot = 0; slot < this.size; slot++) {
             let index: number = this.slots[slot * 3] & mask;
 
-            while (table[index] != 0) {
+            while (table[index] !== 0) {
                 index = (index + 1) & mask;
             }
 

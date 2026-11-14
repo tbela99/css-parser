@@ -1,13 +1,13 @@
-import type {Token} from "../../../@types/index.d.ts";
-import type {AstArena} from "../../ast/arena.ts";
-import {ColorType, EnumToken} from "../../ast/types.ts";
-import {convertColor} from "./color.ts";
-import {getColorComponents} from "./utils/components.ts";
-import {makeColor} from "./utils/make-color.ts";
-import {getColorType} from "./utils/color-type.ts";
-import {equalsIgnoreCase} from "../../parser/utils/text.ts";
-import {evaluate} from "../../ast/math/expression.ts";
-import {ValueWalker} from "../../ast/walk.ts";
+import type { Token } from "../../../@types/index.d.ts";
+import type { AstArena } from "../../ast/arena.ts";
+import { ColorType, EnumToken } from "../../ast/types.ts";
+import { convertColor } from "./color.ts";
+import { getColorComponents } from "./utils/components.ts";
+import { makeColor } from "./utils/make-color.ts";
+import { getColorType } from "./utils/color-type.ts";
+import { equalsIgnoreCase } from "../../parser/utils/text.ts";
+import { evaluate } from "../../ast/math/expression.ts";
+import { ValueWalker } from "../../ast/walk.ts";
 
 /**
  * Compute alpha color
@@ -52,7 +52,7 @@ export function alpha(arena: AstArena, color: Token, alpha: Token): Token | null
 
         const result = evaluate(arena, [alpha]);
 
-        if (result.length == 1) {
+        if (result.length === 1) {
             alpha = result[0];
         }
         // else {

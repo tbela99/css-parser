@@ -9,11 +9,6 @@ import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2lsrgbvalues } from './srgb.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 
-// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
-//     const [x, y, z] = Lab_to_XYZ(l, a, b);
-//
-//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
-// }
 function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     // convert XYZ to linear-light sRGB
     const M = [
@@ -24,7 +19,7 @@ function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     const XYZ = [x, y, z]; // convert to XYZ
     return multiplyMatrices(M, XYZ)
         .map((v) => v)
-        .concat(alpha == null || alpha == 1 ? [] : [alpha]);
+        .concat(alpha == null || alpha === 1 ? [] : [alpha]);
 }
 function XYZ_D50_to_D65(x, y, z) {
     // Bradford chromatic adaptation from D50 to D65
@@ -45,7 +40,7 @@ function srgb2xyz(r, g, b, alpha) {
         0.21263900587151036 * r + 0.7151686787677559 * g + 0.07219231536073371 * b,
         0.01933081871559185 * r + 0.11919477979462599 * g + 0.9505321522496606 * b,
     ];
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
     return rgb;
@@ -55,7 +50,7 @@ function srgb2xyz_d65(r, g, b, alpha) {
     // xyx d65
     let values = srgb2xyz(r, g, b);
     let rgb = XYZ_D65_to_D50(values[0], values[1], values[2]);
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
     return rgb;

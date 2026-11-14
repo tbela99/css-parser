@@ -98,11 +98,11 @@ export function color2HslToken(arena: AstArena, token: Token): Token | null {
 }
 
 function hslToken(arena: AstArena, values: number[]): Token {
-    if (values[1] == 0) {
+    if (values[1] === 0) {
         values[0] = 0;
     }
 
-    if (values[2] == 1 || values[2] == 0) {
+    if (values[2] === 1 || values[2] === 0) {
         values[0] = 0;
         values[1] = 0;
     }
@@ -113,7 +113,7 @@ function hslToken(arena: AstArena, values: number[]): Token {
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
 
-    if (values.length == 4 && values[3] != 1) {
+    if (values.length === 4 && values[3] !== 1) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -149,13 +149,13 @@ export function rgb2hslvalues(arena: AstArena, token: Token): number[] | null {
     // @ts-ignore
     let a: number = null;
 
-    if (chi.length == 4) {
+    if (chi.length === 4) {
         a = getNumber(arena, chi[3]);
     }
 
     const values: number[] = [r, g, b];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         values.push(a);
     }
 
@@ -198,7 +198,7 @@ export function hwb2hslvalues(
 
     const hsl = [hue, saturation * 100, lightness * 100];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hsl.push(a);
     }
 

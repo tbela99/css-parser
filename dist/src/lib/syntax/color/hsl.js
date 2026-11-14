@@ -76,10 +76,10 @@ function color2HslToken(arena, token) {
     return hslToken(arena, srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
 function hslToken(arena, values) {
-    if (values[1] == 0) {
+    if (values[1] === 0) {
         values[0] = 0;
     }
-    if (values[2] == 1 || values[2] == 0) {
+    if (values[2] === 1 || values[2] === 0) {
         values[0] = 0;
         values[1] = 0;
     }
@@ -88,7 +88,7 @@ function hslToken(arena, values) {
         arena.createToken(EnumToken.PercentageTokenType, values[1]),
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
-    if (values.length == 4 && values[3] != 1) {
+    if (values.length === 4 && values[3] !== 1) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("hsl", ColorType.HSL, chi);
@@ -112,11 +112,11 @@ function rgb2hslvalues(arena, token) {
     let b = getNumber(arena, t);
     // @ts-ignore
     let a = null;
-    if (chi.length == 4) {
+    if (chi.length === 4) {
         a = getNumber(arena, chi[3]);
     }
     const values = [r, g, b];
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         values.push(a);
     }
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
@@ -144,7 +144,7 @@ function hwb2hslvalues(arena, token) {
         saturation = chroma / (1 - Math.abs(2 * lightness - 1));
     }
     const hsl = [hue, saturation * 100, lightness * 100];
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hsl.push(a);
     }
     return hsl;

@@ -129,7 +129,7 @@ class PropertyList {
         let syntaxRules = null;
         const arena = this.arena;
         name =
-            arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+            arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
                 : arena.strings[arena.name[declaration]];
         // do not compute shorthand for invalid declarations
@@ -204,7 +204,7 @@ class PropertyList {
         // the value of a shorthand that contains var(), env() or if() cannot be expanded: the longhands that follow
         // it are not merged into it. `background: var(--bg); background-clip: text`
         if (shorthand === name &&
-            (shortHandType == "map" || shortHandType == "set") &&
+            (shortHandType === "map" || shortHandType === "set") &&
             hasWildCardFunction(arena, declaration)) {
             this.declarations.set(this.memo.key(arena, declaration), declaration);
             return this;
@@ -215,14 +215,14 @@ class PropertyList {
                 existing = existing.declarations.get(name);
             }
             if (existing != null &&
-                typeof existing == "number" &&
+                typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
                 arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration) {
                 return this;
             }
         }
         // @ts-ignore
-        if (shortHandType == "map") {
+        if (shortHandType === "map") {
             let owner = this;
             const mapName = 
             // @ts-ignore
@@ -255,7 +255,7 @@ class PropertyList {
             }
         }
         // @ts-ignore
-        else if (shortHandType == "set") {
+        else if (shortHandType === "set") {
             // @ts-ignore
             if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
@@ -336,7 +336,7 @@ class PropertyList {
                 }
             }
         }
-        if (values != declarationValues) {
+        if (values !== declarationValues) {
             arena.setTokenList(declaration, values);
         }
     }

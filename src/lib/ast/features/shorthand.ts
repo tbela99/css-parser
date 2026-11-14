@@ -43,7 +43,7 @@ export class ComputeShorthandFeature {
             [key: string]: any;
         },
     ): AstNode | null {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] == 0) {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || arena.firstChild[ast] === 0) {
             return null;
         }
 
@@ -53,7 +53,7 @@ export class ComputeShorthandFeature {
         let doNotSort: boolean = false;
         let hasDeclarations: boolean = false;
 
-        if (arena.dataTypes[ast] == EnumToken.AtRuleNodeType) {
+        if (arena.dataTypes[ast] === EnumToken.AtRuleNodeType) {
             switch (arena.strings[arena.name[ast]]) {
                 case "function":
                 case "mixin":
@@ -66,12 +66,12 @@ export class ComputeShorthandFeature {
         // the rules (with their leading comments) stay in place
         let child: AstNode = arena.firstChild[ast];
 
-        while (child != 0) {
+        while (child !== 0) {
             let last: AstNode = child;
 
             if (!doNotSort) {
                 // capture comments with the next node
-                while (arena.nextSibling[last] != 0 && arena.dataTypes[last] == EnumToken.CommentNodeType) {
+                while (arena.nextSibling[last] !== 0 && arena.dataTypes[last] === EnumToken.CommentNodeType) {
                     last = arena.nextSibling[last];
                 }
             }
@@ -79,10 +79,10 @@ export class ComputeShorthandFeature {
             const next: AstNode = arena.nextSibling[last];
 
             // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
-            if (doNotSort || arena.dataTypes[last] == EnumToken.DeclarationNodeType) {
+            if (doNotSort || arena.dataTypes[last] === EnumToken.DeclarationNodeType) {
                 hasDeclarations = true;
 
-                for (let node: AstNode = child; node != next; ) {
+                for (let node: AstNode = child; node !== next; ) {
                     const nextNode: AstNode = arena.nextSibling[node];
 
                     arena.detach(node);
@@ -99,7 +99,7 @@ export class ComputeShorthandFeature {
             const first: AstNode = arena.firstChild[ast];
 
             for (const node of list) {
-                if (first == 0) {
+                if (first === 0) {
                     arena.appendChild(ast, node);
                 } else {
                     arena.insertBefore(first, node);

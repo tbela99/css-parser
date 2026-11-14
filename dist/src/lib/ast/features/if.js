@@ -44,10 +44,10 @@ function cloneDeclaration(arena, declaration, nodeMap) {
  */
 function createAtRule(arena, declaration, parent, nam, tokens, options = {}) {
     const atRule = arena.createAtRule(EnumToken.AtRuleNodeType, nam, tokens.reduce((acc, curr) => acc + renderValue(arena, curr, options), ""), true, tokens, null, null);
-    if (arena.parents[declaration] != 0) {
+    if (arena.parents[declaration] !== 0) {
         parent = arena.parents[declaration];
     }
-    if (parent != 0) {
+    if (parent !== 0) {
         arena.copyLocation(atRule, parent);
     }
     return atRule;
@@ -60,8 +60,8 @@ function createAtRule(arena, declaration, parent, nam, tokens, options = {}) {
 function conditionLeft(arena, condition) {
     return (arena
         .fieldTokens(condition, TokenField.L)
-        .find((t) => arena.dataTypes[t] != EnumToken.CommentTokenType &&
-        arena.dataTypes[t] != EnumToken.WhitespaceTokenType) ?? null);
+        .find((t) => arena.dataTypes[t] !== EnumToken.CommentTokenType &&
+        arena.dataTypes[t] !== EnumToken.WhitespaceTokenType) ?? null);
 }
 /**
  * value tokens of an if condition (right side). the trailing semicolon is removed
@@ -83,7 +83,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
     let targetParentWrapper = parentWrapper;
     let targetWrapper = wrapper;
     // map a token or the declaration itself to its clone
-    const mapped = (target) => target == declaration ? clonedDeclaration : nodeMap.get(target);
+    const mapped = (target) => target === declaration ? clonedDeclaration : nodeMap.get(target);
     if (arena.dataTypes[node] === EnumToken.IfElseConditionTokenType) {
         //
         clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
@@ -96,10 +96,10 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
                 equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])) {
                 arena.replaceToken(mapped(targetWrapper), ...conditionValue(arena, elseCondition, nodeMap));
-                if (targetParentWrapper != declaration) {
+                if (targetParentWrapper !== declaration) {
                     const siblings = arena.tokens(targetParentWrapper);
                     let index = siblings.indexOf(targetWrapper);
-                    if (index != -1) {
+                    if (index !== -1) {
                         let i;
                         let siblingWrapper;
                         let left = conditionLeft(arena, arena.field(node, TokenField.L));
@@ -134,7 +134,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
         const leftType = arena.dataTypes[left];
         if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-            arena.replaceToken(mapped(targetWrapper == declaration ? node : targetWrapper), ...conditionValue(arena, node, nodeMap));
+            arena.replaceToken(mapped(targetWrapper === declaration ? node : targetWrapper), ...conditionValue(arena, node, nodeMap));
             result.push(clonedDeclaration);
         }
         else if (leftType === EnumToken.WhenElseFunctionTokenType) {
@@ -156,7 +156,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
         else if (leftType === EnumToken.ContainerFunctionTokenType) {
             const atRule = createAtRule(arena, declaration, parent, "container", [arena.clone(left, true)]);
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
-            const isWildCard = targetWrapper != declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
+            const isWildCard = targetWrapper !== declaration && arena.dataTypes[targetWrapper] === EnumToken.WildCardFunctionTokenType;
             arena.replaceToken(mapped(isWildCard ? targetWrapper : node), ...conditionValue(arena, node, nodeMap));
             // inlined: arena.appendChildren(atRule, clonedDeclaration)
             arena.appendChildList(atRule, [clonedDeclaration]);
@@ -180,7 +180,7 @@ function processNode(arena, declarationNode, cache, parent = 0) {
     const result = [];
     const stack = [declarationNode];
     // the generated nodes are detached: remember the parent for the location of the generated at-rules
-    if (arena.parents[declarationNode] != 0) {
+    if (arena.parents[declarationNode] !== 0) {
         parent = arena.parents[declarationNode];
     }
     while (++k < stack.length) {
@@ -194,7 +194,7 @@ function processNode(arena, declarationNode, cache, parent = 0) {
         const value = found.value;
         // the parent of a detached token is the declaration
         const parentWrapper = arena.getValueParent(value) || declaration;
-        const grandParent = parentWrapper == declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
+        const grandParent = parentWrapper === declaration ? declaration : arena.getValueParent(parentWrapper) || declaration;
         if (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType) {
             const conditions = arena.tokens(value);
             for (i = 0; i < conditions.length; i++) {
@@ -205,11 +205,11 @@ function processNode(arena, declarationNode, cache, parent = 0) {
             stack.push(...substituteIfElseNode(arena, declaration, value, parentWrapper, grandParent, cache, parent));
         }
         // the node is substituted: release it unless it is the node being replaced
-        if (astNode != declarationNode) {
+        if (astNode !== declarationNode) {
             arena.detach(astNode);
         }
     }
-    if (result.length > 0 && arena.parents[declarationNode] != 0) {
+    if (result.length > 0 && arena.parents[declarationNode] !== 0) {
         arena.replaceChild(declarationNode, ...result);
         if (!result.includes(declarationNode)) {
             arena.detach(declarationNode);

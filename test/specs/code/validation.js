@@ -652,7 +652,8 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #23", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/bootstrap-4.css");
-            // webref does not define -ms-user-select: it is validated as user-select, `-ms-user-select: auto` is valid
+            // webref does not define -ms-user-select: it keeps its mdn-data definition (none | element | text),
+            // `-ms-user-select: auto` is invalid
             return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
@@ -660,7 +661,7 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-            ).then((result) => expect(result.errors.length).equals(0));
+            ).then((result) => expect(result.errors.length).equals(1));
         });
 
         it("file validation #24", function () {
@@ -677,7 +678,8 @@ html, body, div, span, applet, object, iframe,
 
         it("file validation #25", function () {
             const url = new URL(dirname(import.meta.url) + "/../../files/css/tailwind.css");
-            // webref does not define -ms-user-select: it is validated as user-select, `-ms-user-select: auto` is valid
+            // webref does not define -ms-user-select: it keeps its mdn-data definition (none | element | text),
+            // `-ms-user-select: auto` and `-ms-user-select: all` are invalid
             return transform(
                 `@import '${url.pathname.replace(root.pathname, "")}';
 `,
@@ -685,7 +687,7 @@ html, body, div, span, applet, object, iframe,
                     validation: true,
                     resolveImport: true,
                 },
-            ).then((result) => expect(result.errors.length).equals(10));
+            ).then((result) => expect(result.errors.length).equals(20));
         });
 
         it("file validation #26", function () {
@@ -887,6 +889,127 @@ html, body, div, span, applet, object, iframe,
             return transform(`@when media(width>0){.a{color:red}}`, {
                 validation: true,
             }).then((result) => expect(result.errors.length).equals(0));
+        });
+
+        it("vendor prefixed alias is not renamed #38", function () {
+            return transform(
+                `.a{-webkit-transform:none;transform:none;-webkit-filter:none;filter:none;-webkit-box-sizing:border-box}`,
+                {
+                    validation: true,
+                },
+            ).then((result) => {
+                expect(result.errors.length).equals(0);
+                expect(result.code).equals(
+                    `.a{-webkit-transform:none;transform:none;-webkit-filter:none;filter:none;-webkit-box-sizing:border-box}`,
+                );
+            });
+        });
+
+        it("vendor prefixed alias is not renamed with minify false #44", function () {
+            // animate.css: 738 vendor prefixed aliases (-webkit-transform, -webkit-animation-name, ...)
+            return transform(`.a{-webkit-transform:none;transform:none;-webkit-animation-name:a;animation-name:a}`, {
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+            }).then((result) =>
+                expect(result.code).equals(
+                    `.a{-webkit-transform:none;transform:none;-webkit-animation-name:a;animation-name:a}`,
+                ),
+            );
+        });
+
+        it("vendor prefixed aliases of animate.css are not renamed #45", function () {
+            const url = new URL(dirname(import.meta.url) + "/../../files/css/animate.css");
+            // the 738 vendor prefixed aliases are kept: renaming them would remove 738 * 8 bytes (68171 bytes)
+            return transform(
+                `@import '${url.pathname.replace(root.pathname, "")}';
+`,
+                {
+                    resolveImport: true,
+                    minify: false,
+                    beautify: false,
+                    removeEmpty: true,
+                    removeComments: true,
+                    convertColor: true,
+                },
+            ).then((result) => {
+                expect(new TextEncoder().encode(result.code).length).equals(74075);
+                expect(result.code.match(/-webkit-transform:/g).length).equals(500);
+            });
+        });
+
+        it("vendor prefixed alias uses the syntax of the standard property #39", function () {
+            // -webkit-mask-box-image-width is an alias of mask-border-width
+            return Promise.all([
+                transform(`.a{-webkit-mask-box-image-width:10px;-webkit-mask-box-image-repeat:round stretch}`, {
+                    validation: true,
+                }),
+                transform(`.a{-webkit-mask-box-image-width:red}`, { validation: true }),
+                transform(`.a{-webkit-align-content:foo}`, { validation: true }),
+            ]).then(([valid, invalidWidth, invalidAlign]) => {
+                expect(valid.errors.length).equals(0);
+                expect(valid.code).equals(`.a{-webkit-mask-box-image-width:10px;-webkit-mask-box-image-repeat:round stretch}`);
+                expect(invalidWidth.errors.length).equals(1);
+                expect(invalidAlign.errors.length).equals(1);
+            });
+        });
+
+        it("vendor prefixed alias with a legacy syntax #40", function () {
+            // the legacy values extend the syntax of the standard property
+            return Promise.all([
+                transform(
+                    `.a{-webkit-mask-clip:border;-webkit-mask-composite:xor;-webkit-background-clip:text;-webkit-appearance:textfield}`,
+                    { validation: true },
+                ),
+                transform(`.a{-webkit-mask-clip:no-clip;-webkit-mask-composite:exclude;-webkit-appearance:auto}`, {
+                    validation: true,
+                }),
+                transform(`.a{mask-clip:border}`, { validation: true }),
+                transform(`.a{-webkit-appearance:foo}`, { validation: true }),
+            ]).then(([legacy, standard, standardProperty, invalid]) => {
+                expect(legacy.errors.length).equals(0);
+                expect(legacy.code).equals(
+                    `.a{-webkit-mask-clip:border;-webkit-mask-composite:xor;-webkit-background-clip:text;-webkit-appearance:textfield}`,
+                );
+                expect(standard.errors.length).equals(0);
+                // the legacy values are not accepted by the standard property
+                expect(standardProperty.errors.length).equals(1);
+                expect(invalid.errors.length).equals(1);
+            });
+        });
+
+        it("non standard property not defined by webref keeps its mdn-data definition #42", function () {
+            return transform(
+                `.a{-webkit-box-orient:vertical;-webkit-tap-highlight-color:#0000;-webkit-overflow-scrolling:touch;-ms-scroll-chaining:none}.b::-webkit-slider-thumb{font-smooth:auto}`,
+                {
+                    validation: "all",
+                    lenient: false,
+                },
+            ).then((result) => {
+                expect(result.errors.length).equals(0);
+                expect(result.code).equals(
+                    `.a{-webkit-box-orient:vertical;-webkit-tap-highlight-color:#0000;-webkit-overflow-scrolling:touch;-ms-scroll-chaining:none}.b::-webkit-slider-thumb{font-smooth:auto}`,
+                );
+            });
+        });
+
+        it("removePrefix renames to the non standard property #43", function () {
+            return transform(`.a{-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-font-smoothing:antialiased}`, {
+                removePrefix: true,
+            }).then((result) =>
+                expect(result.code).equals(`.a{box-orient:horizontal;box-direction:normal;font-smooth:antialiased}`),
+            );
+        });
+
+        it("legacy name alias that is not vendor prefixed is renamed #41", function () {
+            return transform(`.a{word-wrap:break-word}.b{grid-gap:10px}`, {
+                validation: true,
+            }).then((result) => {
+                expect(result.errors.length).equals(0);
+                expect(result.code).equals(`.a{overflow-wrap:break-word}.b{gap:10px}`);
+            });
         });
     });
 }

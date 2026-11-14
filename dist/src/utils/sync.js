@@ -26,8 +26,8 @@ function parseResult(result, options) {
             // extract inline source map from the input CSS
             const arena = result.arena;
             const token = arena.lastChild[result.ast];
-            if (token != 0 &&
-                arena.dataTypes[token] == EnumToken.CommentTokenType &&
+            if (token !== 0 &&
+                arena.dataTypes[token] === EnumToken.CommentTokenType &&
                 arena.startsWith(token, "val", "/*# sourceMappingURL=")) {
                 let data = arena.strings[arena.stringValue[token]].slice(21, -2).trim();
                 if (data.endsWith(".map")) {
@@ -69,12 +69,12 @@ function validateSyncArguments(options, prefix = "options.") {
     let i;
     for (i = 0; i < args.length; i++) {
         const [key, value] = args[i];
-        if (typeof value == "function") {
+        if (typeof value === "function") {
             if (value instanceof Promise || Object.getPrototypeOf(value).constructor.name == "AsyncFunction") {
                 throw new Error(`[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`);
             }
         }
-        else if (value != null && typeof value == "object" && !(value instanceof AstArena)) {
+        else if (value != null && typeof value === "object" && !(value instanceof AstArena)) {
             validateSyncArguments(value, prefix + key + ".");
         }
     }

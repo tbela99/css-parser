@@ -49,11 +49,11 @@ function matchType(arena, val, properties) {
         return properties.types.some((type) => {
             // @ts-ignore
             const typ = EnumToken[type];
-            return typ == EnumToken.LengthTokenType || typ == EnumToken.AngleTokenType;
+            return typ === EnumToken.LengthTokenType || typ === EnumToken.AngleTokenType;
         });
     }
     if (tokensfuncSet.has(typ) && typ === EnumToken.MathFunctionTokenType) {
-        for (let t = arena.firstToken[val]; t != 0; t = arena.nextSibling[t]) {
+        for (let t = arena.firstToken[val]; t !== 0; t = arena.nextSibling[t]) {
             if (!mathTokenTypes.includes(arena.dataTypes[t]) && !matchType(arena, t, properties)) {
                 return false;
             }

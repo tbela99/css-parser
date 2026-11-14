@@ -51,16 +51,16 @@ function srgbvalues(arena, token) {
     return null;
 }
 function rgb2srgb(arena, token) {
-    return (getColorComponents(arena, token)?.map?.((t, index) => index == 3
-        ? arena.dataTypes[t] == EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] == "none"
+    return (getColorComponents(arena, token)?.map?.((t, index) => index === 3
+        ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none"
             ? 1
             : getNumber(arena, t)
-        : ((arena.dataTypes[t] == EnumToken.PercentageTokenType ? 255 : 1) *
+        : ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) *
             getNumber(arena, t)) /
             255) ?? null);
 }
 function rgb2srgbvalues(arena, token) {
-    return (getColorComponents(arena, token)?.map?.((t, index) => index == 3
+    return (getColorComponents(arena, token)?.map?.((t, index) => index === 3
         ? getNumber(arena, t)
         : getNumber(arena, t) / 255) ?? null);
 }
@@ -74,14 +74,14 @@ function rgb2srgbvalues(arena, token) {
 //     return result;
 // }
 function hex2srgbvalues(arena, token) {
-    const value = expandHexValue(arena.colorType[token] == ColorType.LIT
+    const value = expandHexValue(arena.colorType[token] === ColorType.LIT
         ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
         : arena.strings[arena.stringValue[token]]);
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);
     }
-    if (rgb.length == 4) {
+    if (rgb.length === 4) {
         rgb[3] = +rgb[3].toFixed(2);
     }
     return rgb;
@@ -98,7 +98,7 @@ function hwb2srgbvalues(arena, token) {
         return [];
     }
     const rgb = hwb2srgb(h, w, b);
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         rgb.push(a);
     }
     return rgb;
@@ -171,7 +171,7 @@ function cmyk2srgbvalues(arena, token) {
     const k = getNumber(arena, t);
     const mul = 1 - k;
     const rgb = [1 - Math.min(1, c * mul + k), 1 - Math.min(1, m * mul + k), 1 - Math.min(1, y * mul + k)];
-    if (components.length == 5) {
+    if (components.length === 5) {
         rgb.push(getNumber(arena, components[4]));
     }
     return rgb;
@@ -182,7 +182,7 @@ function oklab2srgbvalues(arena, token) {
         return null;
     }
     const rgb = OKLab_to_sRGB(l, a, b);
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
     return rgb;
@@ -194,7 +194,7 @@ function oklch2srgbvalues(arena, token) {
     }
     const values = lchvalues2labvalues(l, c, h);
     const rgb = OKLab_to_sRGB(values[0], values[1], values[2]);
-    if (alpha != 1) {
+    if (alpha !== 1) {
         rgb.push(alpha);
     }
     return rgb;
@@ -215,14 +215,14 @@ function hslvalues(arena, token) {
     t = components[2];
     // @ts-ignore
     let l = getNumber(arena, t);
-    if (arena.dataTypes[components[1]] == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[components[1]] === EnumToken.PercentageTokenType) {
         s *= 100;
     }
-    if (arena.dataTypes[components[2]] == EnumToken.PercentageTokenType) {
+    if (arena.dataTypes[components[2]] === EnumToken.PercentageTokenType) {
         l *= 100;
     }
     let a = null;
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
         // @ts-ignore
@@ -288,7 +288,7 @@ function lch2srgbvalues(arena, token) {
     }
     // https://www.w3.org/TR/css-color-4/#lab-to-lch
     const rgb = Lab_to_sRGB(l, a, b);
-    if (alpha != 1) {
+    if (alpha !== 1) {
         rgb.push(alpha);
     }
     return rgb;
@@ -308,7 +308,7 @@ function srgb2lsrgbvalues(r, g, b, a = null) {
         }
         return (Math.sign(val) || 1) * Math.pow((abs + 0.055) / 1.055, 2.4);
     });
-    if (a != 1 && a != null) {
+    if (a !== 1 && a != null) {
         rgb.push(a);
     }
     return rgb;
@@ -327,7 +327,7 @@ function lsrgb2srgbvalues(r, g, b, alpha = null) {
         }
         return 12.92 * val;
     });
-    if (alpha != 1 && alpha != null) {
+    if (alpha !== 1 && alpha != null) {
         rgb.push(alpha);
     }
     return rgb;

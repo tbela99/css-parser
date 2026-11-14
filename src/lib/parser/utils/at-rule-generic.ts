@@ -5,7 +5,8 @@ import { tokensfuncDefMap } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function matchGenericSyntax(
-    arena: AstArena, stream: Token[],
+    arena: AstArena,
+    stream: Token[],
     options: ParserOptions,
 ): {
     success: boolean;
@@ -22,7 +23,10 @@ export function matchGenericSyntax(
     for (; i < stream.length; i++) {
         const token = stream[i];
 
-        if (arena.dataTypes[token] === EnumToken.WhitespaceTokenType || arena.dataTypes[token] === EnumToken.CommentTokenType) {
+        if (
+            arena.dataTypes[token] === EnumToken.WhitespaceTokenType ||
+            arena.dataTypes[token] === EnumToken.CommentTokenType
+        ) {
             continue;
         }
         if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
@@ -44,7 +48,10 @@ export function matchGenericSyntax(
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
+                    location: [
+                        options.source!.file,
+                        ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token)),
+                    ],
                 });
                 success = false;
                 break;
@@ -56,14 +63,20 @@ export function matchGenericSyntax(
             continue;
         }
 
-        if (arena.dataTypes[token] === EnumToken.IdenTokenType && equalsIgnoreCase("and", arena.strings[arena.stringValue[token]])) {
+        if (
+            arena.dataTypes[token] === EnumToken.IdenTokenType &&
+            equalsIgnoreCase("and", arena.strings[arena.stringValue[token]])
+        ) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
+                    location: [
+                        options.source!.file,
+                        ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token)),
+                    ],
                 });
                 success = false;
                 break;
@@ -76,14 +89,20 @@ export function matchGenericSyntax(
             continue;
         }
 
-        if (arena.dataTypes[token] === EnumToken.IdenTokenType && equalsIgnoreCase("or", arena.strings[arena.stringValue[token]])) {
+        if (
+            arena.dataTypes[token] === EnumToken.IdenTokenType &&
+            equalsIgnoreCase("or", arena.strings[arena.stringValue[token]])
+        ) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({
                     action: "drop",
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
+                    location: [
+                        options.source!.file,
+                        ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token)),
+                    ],
                 });
                 success = false;
                 break;
@@ -103,7 +122,10 @@ export function matchGenericSyntax(
                     message: `unexpected token ${EnumToken[arena.dataTypes[token]]}`,
                     node: token,
                     // inlined: options.source!.getSourceLocation(arena.getSpanStart(token))
-                    location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token))],
+                    location: [
+                        options.source!.file,
+                        ...options.source!.lineStarts.getOffsets(arena.getSpanStart(token)),
+                    ],
                 });
                 success = false;
                 break;
@@ -129,7 +151,10 @@ export function matchGenericSyntax(
             message: `unexpected token ${EnumToken[arena.dataTypes[stack[stack.length - 1]]]}`,
             node: stack[stack.length - 1],
             // inlined: options.source!.getSourceLocation(arena.getSpanStart(stack[stack.length - 1]))
-            location: [options.source!.file, ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1]))],
+            location: [
+                options.source!.file,
+                ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stack[stack.length - 1])),
+            ],
         });
         success = false;
     }
