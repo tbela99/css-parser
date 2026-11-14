@@ -246,7 +246,7 @@ const outputFile: string = outputDirectory + "/validation.json";
 // the origin of the definitions of the syntax file, used to report the origin of the removed definitions
 const originsFile: string = outputDirectory + "/validation.origins.json";
 // the changes are appended to this file, they are ported manually to CHANGELOG.md
-const changesFile: string = process.env.CSS_SYNTAX_CHANGES_FILE ?? import.meta.dirname! + "/../SYNTAX-CHANGES.md";
+const changesFile: string = process.env.CSS_SYNTAX_CHANGES_FILE ?? import.meta.dirname! + "/../SYNTAX-CHANGELOG.md";
 
 // the previous syntax file, compared with the new one
 const previous: SyntaxFile | null = await readFile(outputFile, "utf8").then(

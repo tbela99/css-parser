@@ -1,11 +1,12 @@
 # Changelog
 
-# Unreleased
+# v2.1.0
+
+- [x] use arraybuffer as input data
 
 declarations:
 
 - [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
-- [x] the vendor prefixed legacy name aliases are not renamed: they are validated with the syntax of the standard property (`-webkit-align-content` with the syntax of `align-content`). the syntax file stores them as aliases: `"-webkit-align-content": { "alias": "align-content" }`. the vendor prefixed properties with a legacy syntax have their own syntax: the syntax of the standard property or the legacy syntax of the csstree patch (`-webkit-appearance: <'appearance'> | none | button | button-bevel | ...`, `-webkit-mask-box-image`), or the legacy values of `scripts/local-patch.json` (`-webkit-mask`, `-webkit-mask-clip: [ <coord-box> | no-clip | border | padding | content | text ]#`, `-webkit-mask-origin`, `-webkit-mask-composite`, `-webkit-background-clip`)
 
 validation
 
