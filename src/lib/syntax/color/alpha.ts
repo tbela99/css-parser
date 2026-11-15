@@ -11,6 +11,7 @@ import { ValueWalker } from "../../ast/walk.ts";
 
 /**
  * Compute alpha color
+ * @param arena
  * @param color
  * @param alpha
  * @returns
@@ -51,7 +52,7 @@ export function alpha(arena: AstArena, color: Token, alpha: Token): Token | null
 
         const result = evaluate(arena, [alpha]);
 
-        if (result.length == 1) {
+        if (result.length === 1) {
             alpha = result[0];
         }
         // else {

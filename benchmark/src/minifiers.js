@@ -127,7 +127,16 @@ export const minifiers = [
     {
         id: "css-parser2",
         url: versions["css-parser"].url,
-        label: `@tbela99/css-parser (speed) - ${versions["css-parser"].version}`,
+        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
+        minify: async (css) =>
+            transformSync({
+                input: css,
+            }).code,
+    },
+    {
+        id: "css-parser-speed",
+        url: versions["css-parser"].url,
+        label: `@tbela99/css-parser (fast) - ${versions["css-parser"].version}`,
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
         minify: async (css) =>
             transformSync({
@@ -138,11 +147,5 @@ export const minifiers = [
                 removeComments: true,
                 convertColor: true,
             }).code,
-    },
-    {
-        id: "css-parser",
-        url: versions["css-parser"].url,
-        label: `@tbela99/css-parser (default settings) - ${versions["css-parser"].version}`,
-        minify: async (css) => transformSync(css, { minify: true }).code,
     },
 ];

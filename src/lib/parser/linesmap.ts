@@ -29,7 +29,7 @@ export class LineMap {
         const column: number = offset - this.lineStarts[line];
 
         // [line, column]
-        return [line + 1, line == 0 ? column + 1 : column];
+        return [line + 1, line === 0 ? column + 1 : column];
     }
 
     /**
@@ -55,20 +55,5 @@ export class LineMap {
             }
         }
         return result;
-    }
-
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts(): number[] {
-        return this.lineStarts;
-    }
-
-    /**
-     * add line start
-     */
-    addLineStart(lineStart: number) {
-        this.lineStarts.push(lineStart);
     }
 }

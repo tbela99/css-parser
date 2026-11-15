@@ -45,6 +45,7 @@ $ deno add @tbela99/css-parser
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
+* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
 * **51.5kb** once minified and gzipped.
 
 ## Vendor prefix removal
@@ -113,7 +114,7 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 128.67 ms          | 268.86 ms                 |
+| Time                  | 116.61 ms          | 224.18 ms                 |
 | Size reduction        | -20.6%             | -31.4%                    |
 
 ## Playground

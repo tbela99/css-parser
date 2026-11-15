@@ -23,19 +23,68 @@ export function getSyntaxConfig(): ValidationConfiguration {
     return config as ValidationConfiguration;
 }
 
+/**
+ * find a syntax definition in a group.
+ *
+ * the syntaxes are generated from webref (see scripts/webref.ts): the functions and the patched syntaxes are stored in
+ * the {@link ValidationSyntaxGroupEnum.Syntaxes} group, the value types are stored in the
+ * {@link ValidationSyntaxGroupEnum.Types} group with their name without the angle brackets (`color`).
+ * a {@link ValidationSyntaxGroupEnum.Syntaxes} lookup falls back to the {@link ValidationSyntaxGroupEnum.Types} group
+ * @param group
+ * @param key
+ */
+function lookupNode(group: ValidationSyntaxGroupEnum, key: string): ValidationSyntaxNode | null {
+    const groups = config as unknown as Record<string, Record<string, ValidationSyntaxNode> | undefined>;
+
+    if (groups[group]?.[key] != null) {
+        let node: ValidationSyntaxNode = groups[group][key];
+
+        // an alias uses the syntax of the standard property: `-webkit-align-content` is an alias of `align-content`.
+        // the name of the declaration is not changed
+        for (let i = 0; node.alias != null && i < 4; i++) {
+            const target: ValidationSyntaxNode | undefined = groups[group][node.alias];
+
+            if (target == null) {
+                return null;
+            }
+
+            node = target;
+        }
+
+        return node.alias != null ? null : node;
+    }
+
+    if (group === ValidationSyntaxGroupEnum.Syntaxes) {
+        return groups[ValidationSyntaxGroupEnum.Types]?.[key] ?? null;
+    }
+
+    return null;
+}
+
+/**
+ * true if a type or a function syntax is defined
+ * @param key the type name without the angle brackets, or the function name followed by `()`
+ */
+export function hasSyntax(key: string): boolean {
+    return lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+}
+
+/**
+ * return the raw syntax of a type or a function
+ * @param key the type name without the angle brackets, or the function name followed by `()`
+ */
+export function getSyntax(key: string): string | null {
+    return (lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key)?.syntax as string | undefined) ?? null;
+}
+
 function findNode(
     group: ValidationSyntaxGroupEnum,
     key: string,
 ): Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode | null {
-    // @ts-expect-error
-    let obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = config[group] as Record<
-        ValidationSyntaxGroupEnum,
-        ValidationSyntaxNode
-    >;
+    let obj: ValidationSyntaxNode | null = lookupNode(group, key);
 
-    // @ts-expect-error
-    if (obj[key] == null) {
-        if (key.charAt(0) == "@" || key.charAt(0) == "-") {
+    if (obj == null) {
+        if (key.charAt(0) === "@" || key.charAt(0) === "-") {
             const matches: RegExpMatchArray = key.match(/^(@?)(-[a-zA-Z]+)-(.*?)$/) as RegExpMatchArray;
 
             if (matches != null) {
@@ -43,14 +92,12 @@ function findNode(
             }
         }
 
-        // @ts-expect-error
-        if (obj[key] == null) {
+        obj = lookupNode(group, key);
+
+        if (obj == null) {
             return null;
         }
     }
-
-    // @ts-expect-error
-    obj = obj[key] as ValidationSyntaxNode | Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode>;
 
     return obj;
 }
@@ -102,7 +149,7 @@ export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: str
         }
     }
 
-    if (blockStart != -1) {
+    if (blockStart !== -1) {
         i = syntaxRules.length;
 
         while (i--) {
@@ -113,8 +160,8 @@ export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: str
         }
     }
 
-    let block = blockStart == -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
-    let prelude = trimSyntaxArray(blockStart == -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
+    let block = blockStart === -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
+    let prelude = trimSyntaxArray(blockStart === -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
 
     let propertyDescriptors: Record<string, ValidationToken[]> | null = null;
 

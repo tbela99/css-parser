@@ -13,6 +13,7 @@ import type { AstArenaNode } from "../lib/ast/arena-node.ts";
 import { FeatureWalkMode } from "../lib/ast/features/type.ts";
 import { ValidationToken } from "../lib/validation/parser/types";
 import { SourceFile } from "../lib/parser/source.ts";
+import type { CssInput } from "../lib/parser/input.ts";
 import { ResponseType } from "../types.ts";
 import type { AstArena } from "../lib/ast/arena.ts";
 
@@ -212,8 +213,8 @@ export interface MinifyOptions {
 export declare type LoadResult =
     | Promise<ReadableStream<Uint8Array>>
     | ReadableStream<Uint8Array>
-    | string
-    | Promise<string>
+    | CssInput
+    | Promise<CssInput>
     | object;
 
 /**
@@ -441,18 +442,18 @@ export declare interface ParseInputFileOptions {
  */
 export declare interface ParseInputOptions {
     /**
-     * Input string or stream
+     * Input css: an ArrayBuffer or a view of an ArrayBuffer (utf-8, the preferred input), or a string
      */
-    input: string;
+    input: CssInput;
 }
 /**
  * Input options for string or stream
  */
 export declare interface ParseInputStreamOptions {
     /**
-     * Input string or stream
+     * Input css: an ArrayBuffer or a view of an ArrayBuffer (utf-8, the preferred input), a string or a stream
      */
-    input: string | ReadableStream<Uint8Array>;
+    input: CssInput | ReadableStream<Uint8Array>;
 }
 
 /**

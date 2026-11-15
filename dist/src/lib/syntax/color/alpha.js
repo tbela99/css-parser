@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { ColorType, EnumToken } from '../../ast/types.js';
@@ -16,6 +16,7 @@ import { ValueWalker } from '../../ast/walk.js';
 
 /**
  * Compute alpha color
+ * @param arena
  * @param color
  * @param alpha
  * @returns
@@ -52,7 +53,7 @@ function alpha(arena, color, alpha) {
             }
         }
         const result = evaluate(arena, [alpha]);
-        if (result.length == 1) {
+        if (result.length === 1) {
             alpha = result[0];
         }
         // else {

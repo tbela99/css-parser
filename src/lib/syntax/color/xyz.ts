@@ -1,12 +1,6 @@
-import { multiplyMatrices } from "./utils/matrix.ts";
-import { srgb2lsrgbvalues } from "./srgb.ts";
-import { XYZ_D65_to_D50 } from "./xyzd50.ts";
-
-// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
-//     const [x, y, z] = Lab_to_XYZ(l, a, b);
-//
-//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
-// }
+import {multiplyMatrices} from "./utils/matrix.ts";
+import {srgb2lsrgbvalues} from "./srgb.ts";
+import {XYZ_D65_to_D50} from "./xyzd50.ts";
 
 export function XYZ_to_lin_sRGB(x: number, y: number, z: number, alpha: number | null = null): number[] {
     // convert XYZ to linear-light sRGB
@@ -21,7 +15,7 @@ export function XYZ_to_lin_sRGB(x: number, y: number, z: number, alpha: number |
 
     return multiplyMatrices(M, XYZ)
         .map((v: number) => v)
-        .concat(alpha == null || alpha == 1 ? [] : [alpha]);
+        .concat(alpha == null || alpha === 1 ? [] : [alpha]);
 }
 
 export function XYZ_D50_to_D65(x: number, y: number, z: number): number[] {
@@ -49,7 +43,7 @@ export function srgb2xyz(r: number, g: number, b: number, alpha?: number): numbe
         0.01933081871559185 * r + 0.11919477979462599 * g + 0.9505321522496606 * b,
     ];
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
 
@@ -62,7 +56,7 @@ export function srgb2xyz_d65(r: number, g: number, b: number, alpha?: number): n
     let values = srgb2xyz(r, g, b);
     let rgb: number[] = XYZ_D65_to_D50(values[0], values[1], values[2]);
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         rgb.push(alpha);
     }
 

@@ -11,7 +11,7 @@ export function eq(a: any, b: any): boolean {
         return a == b;
     }
 
-    if (typeof a != "object" || typeof b != "object") {
+    if (typeof a !== "object" || typeof b !== "object") {
         return a === b;
     }
 
@@ -38,7 +38,7 @@ export function eq(a: any, b: any): boolean {
     const k1: string[] = Object.keys(a);
     const k2: string[] = Object.keys(b);
 
-    if (k1.length != k2.length) {
+    if (k1.length !== k2.length) {
         return false;
     }
 
@@ -61,16 +61,16 @@ export function eq(a: any, b: any): boolean {
  * @param b
  */
 export function eqToken(arena: AstArena, a: number, b: number): boolean {
-    if (a == b) {
+    if (a === b) {
         return true;
     }
 
     if (
-        arena.dataTypes[a] != arena.dataTypes[b] ||
-        arena.name[a] != arena.name[b] ||
-        arena.stringValue[a] != arena.stringValue[b] ||
-        arena.unit[a] != arena.unit[b] ||
-        arena.colorType[a] != arena.colorType[b]
+        arena.dataTypes[a] !== arena.dataTypes[b] ||
+        arena.name[a] !== arena.name[b] ||
+        arena.stringValue[a] !== arena.stringValue[b] ||
+        arena.unit[a] !== arena.unit[b] ||
+        arena.colorType[a] !== arena.colorType[b]
     ) {
         return false;
     }
@@ -86,7 +86,7 @@ export function eqToken(arena: AstArena, a: number, b: number): boolean {
     let ta: number = arena.firstToken[a];
     let tb: number = arena.firstToken[b];
 
-    while (ta != 0 && tb != 0) {
+    while (ta !== 0 && tb !== 0) {
         if (!eqToken(arena, ta, tb)) {
             return false;
         }
@@ -95,14 +95,14 @@ export function eqToken(arena: AstArena, a: number, b: number): boolean {
         tb = arena.nextSibling[tb];
     }
 
-    if (ta != tb) {
+    if (ta !== tb) {
         return false;
     }
 
     ta = arena.firstChild[a];
     tb = arena.firstChild[b];
 
-    while (ta != 0 && tb != 0) {
+    while (ta !== 0 && tb !== 0) {
         if (!eqToken(arena, ta, tb)) {
             return false;
         }
@@ -111,5 +111,5 @@ export function eqToken(arena: AstArena, a: number, b: number): boolean {
         tb = arena.nextSibling[tb];
     }
 
-    return ta == tb;
+    return ta === tb;
 }

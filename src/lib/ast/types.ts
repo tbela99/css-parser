@@ -1,16 +1,4 @@
 /**
- * Syntax validation enum
- */
-export enum SyntaxValidationResult {
-    /** valid syntax */
-    Valid,
-    /** drop invalid syntax */
-    Drop,
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    Lenient,
-}
-
-/**
  * Enum of node statuses
  */
 export enum EnumAstNodeStatus {
@@ -696,6 +684,11 @@ export enum EnumToken {
      * user defined dimension token type
      */
     UserDefinedDimensionTokenType,
+
+    /**
+     * unicode range token type: `U+0025-00FF`, `U+4??`. the token is rendered as it is
+     */
+    UniCodeRange,
     /* aliases */
 
     /**

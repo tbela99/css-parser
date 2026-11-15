@@ -6,7 +6,7 @@ import { expandHexValue } from "../hex.ts";
 import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getColorComponents(arena: AstArena, token: Token): Token[] | null {
-    if (arena.colorType[token] == ColorType.HEX || arena.colorType[token] == ColorType.LIT) {
+    if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
         const val: string = arena.strings[arena.stringValue[token]];
 
         if (equalsIgnoreCase("currentcolor", val)) {
@@ -14,7 +14,7 @@ export function getColorComponents(arena: AstArena, token: Token): Token[] | nul
         }
 
         const value: string = expandHexValue(
-            arena.colorType[token] == ColorType.LIT ? COLORS_NAMES[val.toLowerCase()] : val,
+            arena.colorType[token] === ColorType.LIT ? COLORS_NAMES[val.toLowerCase()] : val,
         );
         // @ts-ignore
         return value
@@ -27,14 +27,14 @@ export function getColorComponents(arena: AstArena, token: Token): Token[] | nul
 
     const result: Token[] = [];
 
-    for (let child = arena.firstToken[token]; child != 0; child = arena.nextSibling[child]) {
+    for (let child = arena.firstToken[token]; child !== 0; child = arena.nextSibling[child]) {
         const typ: EnumToken = arena.dataTypes[child];
 
         if (
-            typ == EnumToken.LiteralTokenType ||
-            typ == EnumToken.CommentTokenType ||
-            typ == EnumToken.CommaTokenType ||
-            typ == EnumToken.WhitespaceTokenType
+            typ === EnumToken.LiteralTokenType ||
+            typ === EnumToken.CommentTokenType ||
+            typ === EnumToken.CommaTokenType ||
+            typ === EnumToken.WhitespaceTokenType
         ) {
             continue;
         }
@@ -44,13 +44,13 @@ export function getColorComponents(arena: AstArena, token: Token): Token[] | nul
             typ === EnumToken.WildCardFunctionTokenType ||
             typ === EnumToken.MathFunctionTokenType
         ) {
-            if ("var" == arena.strings[arena.stringValue[child]].toLowerCase()) {
+            if ("var" === arena.strings[arena.stringValue[child]].toLowerCase()) {
                 return null;
             }
         }
 
         if (
-            typ == EnumToken.ColorTokenType &&
+            typ === EnumToken.ColorTokenType &&
             equalsIgnoreCase("currentcolor", arena.strings[arena.stringValue[child]])
         ) {
             return null;

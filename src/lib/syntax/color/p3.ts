@@ -62,7 +62,7 @@ export function lp32xyz(r: number, g: number, b: number, alpha?: number) {
 
     const result: number[] = multiplyMatrices(M, [r, g, b]);
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         result.push(alpha);
     }
 
@@ -79,7 +79,7 @@ export function xyz2lp3(x: number, y: number, z: number, alpha?: number) {
 
     const result: number[] = multiplyMatrices(M, [x, y, z]);
 
-    if (alpha != null && alpha != 1) {
+    if (alpha != null && alpha !== 1) {
         result.push(alpha);
     }
 

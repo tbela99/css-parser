@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
@@ -16,7 +16,7 @@ function stripCommaToken(arena, tokenList) {
     let result = [];
     for (let i = 0; i < tokenList.length; i++) {
         const typ = arena.dataTypes[tokenList[i]];
-        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
+        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CommaTokenType) {
             continue;
         }
         result.push(tokenList[i]);

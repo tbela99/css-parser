@@ -28,7 +28,7 @@ function prophotorgb2lin_ProPhoto(r: number, g: number, b: number, a: number | n
             }
             return v / 16;
         })
-        .concat(a == null || a == 1 ? [] : [a]);
+        .concat(a == null || a === 1 ? [] : [a]);
 }
 
 function prophotorgb2xyz50(r: number, g: number, b: number, a: number | null = null): number[] {
@@ -40,7 +40,7 @@ function prophotorgb2xyz50(r: number, g: number, b: number, a: number | null = n
         0.8251046025104602 * b,
     ];
 
-    return xyz.concat(a == null || a == 1 ? [] : [a]);
+    return xyz.concat(a == null || a === 1 ? [] : [a]);
 }
 
 function xyz50_to_prophotorgb(x: number, y: number, z: number, a?: number): number[] {
@@ -50,7 +50,7 @@ function xyz50_to_prophotorgb(x: number, y: number, z: number, a?: number): numb
 
         x * -0.5446307051249019 + y * 1.5082477428451466 + 0.0205274474364214 * z,
         1.2119675456389452 * z,
-        a == 1 ? null : a,
+        a === 1 ? null : a,
     );
 }
 

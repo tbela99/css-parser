@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86.52% </span>
+                <span class="strong">86.59% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>167/193</span>
+                <span class='fraction'>168/194</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.62% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>34/58</span>
+                <span class='fraction'>36/60</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86.52% </span>
+                <span class="strong">86.59% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>167/193</span>
+                <span class='fraction'>168/194</span>
             </div>
         
             
@@ -256,19 +256,21 @@
 <a name='L191'></a><a href='#L191'>191</a>
 <a name='L192'></a><a href='#L192'>192</a>
 <a name='L193'></a><a href='#L193'>193</a>
-<a name='L194'></a><a href='#L194'>194</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">8x</span>
@@ -402,12 +404,12 @@
 <span class="cline-any cline-yes">108x</span>
 <span class="cline-any cline-yes">108x</span>
 <span class="cline-any cline-yes">108x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">95x</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-yes">108x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">108x</span>
 <span class="cline-any cline-yes">108x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -447,13 +449,13 @@
 <span class="cline-any cline-yes">83x</span>
 <span class="cline-any cline-yes">83x</span>
 <span class="cline-any cline-yes">83x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -461,6 +463,7 @@ import { color2srgbvalues, getNumber, getAngle } from './color.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { srgb2labvalues, xyz2lab, oklch2labvalues, oklab2labvalues, getLABComponents, hwb2labvalues, hsl2labvalues, rgb2labvalues, hex2labvalues } from './lab.js';
 import { cmyk2srgbvalues } from './srgb.js';
+import { epsilon } from '../constants.js';
 &nbsp;
 function hex2lchToken(arena, token) {
     const values = hex2lchvalues(arena, token);
@@ -531,7 +534,7 @@ function lchToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("lch", ColorType.LCH, chi);
@@ -592,20 +595,20 @@ function color2lchvalues(arena, token) {
     return srgb2lch(values[0], values[1], values[2], values[3]);
 }
 function labvalues2lchvalues(l, a, b, alpha = null) {
-    let c = Math.sqrt(a * a + b * b);
+    const c = Math.sqrt(a * a + b * b);
     let h = (Math.atan2(b, a) * 180) / Math.PI;
-    if (h &lt; 0) {
-        h += 360;
+    if (h &gt;= -epsilon &amp;&amp; h &lt;= epsilon) {
+        h = 0;
     }
-    if (c &lt; 0.0001) {
-        c = h = 0;
+    else if (h &lt; 0) {
+        h += 360;
     }
     return alpha == null ? [l, c, h] : [l, c, h, alpha];
 }
 function xyz2lchvalues(x, y, z, alpha) {
     const values = xyz2lab(x, y, z);
     const lch = labvalues2lchvalues(values[0], values[1], values[2]);
-    return alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >|| alpha == 1 </span>? lch <span class="branch-0 cbranch-no" title="branch not covered" >: lch.concat(alpha);</span>
+    return alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >|| alpha === 1 </span>? lch <span class="branch-0 cbranch-no" title="branch not covered" >: lch.concat(alpha);</span>
 }
 function getLCHComponents(arena, token) {
     const components = getColorComponents(arena, token);
@@ -625,11 +628,11 @@ function getLCHComponents(arena, token) {
     // @ts-ignore
     let t = components[0];
     // @ts-ignore
-    const l = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType ? 100 : 1);
+    const l = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 100 : 1);
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 150 </span>: 1);
+    const c = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 150 </span>: 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
@@ -649,7 +652,7 @@ export { cmyk2lchToken, cmyk2lchvalues, color2lchToken, color2lchvalues, getLCHC
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-07T22:03:47.899Z
+                at 2026-11-15T00:19:12.243Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { SourceMap } from '../printer/sourcemap/sourcemap.js';
@@ -51,62 +51,6 @@ class SourceFile {
      */
     append(content) {
         this.content += content;
-    }
-    /**
-     * get file name
-     * @returns
-     */
-    getFileName() {
-        return this.file;
-    }
-    /**
-     * get content
-     * @returns
-     */
-    getContent() {
-        return this.content;
-    }
-    /**
-     * get text
-     * @param start
-     * @param length
-     * @returns
-     */
-    getText(start, length) {
-        return this.content.slice(start, start + length);
-    }
-    /**
-     * Compute line and column of the offset
-     * @param offset
-     * @returns
-     */
-    getOffsets(offset) {
-        return this.lineStarts.getOffsets(offset);
-    }
-    /**
-     * get source location
-     * @param offset
-     * @returns
-     */
-    getSourceLocation(offset) {
-        // inlined: this.getOffsets(offset)
-        return [this.file, ...this.lineStarts.getOffsets(offset)];
-    }
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts() {
-        // inlined: this.lineStarts.getLineStarts()
-        return this.lineStarts.lineStarts;
-    }
-    /**
-     * add line start
-     * @param lineStart
-     */
-    addLineStart(lineStart) {
-        // inlined: this.lineStarts.addLineStart(lineStart)
-        this.lineStarts.lineStarts.push(lineStart);
     }
     /**
      * set input source map

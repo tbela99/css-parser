@@ -203,19 +203,19 @@
 <a name='L138'></a><a href='#L138'>138</a>
 <a name='L139'></a><a href='#L139'>139</a>
 <a name='L140'></a><a href='#L140'>140</a>
-<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">612x</span>
 <span class="cline-any cline-yes">612x</span>
 <span class="cline-any cline-yes">612x</span>
@@ -341,13 +341,13 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { color2srgbvalues, minmax } from './color.js';
@@ -416,7 +416,7 @@ function color2RgbToken(arena, token) {
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return rgb2RgbToken(arena, values.map((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))));
+    return rgb2RgbToken(arena, values.map((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))));
 }
 function rgb2RgbToken(arena, values) {
     const chi = [
@@ -424,21 +424,21 @@ function rgb2RgbToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("rgb", ColorType.RGB, chi);
 }
 function hex2rgbvalues(arena, token) {
-    const value = expandHexValue(arena.colorType[token] == ColorType.LIT
+    const value = expandHexValue(arena.colorType[token] === ColorType.LIT
         ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
         : arena.strings[arena.stringValue[token]]);
     const rgb = [];
     for (let i = 1; i &lt; value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16));
     }
-    if (rgb.length == 4) {
-        if (rgb[3] == 255) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+    if (rgb.length === 4) {
+        if (rgb[3] === 255) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >            rgb.pop();</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
         else {
@@ -448,7 +448,7 @@ function hex2rgbvalues(arena, token) {
     return rgb;
 }
 function hwb2rgbvalues(arena, token) {
-    return hwb2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return hwb2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 function hsl2rgbvalues(arena, token) {
     let { h, s, l, a } = hslvalues(arena, token) ?? {};
@@ -457,29 +457,29 @@ function hsl2rgbvalues(arena, token) {
     }
     return hslvalues2srgbvalues(h, s, l)
         .map((t) =&gt; minmax(Math.round(t * 255), 0, 255))
-        .concat(a == 1 || a == null ? [] : [a]);
+        .concat(a === 1 || a == null ? [] : [a]);
 }
 function hsl2srgbvalues(arena, token) {
     let { h, s, l, a } = hslvalues(arena, token) <span class="branch-0 cbranch-no" title="branch not covered" >?? {};</span>
     if (h == null || s == null || l == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslvalues2srgbvalues(h, s, l).concat(a == 1 || a == null <span class="branch-0 cbranch-no" title="branch not covered" >? [] </span>: [a]);
+    return hslvalues2srgbvalues(h, s, l).concat(a === 1 || a == null <span class="branch-0 cbranch-no" title="branch not covered" >? [] </span>: [a]);
 }
 function cmyk2rgbvalues(arena, token) {
-    return cmyk2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return cmyk2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 function oklab2rgbvalues(arena, token) {
-    return oklab2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return oklab2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 function oklch2rgbvalues(arena, token) {
-    return oklch2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return oklch2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 function lab2rgbvalues(arena, token) {
-    return lab2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return lab2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 function lch2rgbvalues(arena, token) {
-    return lch2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index == 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
+    return lch2srgbvalues(arena, token)?.map?.((t, index) =&gt; (index === 3 ? t : srgb2rgb(t))) <span class="branch-0 cbranch-no" title="branch not covered" >?? null;</span>
 }
 &nbsp;
 export { cmyk2RgbToken, cmyk2rgbvalues, color2RgbToken, hex2RgbToken, hex2rgbvalues, hsl2RgbToken, hsl2rgbvalues, hsl2srgbvalues, hwb2RgbToken, hwb2rgbvalues, lab2RgbToken, lab2rgbvalues, lch2RgbToken, lch2rgbvalues, oklab2RgbToken, oklab2rgbvalues, oklch2RgbToken, oklch2rgbvalues, srgb2rgb };
@@ -490,7 +490,7 @@ export { cmyk2RgbToken, cmyk2rgbvalues, color2RgbToken, hex2RgbToken, hex2rgbval
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-07T22:03:47.899Z
+                at 2026-11-15T00:19:12.243Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

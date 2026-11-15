@@ -3,6 +3,8 @@
 /deno.lock
 /.repl_history
 /ROADMAP.draft.md
+/SYNTAX-CHANGELOG.md
+/src/data/validation.origins.json
 /.idea
 /.DS_Store
 /ROADMAP.md

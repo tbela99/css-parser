@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 // Alphabet: a-z, A-Z, 0-9, _, -
@@ -75,7 +75,7 @@ async function hash(input, length = 6, algo) {
             case "base64url":
             case "base64":
                 result = btoa(input);
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
                 return result.slice(0, length);
@@ -105,7 +105,7 @@ function syncHash(input, length = 6, algo) {
             case "base64url":
             case "base64":
                 result = btoa(input);
-                if (algo == "base64url") {
+                if (algo === "base64url") {
                     result = result.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
                 }
                 return result.slice(0, length);

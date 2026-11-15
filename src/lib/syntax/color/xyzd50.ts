@@ -28,7 +28,7 @@ export function XYZ_D65_to_D50(x: number, y: number, z: number, alpha: number | 
         [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371],
     ];
 
-    return multiplyMatrices(M, [x, y, z]).concat(alpha == null || alpha == 1 ? [] : [alpha]);
+    return multiplyMatrices(M, [x, y, z]).concat(alpha == null || alpha === 1 ? [] : [alpha]);
 }
 
 export function xyzd502srgb(x: number, y: number, z: number, alpha: number | null = null): number[] {

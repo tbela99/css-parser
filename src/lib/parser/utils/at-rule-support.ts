@@ -36,22 +36,27 @@ export function parseAtRuleSupportSyntax(
     for (; i < stream.length; i++) {
         tokens.push(stream[i]);
 
-        if (arena.dataTypes[stream[i]] == EnumToken.ColonTokenType) {
-            if (arena.dataTypes[stream[i + 1]] == EnumToken.IdenTokenType) {
+        if (arena.dataTypes[stream[i]] === EnumToken.ColonTokenType) {
+            if (arena.dataTypes[stream[i + 1]] === EnumToken.IdenTokenType) {
                 const val: string = arena.strings[arena.stringValue[stream[i + 1]]];
                 arena.dataTypes[stream[i]] = pseudoElements.includes(val)
                     ? EnumToken.PseudoElementTokenType
                     : EnumToken.PseudoClassTokenType;
                 // inlined: arena.setStr(stream[i], ":" + val)
-                arena.stringValue[stream[i]] = arena.internString((":" + val));
+                arena.stringValue[stream[i]] = arena.internString(":" + val);
 
                 // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
-                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
+                arena.setSpan(
+                    stream[i],
+                    arena.getSourceId(stream[i]),
+                    arena.getSpanStart(stream[i]),
+                    arena.getSpanEnd(stream[i + 1]),
+                );
                 stream.splice(i + 1, 1);
                 continue;
             }
 
-            if (arena.dataTypes[stream[i + 1]] == EnumToken.FunctionTokenDefType) {
+            if (arena.dataTypes[stream[i + 1]] === EnumToken.FunctionTokenDefType) {
                 val = ":" + arena.strings[arena.stringValue[stream[i + 1]]];
 
                 arena.dataTypes[stream[i]] =
@@ -63,7 +68,12 @@ export function parseAtRuleSupportSyntax(
 
                 stack.push(stream[i]);
                 // inlined: arena.setSpanEnd(stream[i], arena.getSpanEnd(stream[i + 1]))
-                arena.setSpan(stream[i], arena.getSourceId(stream[i]), arena.getSpanStart(stream[i]), arena.getSpanEnd(stream[i + 1]));
+                arena.setSpan(
+                    stream[i],
+                    arena.getSourceId(stream[i]),
+                    arena.getSpanStart(stream[i]),
+                    arena.getSpanEnd(stream[i + 1]),
+                );
                 stream.splice(i + 1, 1);
                 continue;
             }
@@ -85,7 +95,8 @@ export function parseAtRuleSupportSyntax(
             let k: number = i;
             while (
                 k < stream.length &&
-                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType || arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)
+                (arena.dataTypes[stream[k]] === EnumToken.WhitespaceTokenType ||
+                    arena.dataTypes[stream[k]] === EnumToken.CommentTokenType)
             ) {
                 tokens.push(stream[k]);
                 k++;
@@ -94,7 +105,10 @@ export function parseAtRuleSupportSyntax(
             expectAndOr = false;
         }
 
-        if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+        if (
+            arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
+            tokensfuncDefMap.has(arena.dataTypes[stream[i]])
+        ) {
             scopes.push((scope = new Set<EnumToken>()));
             stack.push(stream[i]);
             continue;
@@ -193,7 +207,10 @@ export function parseAtRuleSupportSyntax(
                         const unary: Token = arena.createToken(EnumToken.SupportsQueryUnaryConditionTokenType);
 
                         // inlined: arena.setField(unary, TokenField.R, ...trimArray(arena, tokens.splice(index + 1, i - index - 1)))
-                        arena.setTokenList(arena.fieldList(unary, TokenField.R), trimArray(arena, tokens.splice(index + 1, i - index - 1)));
+                        arena.setTokenList(
+                            arena.fieldList(unary, TokenField.R),
+                            trimArray(arena, tokens.splice(index + 1, i - index - 1)),
+                        );
                         // inlined: arena.setField(unary, TokenField.L, not)
                         arena.setTokenList(arena.fieldList(unary, TokenField.L), [not]);
                         arena.spanLocation(unary, not, stream[i]);
@@ -203,7 +220,10 @@ export function parseAtRuleSupportSyntax(
                     }
 
                     // inlined: arena.typeOf(stack.at(-1))
-                    if (arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType || arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType) {
+                    if (
+                        arena.dataTypes[stack.at(-1) as number] === EnumToken.AndTokenType ||
+                        arena.dataTypes[stack.at(-1) as number] === EnumToken.OrTokenType
+                    ) {
                         const index: number = tokens.indexOf(stack.at(-1)!);
                         const index2: number = stack.length > 1 ? tokens.indexOf(stack.at(-2)!) + 1 : 0;
 
@@ -214,7 +234,10 @@ export function parseAtRuleSupportSyntax(
                         // inlined: arena.setField(condition, TokenField.L, ...left)
                         arena.setTokenList(arena.fieldList(condition, TokenField.L), left);
                         // inlined: arena.setField(condition, TokenField.R, ...trimArray(arena, tokens.slice(index + 1)))
-                        arena.setTokenList(arena.fieldList(condition, TokenField.R), trimArray(arena, tokens.slice(index + 1)));
+                        arena.setTokenList(
+                            arena.fieldList(condition, TokenField.R),
+                            trimArray(arena, tokens.slice(index + 1)),
+                        );
                         // inlined: arena.setField(condition, TokenField.Op, op)
                         arena.setTokenList(arena.fieldList(condition, TokenField.Op), [op]);
                         arena.spanLocation(condition, op, stream[i]);

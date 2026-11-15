@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumAstNodeStatus, EnumToken } from '../types.js';
@@ -40,10 +40,10 @@ function replaceAstNodes(arena, tokens) {
     // inlined: arena.walkValues(tokens)
     for (const value of new ValueWalker(arena, tokens)) {
         const typ = arena.dataTypes[value];
-        if (typ == EnumToken.MediaQueryConditionTokenType) {
+        if (typ === EnumToken.MediaQueryConditionTokenType) {
             const token = arena
                 .fieldTokens(value, TokenField.L)
-                .find((t) => arena.dataTypes[t] == EnumToken.IdenTokenType);
+                .find((t) => arena.dataTypes[t] === EnumToken.IdenTokenType);
             if (token != null) {
                 let val = arena.strings[arena.stringValue[token]];
                 if (val in pseudoAliasMap) {
@@ -53,7 +53,7 @@ function replaceAstNodes(arena, tokens) {
                     const r = arena.fieldTokens(value, TokenField.R);
                     if ((equalsIgnoreCase(val, "min-resolution") || equalsIgnoreCase(val, "max-resolution")) &&
                         r.length > 0 &&
-                        arena.dataTypes[r[0]] == EnumToken.NumberTokenType) {
+                        arena.dataTypes[r[0]] === EnumToken.NumberTokenType) {
                         arena.dataTypes[r[0]] = EnumToken.ResolutionTokenType;
                         // inlined: arena.setUnitString(r[0], "x")
                         arena.unit[r[0]] = arena.internString("x");
@@ -71,16 +71,16 @@ function replaceAstNodes(arena, tokens) {
                 }
             }
         }
-        else if (typ == EnumToken.IdenTokenType ||
-            typ == EnumToken.PseudoClassFuncTokenType ||
-            typ == EnumToken.PseudoClassTokenType ||
-            typ == EnumToken.PseudoElementTokenType) {
-            let key = arena.strings[arena.stringValue[value]] + (typ == EnumToken.PseudoClassFuncTokenType ? "()" : "");
+        else if (typ === EnumToken.IdenTokenType ||
+            typ === EnumToken.PseudoClassFuncTokenType ||
+            typ === EnumToken.PseudoClassTokenType ||
+            typ === EnumToken.PseudoElementTokenType) {
+            let key = arena.strings[arena.stringValue[value]] + (typ === EnumToken.PseudoClassFuncTokenType ? "()" : "");
             if (key in pseudoAliasMap) {
                 const isPseudClass = pseudoAliasMap[key].startsWith("::");
                 // inlined: arena.setStr(value, pseudoAliasMap[key])
                 arena.stringValue[value] = arena.internString(pseudoAliasMap[key]);
-                if (isPseudClass && typ == EnumToken.PseudoElementTokenType) {
+                if (isPseudClass && typ === EnumToken.PseudoElementTokenType) {
                     arena.dataTypes[value] = EnumToken.PseudoClassTokenType;
                 }
                 result = true;
@@ -88,7 +88,7 @@ function replaceAstNodes(arena, tokens) {
         }
     }
     // remove duplicate tokens
-    if (tokens.find((t) => arena.dataTypes[t] == EnumToken.CommaTokenType) != null) {
+    if (tokens.find((t) => arena.dataTypes[t] === EnumToken.CommaTokenType) != null) {
         const set = new Set();
         const split = splitTokenList(arena, tokens, [EnumToken.CommaTokenType]);
         tokens.length = 0;
@@ -121,24 +121,29 @@ class ComputePrefixFeature {
             options.features.push(new ComputePrefixFeature(options));
         }
     }
+    /**
+     *
+     * @param arena
+     * @param node
+     */
     run(arena, node) {
         if (arena.flags[node] &
             (EnumAstNodeStatus.Disallowed | EnumAstNodeStatus.Invalid | EnumAstNodeStatus.Malformed)) {
             return null;
         }
         const typ = arena.dataTypes[node];
-        if (typ == EnumToken.RuleNodeType) {
+        if (typ === EnumToken.RuleNodeType) {
             // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
             arena.name[node] = arena.internString(replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""));
-            if (arena.firstToken[node] != 0) {
+            if (arena.firstToken[node] !== 0) {
                 const tokens = arena.tokens(node);
                 replaceAstNodes(arena, tokens);
                 arena.setTokenList(node, tokens);
             }
         }
-        else if (typ == EnumToken.DeclarationNodeType) {
+        else if (typ === EnumToken.DeclarationNodeType) {
             const name = arena.strings[arena.name[node]];
-            if (name.charAt(0) == "-") {
+            if (name.charAt(0) === "-") {
                 const match = name.match(/^-([^-]+)-(.+)$/);
                 if (match != null) {
                     let nam = match[2];
@@ -157,7 +162,8 @@ class ComputePrefixFeature {
             for (const value of new ValueWalker(arena, node)) {
                 const typ = arena.dataTypes[value];
                 const val = arena.strings[arena.stringValue[value]];
-                if ((typ == EnumToken.IdenTokenType || (typ != EnumToken.ParensTokenType && funcLike.includes(typ))) &&
+                if ((typ === EnumToken.IdenTokenType ||
+                    (typ !== EnumToken.ParensTokenType && funcLike.includes(typ))) &&
                     val.match(/^-([^-]+)-(.+)$/) != null) {
                     if (val.endsWith("-gradient")) {
                         if (regMatchLinearGradient.test(val)) {
@@ -179,7 +185,8 @@ class ComputePrefixFeature {
             if (hasPrefix) {
                 // inlined: arena.walkValues(node)
                 for (const value of new ValueWalker(arena, node)) {
-                    if (arena.dataTypes[value] == EnumToken.IdenTokenType || funcLike.includes(arena.dataTypes[value])) {
+                    if (arena.dataTypes[value] === EnumToken.IdenTokenType ||
+                        funcLike.includes(arena.dataTypes[value])) {
                         const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
                         if (match != null) {
                             // inlined: arena.setStr(value, match[2])
@@ -189,7 +196,7 @@ class ComputePrefixFeature {
                 }
             }
         }
-        else if (typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType) {
+        else if (typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType) {
             const name = arena.strings[arena.name[node]];
             if (name.startsWith("-")) {
                 const match = name.match(/^-([^-]+)-(.+)$/);
@@ -197,7 +204,7 @@ class ComputePrefixFeature {
                     arena.name[node] = arena.internString(match[2]);
                 }
             }
-            if (typ == EnumToken.AtRuleNodeType && arena.stringValue[node] !== 0) {
+            if (typ === EnumToken.AtRuleNodeType && arena.stringValue[node] !== 0) {
                 const tokens = arena.tokens(node);
                 const result = replaceAstNodes(arena, tokens);
                 arena.setTokenList(node, tokens);
@@ -210,8 +217,9 @@ class ComputePrefixFeature {
     }
     /**
      * Convert -webkit-linear-gradient to linear-gradient syntax
-     * @param tokens
      * @returns
+     * @param arena
+     * @param token
      */
     webkitLinearToLinearGradient(arena, token) {
         let i;
@@ -237,27 +245,27 @@ class ComputePrefixFeature {
         // - to bottom -> 180deg
         // - to left -> 270deg
         for (i = 0; i < tokens.length; i++) {
-            if (arena.dataTypes[tokens[i]] == EnumToken.AngleTokenType ||
-                (arena.dataTypes[tokens[i]] == EnumToken.NumberTokenType && arena.numericValue[tokens[i]] == 0)) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.AngleTokenType ||
+                (arena.dataTypes[tokens[i]] === EnumToken.NumberTokenType && arena.numericValue[tokens[i]] === 0)) {
                 arena.numericValue[tokens[i]] =
                     (90 -
-                        (arena.dataTypes[tokens[i]] == EnumToken.NumberTokenType
+                        (arena.dataTypes[tokens[i]] === EnumToken.NumberTokenType
                             ? arena.numericValue[tokens[i]]
                             : arena.numericValue[toDegrees(arena, tokens[i])])) %
                         360;
             }
-            else if (arena.dataTypes[tokens[i]] == EnumToken.IdenTokenType) {
+            else if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
                 key = arena.strings[arena.stringValue[tokens[i]]].toLowerCase();
                 switch (key) {
                     case "right":
                     case "left":
-                        tokens.splice(i, 1, arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, key == "right" ? "left" : "right"));
+                        tokens.splice(i, 1, arena.createToken(EnumToken.IdenTokenType, "to"), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.IdenTokenType, key === "right" ? "left" : "right"));
                         i += 2;
                         break;
                     case "top":
                     case "bottom":
                         k = i + 1;
-                        to = key == "top" ? "bottom" : "top";
+                        to = key === "top" ? "bottom" : "top";
                         while (k < tokens.length &&
                             (arena.dataTypes[tokens[k]] === EnumToken.WhitespaceTokenType ||
                                 arena.dataTypes[tokens[k]] === EnumToken.CommentTokenType)) {
@@ -284,13 +292,14 @@ class ComputePrefixFeature {
             }
         }
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
             ? "repeating-linear-gradient"
-            : "linear-gradient"));
+            : "linear-gradient");
         arena.setTokenList(token, tokens);
     }
     /**
      * Convert -webkit-gradient(linear) to linear-gradient or linear-gradient syntax
+     * @param arena
      * @param token
      * @returns
      */
@@ -404,14 +413,16 @@ class ComputePrefixFeature {
     }
     /**
      * Convert -webkit-radial-gradient to radial-gradient syntax
-     * @param tokens
      * @returns
+     * @param arena
+     * @param token
      */
     webkitRadialToRadialGradient(arena, token) {
         let i = 0;
         const tokens = arena.tokens(token);
         while (i < tokens.length &&
-            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)) {
+            (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType)) {
             i++;
         }
         const positions = [];
@@ -445,7 +456,8 @@ class ComputePrefixFeature {
                 equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
@@ -463,7 +475,8 @@ class ComputePrefixFeature {
                 equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
                 form.push(tokens[i++]);
             }
-            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType || arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
+            while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[tokens[i]] === EnumToken.CommentTokenType) {
                 i++;
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.CommaTokenType) {
@@ -496,9 +509,9 @@ class ComputePrefixFeature {
             tokens.push(arena.createToken(EnumToken.CommaTokenType));
         }
         // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
-        arena.stringValue[token] = arena.internString((equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
             ? "repeating-radial-gradient"
-            : "radial-gradient"));
+            : "radial-gradient");
         for (const colorStop of colorStops) {
             tokens.push(colorStop);
         }

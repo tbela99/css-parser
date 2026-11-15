@@ -235,20 +235,20 @@
 <a name='L170'></a><a href='#L170'>170</a>
 <a name='L171'></a><a href='#L171'>171</a>
 <a name='L172'></a><a href='#L172'>172</a>
-<a name='L173'></a><a href='#L173'>173</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L173'></a><a href='#L173'>173</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -371,12 +371,12 @@
 <span class="cline-any cline-yes">38x</span>
 <span class="cline-any cline-yes">38x</span>
 <span class="cline-any cline-yes">38x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2328x</span>
-<span class="cline-any cline-yes">2328x</span>
-<span class="cline-any cline-yes">1532x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7643x</span>
+<span class="cline-any cline-yes">7643x</span>
+<span class="cline-any cline-yes">4194x</span>
 <span class="cline-any cline-yes">487x</span>
 <span class="cline-any cline-yes">487x</span>
 <span class="cline-any cline-yes">487x</span>
@@ -393,25 +393,25 @@
 <span class="cline-any cline-yes">138x</span>
 <span class="cline-any cline-yes">138x</span>
 <span class="cline-any cline-yes">138x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2466x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">7781x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -487,7 +487,7 @@ function oklchToken(arena, values) {
         arena.createToken(EnumToken.NumberTokenType, values[1]),
         arena.createToken(EnumToken.NumberTokenType, values[2]),
     ];
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
     return arena.createColor("oklch", ColorType.OKLCH, chi);
@@ -565,14 +565,14 @@ function getOKLCHComponents(arena, token) {
     // @ts-ignore
     t = components[1];
     // @ts-ignore
-    const c = getNumber(arena, t) * (arena.dataTypes[t] == EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 0.4 </span>: 1);
+    const c = getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType <span class="branch-0 cbranch-no" title="branch not covered" >? 0.4 </span>: 1);
     // @ts-ignore
     t = components[2];
     // @ts-ignore
     const h = getAngle(arena, t) * 360;
     // @ts-ignore
     t = components[3];
-    const alpha = t == null || (arena.dataTypes[t] == EnumToken.IdenTokenType &amp;&amp; arena.strings[arena.stringValue[t]] == "none")
+    const alpha = t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType &amp;&amp; arena.strings[arena.stringValue[t]] === "none")
         ? 1
         : getNumber(arena, t);
     return [l, c, h, alpha];
@@ -586,7 +586,7 @@ export { cmyk2oklchToken, cmyk2oklchvalues, color2oklchToken, getOKLCHComponents
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-07T22:03:47.899Z
+                at 2026-11-15T00:19:12.243Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

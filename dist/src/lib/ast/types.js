@@ -2,21 +2,9 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
-/**
- * Syntax validation enum
- */
-var SyntaxValidationResult;
-(function (SyntaxValidationResult) {
-    /** valid syntax */
-    SyntaxValidationResult[SyntaxValidationResult["Valid"] = 0] = "Valid";
-    /** drop invalid syntax */
-    SyntaxValidationResult[SyntaxValidationResult["Drop"] = 1] = "Drop";
-    /** preserve unknown at-rules, declarations and pseudo-classes */
-    SyntaxValidationResult[SyntaxValidationResult["Lenient"] = 2] = "Lenient";
-})(SyntaxValidationResult || (SyntaxValidationResult = {}));
 /**
  * Enum of node statuses
  */
@@ -660,6 +648,10 @@ var EnumToken;
      * user defined dimension token type
      */
     EnumToken[EnumToken["UserDefinedDimensionTokenType"] = 140] = "UserDefinedDimensionTokenType";
+    /**
+     * unicode range token type: `U+0025-00FF`, `U+4??`. the token is rendered as it is
+     */
+    EnumToken[EnumToken["UniCodeRange"] = 141] = "UniCodeRange";
     /* aliases */
     /**
      * alias for time token type
@@ -1017,4 +1009,4 @@ var WalkerEvent;
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, SyntaxValidationResult, WalkerEvent, WalkerOptionEnum };
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };

@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "publish": {
     "include": [
       "src",
@@ -28,6 +28,8 @@
       "ROADMAP.md",
       "rollup.config.js",
       "scripts",
+      "native",
+      "src/data/validation.origins.json",
       ".DS_Store",
       ".idea",
       "ROADMAP.md",

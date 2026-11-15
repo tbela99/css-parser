@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { epsilon } from '../../syntax/constants.js';
@@ -229,7 +229,7 @@ function decompose(original) {
     }
     [qx, qy, qz] = toZero([qx, qy, qz]);
     let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
-        if (acc == 0 || (curr > 0 && curr < acc)) {
+        if (acc === 0 || (curr > 0 && curr < acc)) {
             acc = curr;
         }
         return acc;

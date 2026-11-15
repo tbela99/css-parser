@@ -13,7 +13,7 @@ export function stripCommaToken(arena: AstArena, tokenList: Token[]): Token[] | 
     for (let i = 0; i < tokenList.length; i++) {
         const typ: EnumToken = arena.dataTypes[tokenList[i]];
 
-        if (typ == EnumToken.CommentTokenType || typ == EnumToken.CommaTokenType) {
+        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CommaTokenType) {
             continue;
         }
 

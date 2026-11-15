@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { PropertySet } from './set.js';
@@ -75,6 +75,20 @@ class DeclarationMemo {
     }
 }
 /**
+ * true if the value of a declaration contains var(), env() or if()
+ * @param arena
+ * @param declaration
+ */
+function hasWildCardFunction(arena, declaration) {
+    for (const token of arena.tokens(declaration)) {
+        if (arena.dataTypes[token] === EnumToken.WildCardFunctionTokenType ||
+            arena.dataTypes[token] === EnumToken.WildCardFunctionTokenDefType) {
+            return true;
+        }
+    }
+    return false;
+}
+/**
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 class PropertyList {
@@ -107,17 +121,6 @@ class PropertyList {
         this.memo = memo ?? new DeclarationMemo();
     }
     /**
-     * add declarations
-     * @param declarations node ids
-     * @returns
-     */
-    add(declarations) {
-        for (const declaration of declarations) {
-            this.addDeclaration(declaration);
-        }
-        return this;
-    }
-    /**
      * add a declaration
      * @param declaration node id
      */
@@ -126,7 +129,7 @@ class PropertyList {
         let syntaxRules = null;
         const arena = this.arena;
         name =
-            arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+            arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
                 : arena.strings[arena.name[declaration]];
         // do not compute shorthand for invalid declarations
@@ -198,20 +201,28 @@ class PropertyList {
             // @ts-ignore
             shorthand = config.property[propertyName];
         }
+        // the value of a shorthand that contains var(), env() or if() cannot be expanded: the longhands that follow
+        // it are not merged into it. `background: var(--bg); background-clip: text`
+        if (shorthand === name &&
+            (shortHandType === "map" || shortHandType === "set") &&
+            hasWildCardFunction(arena, declaration)) {
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
+            return this;
+        }
         if (this.declarations.has(shorthand)) {
             let existing = this.declarations.get(shorthand);
             if (existing instanceof PropertySet || existing instanceof PropertyMap) {
                 existing = existing.declarations.get(name);
             }
             if (existing != null &&
-                typeof existing == "number" &&
+                typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
-                arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration) {
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0) {
                 return this;
             }
         }
         // @ts-ignore
-        if (shortHandType == "map") {
+        if (shortHandType === "map") {
             let owner = this;
             const mapName = 
             // @ts-ignore
@@ -225,8 +236,9 @@ class PropertyList {
                 owner = this.declarations.get(mapName);
             }
             else if (!this.declarations.has(shorthand)) {
+                this.declarations.set(shorthand, 
                 // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, config.map[shorthand], this.memo));
+                new PropertyMap(arena, config.map[shorthand], this.memo));
             }
             if (owner == this) {
                 // @ts-ignore
@@ -243,7 +255,7 @@ class PropertyList {
             }
         }
         // @ts-ignore
-        else if (shortHandType == "set") {
+        else if (shortHandType === "set") {
             // @ts-ignore
             if (!this.declarations.has(shorthand)) {
                 // @ts-ignore
@@ -324,7 +336,7 @@ class PropertyList {
                 }
             }
         }
-        if (values != declarationValues) {
+        if (values !== declarationValues) {
             arena.setTokenList(declaration, values);
         }
     }

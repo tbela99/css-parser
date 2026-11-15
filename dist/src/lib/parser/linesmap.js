@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 /**
@@ -32,7 +32,7 @@ class LineMap {
         const line = this.search(offset);
         const column = offset - this.lineStarts[line];
         // [line, column]
-        return [line + 1, line == 0 ? column + 1 : column];
+        return [line + 1, line === 0 ? column + 1 : column];
     }
     /**
      * search the greatest index of the value less than or equal to offset
@@ -56,19 +56,6 @@ class LineMap {
             }
         }
         return result;
-    }
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts() {
-        return this.lineStarts;
-    }
-    /**
-     * add line start
-     */
-    addLineStart(lineStart) {
-        this.lineStarts.push(lineStart);
     }
 }
 

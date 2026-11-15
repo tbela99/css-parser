@@ -1,4 +1,3 @@
-import { hsl2hsv } from "./hsv.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import type { Token } from "../../../@types/index.d.ts";
 import { getColorComponents } from "./utils/components.ts";
@@ -30,7 +29,6 @@ export function hsl2hwbToken(arena: AstArena, token: Token): Token | null {
         return null;
     }
 
-    // console.error(new Error("hsl2hwbToken"));
     return hwbToken(arena, values);
 }
 
@@ -101,7 +99,7 @@ export function hwbToken(arena: AstArena, values: number[]): Token {
         arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
 
-    if (values.length == 4) {
+    if (values.length === 4) {
         chi.push(
             arena.createToken(EnumToken.LiteralTokenType, "/"),
             arena.createToken(EnumToken.PercentageTokenType, values[3] * 100),
@@ -113,7 +111,7 @@ export function hwbToken(arena: AstArena, values: number[]): Token {
 
 export function rgb2hwbvalues(arena: AstArena, token: Token): number[] {
     const values = getColorComponents(arena, token)!.map((t: Token, index: number): number => {
-        if (index == 3) {
+        if (index === 3) {
             return getNumber(arena, t);
         }
 
@@ -187,7 +185,10 @@ export function color2hwbvalues(arena: AstArena, token: Token): number[] | null 
     return srgb2hwb(values[0], values[1], values[2], values[3]);
 }
 
-export function hwbvalues(arena: AstArena, token: Token): { h: number; w: number; b: number; a?: number | null } | null {
+export function hwbvalues(
+    arena: AstArena,
+    token: Token,
+): { h: number; w: number; b: number; a?: number | null } | null {
     const components: Token[] | null = getColorComponents(arena, token);
 
     if (components == null) {
@@ -218,7 +219,7 @@ export function hwbvalues(arena: AstArena, token: Token): { h: number; w: number
 
     let a = null;
 
-    if (components.length == 4) {
+    if (components.length === 4) {
         // @ts-ignore
         t = components[3];
 
@@ -268,16 +269,6 @@ export function srgb2hwb(r: number, g: number, b: number, a: number | null = nul
     return result;
 }
 
-export function hsv2hwb(h: number, s: number, v: number, a: number | null = null): number[] {
-    const result: number[] = [h, (1 - s) * v, 1 - v];
-
-    if (a != null) {
-        result.push(a);
-    }
-
-    return result;
-}
-
 export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number | null = null): number[] {
     const sNorm = s / 100;
     const lNorm = l / 100;
@@ -297,7 +288,7 @@ export function hslvalues2hwbvalues(h: number, s: number, l: number, a: number |
 
     const hwb = [hue, w * 100, b * 100];
 
-    if (a != null && a != 1) {
+    if (a != null && a !== 1) {
         hwb.push(a);
     }
 

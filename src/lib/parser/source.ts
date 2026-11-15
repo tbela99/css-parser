@@ -1,6 +1,6 @@
-import type {SourceMapObject} from "../../@types/index.d.ts";
-import {SourceMap} from "../printer/sourcemap/sourcemap.ts";
-import {LineMap} from "./linesmap.ts";
+import type { SourceMapObject } from "../../@types/index.d.ts";
+import { SourceMap } from "../printer/sourcemap/sourcemap.ts";
+import { LineMap } from "./linesmap.ts";
 
 /**
  * Source file ID
@@ -48,69 +48,6 @@ export class SourceFile {
      */
     append(content: string) {
         this.content += content;
-    }
-
-    /**
-     * get file name
-     * @returns
-     */
-    getFileName(): string | null {
-        return this.file;
-    }
-
-    /**
-     * get content
-     * @returns
-     */
-    getContent(): string {
-        return this.content;
-    }
-
-    /**
-     * get text
-     * @param start
-     * @param length
-     * @returns
-     */
-    getText(start: number, length: number): string {
-        return this.content.slice(start, start + length);
-    }
-
-    /**
-     * Compute line and column of the offset
-     * @param offset
-     * @returns
-     */
-    getOffsets(offset: number): [number, number] {
-        return this.lineStarts.getOffsets(offset);
-    }
-
-    /**
-     * get source location
-     * @param offset
-     * @returns
-     */
-    getSourceLocation(offset: number): [string | null, number, number] {
-        // inlined: this.getOffsets(offset)
-        return [this.file, ...this.lineStarts.getOffsets(offset)];
-    }
-
-    /**
-     * get line starts
-     * @returns
-     */
-    getLineStarts(): number[] {
-        // inlined: this.lineStarts.getLineStarts()
-        return this.lineStarts.lineStarts;
-    }
-
-    /**
-     * add line start
-     * @param lineStart
-     */
-    addLineStart(lineStart: number) {
-        // inlined: this.lineStarts.addLineStart(lineStart)
-        this.lineStarts.lineStarts.push(lineStart);
     }
 
     /**

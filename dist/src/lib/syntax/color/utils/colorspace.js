@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { equalsIgnoreCase } from '../../../parser/utils/text.js';
@@ -10,13 +10,11 @@ import { getColorComponents } from './components.js';
 
 /**
  * Return the color space of the color
+ * @param arena
  * @param color
  * @returns
  */
 function getColorSpace(arena, color) {
-    // if (!("chi" in color)) {
-    //     return "rgb";
-    // }
     let name;
     const components = getColorComponents(arena, color);
     if (components == null || components.length < 3) {
@@ -41,7 +39,7 @@ function getColorSpace(arena, color) {
     else {
         name = arena.strings[arena.stringValue[color]];
     }
-    return name == "device-cmyk"
+    return name === "device-cmyk"
         ? "cmyk"
         : name.startsWith("xyz")
             ? "xyz"

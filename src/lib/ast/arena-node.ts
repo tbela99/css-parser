@@ -68,10 +68,10 @@ export function isNodeObjectType(typ: EnumToken): boolean {
  */
 function hasValueTokens(typ: EnumToken): boolean {
     return (
-        typ == EnumToken.DeclarationNodeType ||
-        typ == EnumToken.CssVariableTokenType ||
-        typ == EnumToken.CssVariableImportTokenType ||
-        typ == EnumToken.CssVariableDeclarationMapTokenType
+        typ === EnumToken.DeclarationNodeType ||
+        typ === EnumToken.CssVariableTokenType ||
+        typ === EnumToken.CssVariableImportTokenType ||
+        typ === EnumToken.CssVariableDeclarationMapTokenType
     );
 }
 
@@ -91,7 +91,7 @@ function toIds(arena: AstArena, values: AstArenaNodeInput | readonly AstArenaNod
     if (!Array.isArray(values)) {
         const value: AstArenaNodeInput = values as AstArenaNodeInput;
 
-        result.push(typeof value == "number" ? value : arena.fromObject(value));
+        result.push(typeof value === "number" ? value : arena.fromObject(value));
         return result;
     }
 
@@ -100,7 +100,7 @@ function toIds(arena: AstArena, values: AstArenaNodeInput | readonly AstArenaNod
     for (let i = 0; i < list.length; i++) {
         const value: AstArenaNodeInput = list[i];
 
-        result.push(typeof value == "number" ? value : arena.fromObject(value));
+        result.push(typeof value === "number" ? value : arena.fromObject(value));
     }
 
     return result;
@@ -114,7 +114,7 @@ function toIds(arena: AstArena, values: AstArenaNodeInput | readonly AstArenaNod
 function listViews(arena: AstArena, first: number): readonly AstArenaNode[] {
     const result: AstArenaNode[] = [];
 
-    for (let id = first; id != 0; id = arena.nextSibling[id]) {
+    for (let id = first; id !== 0; id = arena.nextSibling[id]) {
         result.push(new AstArenaNode(arena, id));
     }
 
@@ -188,14 +188,18 @@ export class AstArenaNode {
         const typ: EnumToken = arena.dataTypes[id];
 
         if (isNodeObjectType(typ)) {
-            return typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType || hasValueTokens(typ)
+            return typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType || hasValueTokens(typ)
                 ? arena.strings[arena.name[id]]
                 : undefined;
         }
 
-        return arena.name[id] == 0 ? undefined : arena.strings[arena.name[id]];
+        return arena.name[id] === 0 ? undefined : arena.strings[arena.name[id]];
     }
 
+    /**
+     *
+     * @param nam
+     */
     set nam(nam: string) {
         this[ARENA].name[this[ARENAID]] = this[ARENA].internString(nam);
     }
@@ -208,11 +212,15 @@ export class AstArenaNode {
         const id: number = this[ARENAID];
         const typ: EnumToken = arena.dataTypes[id];
 
-        return typ == EnumToken.RuleNodeType || typ == EnumToken.KeyframesRuleNodeType
+        return typ === EnumToken.RuleNodeType || typ === EnumToken.KeyframesRuleNodeType
             ? arena.strings[arena.name[id]]
             : undefined;
     }
 
+    /**
+     *
+     * @param sel
+     */
     set sel(sel: string) {
         this[ARENA].name[this[ARENAID]] = this[ARENA].internString(sel);
     }
@@ -236,25 +244,25 @@ export class AstArenaNode {
                 return listViews(arena, arena.firstToken[id]);
             }
 
-            return typ == EnumToken.StyleSheetNodeType ||
-                typ == EnumToken.RuleNodeType ||
-                typ == EnumToken.KeyframesRuleNodeType
+            return typ === EnumToken.StyleSheetNodeType ||
+                typ === EnumToken.RuleNodeType ||
+                typ === EnumToken.KeyframesRuleNodeType
                 ? undefined
                 : arena.strings[arena.stringValue[id]];
         }
 
-        if (typ == EnumToken.BinaryExpressionTokenType || typ == EnumToken.FractionTokenType) {
+        if (typ === EnumToken.BinaryExpressionTokenType || typ === EnumToken.FractionTokenType) {
             return undefined;
         }
 
-        if (typ == EnumToken.UnaryExpressionTokenType) {
-            return arena.firstChild[id] == 0 ? null : new AstArenaNode(arena, arena.firstChild[id]);
+        if (typ === EnumToken.UnaryExpressionTokenType) {
+            return arena.firstChild[id] === 0 ? null : new AstArenaNode(arena, arena.firstChild[id]);
         }
 
         if (numericTokenTypes.has(typ)) {
             const fraction: number = arena.getFraction(id);
 
-            return fraction == 0 ? arena.numericValue[id] : new AstArenaNode(arena, fraction);
+            return fraction === 0 ? arena.numericValue[id] : new AstArenaNode(arena, fraction);
         }
 
         const field: AstArenaNode | readonly AstArenaNode[] | null | undefined = this.getField("val");
@@ -263,11 +271,15 @@ export class AstArenaNode {
             return field;
         }
 
-        return arena.stringValue[id] != 0 || typ == EnumToken.IdenTokenType || typ == EnumToken.StringTokenType
+        return arena.stringValue[id] !== 0 || typ === EnumToken.IdenTokenType || typ === EnumToken.StringTokenType
             ? arena.strings[arena.stringValue[id]]
             : undefined;
     }
 
+    /**
+     *
+     * @param val
+     */
     set val(val: string | number | AstArenaNodeInput | readonly AstArenaNodeInput[] | null | undefined) {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
@@ -278,7 +290,7 @@ export class AstArenaNode {
             return;
         }
 
-        if (typeof val == "string") {
+        if (typeof val === "string") {
             if (numericTokenTypes.has(typ)) {
                 arena.numericValue[id] = +val;
                 arena.setFraction(id, null);
@@ -289,7 +301,7 @@ export class AstArenaNode {
             return;
         }
 
-        if (typeof val == "number") {
+        if (typeof val === "number") {
             arena.numericValue[id] = val;
 
             if (numericTokenTypes.has(typ)) {
@@ -299,7 +311,7 @@ export class AstArenaNode {
             return;
         }
 
-        if (typ == EnumToken.UnaryExpressionTokenType) {
+        if (typ === EnumToken.UnaryExpressionTokenType) {
             arena.setChildList(id, toIds(arena, val));
         } else if (numericTokenTypes.has(typ)) {
             arena.setFraction(id, val == null ? null : toIds(arena, val)[0]);
@@ -320,30 +332,34 @@ export class AstArenaNode {
             return listViews(arena, arena.firstChild[id]);
         }
 
-        if (isNodeObjectType(arena.dataTypes[id]) || arena.firstToken[id] == 0) {
+        if (isNodeObjectType(arena.dataTypes[id]) || arena.firstToken[id] === 0) {
             return undefined;
         }
 
         return listViews(arena, arena.firstToken[id]);
     }
 
+    /**
+     *
+     * @param chi
+     */
     set chi(chi: readonly AstArenaNodeInput[] | null | undefined) {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
         const typ: EnumToken = arena.dataTypes[id];
 
         if (
-            typ == EnumToken.StyleSheetNodeType ||
-            typ == EnumToken.RuleNodeType ||
-            typ == EnumToken.KeyframesRuleNodeType ||
-            typ == EnumToken.AtRuleNodeType ||
-            typ == EnumToken.KeyframesAtRuleNodeType
+            typ === EnumToken.StyleSheetNodeType ||
+            typ === EnumToken.RuleNodeType ||
+            typ === EnumToken.KeyframesRuleNodeType ||
+            typ === EnumToken.AtRuleNodeType ||
+            typ === EnumToken.KeyframesAtRuleNodeType
         ) {
             if (chi == null) {
                 // an at-rule without a block
                 arena.setChildList(id, []);
 
-                if (typ == EnumToken.AtRuleNodeType || typ == EnumToken.KeyframesAtRuleNodeType) {
+                if (typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType) {
                     arena.flags[id] &= ~EnumAstNodeStatus.HasChildren;
                 }
 
@@ -365,11 +381,15 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return (arena.flags[id] & EnumAstNodeStatus.HasValues) != 0 || arena.firstToken[id] == 0
+        return (arena.flags[id] & EnumAstNodeStatus.HasValues) !== 0 || arena.firstToken[id] === 0
             ? null
             : listViews(arena, arena.firstToken[id]);
     }
 
+    /**
+     *
+     * @param tokens
+     */
     set tokens(tokens: readonly AstArenaNodeInput[] | null | undefined) {
         this[ARENA].setTokenList(this[ARENAID], toIds(this[ARENA], tokens));
     }
@@ -382,11 +402,15 @@ export class AstArenaNode {
         const id: number = this[ARENAID];
         const typ: EnumToken = arena.dataTypes[id];
 
-        return arena.unit[id] == 0 || typ == EnumToken.ColorTokenType || typ == EnumToken.MatchExpressionTokenType
+        return arena.unit[id] === 0 || typ === EnumToken.ColorTokenType || typ === EnumToken.MatchExpressionTokenType
             ? undefined
             : arena.strings[arena.unit[id]];
     }
 
+    /**
+     *
+     * @param unit
+     */
     set unit(unit: string | null | undefined) {
         this[ARENA].setUnitString(this[ARENAID], unit ?? null);
     }
@@ -398,7 +422,7 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return arena.unit[id] == 0 || arena.dataTypes[id] != EnumToken.ColorTokenType
+        return arena.unit[id] === 0 || arena.dataTypes[id] !== EnumToken.ColorTokenType
             ? undefined
             : arena.strings[arena.unit[id]];
     }
@@ -414,7 +438,7 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return arena.unit[id] == 0 || arena.dataTypes[id] != EnumToken.MatchExpressionTokenType
+        return arena.unit[id] === 0 || arena.dataTypes[id] !== EnumToken.MatchExpressionTokenType
             ? undefined
             : arena.strings[arena.unit[id]];
     }
@@ -430,7 +454,7 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return arena.dataTypes[id] != EnumToken.ColorTokenType || arena.colorType[id] == ColorType.NONE
+        return arena.dataTypes[id] !== EnumToken.ColorTokenType || arena.colorType[id] === ColorType.NONE
             ? undefined
             : arena.colorType[id];
     }
@@ -446,9 +470,13 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return arena.dataTypes[id] == EnumToken.UnaryExpressionTokenType ? arena.numericValue[id] : undefined;
+        return arena.dataTypes[id] === EnumToken.UnaryExpressionTokenType ? arena.numericValue[id] : undefined;
     }
 
+    /**
+     *
+     * @param sign
+     */
     set sign(sign: EnumToken) {
         this[ARENA].numericValue[this[ARENAID]] = sign;
     }
@@ -460,14 +488,20 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        return arena.dataTypes[id] == EnumToken.BinaryExpressionTokenType ? arena.numericValue[id] : this.getField("op");
+        return arena.dataTypes[id] === EnumToken.BinaryExpressionTokenType
+            ? arena.numericValue[id]
+            : this.getField("op");
     }
 
+    /**
+     *
+     * @param op
+     */
     set op(op: EnumToken | AstArenaNodeInput | readonly AstArenaNodeInput[] | null) {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        if (arena.dataTypes[id] == EnumToken.BinaryExpressionTokenType) {
+        if (arena.dataTypes[id] === EnumToken.BinaryExpressionTokenType) {
             arena.numericValue[id] = op as EnumToken;
         } else {
             this.setField("op", op as AstArenaNodeInput);
@@ -481,6 +515,10 @@ export class AstArenaNode {
         return this.getField("op1");
     }
 
+    /**
+     *
+     * @param op
+     */
     set op1(op: AstArenaNodeInput | readonly AstArenaNodeInput[] | null) {
         this.setField("op1", op);
     }
@@ -492,6 +530,10 @@ export class AstArenaNode {
         return this.getField("op2");
     }
 
+    /**
+     *
+     * @param op
+     */
     set op2(op: AstArenaNodeInput | readonly AstArenaNodeInput[] | null) {
         this.setField("op2", op);
     }
@@ -503,22 +545,26 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        if (arena.dataTypes[id] == EnumToken.FractionTokenType) {
-            return arena.firstChild[id] == 0 ? null : new AstArenaNode(arena, arena.firstChild[id]);
+        if (arena.dataTypes[id] === EnumToken.FractionTokenType) {
+            return arena.firstChild[id] === 0 ? null : new AstArenaNode(arena, arena.firstChild[id]);
         }
 
         return this.getField("l");
     }
 
+    /**
+     *
+     * @param l
+     */
     set l(l: AstArenaNodeInput | readonly AstArenaNodeInput[] | null) {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        if (arena.dataTypes[id] == EnumToken.FractionTokenType) {
+        if (arena.dataTypes[id] === EnumToken.FractionTokenType) {
             const r: number = arena.lastChild[id];
             const values: number[] = toIds(arena, l);
 
-            if (r != 0 && r != arena.firstChild[id]) {
+            if (r !== 0 && r !== arena.firstChild[id]) {
                 values.push(r);
             }
 
@@ -536,22 +582,26 @@ export class AstArenaNode {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        if (arena.dataTypes[id] == EnumToken.FractionTokenType) {
-            return arena.lastChild[id] == 0 ? null : new AstArenaNode(arena, arena.lastChild[id]);
+        if (arena.dataTypes[id] === EnumToken.FractionTokenType) {
+            return arena.lastChild[id] === 0 ? null : new AstArenaNode(arena, arena.lastChild[id]);
         }
 
         return this.getField("r");
     }
 
+    /**
+     *
+     * @param r
+     */
     set r(r: AstArenaNodeInput | readonly AstArenaNodeInput[] | null) {
         const arena: AstArena = this[ARENA];
         const id: number = this[ARENAID];
 
-        if (arena.dataTypes[id] == EnumToken.FractionTokenType) {
+        if (arena.dataTypes[id] === EnumToken.FractionTokenType) {
             const l: number = arena.firstChild[id];
             const values: number[] = toIds(arena, r);
 
-            if (l != 0) {
+            if (l !== 0) {
                 values.unshift(l);
             }
 
@@ -572,6 +622,10 @@ export class AstArenaNode {
         return loc == null ? null : Object.freeze(loc);
     }
 
+    /**
+     *
+     * @param loc
+     */
     set loc(loc: SourceLocation | null | undefined) {
         this[ARENA].setLocation(this[ARENAID], loc?.srcId, loc?.sta, loc?.end);
     }
@@ -583,6 +637,10 @@ export class AstArenaNode {
         return this[ARENA].flags[this[ARENAID]] & EnumAstNodeStatus.StateMask;
     }
 
+    /**
+     *
+     * @param state
+     */
     set state(state: EnumAstNodeStatus | null | undefined) {
         this[ARENA].setState(this[ARENAID], state);
     }
@@ -597,6 +655,10 @@ export class AstArenaNode {
         return errors == null ? null : Object.freeze(errors.slice());
     }
 
+    /**
+     *
+     * @param errors
+     */
     set errors(errors: readonly ErrorDescription[] | null | undefined) {
         this[ARENA].setErrors(this[ARENAID], errors == null ? null : errors.slice());
     }
@@ -608,7 +670,7 @@ export class AstArenaNode {
     get parent(): AstArenaNode | null {
         const parent: AstNode | Token = this[ARENA].getValueParent(this[ARENAID]);
 
-        return parent == 0 ? null : new AstArenaNode(this[ARENA], parent);
+        return parent === 0 ? null : new AstArenaNode(this[ARENA], parent);
     }
 
     /**
@@ -621,7 +683,7 @@ export class AstArenaNode {
         const fields = structuredFields(arena.dataTypes[id]);
 
         for (let i = 0; i < fields.length; i++) {
-            if (fields[i][0] != key) {
+            if (fields[i][0] !== key) {
                 continue;
             }
 
@@ -632,7 +694,7 @@ export class AstArenaNode {
             }
 
             if (fields[i][2]) {
-                return arena.firstToken[list] == 0 ? null : new AstArenaNode(arena, arena.firstToken[list]);
+                return arena.firstToken[list] === 0 ? null : new AstArenaNode(arena, arena.firstToken[list]);
             }
 
             return listViews(arena, arena.firstToken[list]);
@@ -652,7 +714,7 @@ export class AstArenaNode {
         const fields = structuredFields(arena.dataTypes[id]);
 
         for (let i = 0; i < fields.length; i++) {
-            if (fields[i][0] == key) {
+            if (fields[i][0] === key) {
                 arena.setTokenList(arena.fieldList(id, fields[i][1] as TokenField), toIds(arena, value));
                 return true;
             }

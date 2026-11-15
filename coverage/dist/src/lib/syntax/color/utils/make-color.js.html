@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.61% </span>
+                <span class="strong">95.08% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>57/59</span>
+                <span class='fraction'>58/61</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.61% </span>
+                <span class="strong">95.08% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>57/59</span>
+                <span class='fraction'>58/61</span>
             </div>
         
             
@@ -122,24 +122,27 @@
 <a name='L57'></a><a href='#L57'>57</a>
 <a name='L58'></a><a href='#L58'>58</a>
 <a name='L59'></a><a href='#L59'>59</a>
-<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -147,6 +150,7 @@
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
@@ -179,13 +183,13 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
 	CSS parser, minifier and validator for node and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { EnumToken, ColorType } from '../../../ast/types.js';
@@ -194,6 +198,7 @@ import { minmax, getNumber } from '../color.js';
 &nbsp;
 /**
  * Create a color token
+ * @param arena
  * @param kind
  * @param components
  * @param alpha
@@ -205,14 +210,15 @@ function makeColor(arena, kind, components, alpha) {
 <span class="cstat-no" title="statement not covered" >    }</span>
     const alphaValue = alpha == null
 <span class="branch-0 cbranch-no" title="branch not covered" >        ? 1</span>
-        : arena.dataTypes[alpha] === EnumToken.IdenTokenType <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")</span>
+        : arena.dataTypes[alpha] === EnumToken.IdenTokenType <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp;</span>
+<span class="cstat-no" title="statement not covered" >            equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")</span>
 <span class="branch-0 cbranch-no" title="branch not covered" >            ? 0</span>
             : minmax(getNumber(arena, alpha), 0, 1);
     components.length = 3;
     // the components may belong to another color token: a token belongs to one token list
     for (let i = 0; i &lt; components.length; i++) {
         // inlined: arena.take(components[i])
-        components[i] = arena.parents[components[i]] == 0 ? components[i] : arena.clone(components[i], true);
+        components[i] = arena.parents[components[i]] === 0 ? components[i] : arena.clone(components[i], true);
     }
     if (alphaValue !== 1) {
         components.push(arena.createToken(EnumToken.NumberTokenType, alphaValue));
@@ -247,7 +253,7 @@ export { makeColor };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-07T22:03:47.899Z
+                at 2026-11-15T00:19:12.243Z
             </div>
         <script src="../../../../../../prettify.js"></script>
         <script>

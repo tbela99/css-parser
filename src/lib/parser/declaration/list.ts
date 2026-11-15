@@ -92,6 +92,24 @@ export class DeclarationMemo {
 }
 
 /**
+ * true if the value of a declaration contains var(), env() or if()
+ * @param arena
+ * @param declaration
+ */
+function hasWildCardFunction(arena: AstArena, declaration: AstNode): boolean {
+    for (const token of arena.tokens(declaration)) {
+        if (
+            arena.dataTypes[token] === EnumToken.WildCardFunctionTokenType ||
+            arena.dataTypes[token] === EnumToken.WildCardFunctionTokenDefType
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Represents a list of property declarations, compute shorthand and remove duplicate declarations.
  */
 export class PropertyList {
@@ -129,19 +147,6 @@ export class PropertyList {
     }
 
     /**
-     * add declarations
-     * @param declarations node ids
-     * @returns
-     */
-    add(declarations: Iterable<AstNode>): this {
-        for (const declaration of declarations) {
-            this.addDeclaration(declaration);
-        }
-
-        return this;
-    }
-
-    /**
      * add a declaration
      * @param declaration node id
      */
@@ -151,7 +156,7 @@ export class PropertyList {
         const arena: AstArena = this.arena;
 
         name =
-            arena.dataTypes[declaration] != EnumToken.DeclarationNodeType
+            arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
                 : arena.strings[arena.name[declaration]];
 
@@ -233,6 +238,17 @@ export class PropertyList {
             shorthand = <string>config.property[propertyName];
         }
 
+        // the value of a shorthand that contains var(), env() or if() cannot be expanded: the longhands that follow
+        // it are not merged into it. `background: var(--bg); background-clip: text`
+        if (
+            shorthand === name &&
+            (shortHandType! === "map" || shortHandType! === "set") &&
+            hasWildCardFunction(arena, declaration)
+        ) {
+            this.declarations.set(this.memo.key(arena, declaration), declaration);
+            return this;
+        }
+
         if (this.declarations.has(shorthand)) {
             let existing = this.declarations.get(shorthand);
 
@@ -242,15 +258,16 @@ export class PropertyList {
 
             if (
                 existing != null &&
-                typeof existing == "number" &&
+                typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
-                arena.flags[declaration] & ~EnumAstNodeStatus.ImportantDeclaration
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0
             ) {
                 return this;
             }
         }
+
         // @ts-ignore
-        if (shortHandType == "map") {
+        if (shortHandType === "map") {
             let owner: PropertyMap | PropertyList = this;
 
             const mapName: string =
@@ -268,8 +285,11 @@ export class PropertyList {
 
                 owner = this.declarations.get(mapName) as PropertyMap;
             } else if (!this.declarations.has(shorthand)) {
-                // @ts-ignore
-                this.declarations.set(shorthand, new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo));
+                this.declarations.set(
+                    shorthand,
+                    // @ts-ignore
+                    new PropertyMap(arena, <ShorthandMapType>config.map[shorthand], this.memo),
+                );
             }
 
             if (owner == this) {
@@ -290,7 +310,7 @@ export class PropertyList {
         }
 
         // @ts-ignore
-        else if (shortHandType == "set") {
+        else if (shortHandType === "set") {
             // @ts-ignore
 
             if (!this.declarations.has(shorthand)) {
@@ -395,7 +415,7 @@ export class PropertyList {
             }
         }
 
-        if (values != declarationValues) {
+        if (values !== declarationValues) {
             arena.setTokenList(declaration, values);
         }
     }

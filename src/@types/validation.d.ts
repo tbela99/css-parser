@@ -1,4 +1,3 @@
-import { SyntaxValidationResult } from "../lib/ast/types.ts";
 import type { AstNode } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
 import type { ValidationOptions } from "./index.d.ts";
@@ -10,9 +9,14 @@ import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../lib/validation/p
  */
 export declare interface ValidationSyntaxNode {
     /**
-     * mdn data syntax
+     * webref syntax
      */
     syntax: string;
+    /**
+     * name of the standard property whose syntax is used: the vendor prefixed legacy name aliases of webref
+     * (`-webkit-align-content` is an alias of `align-content`). an alias has no other key
+     */
+    alias?: string;
     /**
      * validation tokens
      */
@@ -74,7 +78,7 @@ export interface ValidationResult {
     /**
      * validation result
      */
-    valid: SyntaxValidationResult;
+    valid: boolean;
     /**
      * node
      */

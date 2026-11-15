@@ -1,7 +1,7 @@
 import type { ErrorDescription, Token } from "../../@types/index.d.ts";
 import { type AstArena, TokenField } from "../ast/arena.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";
-import { ColorType, EnumAstNodeStatus, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
+import { ColorType, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
 import { memoize } from "../parser/utils/cache.ts";
 import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
@@ -34,7 +34,6 @@ export const timeUnits: Array<string> = ["ms", "s"];
 export const angleUnits: Array<string> = ["rad", "turn", "deg", "grad"];
 export const resolutionUnits: Array<string> = ["dpi", "dpcm", "dppx", "x"];
 export const dimensionUnits: Array<string> = [
-    "Q",
     "cap",
     "ch",
     "cm",
@@ -59,16 +58,23 @@ export const dimensionUnits: Array<string> = [
     "lvh",
     "lvi",
     "lvmax",
+    "lvmin",
     "lvw",
     "mm",
     "pc",
     "pt",
     "px",
+    "Q",
+    "rcap",
+    "rch",
     "rem",
+    "rex",
+    "ric",
     "rlh",
     "svb",
     "svh",
     "svi",
+    "svmax",
     "svmin",
     "svw",
     "vb",
@@ -509,15 +515,33 @@ export const pseudoAliasMap: Record<string, string> = {
 //     "-moz-alt-content",
 // ]);
 
-// renamed standard properties
-export const renamedStandardProperties = new Map([["color-adjust", "print-color-adjust"]]);
+// renamed standard properties: the legacy name aliases of webref that are not vendor prefixed (see scripts/webref.ts),
+// updated manually. the vendor prefixed aliases are not renamed: they use the syntax of the standard property (alias)
+export const renamedStandardProperties = new Map([
+    ["color-adjust", "print-color-adjust"],
+    ["font-stretch", "font-width"],
+    ["grid-column-gap", "column-gap"],
+    ["grid-gap", "gap"],
+    ["grid-row-gap", "row-gap"],
+    ["word-wrap", "overflow-wrap"],
+]);
+
+/**
+ * the units of each dimension, lower case: the units are case-insensitive (`Q`, `Hz`, `kHz`)
+ */
+const lengthUnitSet: Set<string> = new Set(dimensionUnits.map((unit: string) => unit.toLowerCase()));
+const resolutionUnitSet: Set<string> = new Set(resolutionUnits.map((unit: string) => unit.toLowerCase()));
+const angleUnitSet: Set<string> = new Set(angleUnits.map((unit: string) => unit.toLowerCase()));
+const timeUnitSet: Set<string> = new Set(timeUnits.map((unit: string) => unit.toLowerCase()));
+const frequencyUnitSet: Set<string> = new Set(frequencyUnits.map((unit: string) => unit.toLowerCase()));
+const flexUnitSet: Set<string> = new Set(flexUnits.map((unit: string) => unit.toLowerCase()));
 
 /**
  * true if the unit is a length unit
  * @param unit
  */
 export function isLengthUnit(unit: string): boolean {
-    return dimensionUnits.includes(unit.toLowerCase());
+    return lengthUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -525,7 +549,7 @@ export function isLengthUnit(unit: string): boolean {
  * @param unit
  */
 export function isResolutionUnit(unit: string): boolean {
-    return resolutionUnits.includes(unit.toLowerCase());
+    return resolutionUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -533,7 +557,7 @@ export function isResolutionUnit(unit: string): boolean {
  * @param unit
  */
 export function isAngleUnit(unit: string): boolean {
-    return angleUnits.includes(unit.toLowerCase());
+    return angleUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -541,7 +565,7 @@ export function isAngleUnit(unit: string): boolean {
  * @param unit
  */
 export function isTimeUnit(unit: string): boolean {
-    return timeUnits.includes(unit.toLowerCase());
+    return timeUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -549,7 +573,7 @@ export function isTimeUnit(unit: string): boolean {
  * @param unit
  */
 export function isFrequencyUnit(unit: string): boolean {
-    return frequencyUnits.includes(unit.toLowerCase());
+    return frequencyUnitSet.has(unit.toLowerCase());
 }
 
 /**
@@ -557,27 +581,27 @@ export function isFrequencyUnit(unit: string): boolean {
  * @param unit
  */
 export function isFlexUnit(unit: string): boolean {
-    return "fr" == unit.toLowerCase();
+    return flexUnitSet.has(unit.toLowerCase());
 }
 
 export function isLength(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function isResolution(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function isAngle(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function isTime(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function isFrequency(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
 }
 
 /**
@@ -588,7 +612,7 @@ export function isFrequency(arena: AstArena, dimension: Token): boolean {
  */
 export function reduceColorStops(arena: AstArena, stops: Token[]) {
     const parts = splitTokenList(arena, stops);
-    const n = parts.length == 1 ? 1 : parts.length - 1;
+    const n = parts.length === 1 ? 1 : parts.length - 1;
 
     let j: number;
     let i: number;
@@ -598,12 +622,12 @@ export function reduceColorStops(arena: AstArena, stops: Token[]) {
     for (i = 0; i < parts.length; i++) {
         k++;
 
-        if (parts[i].length != 3) {
+        if (parts[i].length !== 3) {
             continue;
         }
 
         if (i > 0 && isOkLabClose(arena, parts[i - 1][0], parts[i][0])) {
-            if (parts[i - 1].length == 1) {
+            if (parts[i - 1].length === 1) {
                 parts[i - 1].push(
                     arena.createToken(EnumToken.WhitespaceTokenType),
                     arena.createToken(EnumToken.PercentageTokenType, ((k - 1) * 100) / n),
@@ -623,9 +647,9 @@ export function reduceColorStops(arena: AstArena, stops: Token[]) {
             const typ: EnumToken = arena.dataTypes[parts[i][j]];
 
             if (
-                (typ == EnumToken.LengthTokenType && 0 == arena.numericValue[parts[i][j]]) ||
-                typ == EnumToken.NumberTokenType ||
-                typ == EnumToken.PercentageTokenType
+                (typ === EnumToken.LengthTokenType && 0 === arena.numericValue[parts[i][j]]) ||
+                typ === EnumToken.NumberTokenType ||
+                typ === EnumToken.PercentageTokenType
             ) {
                 if (arena.numericValue[parts[i][j]] === (k * 100) / n) {
                     parts[i].length = j;
@@ -744,7 +768,7 @@ export function reducegradientBackgroundPosition(arena: AstArena, positions: Tok
  */
 export function reduceConicColorStops(arena: AstArena, stops: Token[]): Token[] {
     const parts = splitTokenList(arena, stops);
-    const n = parts.length == 1 ? 1 : parts.length - 1;
+    const n = parts.length === 1 ? 1 : parts.length - 1;
 
     let j: number;
     let i: number;
@@ -754,12 +778,12 @@ export function reduceConicColorStops(arena: AstArena, stops: Token[]): Token[] 
     for (i = 0; i < parts.length; i++) {
         k++;
 
-        if (parts[i].length != 3) {
+        if (parts[i].length !== 3) {
             continue;
         }
 
         if (i > 0 && isOkLabClose(arena, parts[i - 1][0], parts[i][0])) {
-            if (parts[i - 1].length == 1) {
+            if (parts[i - 1].length === 1) {
                 parts[i - 1].push(
                     arena.createToken(EnumToken.WhitespaceTokenType),
                     arena.createToken(EnumToken.AngleTokenType, ((k - 1) * 100) / n, "deg"),
@@ -779,8 +803,8 @@ export function reduceConicColorStops(arena: AstArena, stops: Token[]): Token[] 
             const typ: EnumToken = arena.dataTypes[parts[i][j]];
 
             if (
-                (typ == EnumToken.NumberTokenType && 0 == arena.numericValue[parts[i][j]]) ||
-                typ == EnumToken.AngleTokenType
+                (typ === EnumToken.NumberTokenType && 0 === arena.numericValue[parts[i][j]]) ||
+                typ === EnumToken.AngleTokenType
             ) {
                 if (arena.numericValue[toDegrees(arena, parts[i][j])] === (k * 360) / n) {
                     parts[i].length = j;
@@ -843,8 +867,8 @@ export function isPolarColorspace(arena: AstArena, token: Token): boolean {
  */
 export function isIdentColor(arena: AstArena, token: Token): boolean {
     return (
-        arena.dataTypes[token] == EnumToken.ColorTokenType &&
-        arena.colorType[token] != ColorType.NONE &&
+        arena.dataTypes[token] === EnumToken.ColorTokenType &&
+        arena.colorType[token] !== ColorType.NONE &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(arena.colorType[token]) &&
         isIdent(arena.strings[arena.stringValue[token]])
     );
@@ -859,7 +883,7 @@ export function isIdentColor(arena: AstArena, token: Token): boolean {
 function filterChildren(arena: AstArena, token: Token, types: EnumToken[]): Token[] {
     const children: Token[] = [];
 
-    for (let t = arena.firstToken[token]; t != 0; t = arena.nextSibling[t]) {
+    for (let t = arena.firstToken[token]; t !== 0; t = arena.nextSibling[t]) {
         if (types.includes(arena.dataTypes[t])) {
             children.push(t);
         }
@@ -883,17 +907,17 @@ const colorKeywords: string[] = [
 export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription[]): boolean {
     const typ: EnumToken = arena.dataTypes[token];
 
-    if (typ == EnumToken.WildCardFunctionTokenType) {
+    if (typ === EnumToken.WildCardFunctionTokenType) {
         return true;
     }
 
-    if (typ == EnumToken.ColorTokenType) {
-        if (arena.colorType[token] != ColorType.NONE && arena.firstToken[token] == 0) {
+    if (typ === EnumToken.ColorTokenType) {
+        if (arena.colorType[token] !== ColorType.NONE && arena.firstToken[token] === 0) {
             return true;
         }
     }
 
-    if (typ == EnumToken.IdenTokenType) {
+    if (typ === EnumToken.IdenTokenType) {
         const val = lowercase(arena.strings[arena.stringValue[token]]);
 
         if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
@@ -905,7 +929,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
     }
 
     if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
-        if (arena.firstToken[token] != 0) {
+        if (arena.firstToken[token] !== 0) {
             const name: string = arena.strings[arena.stringValue[token]];
 
             if (name === "light-dark") {
@@ -919,7 +943,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     EnumToken.WildCardFunctionTokenType,
                 ]);
 
-                if (children.length != 2) {
+                if (children.length !== 2) {
                     errors?.push({
                         message: "light-dark function must have 2 arguments",
                         node: token,
@@ -1014,7 +1038,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     tl = arena.field(value, TokenField.R);
                 } else if (
                     parent != null &&
-                    parent != token &&
+                    parent !== token &&
                     arena.dataTypes[parent] === EnumToken.MathFunctionTokenType &&
                     arena.strings[arena.stringValue[parent]] === "calc"
                 ) {
@@ -1043,7 +1067,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     tl = children[l];
                 }
 
-                if (tk != 0 && tl != 0 && tk != null && tl != null) {
+                if (tk !== 0 && tl !== 0 && tk != null && tl != null) {
                     if (
                         (arena.dataTypes[tk] === EnumToken.PercentageTokenType ||
                             arena.dataTypes[tl] === EnumToken.PercentageTokenType) &&
@@ -1060,7 +1084,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                 }
             }
 
-            if (name == "color") {
+            if (name === "color") {
                 const children: Token[] = filterChildren(arena, token, [
                     EnumToken.DashedIdenTokenType,
                     EnumToken.IdenTokenType,
@@ -1072,15 +1096,15 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     EnumToken.PercentageTokenType,
                 ]);
                 const isRelative: boolean =
-                    arena.dataTypes[children[0]] == EnumToken.IdenTokenType &&
-                    arena.strings[arena.stringValue[children[0]]] == "from";
+                    arena.dataTypes[children[0]] === EnumToken.IdenTokenType &&
+                    arena.strings[arena.stringValue[children[0]]] === "from";
 
                 let offset = 0;
                 if (isRelative) {
                     offset = 2;
                 }
 
-                if (offset < children.length && arena.dataTypes[children[offset]] == EnumToken.DashedIdenTokenType) {
+                if (offset < children.length && arena.dataTypes[children[offset]] === EnumToken.DashedIdenTokenType) {
                     if (children.length <= offset + 1) {
                         errors?.push({
                             action: "drop",
@@ -1094,14 +1118,14 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                         const childType: EnumToken = arena.dataTypes[children[i]];
 
                         if (
-                            childType == EnumToken.NumberTokenType ||
-                            childType == EnumToken.LiteralTokenType ||
-                            childType == EnumToken.ColorTokenType ||
-                            childType == EnumToken.FunctionTokenType ||
-                            childType == EnumToken.MathFunctionTokenType ||
-                            childType == EnumToken.PercentageTokenType ||
+                            childType === EnumToken.NumberTokenType ||
+                            childType === EnumToken.LiteralTokenType ||
+                            childType === EnumToken.ColorTokenType ||
+                            childType === EnumToken.FunctionTokenType ||
+                            childType === EnumToken.MathFunctionTokenType ||
+                            childType === EnumToken.PercentageTokenType ||
                             isColor(arena, children[i]) ||
-                            (childType == EnumToken.IdenTokenType &&
+                            (childType === EnumToken.IdenTokenType &&
                                 equalsIgnoreCase("none", arena.strings[arena.stringValue[children[i]]]))
                         ) {
                             continue;
@@ -1113,16 +1137,16 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     return true;
                 }
 
-                if (children.length == 4 || (isRelative && children.length == 6)) {
+                if (children.length === 4 || (isRelative && children.length === 6)) {
                     return true;
                 }
 
                 return true;
-            } else if (name == "color-mix") {
+            } else if (name === "color-mix") {
                 const children: Token[][] = [[]];
 
-                for (let t = arena.firstToken[token]; t != 0; t = arena.nextSibling[t]) {
-                    if (arena.dataTypes[t] == EnumToken.CommaTokenType) {
+                for (let t = arena.firstToken[token]; t !== 0; t = arena.nextSibling[t]) {
+                    if (arena.dataTypes[t] === EnumToken.CommaTokenType) {
                         children.push([]);
                     } else if (
                         ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t])
@@ -1144,7 +1168,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     if (k < children[j].length && arena.dataTypes[children[j][k]] === EnumToken.IdenTokenType) {
                         if (!isRectangularOrthogonalColorspace(arena, children[j][k])) {
                             if (isPolarColorspace(arena, children[j][k++])) {
-                                if (k == children[j].length) {
+                                if (k === children[j].length) {
                                 } else if (arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType) {
                                     return false;
                                 } else if (equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])) {
@@ -1234,13 +1258,13 @@ export function parseColor(arena: AstArena, token: Token): Token {
     if (typ === EnumToken.ColorTokenType) {
         const val: string = arena.strings[arena.stringValue[token]];
 
-        if (arena.colorType[token] == ColorType.NONE && arena.stringValue[token] != 0) {
+        if (arena.colorType[token] === ColorType.NONE && arena.stringValue[token] !== 0) {
             // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
             arena.colorType[token] = (ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0);
         }
 
-        if (arena.firstToken[token] != 0) {
+        if (arena.firstToken[token] !== 0) {
             const tk: Token | null = arena.findToken(
                 token,
                 (arena: AstArena, t: Token) =>
@@ -1255,13 +1279,13 @@ export function parseColor(arena: AstArena, token: Token): Token {
             ) {
                 // inlined: arena.setUnitString(token, "rel")
                 arena.unit[token] = "rel" == null ? 0 : arena.internString("rel");
-            } else if (val == "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] == "in") {
+            } else if (val === "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] === "in") {
                 // inlined: arena.setUnitString(token, "mix")
                 arena.unit[token] = "mix" == null ? 0 : arena.internString("mix");
             }
 
-            if (val == "color") {
-                if (tk != null && EnumToken.DashedIdenTokenType == arena.dataTypes[tk]) {
+            if (val === "color") {
+                if (tk != null && EnumToken.DashedIdenTokenType === arena.dataTypes[tk]) {
                     // inlined: arena.setColorType(token, ColorType.CUSTOM_COLOR)
                     arena.colorType[token] = ColorType.CUSTOM_COLOR;
                 }
@@ -1287,7 +1311,7 @@ function isNonAscii(codepoint: number): boolean {
 
 export function isIdentStart(codepoint: number): boolean {
     // _
-    return codepoint == 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint == REVERSE_SOLIDUS;
+    return codepoint === 0x5f || isLetter(codepoint) || isNonAscii(codepoint) || codepoint === REVERSE_SOLIDUS;
 }
 
 export function isDigit(codepoint: number): boolean {
@@ -1296,7 +1320,7 @@ export function isDigit(codepoint: number): boolean {
 
 export function isIdentCodepoint(codepoint: number): boolean {
     // -
-    return codepoint == 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
+    return codepoint === 0x2d || isDigit(codepoint) || isIdentStart(codepoint);
 }
 
 export const isIdent = memoize(function (name: string): boolean {
@@ -1305,7 +1329,7 @@ export const isIdent = memoize(function (name: string): boolean {
     let codepoint: number = name.charCodeAt(0) as number;
 
     // -
-    if (codepoint == 0x2d) {
+    if (codepoint === 0x2d) {
         const nextCodepoint: number = name.charCodeAt(1) as number;
 
         if (Number.isNaN(nextCodepoint)) {
@@ -1328,7 +1352,7 @@ export const isIdent = memoize(function (name: string): boolean {
         return false;
     }
 
-    if (codepoint == REVERSE_SOLIDUS) {
+    if (codepoint === REVERSE_SOLIDUS) {
         if (i + 1 > j) {
             return false;
         }
@@ -1353,7 +1377,7 @@ export const isIdent = memoize(function (name: string): boolean {
         i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
         codepoint = name.charCodeAt(i) as number;
 
-        if (codepoint == REVERSE_SOLIDUS) {
+        if (codepoint === REVERSE_SOLIDUS) {
             i += codepoint < 0x80 ? 1 : String.fromCodePoint(codepoint).length;
             codepoint = name.charCodeAt(i) as number;
 
@@ -1375,9 +1399,9 @@ export function isNonPrintable(codepoint: number): boolean {
     return (
         (codepoint >= 0 && codepoint <= 0x8) ||
         // tab
-        codepoint == 0xb ||
+        codepoint === 0xb ||
         // delete
-        codepoint == 0x7f ||
+        codepoint === 0x7f ||
         (codepoint >= 0xe && codepoint <= 0x1f)
     );
 }
@@ -1423,14 +1447,14 @@ export function isNonPrintable(codepoint: number): boolean {
 
 export function isPseudo(name: string): boolean {
     return (
-        name.charAt(0) == ":" &&
-        ((name.endsWith("(") && isIdent(name.charAt(1) == ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
-            isIdent(name.charAt(1) == ":" ? name.slice(2) : name.slice(1)))
+        name.charAt(0) === ":" &&
+        ((name.endsWith("(") && isIdent(name.charAt(1) === ":" ? name.slice(2, -1) : name.slice(1, -1))) ||
+            isIdent(name.charAt(1) === ":" ? name.slice(2) : name.slice(1)))
     );
 }
 
 export function isHash(name: string): boolean {
-    return name.charAt(0) == "#" && isIdentStart(name.charCodeAt(1));
+    return name.charAt(0) === "#" && isIdentStart(name.charCodeAt(1));
 }
 
 // export const isNumber = memoize(function (name: string): boolean {
@@ -1524,7 +1548,7 @@ export function isHash(name: string): boolean {
 // }
 
 export function isFlex(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] != 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
 }
 
 export function parseDimension(
@@ -1608,26 +1632,26 @@ export function isFunction(name: string): boolean {
 export function isNewLine(codepoint: number): boolean {
     // \n \r \f \v
     return (
-        codepoint == 0xa ||
-        codepoint == 0xb ||
-        codepoint == 0xc ||
-        codepoint == 0xd ||
-        codepoint == 0x2028 ||
-        codepoint == 0x2029
+        codepoint === 0xa ||
+        codepoint === 0xb ||
+        codepoint === 0xc ||
+        codepoint === 0xd ||
+        codepoint === 0x2028 ||
+        codepoint === 0x2029
     );
 }
 
 export function isWhiteSpace(codepoint: number): boolean {
     return (
-        codepoint == 0x9 ||
-        codepoint == 0x20 ||
+        codepoint === 0x9 ||
+        codepoint === 0x20 ||
         // isNewLine
-        codepoint == 0xa ||
-        codepoint == 0xb ||
-        codepoint == 0xc ||
-        codepoint == 0xd ||
-        codepoint == 0x2028 ||
-        codepoint == 0x2029
+        codepoint === 0xa ||
+        codepoint === 0xb ||
+        codepoint === 0xc ||
+        codepoint === 0xd ||
+        codepoint === 0x2028 ||
+        codepoint === 0x2029
     );
 }
 
@@ -1668,26 +1692,30 @@ export function length2Px(arena: AstArena, value: Token): number | null {
     let result: number | null = null;
     const val: number = arena.numericValue[value];
 
-    if (arena.dataTypes[value] == EnumToken.NumberTokenType) {
+    if (arena.dataTypes[value] === EnumToken.NumberTokenType) {
         result = val;
     } else {
-        switch (arena.strings[arena.unit[value]]) {
+        // the absolute length units: 1in = 2.54cm = 96px. the units are case-insensitive
+        switch (arena.strings[arena.unit[value]]?.toLowerCase()) {
             case "cm":
-                result = val * 37.8;
+                result = (val * 96) / 2.54;
                 break;
             case "mm":
-                result = val * 3.78;
+                result = (val * 96) / 25.4;
                 break;
-            case "Q":
-                result = (val * 37.8) / 40;
+            case "q":
+                // 1Q = 1/40cm
+                result = (val * 96) / 101.6;
                 break;
             case "in":
-                result = val / 96;
+                result = val * 96;
                 break;
             case "pc":
-                result = val / 16;
+                // 1pc = 1/6in
+                result = val * 16;
                 break;
             case "pt":
+                // 1pt = 1/72in
                 result = (val * 4) / 3;
                 break;
             case "px":
@@ -1705,7 +1733,7 @@ export function length2Px(arena: AstArena, value: Token): number | null {
  */
 
 export function minifyNumber(val: string | number): string {
-    if (typeof val != "number") {
+    if (typeof val !== "number") {
         return minifyNumberValue(val);
     }
 
@@ -1754,15 +1782,15 @@ function minifyNumberValue(val: string | number): string {
 
     const chr: string = val.charAt(0);
 
-    if (chr == "-") {
+    if (chr === "-") {
         const slice: string = val.slice(0, 2);
 
-        if (slice == "-0") {
-            return val.length == 2 ? "0" : "-" + val.slice(2);
+        if (slice === "-0") {
+            return val.length === 2 ? "0" : "-" + val.slice(2);
         }
     }
 
-    if (chr == "0") {
+    if (chr === "0") {
         return val.slice(1);
     }
 

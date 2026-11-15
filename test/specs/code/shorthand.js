@@ -119,7 +119,7 @@ p {
 a:focus {
 
 background: left 5% / 15% 60% repeat-x url("../../media/examples/star.png"); 
-background-size: cover auto;
+background-size: cover;
 }
 
 `;
@@ -128,7 +128,7 @@ background-size: cover auto;
 a{
 background: center / contain no-repeat url("../../media/examples/firefox-logo.svg"),            
 #eee 35% url("../../media/examples/lizard.png");
-background-size: cover auto, contain;
+background-size: cover, contain;
 
 }
 `;

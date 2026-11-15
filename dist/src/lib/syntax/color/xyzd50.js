@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.0.0
+	Version: 2.1.0
 	License: MIT
  */
 import { lsrgb2srgbvalues } from './srgb.js';
@@ -31,7 +31,7 @@ function XYZ_D65_to_D50(x, y, z, alpha = null) {
         [0.02962780877005599, 0.9904344267538799, -0.017073799063418826],
         [-0.009243040646204504, 0.015055191490298152, 0.7518742814281371],
     ];
-    return multiplyMatrices(M, [x, y, z]).concat(alpha == null || alpha == 1 ? [] : [alpha]);
+    return multiplyMatrices(M, [x, y, z]).concat(alpha == null || alpha === 1 ? [] : [alpha]);
 }
 function xyzd502srgb(x, y, z, alpha = null) {
     // @ts-ignore
