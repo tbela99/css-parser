@@ -130,7 +130,7 @@ export const minifiers = [
         label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
         minify: async (css) =>
             transformSync({
-                input: css,
+                input: Buffer.from(css),
             }).code,
     },
     {
@@ -140,7 +140,7 @@ export const minifiers = [
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
         minify: async (css) =>
             transformSync({
-                input: css,
+                input: Buffer.from(css),
                 minify: false,
                 beautify: false,
                 removeEmpty: true,
