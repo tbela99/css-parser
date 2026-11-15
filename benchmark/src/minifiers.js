@@ -11,6 +11,7 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform } from "lightningcss";
+import { minify} from '@stacksjs/ts-css';
 import {  transform  as yukuTransform} from "yuku-css";
 import { transformSync as tbelaTransform } from "@tbela99/css-parser";
 import { transformSync as tbelaDevTransform } from "@tbela99/css-parser2";
@@ -67,6 +68,7 @@ const versions = {
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
     'yuku-css': pkgVersion("yuku-css", "yuku-css/package.json"),
+    'stacksjs-ts-css': pkgVersion("stacksjs-ts-css", "@stacksjs/ts-css/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
     "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser2/package.json"),
 };
@@ -125,6 +127,12 @@ export const minifiers = [
         url: versions["yuku-css"].url,
         label: `yuku-css - ${versions["yuku-css"].version}`,
         minify: (css) => yukuTransform(css).code,
+    },
+    {
+        id: "stacksjs-ts-css",
+        url: versions["stacksjs-ts-css"].url,
+        label: `@stacksjs/ts-css - ${versions["stacksjs-ts-css"].version}`,
+        minify: (css) => minify(css).css,
     },
     {
         id: "css-parser-default",

@@ -1,5 +1,11 @@
 # Changelog
 
+# v2.1.1
+
+## Bugs
+
+- [x] important overriden by normal property
+
 # v2.1.0
 
 ## Bugs

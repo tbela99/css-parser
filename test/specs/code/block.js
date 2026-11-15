@@ -1587,4 +1587,26 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
 }`),
         );
     });
+
+    it("normal properties do not override !important #66", async () => {
+        const options = {
+            input: `
+    
+    .a {
+    
+    color: red!important; color: blue;}
+
+    .a {
+    color: Coral!important; color: aqua;}
+    .a {color: blue }
+    `,
+            beautify: true,
+        };
+
+        return transform(options).then((result) =>
+            expect(result.code).equals(`.a {
+ color: coral!important
+}`),
+        );
+    });
 }

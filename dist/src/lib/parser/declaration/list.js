@@ -269,6 +269,13 @@ class PropertyList {
             this.declarations.get(shorthand).add(declaration);
         }
         else {
+            const existing = this.declarations.get(propertyName);
+            if (existing != null &&
+                typeof existing === "number" &&
+                arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0) {
+                return this;
+            }
             if (shorthand != null) {
                 this.mapValues(declaration, shorthand);
             }

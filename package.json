@@ -14,7 +14,7 @@
   },
   "scripts": {
     "doc": "typedoc --tsconfig typedoc-tsconfig.jsonc",
-    "build": "rollup -c;./build.sh ./dist/index.d.ts 'declare interface' 'declare type'",
+    "build": "rollup -c;sh build.sh ./dist/index.d.ts 'declare interface' 'declare type'",
     "watch": "rollup -c -w",
     "test:watch": "web-test-runner \"./test/specs/web.spec.js\" --timeout 30000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=. --watch",
     "test": "web-test-runner \"./test/specs/web.spec.js\" --timeout=10000 --node-resolve --playwright --browsers chromium firefox webkit --root-dir=.; mocha --reporter-options='maxDiffSize=1801920' --timeout=10000 \"test/specs/node.spec.js\"",
