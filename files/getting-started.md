@@ -22,17 +22,15 @@ A non-exhaustive list of features is provided below:
 
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
-* **All-in-one CSS parsing solution** for parsing, validation, transformation, and minification.
+* **All-in-one CSS parsing solution** covering parsing, validation, transformation, minification, and AST manipulation.
 * **Standards-based CSS validation** powered by MDN data.
 * **Full CSS Modules support** for modern component-based workflows.
-* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always yields a complete parse tree.
-* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes for safer plugin and transform logic.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always produces a complete, structured parse result.
+* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes so plugins and transforms can operate on semantic structures.
 * **High-performance minification** with safe optimizations and no unsafe transforms.
 * **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
 * **Color conversion engine** capable of transforming colors between all supported formats.
 * **Automatic CSS nesting generation** from compatible selectors.
-* **Nested CSS transpilation** to legacy-compatible syntax.
-* **`if()` function transpilation** for broader browser compatibility.
 * **Source map generation** for easier debugging and development workflows.
 * **Shorthand property computation** to reduce output size and improve optimization.
 * **Transform function optimization** for more compact CSS output.
@@ -40,7 +38,8 @@ A non-exhaustive list of features is provided below:
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
-* **Vendor prefix cleanup** to modernize generated CSS.
+* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **51.5kb** once minified and gzipped.
 
 ## Installation
 
