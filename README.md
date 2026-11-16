@@ -9,7 +9,7 @@ A zero-allocation, high-performance CSS processing engine for Node.js and the br
 Every stylesheet is fully parsed into a structured AST, with token values represented as typed data. This provides a reliable semantic foundation for custom transformations, plugin development, and advanced stylesheet analysis without relying on raw string manipulation.
  
 > [!NOTE]
-> Version 2.0 has been rewritten to use arena memory for AST nodes and tokens, improving memory usage and performance. On the Tailwind CSS parsing and validation workload, runtime is 42% faster than v1.8.2 while using 60% less memory.<br>
+> Version 2.2.0 has been rewritten to use arena memory for AST nodes and tokens, improving memory usage and performance. On the Tailwind CSS parsing and validation workload, runtime is **59% faster than v1.8.2** while using less memory.<br>
 This major release also introduces breaking changes and removes deprecated features. See the [migration guide](https://tbela99.github.io/css-parser/docs/documents/Guide.Migration.html) for details.
 
 ## Installation
