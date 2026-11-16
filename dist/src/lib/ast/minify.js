@@ -21,6 +21,60 @@ const notEndingWith = ["(", "["].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
 /**
+ * run the features on every node of the tree
+ * @param arena
+ * @param ast
+ * @param options2
+ * @param context
+ * @param mode
+ */
+function runFeatures(arena, ast, options2, context, mode) {
+    // breadth first traversal
+    const queue = [ast];
+    let node;
+    let typ;
+    let replacement;
+    for (let k = 0; k < queue.length; k++) {
+        node = queue[k];
+        typ = arena.dataTypes[node];
+        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CDOCOMMTokenType) {
+            continue;
+        }
+        replacement = node;
+        for (const feature of options2.features) {
+            if ((feature.processMode & mode) === 0 || (feature.accept != null && !feature.accept.has(typ))) {
+                continue;
+            }
+            if (Array.isArray(replacement)) {
+                break;
+            }
+            // the prelude tokens of the rules whose selector has been rewritten are not parsed again:
+            // the features and the renderer use the selector / prelude string
+            const result = feature.run(arena, replacement, options2, arena.parents[node] === 0 ? ast : arena.parents[node], context, mode);
+            if (result != null) {
+                replacement = result;
+            }
+        }
+        if (replacement != null &&
+            (!Array.isArray(replacement) || replacement.length > 0) &&
+            replacement != node &&
+            arena.parents[node] !== 0) {
+            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
+        }
+        if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
+            for (let child = arena.firstChild[replacement]; child !== 0; child = arena.nextSibling[child]) {
+                queue.push(child);
+            }
+        }
+    }
+    for (const feature of options2.features) {
+        if (feature.processMode & mode && "cleanup" in feature) {
+            // @ts-ignore
+            feature.cleanup(arena, ast, options2, context, mode);
+        }
+    }
+}
+/**
  * Apply minification rules to the ast tree
  * @param arena
  * @param ast
@@ -58,62 +112,12 @@ function minify(arena, ast, options = {}, recursive = false, errors, nestingCont
             postprocess = true;
         }
     }
-    /**
-     * run the features on every node of the tree
-     * @param mode
-     */
-    const runFeatures = (mode) => {
-        // breadth first traversal
-        const queue = [ast];
-        let node;
-        let typ;
-        let replacement;
-        for (let k = 0; k < queue.length; k++) {
-            node = queue[k];
-            typ = arena.dataTypes[node];
-            if (typ === EnumToken.CommentTokenType || typ === EnumToken.CDOCOMMTokenType) {
-                continue;
-            }
-            replacement = node;
-            for (const feature of options2.features) {
-                if ((feature.processMode & mode) === 0 || (feature.accept != null && !feature.accept.has(typ))) {
-                    continue;
-                }
-                if (Array.isArray(replacement)) {
-                    break;
-                }
-                // the prelude tokens of the rules whose selector has been rewritten are not parsed again:
-                // the features and the renderer use the selector / prelude string
-                const result = feature.run(arena, replacement, options2, arena.parents[node] === 0 ? ast : arena.parents[node], context, mode);
-                if (result != null) {
-                    replacement = result;
-                }
-            }
-            if (replacement != null &&
-                (!Array.isArray(replacement) || replacement.length > 0) &&
-                replacement != node &&
-                arena.parents[node] !== 0) {
-                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
-            }
-            if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
-                for (let child = arena.firstChild[replacement]; child !== 0; child = arena.nextSibling[child]) {
-                    queue.push(child);
-                }
-            }
-        }
-        for (const feature of options2.features) {
-            if (feature.processMode & mode && "cleanup" in feature) {
-                // @ts-ignore
-                feature.cleanup(arena, ast, options2, context, mode);
-            }
-        }
-    };
     if (preprocess) {
-        runFeatures(FeatureWalkMode.Pre);
+        runFeatures(arena, ast, options2, context, FeatureWalkMode.Pre);
     }
     doMinify(arena, ast, options2, recursive, errors, nestingContent, context);
     if (postprocess) {
-        runFeatures(FeatureWalkMode.Post);
+        runFeatures(arena, ast, options2, context, FeatureWalkMode.Post);
     }
     return ast;
 }
@@ -292,7 +296,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     arena.moveChildren(node, previous);
-                    options.cache?.delete(previous);
+                    options.cache?.delete?.(previous);
                     arena.detach(node);
                     cursor = arena.nextSibling[previous];
                     continue;
@@ -1502,9 +1506,7 @@ function reduceRuleSelector(arena, node) {
     }
     const raw = arena.raw[node];
     const singleSelectorWithoutIs = raw.length === 1 && (raw[0].at(-1) == null || !raw[0].at(-1).startsWith(":is("));
-    let optimized = optimizeSelector(singleSelectorWithoutIs
-        ? raw
-        : raw.map((curr) => curr.slice()));
+    let optimized = optimizeSelector(singleSelectorWithoutIs ? raw : raw.map((curr) => curr.slice()));
     if (optimized != null) {
         arena.optimized[node] = optimized;
     }
