@@ -67,9 +67,9 @@ A sample result:
 
 | File                           | ligthningcss  | CSS Parser    |
 | ------------------------------ | ------------- | ------------- |
-| tailwind.css - 2380419 bytes   | 1864728 bytes | 1633188 bytes |
-| bootstrap-4.css - 200078 bytes | 153616 bytes  | 144571 bytes  |
-| bootstrap-5.css - 205481 bytes | 159987 bytes  | 150852 bytes  |
+| tailwind.css - 2380419 bytes   | 1864728 bytes | 1624148 bytes |
+| bootstrap-4.css - 200078 bytes | 153616 bytes  | 144391 bytes  |
+| bootstrap-5.css - 205481 bytes | 159987 bytes  | 150764 bytes  |
 
 On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,158,698 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
@@ -114,8 +114,8 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 116.61 ms          | 224.18 ms                 |
-| Size reduction        | -20.6%             | -31.4%                    |
+| Time                  | 109.07 ms          | 191.85 ms                 |
+| Size reduction        | -20.7%             | -31.8%                    |
 
 ## Playground
 
