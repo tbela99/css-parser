@@ -21,7 +21,7 @@ import { TokenField } from '../arena.js';
 function isIfToken(arena, value) {
     return (arena.dataTypes[value] === EnumToken.IfConditionTokenType ||
         (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
-            equalsIgnoreCase("if", arena.strings[arena.stringValue[value]])));
+            equalsIgnoreCase("if", arena.resolveString(arena.stringValue[value]))));
 }
 /**
  * deep clone a declaration. the clone map is filled with the cloned value tokens
@@ -94,7 +94,7 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
             //
             if (target != null &&
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
-                equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])) {
+                equalsIgnoreCase("else", arena.resolveString(arena.stringValue[target]))) {
                 arena.replaceToken(mapped(targetWrapper), ...conditionValue(arena, elseCondition, nodeMap));
                 if (targetParentWrapper !== declaration) {
                     const siblings = arena.tokens(targetParentWrapper);
@@ -132,13 +132,13 @@ function substituteIfElseNode(arena, declaration, node, wrapper, parentWrapper, 
             return result;
         }
         const leftType = arena.dataTypes[left];
-        if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
+        if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.resolveString(arena.stringValue[left]))) {
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
             arena.replaceToken(mapped(targetWrapper === declaration ? node : targetWrapper), ...conditionValue(arena, node, nodeMap));
             result.push(clonedDeclaration);
         }
         else if (leftType === EnumToken.WhenElseFunctionTokenType) {
-            const name = arena.strings[arena.stringValue[left]];
+            const name = arena.resolveString(arena.stringValue[left]);
             const minify = name !== "supports";
             const atRule = createAtRule(arena, declaration, parent, name, [
                 arena.createList(EnumToken.ParensTokenType, arena.tokens(left).map((t) => arena.clone(t, true))),

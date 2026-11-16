@@ -1,0 +1,149 @@
+/* 
+	CSS parser, minifier and validator for node and the browser
+
+	Author(s): Thierry Bela
+	Version: 2.2.0
+	License: MIT
+ */
+import { TokenField, numericTokenTypes } from '../arena.js';
+import { EnumToken, EnumAstNodeStatus } from '../types.js';
+import { evaluate } from '../math/expression.js';
+import { FeatureWalkMode } from './type.js';
+import { isFunctionType, mathFuncs } from '../../syntax/constants.js';
+import { ValueWalker } from '../walk.js';
+
+class ComputeCalcExpressionFeature {
+    accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
+    get ordering() {
+        return 3;
+    }
+    get processMode() {
+        return FeatureWalkMode.Post;
+    }
+    static register(options) {
+        if (options.computeCalcExpression) {
+            // @ts-ignore
+            options.features.push(new ComputeCalcExpressionFeature());
+        }
+    }
+    /**
+     *
+     * @param arena
+     * @param ast
+     */
+    run(arena, ast) {
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+            return null;
+        }
+        for (let node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
+            if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType) {
+                continue;
+            }
+            if (!hasExpression(arena, node)) {
+                continue;
+            }
+            // function tokens already evaluated, created on demand
+            let set = null;
+            // inlined: arena.walkValues(node)
+            for (const value of new ValueWalker(arena, node)) {
+                // the parent of a detached token is the declaration
+                const parent = arena.getValueParent(value) || node;
+                if (parent != null && arena.dataTypes[parent] === EnumToken.BinaryExpressionTokenType) {
+                    continue;
+                }
+                const typ = arena.dataTypes[value];
+                if (typ === EnumToken.BinaryExpressionTokenType) {
+                    const result = evaluate(arena, [value]);
+                    try {
+                        if (result.length > 0) {
+                            arena.replaceToken(value, ...result);
+                        }
+                    }
+                    catch (e) { }
+                    continue;
+                }
+                if (isFunctionType(typ)) {
+                    set ??= new Set();
+                    if (!set.has(value)) {
+                        set.add(value);
+                        if (parent != null) {
+                            const name = arena.resolveString(arena.stringValue[value]);
+                            const shouldEvaluate = typ === EnumToken.MathFunctionTokenType ||
+                                (typ === EnumToken.FunctionTokenType && mathFuncs.includes(name));
+                            if (shouldEvaluate) {
+                                const cp = name !== "calc" ? [value] : arena.tokens(value);
+                                const values = evaluate(arena, cp);
+                                // fix a + -b into a - b
+                                // inlined: arena.walkValues(values)
+                                for (const value of new ValueWalker(arena, values)) {
+                                    if (arena.dataTypes[value] === EnumToken.BinaryExpressionTokenType) {
+                                        // inlined: arena.getRight(value)
+                                        const r = (arena.getChildAt(value, TokenField.R) == null
+                                            ? null
+                                            : arena.fieldTokens(value, TokenField.R))[0];
+                                        if (arena.numericValue[value] === EnumToken.Add &&
+                                            // inlined: arena.isNumeric(r)
+                                            numericTokenTypes.has(arena.dataTypes[r]) &&
+                                            Math.sign(arena.numericValue[r]) === -1) {
+                                            arena.numericValue[value] = EnumToken.Sub;
+                                            arena.numericValue[r] *= -1;
+                                        }
+                                    }
+                                }
+                                // the value is replaced by the computed tokens or wrapped into a calc() function
+                                if (values.length === 1 &&
+                                    arena.dataTypes[values[0]] !== EnumToken.BinaryExpressionTokenType) {
+                                    const parentType = arena.dataTypes[parent];
+                                    const wrap = !(parentType === EnumToken.MathFunctionTokenType ||
+                                        (parentType === EnumToken.FunctionTokenType &&
+                                            arena.resolveString(arena.stringValue[parent]) === "calc")) &&
+                                        // inlined: arena.isNumeric(values[0])
+                                        (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
+                                            arena.hasFraction(values[0])) &&
+                                        !(arena.dataTypes[values[0]] === EnumToken.MathFunctionTokenType ||
+                                            (arena.dataTypes[values[0]] === EnumToken.FunctionTokenType &&
+                                                mathFuncs.includes(arena.resolveString(arena.stringValue[values[0]]))));
+                                    arena.replaceToken(value, wrap ? createCalc(arena, value, values) : values[0]);
+                                }
+                                else {
+                                    arena.replaceToken(value, createCalc(arena, value, values));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+}
+/**
+ * wrap tokens into a calc() function
+ * @param arena
+ * @param source token the location is copied from
+ * @param values
+ */
+function createCalc(arena, source, values) {
+    const calc = arena.createFunction(EnumToken.MathFunctionTokenType, "calc", values);
+    arena.copyLocation(calc, source);
+    return calc;
+}
+/**
+ * true if a value token of the declaration is a function, an expression or has children: the values of the other
+ * declarations are not walked
+ * @param arena
+ * @param node
+ */
+function hasExpression(arena, node) {
+    for (let token = arena.firstToken[node]; token !== 0; token = arena.nextSibling[token]) {
+        if (arena.dataTypes[token] === EnumToken.BinaryExpressionTokenType ||
+            isFunctionType(arena.dataTypes[token]) ||
+            arena.firstToken[token] !== 0 ||
+            arena.firstChild[token] !== 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export { ComputeCalcExpressionFeature };

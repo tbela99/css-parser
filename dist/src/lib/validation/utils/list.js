@@ -8,22 +8,6 @@
 import { EnumToken } from '../../ast/types.js';
 
 /**
- * remove comma and comment tokens
- * @param arena
- * @param tokenList
- */
-function stripCommaToken(arena, tokenList) {
-    let result = [];
-    for (let i = 0; i < tokenList.length; i++) {
-        const typ = arena.dataTypes[tokenList[i]];
-        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CommaTokenType) {
-            continue;
-        }
-        result.push(tokenList[i]);
-    }
-    return result;
-}
-/**
  * split a token list
  * @param arena
  * @param tokenList
@@ -47,4 +31,4 @@ function splitTokenList(arena, tokenList, split = [EnumToken.CommaTokenType], in
     return result;
 }
 
-export { splitTokenList, stripCommaToken };
+export { splitTokenList };

@@ -5,35 +5,39 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, multiply } from './utils.js';
+import { setIdentity, multiplyInto } from './utils.js';
 
+/**
+ * the scale matrix. the functions multiply the matrix they receive in place: `from = from × scale`
+ */
+const matrix = new Float64Array(16);
 function scaleX(x, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[0] = x;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function scaleY(y, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[4 + 1] = y;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function scaleZ(z, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[2 * 4 + 2] = z;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function scale(x, y, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[0] = x;
     matrix[4 + 1] = y;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function scale3d(x, y, z, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[0] = x;
     matrix[4 + 1] = y;
     matrix[2 * 4 + 2] = z;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
 export { scale, scale3d, scaleX, scaleY, scaleZ };

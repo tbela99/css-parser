@@ -1,7 +1,7 @@
 import type { ErrorDescription, Token, ParserOptions } from "../../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
+import { isFunctionDefType } from "../../syntax/constants.ts";
 import { equalsIgnoreCase } from "./text.ts";
 
 export function matchGenericSyntax(
@@ -29,7 +29,7 @@ export function matchGenericSyntax(
         ) {
             continue;
         }
-        if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
+        if (arena.dataTypes[token] === EnumToken.StartParensTokenType || isFunctionDefType(arena.dataTypes[token])) {
             stack.push(token);
             scopes.push(new Set());
 
@@ -41,7 +41,7 @@ export function matchGenericSyntax(
             if (
                 stack.length === 0 ||
                 (arena.dataTypes[stack[stack.length - 1]] !== EnumToken.StartParensTokenType &&
-                    !tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]]))
+                    !isFunctionDefType(arena.dataTypes[stack[stack.length - 1]]))
             ) {
                 errors.push({
                     action: "drop",
@@ -65,7 +65,7 @@ export function matchGenericSyntax(
 
         if (
             arena.dataTypes[token] === EnumToken.IdenTokenType &&
-            equalsIgnoreCase("and", arena.strings[arena.stringValue[token]])
+            equalsIgnoreCase("and", arena.resolveString(arena.stringValue[token]))
         ) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.OrTokenType)) {
                 errors.push({
@@ -91,7 +91,7 @@ export function matchGenericSyntax(
 
         if (
             arena.dataTypes[token] === EnumToken.IdenTokenType &&
-            equalsIgnoreCase("or", arena.strings[arena.stringValue[token]])
+            equalsIgnoreCase("or", arena.resolveString(arena.stringValue[token]))
         ) {
             if (!expectAndOr || scopes.at(-1)?.has(EnumToken.AndTokenType)) {
                 errors.push({

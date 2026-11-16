@@ -5,8 +5,12 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, multiply } from './utils.js';
+import { setIdentity, multiplyInto } from './utils.js';
 
+/**
+ * the rotation matrix. the functions multiply the matrix they receive in place: `from = from × rotation`
+ */
+const matrix = new Float64Array(16);
 /**
  * angle in radian
  * @param angle
@@ -16,7 +20,7 @@ import { identity, multiply } from './utils.js';
  * @param from
  */
 function rotate3D(angle, x, y, z, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     const sc = Math.sin(angle / 2) * Math.cos(angle / 2);
     const sq = Math.sin(angle / 2) * Math.sin(angle / 2);
     const norm = Math.sqrt(x * x + y * y + z * z);
@@ -33,15 +37,20 @@ function rotate3D(angle, x, y, z, from) {
     matrix[2 * 4] = 2 * (x * z * sq + y * sc);
     matrix[2 * 4 + 1] = 2 * (y * z * sq - x * sc);
     matrix[2 * 4 + 2] = 1 - 2 * (x * x + y * y) * sq;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
+/**
+ * angle in radian
+ * @param angle
+ * @param from
+ */
 function rotate(angle, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[0] = Math.cos(angle);
     matrix[1] = Math.sin(angle);
     matrix[4] = -Math.sin(angle);
     matrix[4 + 1] = Math.cos(angle);
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
 export { rotate, rotate3D };

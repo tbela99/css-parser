@@ -8,7 +8,7 @@
 import { TokenField } from '../../ast/arena.js';
 import { EnumToken } from '../../ast/types.js';
 import { trimArray } from '../../validation/match.js';
-import { tokensfuncDefMap } from '../../syntax/constants.js';
+import { tokensfuncDefMap, isFunctionDefType } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
 
@@ -36,7 +36,7 @@ function matchAtRuleWhenElseSyntax(arena, stream, context, options = {}) {
         switch (arena.dataTypes[stream[i]]) {
             case EnumToken.IdenTokenType:
                 {
-                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     if ("and" === val || "or" === val) {
                         arena.dataTypes[stream[i]] = "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType;
                         // scope.add(arena.dataTypes[stream[i]]);
@@ -58,12 +58,12 @@ function matchAtRuleWhenElseSyntax(arena, stream, context, options = {}) {
                             }
                         }
                         else if (arena.dataTypes[stream[j]] === EnumToken.StartParensTokenType ||
-                            tokensfuncDefMap.has(arena.dataTypes[stream[j]])) {
+                            isFunctionDefType(arena.dataTypes[stream[j]])) {
                             matchCount++;
                         }
                     }
                     const slice = stream.slice(i, j + 1);
-                    const funcName = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const funcName = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     // the function token may be converted by the sub parsers
                     const isSupportsFunction = arena.dataTypes[stream[i]] === EnumToken.SupportsFunctionTokenDefType;
                     const funcType = tokensfuncDefMap.get(arena.dataTypes[stream[i]]);

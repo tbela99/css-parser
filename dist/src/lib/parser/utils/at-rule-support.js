@@ -6,7 +6,7 @@
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
-import { pseudoElements, tokensfuncDefMap } from '../../syntax/constants.js';
+import { pseudoElements, isFunctionDefType, tokensfuncDefMap } from '../../syntax/constants.js';
 import { getSyntaxConfig, getParsedSyntax } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
@@ -35,7 +35,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
         tokens.push(stream[i]);
         if (arena.dataTypes[stream[i]] === EnumToken.ColonTokenType) {
             if (arena.dataTypes[stream[i + 1]] === EnumToken.IdenTokenType) {
-                const val = arena.strings[arena.stringValue[stream[i + 1]]];
+                const val = arena.resolveString(arena.stringValue[stream[i + 1]]);
                 arena.dataTypes[stream[i]] = pseudoElements.includes(val)
                     ? EnumToken.PseudoElementTokenType
                     : EnumToken.PseudoClassTokenType;
@@ -47,7 +47,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                 continue;
             }
             if (arena.dataTypes[stream[i + 1]] === EnumToken.FunctionTokenDefType) {
-                val = ":" + arena.strings[arena.stringValue[stream[i + 1]]];
+                val = ":" + arena.resolveString(arena.stringValue[stream[i + 1]]);
                 arena.dataTypes[stream[i]] =
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
@@ -82,7 +82,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
             expectAndOr = false;
         }
         if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
-            tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+            isFunctionDefType(arena.dataTypes[stream[i]])) {
             scopes.push((scope = new Set()));
             stack.push(stream[i]);
             continue;
@@ -114,7 +114,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                         scope = scopes[scopes.length - 1];
                         expectAndOr = true;
                     }
-                    else if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                    else if (stack.length > 0 && isFunctionDefType(arena.dataTypes[stack[stack.length - 1]])) {
                         const func = stack[stack.length - 1];
                         const index = tokens.indexOf(func);
                         arena.dataTypes[func] = tokensfuncDefMap.get(arena.dataTypes[func]);
@@ -122,7 +122,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                         arena.spanLocation(func, func, stream[i]);
                         if (arena.dataTypes[tokens[index]] === EnumToken.PseudoClassFuncTokenType) {
                             // not a declaration
-                            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.strings[arena.stringValue[tokens[index]]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(tokens[index])), options);
+                            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.resolveString(arena.stringValue[tokens[index]]) + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(tokens[index])), options);
                             if (!result.success) {
                                 return {
                                     success: false,
@@ -132,11 +132,6 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                             stack.pop();
                             tokens.pop();
                             break;
-                        }
-                        //
-                        let k = stack.length - 1;
-                        while (tokensfuncDefMap.has(arena.dataTypes[stack[k]])) {
-                            k--;
                         }
                         stack.pop();
                         tokens.pop();
@@ -182,7 +177,7 @@ function parseAtRuleSupportSyntax(arena, stream, context, options = {}) {
                 break;
             case EnumToken.IdenTokenType:
                 {
-                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     if ("not" === val) {
                         stack.push(stream[i]);
                         arena.dataTypes[stream[i]] = EnumToken.NotTokenType;

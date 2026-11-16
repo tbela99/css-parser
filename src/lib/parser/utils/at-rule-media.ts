@@ -3,7 +3,7 @@ import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { evaluate } from "../../ast/math/expression.ts";
 import { gcd } from "../../ast/math/math.ts";
-import { mediaTypes, mFGT, mFLT, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { mediaTypes, mFGT, mFLT, tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 
 import { createValidationContext, getMFInfo, isMFValue, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -41,7 +41,7 @@ export function parseMediaqueryList(
 
         parts[parts.length - 1].push(token);
 
-        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+        if (type === EnumToken.StartParensTokenType || isFunctionDefType(type)) {
             matchCount++;
         } else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
             matchCount--;
@@ -72,7 +72,7 @@ export function parseMediaqueryList(
             // [not | only] <media-type> [ and <media-condition-without-or>  ]?
             if (i < stream.length) {
                 if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
-                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
 
                     if (mediaTypes.includes(val)) {
                         tokens.push(stream[i]);
@@ -119,7 +119,7 @@ export function parseMediaqueryList(
                     //     let valid: boolean = true;
                     //
                     //     if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
-                    //         const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    //         const val: string = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     //         valid = val === "and" || val === "or";
                     //     } else {
                     //         valid = arena.dataTypes[stream[i]] !== EnumToken.CommaTokenType;
@@ -130,7 +130,7 @@ export function parseMediaqueryList(
 
                 if (
                     arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
-                    tokensfuncDefMap.has(arena.dataTypes[stream[i]])
+                    isFunctionDefType(arena.dataTypes[stream[i]])
                 ) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
@@ -149,7 +149,7 @@ export function parseMediaqueryList(
 
                     case EnumToken.IdenTokenType:
                         {
-                            const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                            const val: string = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
 
                             if (val === "and" || val === "or") {
                                 arena.dataTypes[stream[i]] =
@@ -198,7 +198,7 @@ export function parseMediaqueryList(
                         break;
 
                     case EnumToken.EndParensTokenType:
-                        if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                        if (stack.length > 0 && isFunctionDefType(arena.dataTypes[stack[stack.length - 1]])) {
                             const index: number = tokens.indexOf(stack[stack.length - 1]);
 
                             arena.spanLocation(tokens[index], tokens[index], stream[i]);
@@ -216,7 +216,7 @@ export function parseMediaqueryList(
                                 (
                                     getParsedSyntax(
                                         ValidationSyntaxGroupEnum.Syntaxes,
-                                        arena.strings[arena.stringValue[tokens[index]]] + "()",
+                                        arena.resolveString(arena.stringValue[tokens[index]]) + "()",
                                     ) as ValidationFunctionToken[]
                                 )?.[0]?.chi as ValidationFunctionToken[],
                                 createValidationContext(arena, arena.tokens(tokens[index])),
@@ -265,7 +265,7 @@ export function parseMediaqueryList(
                                         arena.dataTypes[n] !== EnumToken.CommentTokenType,
                                 );
 
-                                const name: string = arena.strings[arena.stringValue[filteredNames[0]]];
+                                const name: string = arena.resolveString(arena.stringValue[filteredNames[0]]);
                                 const mfInfo = getMFInfo(name);
 
                                 for (const val of [left, right]) {
@@ -278,7 +278,7 @@ export function parseMediaqueryList(
                                             for (let l = 0; l < val.length; l++) {
                                                 if (
                                                     arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
-                                                    arena.strings[arena.stringValue[val[l]]] === "calc"
+                                                    arena.resolveString(arena.stringValue[val[l]]) === "calc"
                                                 ) {
                                                     const value = evaluate(arena, [val[l]]);
 
@@ -366,7 +366,7 @@ export function parseMediaqueryList(
                                     arena.dataTypes[n] !== EnumToken.CommentTokenType,
                             );
 
-                            const name: string = arena.strings[arena.stringValue[filteredNames[0]]];
+                            const name: string = arena.resolveString(arena.stringValue[filteredNames[0]]);
 
                             const mfInfo = getMFInfo(name);
                             if (options.computeCalcExpression) {
@@ -380,7 +380,7 @@ export function parseMediaqueryList(
                                     for (let l = 0; l < val.length; l++) {
                                         if (
                                             arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
-                                            arena.strings[arena.stringValue[val[l]]] === "calc"
+                                            arena.resolveString(arena.stringValue[val[l]]) === "calc"
                                         ) {
                                             const value = evaluate(arena, [val[l]]);
 
@@ -577,8 +577,8 @@ export function parseMediaqueryList(
                                             (arena.dataTypes[rightOp] === EnumToken.LtTokenType ||
                                                 arena.dataTypes[rightOp] === EnumToken.LteTokenType) &&
                                             equalsIgnoreCase(
-                                                arena.strings[arena.stringValue[leftNames[0]]],
-                                                arena.strings[arena.stringValue[rightNames[0]]],
+                                                arena.resolveString(arena.stringValue[leftNames[0]]),
+                                                arena.resolveString(arena.stringValue[rightNames[0]]),
                                             )
                                         ) {
                                             const rangeQuery: Token = arena.createToken(

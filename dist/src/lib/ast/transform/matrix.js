@@ -5,84 +5,63 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, is2DMatrix } from './utils.js';
+import { isIdentity, is2DMatrix } from './utils.js';
 import { EnumToken } from '../types.js';
-import { eq } from '../../parser/utils/eq.js';
-import { getNumber } from '../../syntax/color/color.js';
 
-function parseMatrix(arena, mat) {
-    if (arena.dataTypes[mat] === EnumToken.IdenTokenType) {
-        return arena.strings[arena.stringValue[mat]] === "none" ? identity() : null;
-    }
-    const children = arena.tokens(mat).filter((t) => arena.dataTypes[t] === EnumToken.NumberTokenType || arena.dataTypes[t] === EnumToken.IdenTokenType);
-    const values = [];
-    for (const child of children) {
-        if (arena.dataTypes[child] !== EnumToken.NumberTokenType) {
-            return null;
-        }
-        // @ts-ignore
-        values.push(getNumber(arena, child));
-    }
-    // @ts-ignore
-    return matrix(values);
-}
-// use column-major order
-function matrix(values) {
-    const matrix = identity();
-    if (values.length === 6) {
+/**
+ * set the values of a `matrix()` (6 values) or of a `matrix3d()` (16 values) function, column-major order. the other
+ * values of a `matrix()` are the values of the identity matrix
+ * @param values
+ * @param count number of values: 6 or 16
+ * @param matrix the matrix that receives the values
+ */
+function setMatrixValues(values, count, matrix) {
+    if (count === 6) {
         matrix[0] = values[0];
         matrix[1] = values[1];
+        matrix[2] = 0;
+        matrix[3] = 0;
         matrix[4] = values[2];
         matrix[4 + 1] = values[3];
+        matrix[4 + 2] = 0;
+        matrix[4 + 3] = 0;
+        matrix[2 * 4] = 0;
+        matrix[2 * 4 + 1] = 0;
+        matrix[2 * 4 + 2] = 1;
+        matrix[2 * 4 + 3] = 0;
         matrix[3 * 4] = values[4];
         matrix[3 * 4 + 1] = values[5];
-    }
-    else if (values.length === 16) {
-        matrix[0] = values[0];
-        matrix[1] = values[1];
-        matrix[2] = values[2];
-        matrix[3] = values[3];
-        matrix[4] = values[4];
-        matrix[4 + 1] = values[5];
-        matrix[4 + 2] = values[6];
-        matrix[4 + 3] = values[7];
-        matrix[2 * 4] = values[8];
-        matrix[2 * 4 + 1] = values[9];
-        matrix[2 * 4 + 2] = values[10];
-        matrix[2 * 4 + 3] = values[11];
-        matrix[3 * 4] = values[12];
-        matrix[3 * 4 + 1] = values[13];
-        matrix[3 * 4 + 2] = values[14];
-        matrix[3 * 4 + 3] = values[15];
+        matrix[3 * 4 + 2] = 0;
+        matrix[3 * 4 + 3] = 1;
     }
     else {
-        return null;
+        for (let i = 0; i < 16; i++) {
+            matrix[i] = values[i];
+        }
     }
     return matrix;
 }
+/**
+ * the tokens of a matrix: `none`, `matrix()` if it is a 2d matrix, `matrix3d()` otherwise
+ * @param arena
+ * @param matrix
+ */
 function serialize(arena, matrix) {
-    matrix = matrix.slice();
-    // @ts-ignore
-    if (eq(matrix, identity())) {
+    if (isIdentity(matrix)) {
         return arena.createToken(EnumToken.IdenTokenType, "none");
     }
-    if (is2DMatrix(matrix)) {
-        // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
-        return arena.createFunction(EnumToken.TransformFunctionTokenType, "matrix", [matrix[0], matrix[1], matrix[4], matrix[4 + 1], matrix[3 * 4], matrix[3 * 4 + 1]].reduce((acc, t) => {
-            if (acc.length > 0) {
-                acc.push(arena.createToken(EnumToken.CommaTokenType));
-            }
-            acc.push(arena.createToken(EnumToken.NumberTokenType, t));
-            return acc;
-        }, []));
-    }
-    return arena.createFunction(EnumToken.TransformFunctionTokenType, "matrix3d", matrix.reduce((acc, curr) => {
-        if (acc.length > 0) {
-            acc.push(arena.createToken(EnumToken.CommaTokenType));
+    // https://drafts.csswg.org/css-transforms-2/#two-dimensional-subset
+    const is2D = is2DMatrix(matrix);
+    const count = is2D ? 6 : 16;
+    const tokens = new Array(count * 2 - 1);
+    for (let i = 0; i < count; i++) {
+        if (i > 0) {
+            tokens[i * 2 - 1] = arena.createToken(EnumToken.CommaTokenType);
         }
-        acc.push(arena.createToken(EnumToken.NumberTokenType, curr));
-        return acc;
-    }, []));
+        // matrix(a, b, c, d, e, f): values 0, 1, 4, 5, 12, 13
+        tokens[i * 2] = arena.createToken(EnumToken.NumberTokenType, matrix[is2D ? (i < 2 ? i : i < 4 ? i + 2 : i + 8) : i]);
+    }
+    return arena.createFunction(EnumToken.TransformFunctionTokenType, is2D ? "matrix" : "matrix3d", tokens);
 }
 
-export { matrix, parseMatrix, serialize };
+export { serialize, setMatrixValues };

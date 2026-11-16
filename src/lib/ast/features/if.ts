@@ -23,7 +23,7 @@ function isIfToken(arena: AstArena, value: Token): boolean {
     return (
         arena.dataTypes[value] === EnumToken.IfConditionTokenType ||
         (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
-            equalsIgnoreCase("if", arena.strings[arena.stringValue[value]]))
+            equalsIgnoreCase("if", arena.resolveString(arena.stringValue[value])))
     );
 }
 
@@ -143,7 +143,7 @@ function substituteIfElseNode(
             if (
                 target != null &&
                 arena.dataTypes[target] === EnumToken.IdenTokenType &&
-                equalsIgnoreCase("else", arena.strings[arena.stringValue[target]])
+                equalsIgnoreCase("else", arena.resolveString(arena.stringValue[target]))
             ) {
                 arena.replaceToken(mapped(targetWrapper) as Token, ...conditionValue(arena, elseCondition, nodeMap));
 
@@ -199,7 +199,7 @@ function substituteIfElseNode(
 
         const leftType: EnumToken = arena.dataTypes[left];
 
-        if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.strings[arena.stringValue[left]])) {
+        if (leftType === EnumToken.IdenTokenType && equalsIgnoreCase("else", arena.resolveString(arena.stringValue[left]))) {
             clonedDeclaration = cloneDeclaration(arena, declaration, nodeMap);
 
             arena.replaceToken(
@@ -209,7 +209,7 @@ function substituteIfElseNode(
 
             result.push(clonedDeclaration);
         } else if (leftType === EnumToken.WhenElseFunctionTokenType) {
-            const name: string = arena.strings[arena.stringValue[left]];
+            const name: string = arena.resolveString(arena.stringValue[left]);
             const minify: boolean = name !== "supports";
             const atRule: AstAtRule = createAtRule(
                 arena,

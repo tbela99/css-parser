@@ -62,7 +62,7 @@ function matchConfigToken(arena: AstArena, token: Token, config: TokenConfig | n
     return (
         config != null &&
         arena.dataTypes[token] === configType(config) &&
-        (config.val == null || arena.strings[arena.stringValue[token]] === config.val)
+        (config.val == null || arena.resolveString(arena.stringValue[token]) === config.val)
     );
 }
 
@@ -109,7 +109,7 @@ export class PropertyMap {
      */
     add(declaration: AstDeclaration): this {
         const arena: AstArena = this.arena;
-        const nam: string = arena.strings[arena.name[declaration]];
+        const nam: string = arena.resolveString(arena.name[declaration]);
 
         if (nam === this.config.shorthand) {
             this.declarations.clear();
@@ -363,7 +363,7 @@ export class PropertyMap {
                 } else {
                     // a property set has no name
                     key =
-                        value instanceof PropertySet ? "undefined" : arena.strings[arena.name[value as AstDeclaration]];
+                        value instanceof PropertySet ? "undefined" : arena.resolveString(arena.name[value as AstDeclaration]);
                     mapped[key] = value as AstDeclaration;
                 }
             }
@@ -563,7 +563,7 @@ export class PropertyMap {
                     continue;
                 }
 
-                const nam: string = arena.strings[arena.name[declaration]];
+                const nam: string = arena.resolveString(arena.name[declaration]);
                 const config = nam === this.config.shorthand ? this.config : (propertiesMapping[nam] ?? this.config);
 
                 if (!("mapping" in config)) {
@@ -647,7 +647,7 @@ export class PropertyMap {
                                 props.separator != null &&
                                 configType(props.separator as TokenConfig) === valType &&
                                 (valType === EnumToken.CommaTokenType ||
-                                    (props.separator as TokenConfig).val === arena.strings[arena.stringValue[val]])
+                                    (props.separator as TokenConfig).val === arena.resolveString(arena.stringValue[val]))
                             ) {
                                 continue;
                             }
@@ -863,7 +863,7 @@ export class PropertyMap {
                                             ].includes(arena.dataTypes[v]) ||
                                             (arena.dataTypes[v] === EnumToken.IdenTokenType &&
                                                 !propertiesMapping[curr[0]].default.includes(
-                                                    arena.strings[arena.stringValue[v]],
+                                                    arena.resolveString(arena.stringValue[v]),
                                                 ))
                                         ) {
                                             doFilterDefault = false;
@@ -885,7 +885,7 @@ export class PropertyMap {
                                         !doFilterDefault ||
                                         !(
                                             arena.dataTypes[val] === EnumToken.IdenTokenType &&
-                                            props.default.includes(arena.strings[arena.stringValue[val]])
+                                            props.default.includes(arena.resolveString(arena.stringValue[val]))
                                         )
                                     );
                                 });
@@ -910,9 +910,9 @@ export class PropertyMap {
                                                 if (
                                                     arena.dataTypes[values[i]] === EnumToken.IdenTokenType &&
                                                     // @ts-expect-error
-                                                    arena.strings[arena.stringValue[values[i]]] in props.mapping
+                                                    arena.resolveString(arena.stringValue[values[i]]) in props.mapping
                                                 ) {
-                                                    // inlined: this.parse(props.mapping[arena.strings[arena.stringValue[values[i]]]])
+                                                    // inlined: this.parse(props.mapping[arena.resolveString(arena.stringValue[values[i]])])
                                                     values.splice(
                                                         i,
                                                         1,
@@ -921,14 +921,14 @@ export class PropertyMap {
                                                                   this.arena,
                                                                   // @ts-ignore
                                                                   props.mapping[
-                                                                      arena.strings[arena.stringValue[values[i]]]
+                                                                      arena.resolveString(arena.stringValue[values[i]])
                                                                   ],
                                                               )
                                                             : this.memo.parse(
                                                                   this.arena,
                                                                   // @ts-ignore
                                                                   props.mapping[
-                                                                      arena.strings[arena.stringValue[values[i]]]
+                                                                      arena.resolveString(arena.stringValue[values[i]])
                                                                   ],
                                                               )),
                                                     );
@@ -1020,8 +1020,8 @@ export class PropertyMap {
                 if (
                     values.length === 1 &&
                     arena.stringValue[values[0]] !== 0 &&
-                    this.config.default.includes(arena.strings[arena.stringValue[values[0]]].toLowerCase()) &&
-                    this.config.default[0] !== arena.strings[arena.stringValue[values[0]]].toLowerCase()
+                    this.config.default.includes(arena.resolveString(arena.stringValue[values[0]]).toLowerCase()) &&
+                    this.config.default[0] !== arena.resolveString(arena.stringValue[values[0]]).toLowerCase()
                 ) {
                     // inlined: this.parse(this.config.default[0])
                     values =

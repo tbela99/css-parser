@@ -45,3 +45,6 @@ export * as arena from './arena.js';
 export * as memo from './memo.js';
 
 export * as input from './input.js';
+export * as renderResult from './render-result.js';
+export * as strings from './strings.js';
+export * as first from './first.js';

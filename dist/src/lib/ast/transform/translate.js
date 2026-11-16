@@ -5,35 +5,52 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, multiply } from './utils.js';
+import { setIdentity, multiplyInto } from './utils.js';
 
+/**
+ * the translation matrix. the functions multiply the matrix they receive in place: `from = from × translation`
+ */
+const matrix = new Float64Array(16);
 function translateX(x, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[3 * 4] = x;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function translateY(y, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[3 * 4 + 1] = y;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function translateZ(z, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[3 * 4 + 2] = z;
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
-function translate(translate, from) {
-    const matrix = identity();
-    matrix[3 * 4] = translate[0];
-    matrix[3 * 4 + 1] = translate[1] ?? 0;
-    return multiply(from, matrix);
+/**
+ * @param x
+ * @param y 0 if undefined
+ * @param from
+ */
+function translate(x, y, from) {
+    setIdentity(matrix);
+    matrix[3 * 4] = x;
+    matrix[3 * 4 + 1] = y ?? 0;
+    return multiplyInto(from, matrix, from);
 }
-function translate3d(translate, from) {
-    const matrix = identity();
-    matrix[3 * 4] = translate[0];
-    matrix[3 * 4 + 1] = translate[1];
-    matrix[3 * 4 + 2] = translate[2];
-    return multiply(from, matrix);
+/**
+ * @param x
+ * @param y NaN if undefined
+ * @param z NaN if undefined
+ * @param from
+ */
+function translate3d(x, y, z, from) {
+    setIdentity(matrix);
+    matrix[3 * 4] = x;
+    // @ts-ignore undefined is stored as NaN
+    matrix[3 * 4 + 1] = y;
+    // @ts-ignore undefined is stored as NaN
+    matrix[3 * 4 + 2] = z;
+    return multiplyInto(from, matrix, from);
 }
 
 export { translate, translate3d, translateX, translateY, translateZ };

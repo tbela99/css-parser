@@ -50,12 +50,12 @@ function replace(arena, node, variableScope) {
     for (const value of new ValueWalker(arena, node)) {
         const typ = arena.dataTypes[value];
         if (typ === EnumToken.MathFunctionTokenType ||
-            (typ === EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] === "var")) {
+            (typ === EnumToken.WildCardFunctionTokenType && arena.resolveString(arena.stringValue[value]) === "var")) {
             const first = arena.firstToken[value];
             if (first !== 0 &&
                 arena.nextSibling[first] === 0 &&
                 arena.dataTypes[first] === EnumToken.DashedIdenTokenType) {
-                const info = (variableScope.get(arena.strings[arena.stringValue[first]]));
+                const info = (variableScope.get(arena.resolveString(arena.stringValue[first])));
                 // the variable declaration may have been released
                 if (info?.replaceable && arena.name[info.node] !== 0 && arena.parents[value] !== 0) {
                     arena.replaceToken(value, ...arena.tokens(info.node).map((t) => arena.clone(t, true)));
@@ -96,13 +96,13 @@ class InlineCssVariablesFeature {
         // [':root', 'html']
         const isRoot = arena.dataTypes[parent] === EnumToken.StyleSheetNodeType &&
             arena.dataTypes[ast] === EnumToken.RuleNodeType &&
-            (arena.raw[ast] ?? splitRule(arena.strings[arena.name[ast]])).some((segment) => segment.some((s) => s === ":root" || s === "html"));
+            (arena.raw.get(ast) ?? splitRule(arena.resolveString(arena.name[ast]))).some((segment) => segment.some((s) => s === ":root" || s === "html"));
         const variableScope = context.variableScope;
         for (let node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
             if (arena.dataTypes[node] !== EnumToken.DeclarationNodeType) {
                 continue;
             }
-            const name = arena.strings[arena.name[node]];
+            const name = arena.resolveString(arena.name[node]);
             // css variable
             if (name.startsWith("--")) {
                 // the last declaration wins
@@ -122,8 +122,8 @@ class InlineCssVariablesFeature {
                 for (const value of new ValueWalker(arena, node)) {
                     if (arena.dataTypes[value] === EnumToken.MathFunctionTokenDefType ||
                         (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
-                            (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||
-                                arena.strings[arena.stringValue[value]] === "var"))) {
+                            (mathFuncs.includes(arena.resolveString(arena.stringValue[value])) ||
+                                arena.resolveString(arena.stringValue[value]) === "var"))) {
                         recursive = true;
                         break;
                     }
@@ -155,7 +155,7 @@ class InlineCssVariablesFeature {
                 // drop declarations from :root{}
                 for (const parent of info.parent) {
                     if (arena.parents[info.node] === parent) {
-                        const comment = arena.createComment(EnumToken.CommentTokenType, `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc, curr) => acc + renderValue(arena, curr, { convertColor: false }), "")} */`);
+                        const comment = arena.createComment(EnumToken.CommentTokenType, `/* ${arena.resolveString(arena.name[info.node])}: ${info.values.reduce((acc, curr) => acc + renderValue(arena, curr, { convertColor: false }), "")} */`);
                         arena.replaceChild(info.node, comment);
                         arena.detach(info.node);
                     }

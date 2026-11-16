@@ -8,14 +8,13 @@ import type {
     ParserOptions,
     ParserSyncOptions,
     RenderOptions,
-    RenderResult,
     TransformOptions,
-    TransformResult,
     TransformSyncOptions
 } from "./@types/index.d.ts";
 
 import { doParse, doParseSync } from "./lib/parser/parse.ts";
 import { doRender } from "./lib/printer/render.ts";
+import { RenderResult, TransformResult } from "./lib/printer/result.ts";
 import type { AstArena } from "./lib/ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
 import { createParseInfo, Tokenizer } from "./lib/parser/tokenize.ts";
@@ -36,10 +35,9 @@ export type {
     ParseResult,
     ParserOptions,
     RenderOptions,
-    RenderResult,
     TransformOptions,
-    TransformResult,
 } from "./@types/index.d.ts";
+export { RenderResult, TransformResult } from "./lib/printer/result.ts";
 
 export { minify } from "./lib/ast/minify.ts";
 export { parseString } from "./lib/parser/parse.ts";
@@ -72,8 +70,7 @@ export { parseSyntax } from "./lib/validation/parser/parse.ts";
 /**
  * Version number
  */
-// @ts-ignore
-export { version } from "../package.json" with { type: "json" };
+export { version } from "./version.ts";
 
 /**
  * Load file or url
@@ -169,14 +166,16 @@ export function render(
     return doRender(
         arena,
         data,
-        Object.assign(options, {
+        // the options of the caller are not modified
+        {
+            ...options,
             resolve,
             dirname,
             cwd:
                 (options.cwd ?? self.location.pathname.endsWith("/"))
                     ? self.location.pathname
                     : dirname(self.location.pathname),
-        }),
+        } as RenderOptions,
         mapping,
     );
 }
@@ -283,8 +282,16 @@ export function parseSync(
         validateSyncArguments(options);
     }
 
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseSyncInput(stream, { ...options });
+}
 
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+function parseSyncInput(stream: CssInput, options: ParserSyncOptions): ParseResult {
     options.src ??= "";
     options.sourcesMap ??= new Map();
 
@@ -380,11 +387,15 @@ export function transformSync(
         stream = input;
     }
 
-    options ??= {};
+    if (options != null) {
+        validateSyncArguments(options);
+    }
+
+    // the options of the caller are not modified: they may be reused
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
 
     const startTime: number = performance.now();
-    const parseResult: ParseResult = parseSync(stream, options);
+    const parseResult: ParseResult = parseSyncInput(stream, options);
 
     let mapping: Record<string, string> | null = null;
     let importMapping: Record<string, Record<string, string>> | null = null;
@@ -410,17 +421,12 @@ export function transformSync(
         mapping != null ? { mapping, importMapping } : null,
     );
 
-    return {
-        ...parseResult,
-        ...rendered,
-        errors: parseResult.errors.concat(rendered.errors),
-        stats: {
-            bytesOut: rendered.code.length,
-            ...parseResult.stats,
-            render: rendered.stats.total,
-            total: `${(performance.now() - startTime).toFixed(2)}ms`,
-        },
-    } as TransformResult;
+    return new TransformResult(parseResult, rendered, {
+        bytesOut: RenderResult.codeLength(rendered),
+        ...parseResult.stats,
+        render: rendered.stats.total,
+        total: `${(performance.now() - startTime).toFixed(2)}ms`,
+    });
 }
 
 /**
@@ -583,7 +589,16 @@ export async function parse(
         }
     }
 
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseInput(stream, { ...options });
+}
+
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+async function parseInput(stream: CssInput | ReadableStream<Uint8Array>, options: ParserOptions): Promise<ParseResult> {
     options.src ??= "";
     options.sourcesMap ??= new Map();
 
@@ -762,7 +777,7 @@ export async function transform(
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime: number = performance.now();
 
-    return parse(stream, options).then((parseResult: ParseResult) => {
+    return parseInput(stream, options).then((parseResult: ParseResult) => {
         let mapping: Record<string, string> | null = null;
         let importMapping: Record<string, Record<string, string>> | null = null;
 
@@ -787,16 +802,11 @@ export async function transform(
             mapping != null ? { mapping, importMapping } : null,
         );
 
-        return {
-            ...parseResult,
-            ...rendered,
-            errors: parseResult.errors.concat(rendered.errors),
-            stats: {
-                bytesOut: rendered.code.length,
-                ...parseResult.stats,
-                render: rendered.stats.total,
-                total: `${(performance.now() - startTime).toFixed(2)}ms`,
-            },
-        };
+        return new TransformResult(parseResult, rendered, {
+            bytesOut: RenderResult.codeLength(rendered),
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        });
     });
 }

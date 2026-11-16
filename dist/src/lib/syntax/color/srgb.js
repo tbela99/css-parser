@@ -52,7 +52,7 @@ function srgbvalues(arena, token) {
 }
 function rgb2srgb(arena, token) {
     return (getColorComponents(arena, token)?.map?.((t, index) => index === 3
-        ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none"
+        ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[t]) === "none"
             ? 1
             : getNumber(arena, t)
         : ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) *
@@ -75,8 +75,8 @@ function rgb2srgbvalues(arena, token) {
 // }
 function hex2srgbvalues(arena, token) {
     const value = expandHexValue(arena.colorType[token] === ColorType.LIT
-        ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
-        : arena.strings[arena.stringValue[token]]);
+        ? COLORS_NAMES[arena.resolveString(arena.stringValue[token]).toLowerCase()]
+        : arena.resolveString(arena.stringValue[token]));
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16) / 255);

@@ -81,27 +81,27 @@ function colorMix(arena, ...args) {
     const colorComponents = [];
     const colors = [];
     if (arena.dataTypes[args[i]] === EnumToken.IdenTokenType) {
-        if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "in")) {
+        if (!equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i++]]), "in")) {
             return null;
         }
         if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType) {
             return null;
         }
         if (isRectangularOrthogonalColorspace(arena, args[i])) {
-            colorSpace = arena.strings[arena.stringValue[args[i++]]];
+            colorSpace = arena.resolveString(arena.stringValue[args[i++]]);
         }
         else if (isPolarColorspace(arena, args[i])) {
-            colorSpace = arena.strings[arena.stringValue[args[i++]]];
+            colorSpace = arena.resolveString(arena.stringValue[args[i++]]);
             if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType &&
                 arena.dataTypes[args[i]] !== EnumToken.ColorTokenType) {
                 return null;
             }
             if (arena.dataTypes[args[i]] === EnumToken.IdenTokenType &&
-                !equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "hue")) {
+                !equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i]]), "hue")) {
                 if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType) {
                     return null;
                 }
-                hueInterpolationMethod = arena.strings[arena.stringValue[args[i++]]];
+                hueInterpolationMethod = arena.resolveString(arena.stringValue[args[i++]]);
                 switch (hueInterpolationMethod) {
                     case "increasing":
                     case "decreasing":
@@ -111,7 +111,7 @@ function colorMix(arena, ...args) {
                     default:
                         return null;
                 }
-                if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "hue")) {
+                if (!equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i++]]), "hue")) {
                     return null;
                 }
             }
@@ -123,7 +123,7 @@ function colorMix(arena, ...args) {
             ColorType.DPSYS === arena.colorType[args[i]] ||
             ColorType.NON_STD === arena.colorType[args[i]] ||
             ColorType.CUSTOM_COLOR === arena.colorType[args[i]] ||
-            equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "currentcolor")) {
+            equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i]]), "currentcolor")) {
             return null;
         }
         colorComponents.push(getColorComponents(arena, args[i]));
@@ -253,7 +253,7 @@ function colorMix(arena, ...args) {
     let offset1 = arena.colorType[colors[0]] === ColorType.COLOR ? 1 : 0;
     if (colorComponents[0][offset1 + 3] != null &&
         arena.dataTypes[colorComponents[0][offset1 + 3]] === EnumToken.IdenTokenType &&
-        arena.strings[arena.stringValue[colorComponents[0][offset1 + 3]]] === "none" &&
+        arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 3]]) === "none" &&
         colorComponents[1].length === offset1 + 4) {
         // fix powerless alpha for last color if previous color has alpha
         stack[stack.length - 1].color[3] = stack[stack.length - 2].color[3];
@@ -265,19 +265,19 @@ function colorMix(arena, ...args) {
         // console.error(JSON.stringify({colorSpace1, colorSpace, stack, colorComponents}, null, 1));
         if ((stack[stack.length - 1].color[0] === 0 &&
             arena.dataTypes[colorComponents[0][offset1]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[0][offset1]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[0][offset1]]) === "none") ||
             arena.flags[colorComponents[0][0]] & EnumAstNodeStatus.PowerlessColorComponent) {
             stack[stack.length - 1].color[0] = stack[stack.length - 2].color[0];
         }
         if ((stack[stack.length - 1].color[1] === 0 &&
             arena.dataTypes[colorComponents[0][offset1 + 1]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[0][offset1 + 1]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 1]]) === "none") ||
             arena.flags[colorComponents[0][1]] & EnumAstNodeStatus.PowerlessColorComponent) {
             stack[stack.length - 1].color[1] = stack[stack.length - 2].color[1];
         }
         if ((stack[stack.length - 1].color[2] === 0 &&
             arena.dataTypes[colorComponents[0][offset1 + 2]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[0][offset1 + 2]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 2]]) === "none") ||
             arena.flags[colorComponents[0][2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (stack[stack.length - 1].color[1] === 0 ||
@@ -288,7 +288,7 @@ function colorMix(arena, ...args) {
         }
         // }
     }
-    // console.error([arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType, arena.strings[arena.stringValue[colorComponents[0][offset1]]] == "none"]);
+    // console.error([arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType, arena.resolveString(arena.stringValue[colorComponents[0][offset1]]) == "none"]);
     // console.error(isLCHOrOKLCH, colorComponents, stack);
     while (stack.length > 1) {
         r1 = stack.pop();
@@ -297,26 +297,26 @@ function colorMix(arena, ...args) {
         // r2 powerless alpha
         if (colorComponents[currentIndex][offset1 + 3] != null &&
             arena.dataTypes[colorComponents[currentIndex][offset1 + 3]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 3]]] === "none") {
+            arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 3]]) === "none") {
             // fix powerless alpha for last color if previous color has alpha
             r2.color[3] = r1.color[3];
         }
         // powerless hue for lch spaces
         if ((r2.color[0] === 0 &&
             arena.dataTypes[colorComponents[currentIndex][offset1]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1]] & EnumAstNodeStatus.PowerlessColorComponent) {
             r2.color[0] = r1.color[0];
         }
         if ((r2.color[1] === 0 &&
             arena.dataTypes[colorComponents[currentIndex][offset1 + 1]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 1]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 1]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1 + 1]] & EnumAstNodeStatus.PowerlessColorComponent) {
             r2.color[1] = r1.color[1];
         }
         if ((r2.color[2] === 0 &&
             arena.dataTypes[colorComponents[currentIndex][offset1 + 2]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 2]]] === "none") ||
+            arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 2]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1 + 2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (r2.color[1] === 0 ||

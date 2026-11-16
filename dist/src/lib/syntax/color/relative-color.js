@@ -52,7 +52,7 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
             continue;
         }
         if (arena.dataTypes[component] === EnumToken.IdenTokenType) {
-            val = arena.strings[arena.stringValue[component]];
+            val = arena.resolveString(arena.stringValue[component]);
             if (
             // @ts-expect-error
             typeof Math[val.toUpperCase()] !== "number" &&
@@ -73,11 +73,11 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
             continue;
         }
         if (arena.dataTypes[component] === EnumToken.MathFunctionTokenType &&
-            equalsIgnoreCase("calc", arena.strings[arena.stringValue[component]])) {
+            equalsIgnoreCase("calc", arena.resolveString(arena.stringValue[component]))) {
             // inlined: arena.walkValues(arena.tokens(component))
             for (const value of new ValueWalker(arena, arena.tokens(component))) {
                 if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
-                    val = arena.strings[arena.stringValue[value]].toLowerCase();
+                    val = arena.resolveString(arena.stringValue[value]).toLowerCase();
                     if (
                     // @ts-expect-error
                     typeof Math[val.toUpperCase()] !== "number" &&
@@ -114,7 +114,7 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
         // @ts-ignore
         alpha: alpha == null
             ? numberToken(arena, 1, b)
-            : arena.dataTypes[alpha] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[alpha]] === "none"
+            : arena.dataTypes[alpha] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[alpha]) === "none"
                 ? numberToken(arena, 0, alpha)
                 : arena.dataTypes[alpha] === EnumToken.PercentageTokenType
                     ? numberToken(arena, getNumber(arena, alpha), alpha)
@@ -127,7 +127,7 @@ function parseRelativeColorComponents(arena, relativeKeys, original, rExp, gExp,
         // @ts-ignore
         alpha: getValue(arena, aExp == null
             ? numberToken(arena, 1, bExp)
-            : arena.dataTypes[aExp] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[aExp]] === "none"
+            : arena.dataTypes[aExp] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[aExp]) === "none"
                 ? numberToken(arena, 0, aExp)
                 : aExp),
     };
@@ -185,7 +185,7 @@ function computeComponentValue(arena, expr, values) {
             // normalize hue
             // inlined: arena.walkValues([object.h as Token])
             for (const k of new ValueWalker(arena, [object.h])) {
-                if (arena.dataTypes[k] === EnumToken.AngleTokenType && arena.strings[arena.unit[k]] === "deg") {
+                if (arena.dataTypes[k] === EnumToken.AngleTokenType && arena.resolveString(arena.unit[k]) === "deg") {
                     arena.dataTypes[k] = EnumToken.NumberTokenType;
                 }
             }
@@ -198,16 +198,16 @@ function computeComponentValue(arena, expr, values) {
             EnumToken.AngleTokenType,
             EnumToken.LengthTokenType,
         ].includes(arena.dataTypes[exp])) ;
-        else if (arena.dataTypes[exp] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[exp]] in values) {
-            expr[key] = values[arena.strings[arena.stringValue[exp]]];
+        else if (arena.dataTypes[exp] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[exp]) in values) {
+            expr[key] = values[arena.resolveString(arena.stringValue[exp])];
         }
         else if (arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
             (arena.dataTypes[exp] === EnumToken.FunctionTokenType &&
-                mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) {
+                mathFuncs.includes(arena.resolveString(arena.stringValue[exp])))) {
             // inlined: arena.walkValues(arena.tokens(exp))
             for (const value of new ValueWalker(arena, arena.tokens(exp))) {
                 if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
-                    const name = arena.strings[arena.stringValue[value]];
+                    const name = arena.resolveString(arena.stringValue[value]);
                     const replacement = values[name];
                     // replace the identifier by its value
                     if (replacement != null) {
@@ -222,8 +222,8 @@ function computeComponentValue(arena, expr, values) {
             }
             const result = (arena.dataTypes[exp] === EnumToken.MathFunctionTokenType ||
                 (arena.dataTypes[exp] === EnumToken.FunctionTokenType &&
-                    mathFuncs.includes(arena.strings[arena.stringValue[exp]]))) &&
-                arena.strings[arena.stringValue[exp]] !== "calc"
+                    mathFuncs.includes(arena.resolveString(arena.stringValue[exp])))) &&
+                arena.resolveString(arena.stringValue[exp]) !== "calc"
                 ? evaluateFunc(arena, exp)
                 : evaluate(arena, arena.tokens(exp));
             if (result.length === 1 && arena.dataTypes[result[0]] !== EnumToken.BinaryExpressionTokenType) {

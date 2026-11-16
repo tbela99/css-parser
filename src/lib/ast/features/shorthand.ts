@@ -54,7 +54,7 @@ export class ComputeShorthandFeature {
         let hasDeclarations: boolean = false;
 
         if (arena.dataTypes[ast] === EnumToken.AtRuleNodeType) {
-            switch (arena.strings[arena.name[ast]]) {
+            switch (arena.resolveString(arena.name[ast])) {
                 case "function":
                 case "mixin":
                     doNotSort = true;

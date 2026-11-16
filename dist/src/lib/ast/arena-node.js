@@ -153,10 +153,10 @@ class AstArenaNode {
         const typ = arena.dataTypes[id];
         if (isNodeObjectType(typ)) {
             return typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType || hasValueTokens(typ)
-                ? arena.strings[arena.name[id]]
+                ? arena.resolveString(arena.name[id])
                 : undefined;
         }
-        return arena.name[id] === 0 ? undefined : arena.strings[arena.name[id]];
+        return arena.name[id] === 0 ? undefined : arena.resolveString(arena.name[id]);
     }
     /**
      *
@@ -173,7 +173,7 @@ class AstArenaNode {
         const id = this[ARENAID];
         const typ = arena.dataTypes[id];
         return typ === EnumToken.RuleNodeType || typ === EnumToken.KeyframesRuleNodeType
-            ? arena.strings[arena.name[id]]
+            ? arena.resolveString(arena.name[id])
             : undefined;
     }
     /**
@@ -204,7 +204,7 @@ class AstArenaNode {
                 typ === EnumToken.RuleNodeType ||
                 typ === EnumToken.KeyframesRuleNodeType
                 ? undefined
-                : arena.strings[arena.stringValue[id]];
+                : arena.resolveString(arena.stringValue[id]);
         }
         if (typ === EnumToken.BinaryExpressionTokenType || typ === EnumToken.FractionTokenType) {
             return undefined;
@@ -221,7 +221,7 @@ class AstArenaNode {
             return field;
         }
         return arena.stringValue[id] !== 0 || typ === EnumToken.IdenTokenType || typ === EnumToken.StringTokenType
-            ? arena.strings[arena.stringValue[id]]
+            ? arena.resolveString(arena.stringValue[id])
             : undefined;
     }
     /**
@@ -331,7 +331,7 @@ class AstArenaNode {
         const typ = arena.dataTypes[id];
         return arena.unit[id] === 0 || typ === EnumToken.ColorTokenType || typ === EnumToken.MatchExpressionTokenType
             ? undefined
-            : arena.strings[arena.unit[id]];
+            : arena.resolveString(arena.unit[id]);
     }
     /**
      *
@@ -348,7 +348,7 @@ class AstArenaNode {
         const id = this[ARENAID];
         return arena.unit[id] === 0 || arena.dataTypes[id] !== EnumToken.ColorTokenType
             ? undefined
-            : arena.strings[arena.unit[id]];
+            : arena.resolveString(arena.unit[id]);
     }
     set cal(cal) {
         this[ARENA].setUnitString(this[ARENAID], cal ?? null);
@@ -361,7 +361,7 @@ class AstArenaNode {
         const id = this[ARENAID];
         return arena.unit[id] === 0 || arena.dataTypes[id] !== EnumToken.MatchExpressionTokenType
             ? undefined
-            : arena.strings[arena.unit[id]];
+            : arena.resolveString(arena.unit[id]);
     }
     set attr(attr) {
         this[ARENA].setUnitString(this[ARENAID], attr ?? null);

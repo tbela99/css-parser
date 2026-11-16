@@ -12,7 +12,7 @@ import { equalsIgnoreCase } from '../../../parser/utils/text.js';
 
 function getColorComponents(arena, token) {
     if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-        const val = arena.strings[arena.stringValue[token]];
+        const val = arena.resolveString(arena.stringValue[token]);
         if (equalsIgnoreCase("currentcolor", val)) {
             return null;
         }
@@ -35,12 +35,12 @@ function getColorComponents(arena, token) {
         if (typ === EnumToken.FunctionTokenType ||
             typ === EnumToken.WildCardFunctionTokenType ||
             typ === EnumToken.MathFunctionTokenType) {
-            if ("var" === arena.strings[arena.stringValue[child]].toLowerCase()) {
+            if ("var" === arena.resolveString(arena.stringValue[child]).toLowerCase()) {
                 return null;
             }
         }
         if (typ === EnumToken.ColorTokenType &&
-            equalsIgnoreCase("currentcolor", arena.strings[arena.stringValue[child]])) {
+            equalsIgnoreCase("currentcolor", arena.resolveString(arena.stringValue[child]))) {
             return null;
         }
         result.push(child);

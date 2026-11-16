@@ -81,13 +81,6 @@ export interface ValidationOptions {
     lenient?: boolean;
 
     /**
-     * Visited tokens
-     *
-     * @private
-     */
-    visited?: Map<Token, Set<ValidationToken>>;
-
-    /**
      * Is optional
      *
      * @private
@@ -585,11 +578,11 @@ export declare interface ParserSyncOptions
      */
     setParent?: boolean;
     /**
-     * Cache
+     * Rendered size of the nodes, in bytes
      *
      * @private
      */
-    cache?: Map<AstNode, string>;
+    cache?: Map<AstNode, number>;
 
     /**
      * CSS modules options
@@ -917,78 +910,30 @@ export declare interface ParseResult {
 }
 
 /**
- * Render result object
+ * Render stats
  */
-export declare interface RenderResult {
+export declare interface RenderResultStats {
     /**
-     * Rendered CSS
+     * Render time
      */
-    code: string;
-    /**
-     * Render errors
-     */
-    errors: ErrorDescription[];
-    /**
-     * Render stats
-     */
-    stats: {
-        /**
-         * Render time
-         */
-        total: string;
-    };
-    /**
-     * Source map
-     */
-    map?: SourceMap;
+    total: string;
 }
 
 /**
- * Transform result object
+ * Transform stats
  */
-export declare interface TransformResult extends ParseResult, RenderResult {
+export declare interface TransformResultStats extends ParseResultStats {
     /**
-     * Transform stats
+     * Generated CSS size: the length of {@link TransformResult.code}
      */
-    stats: {
-        /**
-         * Source file
-         */
-        src: string;
-        /**
-         * Bytes read
-         */
-        bytesIn: number;
-        /**
-         * Generated CSS size
-         */
-        bytesOut: number;
-        /**
-         * Bytes read from imported files
-         */
-        importedBytesIn: number;
-        /**
-         * Parse time
-         */
-        parse: string;
-        /**
-         * Minify time
-         */
-        minify: string;
-        /**
-         * Render time
-         */
-        render: string;
-        /**
-         * Total time
-         */
-        total: string;
-        /**
-         * Imported files stats
-         */
-        imports: ParseResultStats[];
-    };
+    bytesOut: number;
+    /**
+     * Render time
+     */
+    render: string;
 }
+
+export { RenderResult, TransformResult } from "../lib/printer/result.ts";
 
 /**
  * Parse token options

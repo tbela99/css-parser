@@ -9,7 +9,7 @@ import { TokenField } from '../../ast/arena.js';
 import { EnumToken } from '../../ast/types.js';
 import { evaluate } from '../../ast/math/expression.js';
 import { gcd } from '../../ast/math/math.js';
-import { tokensfuncDefMap, mediaTypes, mFLT, mFGT } from '../../syntax/constants.js';
+import { isFunctionDefType, mediaTypes, tokensfuncDefMap, mFLT, mFGT } from '../../syntax/constants.js';
 import { trimArray, matchAllSyntaxes, createValidationContext, getMFInfo, isMFValue } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, MediaFeatureType } from '../../validation/parser/typedef.js';
 import { getParsedSyntax } from '../../validation/config.js';
@@ -32,7 +32,7 @@ function parseMediaqueryList(arena, stream, options) {
             continue;
         }
         parts[parts.length - 1].push(token);
-        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+        if (type === EnumToken.StartParensTokenType || isFunctionDefType(type)) {
             matchCount++;
         }
         else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
@@ -57,7 +57,7 @@ function parseMediaqueryList(arena, stream, options) {
             // [not | only] <media-type> [ and <media-condition-without-or>  ]?
             if (i < stream.length) {
                 if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
-                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     if (mediaTypes.includes(val)) {
                         tokens.push(stream[i]);
                         i++;
@@ -97,7 +97,7 @@ function parseMediaqueryList(arena, stream, options) {
                     continue;
                 }
                 if (arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
-                    tokensfuncDefMap.has(arena.dataTypes[stream[i]])) {
+                    isFunctionDefType(arena.dataTypes[stream[i]])) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
                     continue;
@@ -113,7 +113,7 @@ function parseMediaqueryList(arena, stream, options) {
                         break;
                     case EnumToken.IdenTokenType:
                         {
-                            const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                            const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                             if (val === "and" || val === "or") {
                                 arena.dataTypes[stream[i]] =
                                     val === "and" ? EnumToken.AndTokenType : EnumToken.OrTokenType;
@@ -153,13 +153,13 @@ function parseMediaqueryList(arena, stream, options) {
                         }
                         break;
                     case EnumToken.EndParensTokenType:
-                        if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                        if (stack.length > 0 && isFunctionDefType(arena.dataTypes[stack[stack.length - 1]])) {
                             const index = tokens.indexOf(stack[stack.length - 1]);
                             arena.spanLocation(tokens[index], tokens[index], stream[i]);
                             arena.dataTypes[tokens[index]] = tokensfuncDefMap.get(arena.dataTypes[tokens[index]]);
                             arena.setTokenList(tokens[index], trimArray(arena, tokens.slice(index + 1, tokens.length - 1)));
                             tokens.length = index + 1;
-                            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[tokens[index]]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(tokens[index])), options);
+                            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.resolveString(arena.stringValue[tokens[index]]) + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(tokens[index])), options);
                             stack.pop();
                             scopes.pop();
                             currentScope = scopes.at(-1);
@@ -189,7 +189,7 @@ function parseMediaqueryList(arena, stream, options) {
                                 const names = trimArray(arena, tokens.slice(index2 + 1, index));
                                 const filteredNames = names.filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType &&
                                     arena.dataTypes[n] !== EnumToken.CommentTokenType);
-                                const name = arena.strings[arena.stringValue[filteredNames[0]]];
+                                const name = arena.resolveString(arena.stringValue[filteredNames[0]]);
                                 const mfInfo = getMFInfo(name);
                                 for (const val of [left, right]) {
                                     if (options.computeCalcExpression) {
@@ -198,7 +198,7 @@ function parseMediaqueryList(arena, stream, options) {
                                                 mfInfo.type !== MediaFeatureType.StringType)) {
                                             for (let l = 0; l < val.length; l++) {
                                                 if (arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
-                                                    arena.strings[arena.stringValue[val[l]]] === "calc") {
+                                                    arena.resolveString(arena.stringValue[val[l]]) === "calc") {
                                                     const value = evaluate(arena, [val[l]]);
                                                     if (value.length === 1) {
                                                         arena.copyLocation(value[0], val[l]);
@@ -259,7 +259,7 @@ function parseMediaqueryList(arena, stream, options) {
                             let values = trimArray(arena, tokens.slice(index2 + 1, tokens.length - 1));
                             const filteredNames = (names).filter((n) => arena.dataTypes[n] !== EnumToken.WhitespaceTokenType &&
                                 arena.dataTypes[n] !== EnumToken.CommentTokenType);
-                            const name = arena.strings[arena.stringValue[filteredNames[0]]];
+                            const name = arena.resolveString(arena.stringValue[filteredNames[0]]);
                             const mfInfo = getMFInfo(name);
                             if (options.computeCalcExpression) {
                                 if (mfInfo == null ||
@@ -268,7 +268,7 @@ function parseMediaqueryList(arena, stream, options) {
                                     const val = values;
                                     for (let l = 0; l < val.length; l++) {
                                         if (arena.dataTypes[val[l]] === EnumToken.MathFunctionTokenType &&
-                                            arena.strings[arena.stringValue[val[l]]] === "calc") {
+                                            arena.resolveString(arena.stringValue[val[l]]) === "calc") {
                                             const value = evaluate(arena, [val[l]]);
                                             if (value.length === 1) {
                                                 arena.copyLocation(value[0], val[l]);
@@ -416,7 +416,7 @@ function parseMediaqueryList(arena, stream, options) {
                                             arena.dataTypes[rightNames[0]] === EnumToken.IdenTokenType &&
                                             (arena.dataTypes[rightOp] === EnumToken.LtTokenType ||
                                                 arena.dataTypes[rightOp] === EnumToken.LteTokenType) &&
-                                            equalsIgnoreCase(arena.strings[arena.stringValue[leftNames[0]]], arena.strings[arena.stringValue[rightNames[0]]])) {
+                                            equalsIgnoreCase(arena.resolveString(arena.stringValue[leftNames[0]]), arena.resolveString(arena.stringValue[rightNames[0]]))) {
                                             const rangeQuery = arena.createToken(EnumToken.MediaRangeQueryTokenType);
                                             arena.dataTypes[leftOp] =
                                                 arena.dataTypes[leftOp] === EnumToken.GteTokenType

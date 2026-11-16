@@ -24,7 +24,7 @@ function makeColor(arena, kind, components, alpha) {
     const alphaValue = alpha == null
         ? 1
         : arena.dataTypes[alpha] === EnumToken.IdenTokenType &&
-            equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")
+            equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "none")
             ? 0
             : minmax(getNumber(arena, alpha), 0, 1);
     components.length = 3;

@@ -10,7 +10,7 @@ import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray, matchAllSyntaxes, createValidationContext } from '../../validation/match.js';
 
 function matchAtRuleSyntax(arena, atRule, stream, options) {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[atRule]]);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[atRule]));
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     trimArray(arena, stream);
     if (syntax.length === 0) {

@@ -47,7 +47,7 @@ import { equalsIgnoreCase } from '../../parser/utils/text.js';
 function convertColor(arena, token, to) {
     if (arena.colorType[token] === ColorType.SYS ||
         arena.colorType[token] === ColorType.DPSYS ||
-        (isIdentColor(arena, token) && "currentcolor" === arena.strings[arena.stringValue[token]])) {
+        (isIdentColor(arena, token) && "currentcolor" === arena.resolveString(arena.stringValue[token]))) {
         return token;
     }
     if (arena.colorType[token] === ColorType.ALPHA) {
@@ -57,7 +57,7 @@ function convertColor(arena, token, to) {
             arena.dataTypes[token] !== EnumToken.CommentTokenType);
         if (args.length > 1 &&
             arena.dataTypes[args[args.length - 2]] === EnumToken.LiteralTokenType &&
-            "/" === arena.strings[arena.stringValue[args[args.length - 2]]]) {
+            "/" === arena.resolveString(arena.stringValue[args[args.length - 2]])) {
             args.splice(args.length - 2, 1);
         }
         let values = trimArray(arena, args.slice(1));
@@ -84,20 +84,20 @@ function convertColor(arena, token, to) {
         }
         token = result;
     }
-    if (arena.strings[arena.unit[token]] === "rel" &&
-        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))) {
+    if (arena.resolveString(arena.unit[token]) === "rel" &&
+        ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) => equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token])))) {
         const chi = getColorComponents(arena, token);
-        const offset = arena.strings[arena.stringValue[token]] === "color" ? 2 : 1;
+        const offset = arena.resolveString(arena.stringValue[token]) === "color" ? 2 : 1;
         if (chi != null) {
             // @ts-ignore
             const color = chi[1];
-            const components = parseRelativeColorComponents(arena, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "color")
-                ? arena.strings[arena.stringValue[chi[offset]]]
-                : arena.strings[arena.stringValue[token]], color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
+            const components = parseRelativeColorComponents(arena, equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "color")
+                ? arena.resolveString(arena.stringValue[chi[offset]])
+                : arena.resolveString(arena.stringValue[token]), color, chi[offset + 1], chi[offset + 2], chi[offset + 3], chi[offset + 4]);
             if (components == null) {
                 return null;
             }
-            const name = arena.strings[arena.stringValue[token]];
+            const name = arena.resolveString(arena.stringValue[token]);
             const tk = arena.createColor(name, ColorType[name.toUpperCase().replaceAll("-", "_")], name === "color" ? [arena.clone(chi[offset])] : []);
             const seen = new Set();
             for (const t of Object.values(components)) {
@@ -112,7 +112,7 @@ function convertColor(arena, token, to) {
     }
     if (arena.colorType[token] === to) {
         if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-            const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
+            const val = reduceHexValue(arena.resolveString(arena.stringValue[token]));
             // inlined: arena.setStr(token, val)
             arena.stringValue[token] = arena.internString(val);
             arena.colorType[token] = val[0] === "#" ? ColorType.HEX : ColorType.LIT;
@@ -122,7 +122,7 @@ function convertColor(arena, token, to) {
     if (arena.colorType[token] === ColorType.COLOR) {
         const colorSpace = arena.findToken(token, (arena, t) => ![EnumToken.WhitespaceTokenType, EnumToken.CommentTokenType].includes(arena.dataTypes[t]));
         if (colorSpace != null &&
-            arena.strings[arena.stringValue[colorSpace]] === ColorType[to].toLowerCase().replaceAll("_", "-")) {
+            arena.resolveString(arena.stringValue[colorSpace]) === ColorType[to].toLowerCase().replaceAll("_", "-")) {
             for (const chi of arena.tokens(token)) {
                 if (arena.dataTypes[chi] === EnumToken.NumberTokenType && !arena.hasFraction(chi)) {
                     arena.numericValue[chi] = getNumber(arena, chi);
@@ -209,7 +209,7 @@ function convertColor(arena, token, to) {
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT: {
-                const val = reduceHexValue(arena.strings[arena.stringValue[token]]);
+                const val = reduceHexValue(arena.resolveString(arena.stringValue[token]));
                 return arena.createColor(val, val[0] === "#" ? ColorType.HEX : ColorType.LIT);
             }
             case ColorType.HSL:
@@ -489,7 +489,7 @@ function color2srgbvalues(arena, token) {
     }
     const colorSpace = components.shift();
     let values = components.map((val) => getNumber(arena, val));
-    switch (arena.strings[arena.stringValue[colorSpace]]) {
+    switch (arena.resolveString(arena.stringValue[colorSpace])) {
         case "display-p3":
             values = p32srgbvalues(values[0], values[1], values[2], values[3]);
             break;
@@ -547,7 +547,7 @@ function values2colortoken(arena, values, to) {
  */
 function getNumber(arena, token) {
     const typ = arena.dataTypes[token];
-    if (typ === EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] === "none") {
+    if (typ === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[token]) === "none") {
         return 0;
     }
     let val;
@@ -568,13 +568,13 @@ function getNumber(arena, token) {
 function getAngle(arena, token) {
     const typ = arena.dataTypes[token];
     if (typ === EnumToken.IdenTokenType) {
-        if (arena.strings[arena.stringValue[token]] === "none") {
+        if (arena.resolveString(arena.stringValue[token]) === "none") {
             return 0;
         }
     }
     const val = getNumber(arena, token);
     if (typ === EnumToken.AngleTokenType) {
-        switch (arena.strings[arena.unit[token]]) {
+        switch (arena.resolveString(arena.unit[token])) {
             case "deg":
                 return val / 360;
             case "rad":

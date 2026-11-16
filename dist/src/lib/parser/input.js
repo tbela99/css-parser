@@ -5,7 +5,13 @@
 	Version: 2.1.0
 	License: MIT
  */
+import { nativeBufferClass } from '../printer/writer.js';
+
 const encoder = new TextEncoder();
+/**
+ * the code units of a Uint16Array are stored in the platform byte order
+ */
+const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 const decoder = new TextDecoder();
 const nonAscii = /[^\x00-\x7f]/;
 const empty = new Uint8Array(0);
@@ -39,6 +45,13 @@ function bytesOf(input) {
  * @param text
  */
 function codeUnitsOf(text) {
+    const native = nativeBufferClass();
+    // node.js: the code units are written by the native encoder (little endian platforms)
+    if (native !== null && littleEndian) {
+        const buffer = native.allocUnsafeSlow(text.length * 2);
+        buffer.write(text, 0, text.length * 2, "utf16le");
+        return new Uint16Array(buffer.buffer, buffer.byteOffset, text.length);
+    }
     const codes = new Uint16Array(text.length);
     for (let i = 0; i < text.length; i++) {
         codes[i] = text.charCodeAt(i);
@@ -56,7 +69,9 @@ function toCodeUnits(input) {
         return { codes: empty, text: "" };
     }
     if (typeof input === "string") {
-        return { codes: nonAscii.test(input) ? codeUnitsOf(input) : encoder.encode(input), text: input };
+        // an ascii string has a byte for each code unit: the encoded string is the code units
+        const bytes = encoder.encode(input);
+        return { codes: bytes.length === input.length ? bytes : codeUnitsOf(input), text: input };
     }
     const bytes = bytesOf(input);
     const text = decoder.decode(bytes);

@@ -146,7 +146,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
     if (
         arena.colorType[token] === ColorType.SYS ||
         arena.colorType[token] === ColorType.DPSYS ||
-        (isIdentColor(arena, token) && "currentcolor" === arena.strings[arena.stringValue[token]])
+        (isIdentColor(arena, token) && "currentcolor" === arena.resolveString(arena.stringValue[token]))
     ) {
         return token;
     }
@@ -163,7 +163,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
         if (
             args.length > 1 &&
             arena.dataTypes[args[args.length - 2]] === EnumToken.LiteralTokenType &&
-            "/" === arena.strings[arena.stringValue[args[args.length - 2]]]
+            "/" === arena.resolveString(arena.stringValue[args[args.length - 2]])
         ) {
             args.splice(args.length - 2, 1);
         }
@@ -206,22 +206,22 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
     }
 
     if (
-        arena.strings[arena.unit[token]] === "rel" &&
+        arena.resolveString(arena.unit[token]) === "rel" &&
         ["rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch", "color"].some((t) =>
-            equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]),
+            equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token])),
         )
     ) {
         const chi: Token[] | null = getColorComponents(arena, token);
-        const offset: number = arena.strings[arena.stringValue[token]] === "color" ? 2 : 1;
+        const offset: number = arena.resolveString(arena.stringValue[token]) === "color" ? 2 : 1;
 
         if (chi != null) {
             // @ts-ignore
             const color: Token = chi[1];
             const components: Record<RelativeColorTypes, Token> = parseRelativeColorComponents(
                 arena,
-                equalsIgnoreCase(arena.strings[arena.stringValue[token]], "color")
-                    ? arena.strings[arena.stringValue[chi[offset]]]
-                    : (arena.strings[arena.stringValue[token]] as string),
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "color")
+                    ? arena.resolveString(arena.stringValue[chi[offset]])
+                    : (arena.resolveString(arena.stringValue[token]) as string),
                 color,
                 chi[offset + 1],
                 chi[offset + 2],
@@ -233,7 +233,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
                 return null;
             }
 
-            const name: string = arena.strings[arena.stringValue[token]];
+            const name: string = arena.resolveString(arena.stringValue[token]);
             const tk: Token = arena.createColor(
                 name,
                 ColorType[name.toUpperCase().replaceAll("-", "_") as keyof typeof ColorType],
@@ -259,7 +259,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
 
     if (arena.colorType[token] === to) {
         if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-            const val: string = reduceHexValue(arena.strings[arena.stringValue[token]]);
+            const val: string = reduceHexValue(arena.resolveString(arena.stringValue[token]));
 
             // inlined: arena.setStr(token, val)
             arena.stringValue[token] = arena.internString(val);
@@ -278,7 +278,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
 
         if (
             colorSpace != null &&
-            arena.strings[arena.stringValue[colorSpace]] === ColorType[to].toLowerCase().replaceAll("_", "-")
+            arena.resolveString(arena.stringValue[colorSpace]) === ColorType[to].toLowerCase().replaceAll("_", "-")
         ) {
             for (const chi of arena.tokens(token)) {
                 if (arena.dataTypes[chi] === EnumToken.NumberTokenType && !arena.hasFraction(chi)) {
@@ -389,7 +389,7 @@ export function convertColor(arena: AstArena, token: Token, to: ColorType): Toke
         switch (arena.colorType[token]) {
             case ColorType.HEX:
             case ColorType.LIT: {
-                const val: string = reduceHexValue(arena.strings[arena.stringValue[token]]);
+                const val: string = reduceHexValue(arena.resolveString(arena.stringValue[token]));
 
                 return arena.createColor(val, val[0] === "#" ? ColorType.HEX : ColorType.LIT);
             }
@@ -771,7 +771,7 @@ export function color2srgbvalues(arena: AstArena, token: Token): number[] | null
     const colorSpace: Token = components.shift() as Token;
     let values: number[] = components.map((val: Token) => getNumber(arena, val));
 
-    switch (arena.strings[arena.stringValue[colorSpace]]) {
+    switch (arena.resolveString(arena.stringValue[colorSpace])) {
         case "display-p3":
             values = p32srgbvalues(values[0], values[1], values[2], values[3]);
             break;
@@ -887,7 +887,7 @@ export function clamp(arena: AstArena, token: Token): Token {
 export function getNumber(arena: AstArena, token: Token): number {
     const typ: EnumToken = arena.dataTypes[token];
 
-    if (typ === EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] === "none") {
+    if (typ === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[token]) === "none") {
         return 0;
     }
 
@@ -912,7 +912,7 @@ export function getAngle(arena: AstArena, token: Token): number {
     const typ: EnumToken = arena.dataTypes[token];
 
     if (typ === EnumToken.IdenTokenType) {
-        if (arena.strings[arena.stringValue[token]] === "none") {
+        if (arena.resolveString(arena.stringValue[token]) === "none") {
             return 0;
         }
     }
@@ -920,7 +920,7 @@ export function getAngle(arena: AstArena, token: Token): number {
     const val: number = getNumber(arena, token);
 
     if (typ === EnumToken.AngleTokenType) {
-        switch (arena.strings[arena.unit[token]]) {
+        switch (arena.resolveString(arena.unit[token])) {
             case "deg":
                 return val / 360;
 

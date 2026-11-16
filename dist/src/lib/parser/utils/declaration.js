@@ -7,8 +7,8 @@
  */
 import { EnumToken, ColorType, EnumAstNodeStatus } from '../../ast/types.js';
 import { TokenField } from '../../ast/arena.js';
-import { tokensfuncDefMap, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
-import { renamedStandardProperties, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
+import { isFunctionDefType, COLORS_NAMES, nonStandardColors, systemColors, deprecatedSystemColors, tokensfuncDefMap, tokensMap, trimTokenSpace } from '../../syntax/constants.js';
+import { renamedStandardProperties, isColorName, isColor, parseColor, isWhiteSpace } from '../../syntax/syntax.js';
 import { getSyntaxRule, getParsedSyntax } from '../../validation/config.js';
 import { matchDeclarationSyntax, trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
@@ -83,7 +83,8 @@ function parseColorIdent(arena, value) {
  * @param errors
  */
 function createDeclarationNode(arena, name, tokens, state, errors) {
-    const node = arena.createDeclaration(EnumToken.DeclarationNodeType, arena.strings[arena.stringValue[name]], tokens, state, errors);
+    // the name is an interned string id: the string is not created
+    const node = arena.createDeclaration(EnumToken.DeclarationNodeType, arena.stringValue[name], tokens, state, errors);
     arena.copyLocation(node, name);
     return node;
 }
@@ -98,10 +99,10 @@ function createDeclarationNode(arena, name, tokens, state, errors) {
 function parseDeclaration(arena, tokens, parent, options, errors) {
     const name = tokens.shift();
     let i;
-    let nam = arena.strings[arena.stringValue[name]];
+    let nam = arena.resolveString(arena.stringValue[name]);
     // parent at-rule name
     const isAtRule = parent != null && typeof parent === "number" && arena.dataTypes[parent] === EnumToken.AtRuleNodeType;
-    const parentNam = isAtRule ? arena.strings[arena.name[parent]] : null;
+    const parentNam = isAtRule ? arena.resolveString(arena.name[parent]) : null;
     let rules = null;
     let syntaxRules = null;
     let success = true;
@@ -226,7 +227,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
     }
     for (i = 0; i < tokens.length; i++) {
         token = tokens[i];
-        if (tokensfuncDefMap.has(arena.dataTypes[token]) ||
+        if (isFunctionDefType(arena.dataTypes[token]) ||
             arena.dataTypes[token] === EnumToken.StartParensTokenType ||
             arena.dataTypes[token] === EnumToken.BlockStartTokenType) {
             stack.push(token);
@@ -239,11 +240,11 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         switch (arena.dataTypes[token]) {
             case EnumToken.Literal:
                 // inlined: arena.typeOf(stack.at(-1))
-                if (arena.strings[arena.stringValue[token]] === "/" &&
+                if (arena.resolveString(arena.stringValue[token]) === "/" &&
                     arena.dataTypes[stack.at(-1)] === EnumToken.MathFunctionTokenDefType) {
                     arena.dataTypes[token] = EnumToken.Div;
                 }
-                else if (arena.strings[arena.stringValue[token]] === "-" &&
+                else if (arena.resolveString(arena.stringValue[token]) === "-" &&
                     // inlined: arena.typeOf(stack.at(-1))
                     arena.dataTypes[stack.at(-1)] === EnumToken.MathFunctionTokenDefType) {
                     arena.dataTypes[token] = EnumToken.Sub;
@@ -268,7 +269,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
             case EnumToken.EndParensTokenType:
                 if (stack.length > 0 &&
                     (arena.dataTypes[stack[stack.length - 1]] === EnumToken.StartParensTokenType ||
-                        tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]]))) {
+                        isFunctionDefType(arena.dataTypes[stack[stack.length - 1]]))) {
                     index = tokens.indexOf(stack.at(-1));
                     tokens.splice(i, 1);
                     arena.dataTypes[tokens[index]] =
@@ -277,7 +278,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                             : tokensfuncDefMap.get(arena.dataTypes[stack[stack.length - 1]]);
                     arena.setTokenList(tokens[index], trimArray(arena, tokens.splice(index + 1, i - index - 1)));
                     if (arena.dataTypes[tokens[index]] === EnumToken.WildCardFunctionTokenType &&
-                        equalsIgnoreCase(arena.strings[arena.stringValue[tokens[index]]], "if")) {
+                        equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[index]]), "if")) {
                         const last = arena.lastToken[tokens[index]];
                         if (last !== 0 && arena.dataTypes[last] === EnumToken.SemiColonTokenType) {
                             arena.detach(last);
@@ -294,7 +295,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                             let index = -1;
                             while (++index < curr.length) {
                                 if (arena.dataTypes[curr[index]] === EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase("else", arena.strings[arena.stringValue[curr[index]]])) {
+                                    equalsIgnoreCase("else", arena.resolveString(arena.stringValue[curr[index]]))) {
                                     foundElse = true;
                                 }
                                 if (arena.dataTypes[curr[index]] === EnumToken.ColonTokenType) {
@@ -330,15 +331,15 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                     else if (arena.dataTypes[tokens[index]] === EnumToken.UrlFunctionTokenType) {
                         const url = arena.findToken(tokens[index], (arena, t) => arena.dataTypes[t] === EnumToken.StringTokenType);
                         if (url != null &&
-                            /^[a-zA-Z0-9/_.-]+$/.test(arena.strings[arena.stringValue[url]].slice(1, -1))) {
+                            /^[a-zA-Z0-9/_.-]+$/.test(arena.resolveString(arena.stringValue[url]).slice(1, -1))) {
                             arena.dataTypes[url] = EnumToken.UrlTokenTokenType;
-                            // inlined: arena.setStr(url, arena.strings[arena.stringValue[url]].slice(1, -1))
-                            arena.stringValue[url] = arena.internString(arena.strings[arena.stringValue[url]].slice(1, -1));
+                            // inlined: arena.setStr(url, arena.resolveString(arena.stringValue[url]).slice(1, -1))
+                            arena.stringValue[url] = arena.internString(arena.resolveString(arena.stringValue[url]).slice(1, -1));
                         }
                     }
                     i = index;
                     if (arena.dataTypes[tokens[index]] === EnumToken.MathFunctionTokenType &&
-                        equalsIgnoreCase("calc", arena.strings[arena.stringValue[tokens[index]]])) {
+                        equalsIgnoreCase("calc", arena.resolveString(arena.stringValue[tokens[index]]))) {
                         // inlined: arena.setTokens(tokens[index], buildExpression(arena, arena.tokens(tokens[index])))
                         arena.setTokenList(tokens[index], [buildExpression(arena, arena.tokens(tokens[index]))]);
                     }
@@ -365,11 +366,12 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
                 }
                 break;
             case EnumToken.IdenTokenType:
-                {
-                    const val = lowercase(arena.strings[arena.stringValue[token]]);
+                // the identifiers that are not colors are skipped without reading the string (computed once per id)
+                if (arena.stringFlag(arena.stringValue[token], 0 /* StringFlag.Color */, isColorName)) {
+                    const val = lowercase(arena.resolveString(arena.stringValue[token]));
                     if (val in COLORS_NAMES || val === "currentcolor") {
-                        // inlined: arena.setStr(token, val)
-                        arena.stringValue[token] = arena.internString(val);
+                        // the lowercase string id: no string is created
+                        arena.stringValue[token] = arena.lowerStringId(arena.stringValue[token]);
                         arena.dataTypes[token] = EnumToken.ColorTokenType;
                         // inlined: arena.setColorType(token, ColorType.LIT)
                         arena.colorType[token] = ColorType.LIT;
@@ -437,9 +439,9 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         let i = 0;
         for (; i < tokens.length; i++) {
             if (arena.dataTypes[tokens[i]] === EnumToken.StringTokenType) {
-                if (/[\s.]/.test(arena.strings[arena.stringValue[tokens[i]]])) {
-                    // inlined: arena.setStr(tokens[i], parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]))
-                    arena.stringValue[tokens[i]] = arena.internString(parseGridTemplate(arena.strings[arena.stringValue[tokens[i]]]));
+                if (/[\s.]/.test(arena.resolveString(arena.stringValue[tokens[i]]))) {
+                    // inlined: arena.setStr(tokens[i], parseGridTemplate(arena.resolveString(arena.stringValue[tokens[i]])))
+                    arena.stringValue[tokens[i]] = arena.internString(parseGridTemplate(arena.resolveString(arena.stringValue[tokens[i]])));
                 }
                 if (arena.dataTypes[tokens[i + 1]] === EnumToken.WhitespaceTokenType &&
                     arena.dataTypes[tokens[i + 2]] === EnumToken.StringTokenType) {
@@ -461,7 +463,7 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         let index = -1;
         for (let i = 0; i < tokens.length; i++) {
             if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType &&
-                equalsIgnoreCase("from", arena.strings[arena.stringValue[tokens[i]]])) {
+                equalsIgnoreCase("from", arena.resolveString(arena.stringValue[tokens[i]]))) {
                 index = i;
                 break;
             }

@@ -1,4 +1,4 @@
-export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
+export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
     const css = `
 :root {
 --color: green;
@@ -842,8 +842,8 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
 
                 for (let node = arena.firstChild[result.ast]; node != 0; node = arena.nextSibling[node]) {
                     preludes.push([
-                        arena.strings[arena.name[node]],
-                        arena.tokens(node).map((token) => arena.strings[arena.stringValue[token]]),
+                        arena.resolveString(arena.name[node]),
+                        arena.tokens(node).map((token) => arena.resolveString(arena.stringValue[token])),
                     ]);
                 }
 
@@ -852,6 +852,52 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
                     ["media", ["screen"]],
                 ]);
             });
+        });
+    });
+
+    describe("minify rule merge size", function () {
+        it("a merge that repeats the selector of a rule is not kept #1", function () {
+            // the declarations of html are shared with the next rule: the merge would repeat the selector of the next
+            // rule (html,body,...{margin:0;padding:0;border:0}body,...{font:inherit;vertical-align:baseline})
+            const css = `html{margin:0;padding:0;border:0}body,div,span,object,iframe,h1,h2,h3,h4,h5,h6,p{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline}`;
+
+            expect(transformSync(css).code).equals(
+                "html{margin:0;padding:0;border:0}body,div,span,object,iframe,h1,h2,h3,h4,h5,h6,p{margin:0;padding:0;border:0;font:inherit;vertical-align:baseline}",
+            );
+        });
+
+        it("the minified css is not larger than the fast mode output #2", function () {
+            return readFile(
+                (import.meta.dirname ?? dirname(new URL(import.meta.url).pathname)) + "/../../files/css/blueprint.css",
+                "utf-8",
+            ).then((css) => {
+                // the fast mode of the readme: minify: false
+                const fast = transformSync({
+                    input: css,
+                    minify: false,
+                    beautify: false,
+                    removeEmpty: true,
+                    removeComments: true,
+                    convertColor: true,
+                    minifyValues: true,
+                });
+                const minified = transformSync(css);
+
+                expect(minified.code.length).to.be.at.most(fast.code.length);
+            });
+        });
+    });
+
+    describe("minify shorthand without keywords", function () {
+        it("text-emphasis #1", function () {
+            // text-emphasis-color has no keyword: the minifier threw `Cannot read properties of undefined`
+            expect(transformSync(".a{text-emphasis:none}").code).equals(".a{text-emphasis:none}");
+            expect(transformSync(".a{text-emphasis-style:dot;text-emphasis-color:red}").code).equals(
+                ".a{text-emphasis:dot red}",
+            );
+            expect(transformSync(".a{text-emphasis-color:red;text-emphasis-style:none}").code).equals(
+                ".a{text-emphasis:red}",
+            );
         });
     });
 }

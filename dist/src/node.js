@@ -12,6 +12,9 @@ import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
 export { renderValue } from './lib/printer/render.js';
+import { TransformResult, RenderResult } from './lib/printer/result.js';
+import { useNativeBuffer } from './lib/printer/writer.js';
+import { Buffer } from 'node:buffer';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
 import { createParseInfo, Tokenizer } from './lib/parser/tokenize.js';
@@ -21,7 +24,7 @@ import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
 import { SourceFile } from './lib/parser/source.js';
 import { cwd } from 'node:process';
-import { parseResult, validateSyncArguments } from './utils/sync.js';
+import { validateSyncArguments, parseResult } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
 export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
@@ -32,6 +35,8 @@ export { FeatureWalkMode } from './lib/ast/features/type.js';
 export { parseSyntax } from './lib/validation/parser/parse.js';
 export { version } from '../package.json.js';
 
+// the rendered css is encoded with the node.js Buffer: faster than TextEncoder.encodeInto()
+useNativeBuffer(Buffer);
 /**
  * Load file or url
  * @param url
@@ -117,7 +122,9 @@ async function load(url, currentDirectory = ".", responseType = false) {
  * ```
  */
 function render(arena, data, options = {}, mapping) {
-    return doRender(arena, data, Object.assign(options, { resolve, dirname, cwd: options.cwd ?? resolve$1() }), mapping);
+    return doRender(arena, data, 
+    // the options of the caller are not modified
+    { ...options, resolve, dirname, cwd: options.cwd ?? resolve$1() }, mapping);
 }
 /**
  * Parse CSS
@@ -150,7 +157,15 @@ function parseSync(...args) {
     if (options != null) {
         validateSyncArguments(options);
     }
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseSyncInput(stream, { ...options });
+}
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+function parseSyncInput(stream, options) {
     options.src ??= "";
     options.sourcesMap ??= new Map();
     Object.assign(options, {
@@ -197,7 +212,11 @@ function transformSync(...args) {
         options = opt;
         stream = input;
     }
-    options ??= {};
+    if (options != null) {
+        validateSyncArguments(options);
+    }
+    // the options of the caller are not modified: they may be reused
+    options = { ...options };
     if (options.minify == null) {
         options.minify = true;
     }
@@ -208,7 +227,7 @@ function transformSync(...args) {
         options.removeCharset = true;
     }
     const startTime = performance.now();
-    const parseResult = parseSync(stream, options);
+    const parseResult = parseSyncInput(stream, options);
     let mapping = null;
     let importMapping = null;
     if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
@@ -223,17 +242,12 @@ function transformSync(...args) {
         ...options,
         expandNestingRules: false,
     }, mapping != null ? { mapping, importMapping } : null);
-    return {
-        ...parseResult,
-        ...rendered,
-        errors: parseResult.errors.concat(rendered.errors),
-        stats: {
-            bytesOut: rendered.code.length,
-            ...parseResult.stats,
-            render: rendered.stats.total,
-            total: `${(performance.now() - startTime).toFixed(2)}ms`,
-        },
-    };
+    return new TransformResult(parseResult, rendered, {
+        bytesOut: RenderResult.codeLength(rendered),
+        ...parseResult.stats,
+        render: rendered.stats.total,
+        total: `${(performance.now() - startTime).toFixed(2)}ms`,
+    });
 }
 /**
  * Parse CSS
@@ -300,7 +314,15 @@ async function parse(...args) {
             stream = input;
         }
     }
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseInput(stream, { ...options });
+}
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+async function parseInput(stream, options) {
     options.src ??= "";
     options.sourcesMap ??= new Map();
     Object.assign(options, {
@@ -386,7 +408,8 @@ async function transform(...args) {
             stream = input;
         }
     }
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    options = { ...options };
     if (options.minify == null) {
         options.minify = true;
     }
@@ -397,7 +420,7 @@ async function transform(...args) {
         options.removeCharset = true;
     }
     const startTime = performance.now();
-    return parse(stream, options).then((parseResult) => {
+    return parseInput(stream, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
         if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
@@ -412,18 +435,13 @@ async function transform(...args) {
             ...options,
             expandNestingRules: false,
         }, mapping != null ? { mapping, importMapping } : null);
-        return {
-            ...parseResult,
-            ...rendered,
-            errors: parseResult.errors.concat(rendered.errors),
-            stats: {
-                bytesOut: rendered.code.length,
-                ...parseResult.stats,
-                render: rendered.stats.total,
-                total: `${(performance.now() - startTime).toFixed(2)}ms`,
-            },
-        };
+        return new TransformResult(parseResult, rendered, {
+            bytesOut: RenderResult.codeLength(rendered),
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        });
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseSync, render, resolve, transform, transformSync };
+export { ModuleScopeEnumOptions, RenderResult, ResponseType, TransformResult, dirname, load, parse, parseSync, render, resolve, transform, transformSync };

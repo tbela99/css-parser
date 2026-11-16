@@ -86,8 +86,8 @@ function rgb2RgbToken(arena, values) {
 }
 function hex2rgbvalues(arena, token) {
     const value = expandHexValue(arena.colorType[token] === ColorType.LIT
-        ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
-        : arena.strings[arena.stringValue[token]]);
+        ? COLORS_NAMES[arena.resolveString(arena.stringValue[token]).toLowerCase()]
+        : arena.resolveString(arena.stringValue[token]));
     const rgb = [];
     for (let i = 1; i < value.length; i += 2) {
         rgb.push(parseInt(value.slice(i, i + 2), 16));

@@ -8,8 +8,9 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import type { AstArena } from "../../ast/arena.ts";
+import { StringBuilder } from "../../ast/strings.ts";
 import { renderValue } from "../../printer/render.ts";
-import { combinators, pseudoElements, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { combinators, pseudoElements, tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 import { isHash, isIdent } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
@@ -40,7 +41,7 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
 
         if (
             arena.dataTypes[chi[index]] === EnumToken.IdenTokenType &&
-            equalsIgnoreCase("of", arena.strings[arena.stringValue[chi[index]]])
+            equalsIgnoreCase("of", arena.resolveString(arena.stringValue[chi[index]]))
         ) {
             index--;
             break;
@@ -90,7 +91,7 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
     if (list.length === 1) {
         if (
             arena.dataTypes[list[0]] === EnumToken.IdenTokenType &&
-            equalsIgnoreCase("-n", arena.strings[arena.stringValue[list[0]]])
+            equalsIgnoreCase("-n", arena.resolveString(arena.stringValue[list[0]]))
         ) {
             // inlined: arena.setStr(list[0], "n")
             arena.stringValue[list[0]] = arena.internString("n");
@@ -100,9 +101,9 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
     if (list.length === 3) {
         if (
             arena.dataTypes[list[0]] === EnumToken.IdenTokenType &&
-            ("n" === arena.strings[arena.stringValue[list[0]]] ||
-                "-n" === arena.strings[arena.stringValue[list[0]]] ||
-                "+n" === arena.strings[arena.stringValue[list[0]]])
+            ("n" === arena.resolveString(arena.stringValue[list[0]]) ||
+                "-n" === arena.resolveString(arena.stringValue[list[0]]) ||
+                "+n" === arena.resolveString(arena.stringValue[list[0]]))
         ) {
             if (arena.dataTypes[list[1]] === EnumToken.NextSiblingCombinatorTokenType) {
                 if (arena.dataTypes[list[2]] === EnumToken.NumberTokenType && 0 === arena.numericValue[list[2]]) {
@@ -126,7 +127,7 @@ function minifyNthExpression(arena: AstArena, func: Token): void {
             arena.dataTypes[token] === EnumToken.IdenTokenType ||
             arena.dataTypes[token] === EnumToken.LiteralTokenType
         ) {
-            const val: string = arena.strings[arena.stringValue[token]];
+            const val: string = arena.resolveString(arena.stringValue[token]);
 
             if (arena.dataTypes[token] === EnumToken.IdenTokenType && (val === "odd" || val === "even")) {
                 if (val === "even") {
@@ -196,7 +197,7 @@ function splitUnicodeRanges(arena: AstArena, tokens: Token[]): void {
         const token: Token = tokens[i];
 
         if (arena.dataTypes[token] === EnumToken.UniCodeRange) {
-            const text: string = arena.strings[arena.stringValue[token]];
+            const text: string = arena.resolveString(arena.stringValue[token]);
             const rest: string = text.slice(2);
             const split: Token[] = [
                 arena.createToken(EnumToken.IdenTokenType, text.charAt(0)),
@@ -275,7 +276,7 @@ export function parseSelector(
                 if (filtered.length === 1) {
                     if (
                         arena.dataTypes[filtered[0]] === EnumToken.IdenTokenType &&
-                        "from" === arena.strings[arena.stringValue[filtered[0]]].toLowerCase()
+                        "from" === arena.resolveString(arena.stringValue[filtered[0]]).toLowerCase()
                     ) {
                         arena.resetToken(filtered[0], EnumToken.PercentageTokenType, 0);
                     } else if (
@@ -343,7 +344,7 @@ export function parseSelector(
         if (contextType === EnumToken.AtRuleNodeType) {
             const syntaxRule = getSyntaxRule(
                 ValidationSyntaxGroupEnum.AtRules,
-                "@" + arena.strings[arena.name[context as AstNode]],
+                "@" + arena.resolveString(arena.name[context as AstNode]),
             );
 
             allowed = syntaxRule?.acceptAnyRule ?? false;
@@ -369,7 +370,7 @@ export function parseSelector(
     }
 
     while (parent != null && parent > 0) {
-        if (arena.dataTypes[parent] === EnumToken.AtRuleNodeType && "media" === arena.strings[arena.name[parent]]) {
+        if (arena.dataTypes[parent] === EnumToken.AtRuleNodeType && "media" === arena.resolveString(arena.name[parent])) {
             parent = arena.parents[parent];
             continue;
         }
@@ -394,8 +395,10 @@ export function parseSelector(
 
             if (arena.dataTypes[next] === EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoElementTokenType;
-                // inlined: arena.setStr(token, ":" + arena.strings[arena.stringValue[next]])
-                arena.stringValue[token] = arena.internString(":" + arena.strings[arena.stringValue[next]]);
+                // ":" + name, no string is created
+                arena.stringValue[token] = arena.internBuilder(
+                    arena.appendString(pseudoBuilder.reset().appendCode(0x3a), arena.stringValue[next]),
+                );
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -403,7 +406,7 @@ export function parseSelector(
             }
 
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = ":" + arena.strings[arena.stringValue[next]];
+                val = ":" + arena.resolveString(arena.stringValue[next]);
 
                 arena.dataTypes[token] =
                     val + "()" in getSyntaxConfig().selectors
@@ -420,12 +423,18 @@ export function parseSelector(
 
         if (arena.dataTypes[token] === EnumToken.DoubleColonTokenType) {
             const next = tokens[read + 1];
-            val = ":" + arena.strings[arena.stringValue[next]];
 
             if (arena.dataTypes[next] === EnumToken.IdenTokenType) {
                 arena.dataTypes[token] = EnumToken.PseudoClassTokenType;
-                // inlined: arena.setStr(token, (pseudoElements.includes(val) ? "" : ":") + val)
-                arena.stringValue[token] = arena.internString((pseudoElements.includes(val) ? "" : ":") + val);
+                // ":" + name for the pseudo elements with a single colon syntax, "::" + name otherwise. no string is
+                // created
+                pseudoBuilder.reset().appendCode(0x3a);
+
+                if (!isSingleColonPseudoElement(arena, arena.stringValue[next])) {
+                    pseudoBuilder.appendCode(0x3a);
+                }
+
+                arena.stringValue[token] = arena.internBuilder(arena.appendString(pseudoBuilder, arena.stringValue[next]));
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -433,7 +442,7 @@ export function parseSelector(
             }
 
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = "::" + arena.strings[arena.stringValue[next]];
+                val = "::" + arena.resolveString(arena.stringValue[next]);
                 arena.dataTypes[token] =
                     val + "()" in getSyntaxConfig().selectors
                         ? EnumToken.PseudoClassFunctionTokenDefType
@@ -448,7 +457,7 @@ export function parseSelector(
         }
 
         if (arena.dataTypes[token] === EnumToken.ColorTokenType) {
-            if (isHash(arena.strings[arena.stringValue[token]])) {
+            if (isHash(arena.resolveString(arena.stringValue[token]))) {
                 arena.dataTypes[token] = EnumToken.HashTokenType;
                 all[write++] = token;
                 continue;
@@ -532,7 +541,7 @@ export function parseSelector(
                         arena.spanLocation(func, func, token);
                         tokens.splice(i, 1);
 
-                        if (tokensfuncDefMap.has(arena.dataTypes[func])) {
+                        if (isFunctionDefType(arena.dataTypes[func])) {
                             arena.dataTypes[func] = tokensfuncDefMap.get(arena.dataTypes[func]) as EnumToken;
                             arena.setTokenList(func, trimArray(arena, tokens.splice(index + 1, i - index - 1)));
                         }
@@ -540,7 +549,7 @@ export function parseSelector(
                         if (result.success && options.minify) {
                             // parse an+b
                             // an+b produces an ident such as 'n-0', a literal such as '+2n-0' or a list of tokens such as[2n\s?[+-]\s?3]
-                            const name: string = arena.strings[arena.stringValue[func]];
+                            const name: string = arena.resolveString(arena.stringValue[func]);
 
                             if (
                                 name === ":nth-child" ||
@@ -587,71 +596,303 @@ export function parseSelector(
 const selectorRenderOptions: ParserOptions = { minify: false };
 
 /**
+ * builder of the pseudo classes and pseudo elements
+ */
+const pseudoBuilder: StringBuilder = new StringBuilder();
+
+/**
+ * true if ":" + the string is a pseudo element with a single colon syntax (`:before`). the string is not created
+ * @param arena
+ * @param id
+ */
+function isSingleColonPseudoElement(arena: AstArena, id: number): boolean {
+    const length: number = arena.stringLength(id);
+
+    for (let i: number = 0; i < pseudoElements.length; i++) {
+        const pseudo: string = pseudoElements[i];
+
+        if (pseudo.length === length + 1 && pseudo.charCodeAt(0) === 0x3a) {
+            let k: number = 0;
+
+            while (k < length && arena.stringCodeAt(id, k) === pseudo.charCodeAt(k + 1)) {
+                k++;
+            }
+
+            if (k === length) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * builder of the rendered tokens of the current selector
+ */
+const partBuilder: StringBuilder = new StringBuilder();
+
+/**
+ * builder of the selector of a rule
+ */
+const selectorBuilder: StringBuilder = new StringBuilder();
+
+/**
+ * offsets of the rendered tokens of the current selector in {@link partBuilder}: start and end of each token
+ */
+let partOffsets: Int32Array = new Int32Array(64);
+
+/**
+ * offsets of the distinct selectors in {@link selectorBuilder}: start and end of each selector
+ */
+let selectorOffsets: Int32Array = new Int32Array(16);
+
+/**
+ * true if the string of a token is a combinator. the string is not created
+ * @param arena
+ * @param token
+ */
+function isCombinatorString(arena: AstArena, token: Token | undefined): boolean {
+    if (token === undefined) {
+        return false;
+    }
+
+    const id: number = arena.stringValue[token];
+    const length: number = arena.stringLength(id);
+
+    if (length === 0 || length > 2) {
+        return false;
+    }
+
+    for (let i: number = 0; i < combinators.length; i++) {
+        if (arena.stringEquals(id, combinators[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * append the rendering of a selector token to the builder. the strings of the tokens are copied, no string is created:
+ * the tokens that are rendered as their string value, the symbols. the other tokens are rendered with renderValue()
+ * @param arena
+ * @param token
+ * @param builder
+ */
+function appendSelectorToken(arena: AstArena, token: Token, builder: StringBuilder): void {
+    if (arena.firstToken[token] === 0 && arena.firstChild[token] === 0) {
+        switch (arena.dataTypes[token]) {
+            case EnumToken.HashTokenType:
+            case EnumToken.IdenTokenType:
+            case EnumToken.LiteralTokenType:
+            case EnumToken.DashedIdenTokenType:
+            case EnumToken.ClassSelectorTokenType:
+            case EnumToken.PseudoClassTokenType:
+                arena.appendString(builder, arena.stringValue[token]);
+                return;
+
+            case EnumToken.WhitespaceTokenType:
+            case EnumToken.DescendantCombinatorTokenType:
+                builder.appendCode(0x20);
+                return;
+
+            case EnumToken.CommaTokenType:
+                builder.appendCode(0x2c);
+                return;
+
+            case EnumToken.Star:
+            case EnumToken.UniversalSelectorTokenType:
+                builder.appendCode(0x2a);
+                return;
+
+            case EnumToken.NestingSelectorTokenType:
+                builder.appendCode(0x26);
+                return;
+
+            case EnumToken.GtTokenType:
+            case EnumToken.ChildCombinatorTokenType:
+                builder.appendCode(0x3e);
+                return;
+
+            case EnumToken.Plus:
+            case EnumToken.NextSiblingCombinatorTokenType:
+                builder.appendCode(0x2b);
+                return;
+
+            case EnumToken.Tilda:
+            case EnumToken.SubsequentSiblingCombinatorTokenType:
+                builder.appendCode(0x7e);
+                return;
+        }
+    }
+
+    builder.appendString(renderValue(arena, token, selectorRenderOptions));
+}
+
+/**
+ * true if two ranges of code units are equal
+ * @param codes
+ * @param start1
+ * @param end1
+ * @param start2
+ * @param end2
+ */
+function equalCodes(codes: Uint16Array, start1: number, end1: number, start2: number, end2: number): boolean {
+    if (end1 - start1 !== end2 - start2) {
+        return false;
+    }
+
+    for (let i: number = 0; i < end1 - start1; i++) {
+        if (codes[start1 + i] !== codes[start2 + i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * true if a rendered token of the current selector is a single code unit
+ * @param index token index
+ * @param count number of tokens
+ * @param code
+ */
+function isPartCode(index: number, count: number, code: number): boolean {
+    if (index < 0 || index >= count) {
+        return false;
+    }
+
+    const start: number = partOffsets[index * 2];
+
+    return partOffsets[index * 2 + 1] - start === 1 && partBuilder.codes[start] === code;
+}
+
+/**
+ * add the current selector (the rendered tokens in {@link partBuilder}) to the selectors of the rule when it is not
+ * already present. a universal selector is removed before a compound selector
+ * @param count number of rendered tokens
+ * @param selectors number of selectors
+ * @returns the number of selectors
+ */
+function addSelectorCodes(count: number, selectors: number): number {
+    // `*` followed by a token: removed unless the token is a combinator. the index of the combinator is
+    // relative to the start of the selector, like addSelector()
+    for (let i: number = 0; i < count; i++) {
+        if (i + 1 < count && isPartCode(i, count, 0x2a)) {
+            const index: number = isPartCode(i + 1, count, 0x20) ? 2 : 1;
+
+            if (!isPartCode(index, count, 0x3e) && !isPartCode(index, count, 0x7e) && !isPartCode(index, count, 0x2b)) {
+                partOffsets.copyWithin(i * 2, (i + index) * 2, count * 2);
+                count -= index;
+            }
+        }
+    }
+
+    // the selector: the rendered tokens, at the end of the selector builder
+    const start: number = selectorBuilder.length + (selectors > 0 ? 1 : 0);
+
+    if (selectors > 0) {
+        selectorBuilder.appendCode(0x2c);
+    }
+
+    for (let i: number = 0; i < count; i++) {
+        const tokenStart: number = partOffsets[i * 2];
+        const tokenEnd: number = partOffsets[i * 2 + 1];
+
+        for (let k: number = tokenStart; k < tokenEnd; k++) {
+            selectorBuilder.appendCode(partBuilder.codes[k]);
+        }
+    }
+
+    const end: number = selectorBuilder.length;
+
+    // distinct selectors
+    for (let k: number = 0; k < selectors; k++) {
+        if (equalCodes(selectorBuilder.codes, selectorOffsets[k * 2], selectorOffsets[k * 2 + 1], start, end)) {
+            selectorBuilder.length = selectors > 0 ? start - 1 : start;
+            return selectors;
+        }
+    }
+
+    if ((selectors + 1) * 2 > selectorOffsets.length) {
+        const offsets: Int32Array = new Int32Array(selectorOffsets.length * 2);
+
+        offsets.set(selectorOffsets);
+        selectorOffsets = offsets;
+    }
+
+    selectorOffsets[selectors * 2] = start;
+    selectorOffsets[selectors * 2 + 1] = end;
+
+    return selectors + 1;
+}
+
+/**
  * selector of a rule: the distinct comma separated selectors, the whitespace around the combinators is removed.
- * a universal selector is removed before a compound selector
+ * a universal selector is removed before a compound selector. the selector is built from the code units of the
+ * tokens and interned: no string is created
  * @param arena
  * @param tokens
+ * @returns the interned string id of the selector
  */
-function renderSelector(arena: AstArena, tokens: Token[]): string {
-    // the distinct selectors, in order
-    const selectors: Set<string> = new Set();
-    // rendered tokens of the current selector
-    let part: string[] = [];
+function renderSelector(arena: AstArena, tokens: Token[]): number {
+    // number of rendered tokens of the current selector, number of distinct selectors
+    let count: number = 0;
+    let selectors: number = 0;
+
+    partBuilder.reset();
+    selectorBuilder.reset();
 
     for (let index = 0; index < tokens.length; index++) {
         const curr: Token = tokens[index];
+        const type: EnumToken = arena.dataTypes[curr];
 
-        if (arena.dataTypes[curr] === EnumToken.WhitespaceTokenType) {
+        if (type === EnumToken.WhitespaceTokenType) {
             if (
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index - 1]]) ||
                 trimWhiteSpace.includes(arena.dataTypes[tokens[index + 1]]) ||
-                // inlined: arena.str(tokens[index - 1])
-                combinators.includes(arena.strings[arena.stringValue[tokens[index - 1]]] as string) ||
-                // inlined: arena.str(tokens[index + 1])
-                combinators.includes(arena.strings[arena.stringValue[tokens[index + 1]]] as string)
+                isCombinatorString(arena, tokens[index - 1]) ||
+                isCombinatorString(arena, tokens[index + 1])
             ) {
                 continue;
             }
         }
 
-        const t: string = renderValue(arena, curr, selectorRenderOptions);
-
-        if (t === ",") {
-            addSelector(selectors, part);
-            part = [];
-        } else {
-            part.push(t);
+        if (type === EnumToken.CommaTokenType) {
+            selectors = addSelectorCodes(count, selectors);
+            count = 0;
+            partBuilder.reset();
+            continue;
         }
+
+        const start: number = partBuilder.length;
+
+        appendSelectorToken(arena, curr, partBuilder);
+
+        // a token rendered as `,`
+        if (partBuilder.length - start === 1 && partBuilder.codes[start] === 0x2c) {
+            partBuilder.length = start;
+            selectors = addSelectorCodes(count, selectors);
+            count = 0;
+            partBuilder.reset();
+            continue;
+        }
+
+        if ((count + 1) * 2 > partOffsets.length) {
+            const offsets: Int32Array = new Int32Array(partOffsets.length * 2);
+
+            offsets.set(partOffsets);
+            partOffsets = offsets;
+        }
+
+        partOffsets[count * 2] = start;
+        partOffsets[count * 2 + 1] = partBuilder.length;
+        count++;
     }
 
-    addSelector(selectors, part);
+    addSelectorCodes(count, selectors);
 
-    let result: string = "";
-    let first: boolean = true;
-
-    for (const selector of selectors) {
-        result = first ? selector : result + "," + selector;
-        first = false;
-    }
-
-    return result;
+    return arena.internBuilder(selectorBuilder);
 }
 
-/**
- * add a selector from its rendered tokens
- * @param selectors
- * @param curr
- */
-function addSelector(selectors: Set<string>, curr: string[]): void {
-    for (let i: number = 0; i < curr.length; i++) {
-        if (i + 1 < curr.length && curr[i] === "*") {
-            const index: number = curr[i + 1] === " " ? 2 : 1;
-
-            if (![">", "~", "+"].includes(curr[index])) {
-                curr.splice(i, index);
-            }
-        }
-    }
-
-    selectors.add(curr.join(""));
-}

@@ -45,7 +45,7 @@ function replaceAstNodes(arena, tokens) {
                 .fieldTokens(value, TokenField.L)
                 .find((t) => arena.dataTypes[t] === EnumToken.IdenTokenType);
             if (token != null) {
-                let val = arena.strings[arena.stringValue[token]];
+                let val = arena.resolveString(arena.stringValue[token]);
                 if (val in pseudoAliasMap) {
                     val = pseudoAliasMap[val];
                     // inlined: arena.setStr(token, val)
@@ -75,7 +75,7 @@ function replaceAstNodes(arena, tokens) {
             typ === EnumToken.PseudoClassFuncTokenType ||
             typ === EnumToken.PseudoClassTokenType ||
             typ === EnumToken.PseudoElementTokenType) {
-            let key = arena.strings[arena.stringValue[value]] + (typ === EnumToken.PseudoClassFuncTokenType ? "()" : "");
+            let key = arena.resolveString(arena.stringValue[value]) + (typ === EnumToken.PseudoClassFuncTokenType ? "()" : "");
             if (key in pseudoAliasMap) {
                 const isPseudClass = pseudoAliasMap[key].startsWith("::");
                 // inlined: arena.setStr(value, pseudoAliasMap[key])
@@ -133,8 +133,8 @@ class ComputePrefixFeature {
         }
         const typ = arena.dataTypes[node];
         if (typ === EnumToken.RuleNodeType) {
-            // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
-            arena.name[node] = arena.internString(replacePseudo(splitRule(arena.strings[arena.name[node]])).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""));
+            // inlined: arena.setSelector(node, replacePseudo(splitRule(arena.resolveString(arena.name[node]))).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""))
+            arena.name[node] = arena.internString(replacePseudo(splitRule(arena.resolveString(arena.name[node]))).reduce((acc, curr, index) => acc + (index > 0 ? "," : "") + curr.join(""), ""));
             if (arena.firstToken[node] !== 0) {
                 const tokens = arena.tokens(node);
                 replaceAstNodes(arena, tokens);
@@ -142,7 +142,7 @@ class ComputePrefixFeature {
             }
         }
         else if (typ === EnumToken.DeclarationNodeType) {
-            const name = arena.strings[arena.name[node]];
+            const name = arena.resolveString(arena.name[node]);
             if (name.charAt(0) === "-") {
                 const match = name.match(/^-([^-]+)-(.+)$/);
                 if (match != null) {
@@ -161,7 +161,7 @@ class ComputePrefixFeature {
             // inlined: arena.walkValues(node)
             for (const value of new ValueWalker(arena, node)) {
                 const typ = arena.dataTypes[value];
-                const val = arena.strings[arena.stringValue[value]];
+                const val = arena.resolveString(arena.stringValue[value]);
                 if ((typ === EnumToken.IdenTokenType ||
                     (typ !== EnumToken.ParensTokenType && funcLike.includes(typ))) &&
                     val.match(/^-([^-]+)-(.+)$/) != null) {
@@ -187,7 +187,7 @@ class ComputePrefixFeature {
                 for (const value of new ValueWalker(arena, node)) {
                     if (arena.dataTypes[value] === EnumToken.IdenTokenType ||
                         funcLike.includes(arena.dataTypes[value])) {
-                        const match = arena.strings[arena.stringValue[value]].match(/^-([^-]+)-(.+)$/);
+                        const match = arena.resolveString(arena.stringValue[value]).match(/^-([^-]+)-(.+)$/);
                         if (match != null) {
                             // inlined: arena.setStr(value, match[2])
                             arena.stringValue[value] = arena.internString(match[2]);
@@ -197,7 +197,7 @@ class ComputePrefixFeature {
             }
         }
         else if (typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType) {
-            const name = arena.strings[arena.name[node]];
+            const name = arena.resolveString(arena.name[node]);
             if (name.startsWith("-")) {
                 const match = name.match(/^-([^-]+)-(.+)$/);
                 if (match != null && "@" + match[2] in config.atRules) {
@@ -255,7 +255,7 @@ class ComputePrefixFeature {
                         360;
             }
             else if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
-                key = arena.strings[arena.stringValue[tokens[i]]].toLowerCase();
+                key = arena.resolveString(arena.stringValue[tokens[i]]).toLowerCase();
                 switch (key) {
                     case "right":
                     case "left":
@@ -273,10 +273,10 @@ class ComputePrefixFeature {
                         }
                         if (arena.dataTypes[tokens[k]] === EnumToken.IdenTokenType) {
                             val = "";
-                            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[k]]], "left")) {
+                            if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[k]]), "left")) {
                                 val = "right";
                             }
-                            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[k]]], "right")) {
+                            if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[k]]), "right")) {
                                 val = "left";
                             }
                             if (val !== "") {
@@ -291,8 +291,8 @@ class ComputePrefixFeature {
                 }
             }
         }
-        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
-        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-linear-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "-webkit-repeating-linear-gradient") ? "repeating-linear-gradient" : "linear-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "-webkit-repeating-linear-gradient")
             ? "repeating-linear-gradient"
             : "linear-gradient");
         arena.setTokenList(token, tokens);
@@ -311,7 +311,7 @@ class ComputePrefixFeature {
         let type = "";
         let tokens = arena.tokens(token);
         // linear or radial
-        if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "linear")) {
+        if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "linear")) {
             type = "linear-gradient";
             i++;
         }
@@ -325,7 +325,7 @@ class ComputePrefixFeature {
                 }
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
-                key += (key.length > 0 ? " " : "") + arena.strings[arena.stringValue[tokens[i]]];
+                key += (key.length > 0 ? " " : "") + arena.resolveString(arena.stringValue[tokens[i]]);
             }
         }
         // mapping keywords
@@ -372,7 +372,7 @@ class ComputePrefixFeature {
                 continue;
             }
             if (arena.dataTypes[tokens[i]] === EnumToken.FunctionTokenType) {
-                if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "to")) {
+                if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "to")) {
                     colorStop.push(tokens[checkStopIndex]);
                     for (const token of arena.tokens(tokens[i])) {
                         colorStop.push(token);
@@ -381,12 +381,12 @@ class ComputePrefixFeature {
                     i = checkStopIndex;
                     checkStop = false;
                 }
-                else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "from")) {
+                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "from")) {
                     k = arena.tokens(tokens[i]).length + 1;
                     tokens.splice(i, 1, ...arena.tokens(tokens[i]), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.PercentageTokenType, 0));
                     i += k;
                 }
-                else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "color-stop")) {
+                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "color-stop")) {
                     k = arena.tokens(tokens[i]).length - 1;
                     tokens.splice(i, 1, ...arena
                         .tokens(tokens[i])
@@ -432,11 +432,11 @@ class ComputePrefixFeature {
         if (arena.dataTypes[tokens[i]] === EnumToken.PercentageTokenType ||
             (arena.dataTypes[tokens[i]] === EnumToken.NumberTokenType && 0 === arena.numericValue[tokens[i]]) ||
             (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType &&
-                (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "center") ||
-                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "top") ||
-                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "bottom") ||
-                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "left") ||
-                    equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "right")))) {
+                (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "center") ||
+                    equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "top") ||
+                    equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "bottom") ||
+                    equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "left") ||
+                    equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "right")))) {
             do {
                 positions.push(tokens[i]);
                 i++;
@@ -446,14 +446,14 @@ class ComputePrefixFeature {
             }
         }
         if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
-            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-side") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-corner") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-side") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-corner")) {
+            if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "closest-side") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "closest-corner") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "farthest-side") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "farthest-corner")) {
                 size.push(tokens[i++]);
             }
-            else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "circle") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
+            else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "circle") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "ellipse")) {
                 form.push(tokens[i++]);
             }
             while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
@@ -465,14 +465,14 @@ class ComputePrefixFeature {
             }
         }
         if (arena.dataTypes[tokens[i]] === EnumToken.IdenTokenType) {
-            if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-side") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "closest-corner") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-side") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "farthest-corner")) {
+            if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "closest-side") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "closest-corner") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "farthest-side") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "farthest-corner")) {
                 size.push(tokens[i++]);
             }
-            else if (equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "circle") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[tokens[i]]], "ellipse")) {
+            else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "circle") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[tokens[i]]), "ellipse")) {
                 form.push(tokens[i++]);
             }
             while (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType ||
@@ -508,8 +508,8 @@ class ComputePrefixFeature {
             }
             tokens.push(arena.createToken(EnumToken.CommaTokenType));
         }
-        // inlined: arena.setStr(token, equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
-        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-webkit-repeating-radial-gradient")
+        // inlined: arena.setStr(token, equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "-webkit-repeating-radial-gradient") ? "repeating-radial-gradient" : "radial-gradient")
+        arena.stringValue[token] = arena.internString(equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "-webkit-repeating-radial-gradient")
             ? "repeating-radial-gradient"
             : "radial-gradient");
         for (const colorStop of colorStops) {

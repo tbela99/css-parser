@@ -9,10 +9,11 @@ import { TokenField } from '../ast/arena.js';
 import { getParsedSyntax, hasSyntax, getSyntax, getSyntaxConfig } from './config.js';
 import { EnumToken, ColorType } from '../ast/types.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum, MediaFeatureType } from './parser/typedef.js';
-import { tokensfuncDefMap, tokensfuncSet, funcLike, mFLT, mFGT } from '../syntax/constants.js';
+import { isFunctionDefType, isFunctionType, funcLike, tokensfuncDefMap, mFLT, mFGT } from '../syntax/constants.js';
 import { isColor } from '../syntax/syntax.js';
 import { equalsIgnoreCase, lowercase } from '../parser/utils/text.js';
 import { parseTokens } from '../parser/parse.js';
+import { matchingAlternatives, isNullable, mayStartWith } from './first.js';
 
 const config = getSyntaxConfig();
 // @ts-expect-error
@@ -165,7 +166,7 @@ function isMFValue(arena, featureName, tokens, isMFRange) {
                 valid: true,
                 success: tokens.length === 1 &&
                     arena.dataTypes[tokens[0]] === EnumToken.IdenTokenType &&
-                    mediaFeature.values.includes(arena.strings[arena.stringValue[tokens[0]]].toLowerCase()),
+                    mediaFeature.values.includes(arena.resolveString(arena.stringValue[tokens[0]]).toLowerCase()),
             };
         case MediaFeatureType.LengthType:
             return {
@@ -209,7 +210,7 @@ function isMFValue(arena, featureName, tokens, isMFRange) {
                         arena.dataTypes[tokens[0]] === EnumToken.NumberTokenType &&
                         !arena.hasFraction(tokens[0]) &&
                         arena.dataTypes[tokens[1]] === EnumToken.LiteralTokenType &&
-                        arena.strings[arena.stringValue[tokens[1]]] === "/" &&
+                        arena.resolveString(arena.stringValue[tokens[1]]) === "/" &&
                         arena.dataTypes[tokens[2]] === EnumToken.NumberTokenType &&
                         !arena.hasFraction(tokens[2])),
             };
@@ -275,7 +276,7 @@ class ValidationTokenContext {
         while (index + 1 < this.tokens.length) {
             token = this.tokens[++index];
             if (this.arena.dataTypes[token] === EnumToken.StartParensTokenType ||
-                tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                isFunctionDefType(this.arena.dataTypes[token])) {
                 matchCount++;
             }
             else if (this.arena.dataTypes[token] === EnumToken.EndParensTokenType) {
@@ -305,7 +306,7 @@ class ValidationTokenContext {
         while (index + 1 < this.tokens.length) {
             token = this.tokens[++index];
             if (this.arena.dataTypes[token] === EnumToken.StartParensTokenType ||
-                tokensfuncDefMap.has(this.arena.dataTypes[token])) {
+                isFunctionDefType(this.arena.dataTypes[token])) {
                 matchCount++;
             }
             else if (this.arena.dataTypes[token] === EnumToken.EndParensTokenType) {
@@ -441,7 +442,7 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
             arena.dataTypes[token] = EnumToken.UniversalSelectorTokenType;
         }
         tokens.push(token);
-        if (tokensfuncDefMap.has(arena.dataTypes[token])) {
+        if (isFunctionDefType(arena.dataTypes[token])) {
             if (stack.length > 0 && selectorNodeTypes.includes(arena.dataTypes[stack[stack.length - 1]])) {
                 stack.pop();
             }
@@ -459,7 +460,7 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
         switch (arena.dataTypes[token]) {
             case EnumToken.PseudoClassFuncTokenType:
                 {
-                    const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi ?? [], createValidationContext(arena, arena.tokens(token)), options);
+                    const result = matchAllSyntaxes(arena, selectorFunctionSyntax(arena, token)?.[0]?.chi ?? [], createValidationContext(arena, arena.tokens(token)), options);
                     if (!result.success) {
                         success = false;
                         if (result.errors.length > 0) {
@@ -608,9 +609,9 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
                     slice.shift();
                     slice.shift();
                     if (arena.dataTypes[slice[0]] === EnumToken.StringTokenType &&
-                        /^[a-zA-Z0-9_-]+$/.test(arena.strings[arena.stringValue[slice[0]]].slice(1, -1))) {
-                        // inlined: arena.setStr(slice[0], arena.strings[arena.stringValue[slice[0]]].slice(1, -1))
-                        arena.stringValue[slice[0]] = arena.internString(arena.strings[arena.stringValue[slice[0]]].slice(1, -1));
+                        /^[a-zA-Z0-9_-]+$/.test(arena.resolveString(arena.stringValue[slice[0]]).slice(1, -1))) {
+                        // inlined: arena.setStr(slice[0], arena.resolveString(arena.stringValue[slice[0]]).slice(1, -1))
+                        arena.stringValue[slice[0]] = arena.internString(arena.resolveString(arena.stringValue[slice[0]]).slice(1, -1));
                         arena.dataTypes[slice[0]] = EnumToken.IdenTokenType;
                     }
                     slice.shift();
@@ -619,8 +620,8 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
                         break;
                     }
                     if (arena.dataTypes[slice[0]] !== EnumToken.IdenTokenType ||
-                        (arena.strings[arena.stringValue[slice[0]]] !== "i" &&
-                            arena.strings[arena.stringValue[slice[0]]] !== "s")) {
+                        (arena.resolveString(arena.stringValue[slice[0]]) !== "i" &&
+                            arena.resolveString(arena.stringValue[slice[0]]) !== "s")) {
                         return {
                             success: false,
                             errors: [
@@ -670,7 +671,7 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
                     arena.dataTypes[stack.at(-1)] === EnumToken.PseudoElementTokenType) {
                     const token = stack.at(-1);
                     const index = tokens.indexOf(token);
-                    const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi ?? [], createValidationContext(arena, tokens.slice(index + 1, tokens.length - 1)), options);
+                    const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, arena.resolveString(arena.stringValue[token]) + "()")?.[0]?.chi ?? [], createValidationContext(arena, tokens.slice(index + 1, tokens.length - 1)), options);
                     if (!result.success) {
                         success = false;
                         if (result.errors.length > 0) {
@@ -762,10 +763,51 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
 }
 /**
  * declaration validations (successful and failed), by string table of the arena, by syntax and by hash of the value
- * encoding (see {@link encodeToken}). the encoding contains interned string ids: the string table is the key, it is
- * replaced when the arena is compacted and the ids change (see {@link AstArena.compact})
+ * encoding (see {@link encodeToken}). the encoding contains interned string ids: the identity of the string ids is the
+ * key, it is replaced when the arena is compacted and the ids change (see {@link AstArena.stringEpoch})
  */
 const declarationValidations = new WeakMap();
+/**
+ * the validation cache of the string table of an arena
+ * @param arena
+ * @param create create the cache when missing
+ */
+function validationCache(arena, create) {
+    let cache = declarationValidations.get(arena.stringEpoch);
+    if (cache === undefined) {
+        if (!create) {
+            return null;
+        }
+        cache = { bySyntax: new Map(), pool: new Float64Array(1024), used: 0 };
+        declarationValidations.set(arena.stringEpoch, cache);
+    }
+    return cache;
+}
+/**
+ * copy the current encoding into the pool of the cache (see {@link ValidationCache.pool})
+ * @param arena
+ * @returns the offset of the encoding in the pool
+ */
+function storeEncoding(arena) {
+    const cache = validationCache(arena, true);
+    const offset = cache.used;
+    if (offset + encodingLength > cache.pool.length) {
+        let length = cache.pool.length * 2;
+        while (length < offset + encodingLength) {
+            length *= 2;
+        }
+        const pool = new Float64Array(length);
+        pool.set(cache.pool.subarray(0, offset));
+        cache.pool = pool;
+    }
+    const pool = cache.pool;
+    // a loop: subarray() would allocate a view
+    for (let i = 0; i < encodingLength; i++) {
+        pool[offset + i] = encoding[i];
+    }
+    cache.used = offset + encodingLength;
+    return offset;
+}
 /**
  * shared result of a declaration whose validation is cached
  */
@@ -800,14 +842,18 @@ function encode(value) {
 }
 /**
  * encode a token and its descendants. the validation only depends on these fields: two values with the same encoding
- * are validated the same way
+ * are validated the same way. the errors of a failed validation do not depend on the content of the strings either:
+ * they reference the tokens by position and their messages only contain token types
  * @param arena
  * @param token
  */
 function encodeToken(arena, token) {
-    encode(arena.dataTypes[token]);
+    const typ = arena.dataTypes[token];
+    encode(typ);
     encode(arena.name[token]);
-    encode(arena.stringValue[token]);
+    // the validation does not read the content of the strings (only their type): `content: "\f101"` and
+    // `content: "\f102"` are validated once
+    encode(typ === EnumToken.StringTokenType ? 0 : arena.stringValue[token]);
     encode(arena.numericValue[token]);
     encode(arena.unit[token]);
     encode(arena.colorType[token]);
@@ -833,14 +879,11 @@ function encodeToken(arena, token) {
  * @param create create the bucket when missing
  */
 function cachedValidations(arena, syntaxes, create) {
-    let bySyntax = declarationValidations.get(arena.strings);
-    if (bySyntax == null) {
-        if (!create) {
-            return null;
-        }
-        bySyntax = new Map();
-        declarationValidations.set(arena.strings, bySyntax);
+    const cache = validationCache(arena, create);
+    if (cache === null) {
+        return null;
     }
+    const bySyntax = cache.bySyntax;
     let byHash = bySyntax.get(syntaxes);
     if (byHash == null) {
         if (!create) {
@@ -864,11 +907,12 @@ function cachedValidations(arena, syntaxes, create) {
 function findValidation(arena, syntaxes) {
     const bucket = cachedValidations(arena, syntaxes, false);
     if (bucket != null) {
+        const pool = validationCache(arena, false).pool;
         for (let i = 0; i < bucket.length; i++) {
-            const candidate = bucket[i].encoding;
-            if (candidate.length === encodingLength) {
+            const offset = bucket[i].offset;
+            if (bucket[i].length === encodingLength) {
                 let k = 0;
-                while (k < encodingLength && candidate[k] === encoding[k]) {
+                while (k < encodingLength && pool[offset + k] === encoding[k]) {
                     k++;
                 }
                 if (k === encodingLength) {
@@ -883,14 +927,15 @@ function findValidation(arena, syntaxes) {
  * cache the validation of an encoding for the syntax
  * @param arena
  * @param syntaxes
- * @param value encoding
+ * @param offset offset of the encoding in the pool of the cache, see {@link storeEncoding}
+ * @param length length of the encoding
  * @param hash encoding hash
  * @param valid
  * @param errors errors of a failed validation, null when unknown
  */
-function cacheValidation(arena, syntaxes, value, hash, valid, errors) {
+function cacheValidation(arena, syntaxes, offset, length, hash, valid, errors) {
     encodingHash = hash;
-    cachedValidations(arena, syntaxes, true).push({ encoding: value, valid, errors });
+    cachedValidations(arena, syntaxes, true).push({ offset, length, valid, errors });
 }
 /**
  * the value tokens and their descendants, in the encoding order (see {@link encodeToken})
@@ -961,10 +1006,9 @@ function bindErrors(arena, tokens, errors, options) {
                 }
             }
         }
-        const copy = { ...error };
-        delete copy.node;
-        delete copy.location;
-        result.push({ error: copy, node, location });
+        // the node and the location keep their place in the keys: they are replaced when the errors are rebuilt, the
+        // rebuilt errors have the same shape as the errors of a validation
+        result.push({ error: { ...error }, node, location });
     }
     return result;
 }
@@ -1036,12 +1080,13 @@ function matchDeclarationSyntax(arena, syntaxes, tokens, options) {
             };
         }
     }
-    // the encoding is copied before the validation, which may encode other values
-    const value = encoding.slice(0, encodingLength);
+    // the encoding is stored before the validation, which may encode other values
+    const length = encodingLength;
+    const offset = storeEncoding(arena);
     const hash = encodingHash;
     const result = matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, tokens), options);
     if (result.success) {
-        cacheValidation(arena, syntaxes, value, hash, true, null);
+        cacheValidation(arena, syntaxes, offset, length, hash, true, null);
     }
     else {
         const errors = bindErrors(arena, valueTokens(arena, tokens), result.errors, options);
@@ -1050,7 +1095,7 @@ function matchDeclarationSyntax(arena, syntaxes, tokens, options) {
             cached.errors = errors;
         }
         else {
-            cacheValidation(arena, syntaxes, value, hash, false, errors);
+            cacheValidation(arena, syntaxes, offset, length, hash, false, errors);
         }
     }
     return result;
@@ -1074,13 +1119,61 @@ function isValidDeclarationValue(arena, syntaxes, declaration, options) {
     if (cached != null) {
         return cached.valid;
     }
-    // the encoding is copied before the validation, which may encode other values
-    const value = encoding.slice(0, encodingLength);
+    // the encoding is stored before the validation, which may encode other values
+    const length = encodingLength;
+    const offset = storeEncoding(arena);
     const hash = encodingHash;
     const valid = matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, arena.tokens(declaration)), options).success;
     // the errors are not needed: they are computed if a declaration with the same value is validated by the parser
-    cacheValidation(arena, syntaxes, value, hash, valid, null);
+    cacheValidation(arena, syntaxes, offset, length, hash, valid, null);
     return valid;
+}
+/**
+ * the syntaxes being matched and the token they are matched at (a stack, see {@link enterSyntax}): a syntax that is
+ * matched again at the same token while it is being matched is a cyclic definition. the matched syntaxes are set to
+ * null. the entries of a call of {@link matchAllSyntaxes} start at {@link visitedBase}
+ */
+let visitedTokens = new Int32Array(256);
+/**
+ * see {@link visitedTokens}
+ */
+const visitedSyntaxes = [];
+/**
+ * number of entries of {@link visitedTokens}
+ */
+let visitedLength = 0;
+/**
+ * first entry of the current call of {@link matchAllSyntaxes}
+ */
+let visitedBase = 0;
+/**
+ * true if a syntax is being matched at a token
+ * @param token
+ * @param syntax
+ */
+function isVisited(token, syntax) {
+    for (let i = visitedBase; i < visitedLength; i++) {
+        if (visitedTokens[i] === token && visitedSyntaxes[i] === syntax) {
+            return true;
+        }
+    }
+    return false;
+}
+/**
+ * record that a syntax is being matched at a token
+ * @param token
+ * @param syntax
+ * @returns the entry, released when the syntax is no longer being matched (`visitedLength = entry`)
+ */
+function enterSyntax(token, syntax) {
+    if (visitedLength === visitedTokens.length) {
+        const tokens = new Int32Array(visitedTokens.length * 2);
+        tokens.set(visitedTokens);
+        visitedTokens = tokens;
+    }
+    visitedTokens[visitedLength] = token;
+    visitedSyntaxes[visitedLength] = syntax;
+    return visitedLength++;
 }
 /**
  * matches all syntaxes
@@ -1091,17 +1184,19 @@ function isValidDeclarationValue(arena, syntaxes, declaration, options) {
  * @returns
  */
 function matchAllSyntaxes(arena, syntaxes, context, options) {
-    // the visited syntaxes are tracked per call. the options are not copied: the previous map is restored
-    const visited = options.visited;
+    // the syntaxes being matched are tracked per call: the syntaxes being matched by the caller are not seen
+    const base = visitedBase;
+    const length = visitedLength;
     // the result object is passed to the matching functions, which fill it
     const out = createMatch();
     let result;
-    options.visited = new Map();
+    visitedBase = visitedLength;
     try {
         result = matchSyntax(arena, syntaxes, context, options, out);
     }
     finally {
-        options.visited = visited;
+        visitedBase = base;
+        visitedLength = length;
     }
     if (syntaxes != null && result.success && result.syntaxToken != null) {
         const index = syntaxes.indexOf(result.syntaxToken);
@@ -1289,46 +1384,6 @@ function matchOccurenceSyntax(arena, syntax, context, options) {
  * @returns
  */
 /**
- * the syntaxes that may match no token, see {@link isNullable}
- */
-const nullableSyntaxes = new WeakMap();
-/**
- * true if the syntax may match no token: `<a>?`, `<a>*`, `[ <a>? <b>? ]`, `[ [ and <a> ]* | [ or <a> ]* ]`
- * @param syntax
- */
-function isNullable(syntax) {
-    if (syntax.typ === ValidationTokenEnum.Whitespace) {
-        return true;
-    }
-    // `[ <a>? <b>? ]!`: at least one token
-    if (syntax.isMandatatoryGroup) {
-        return false;
-    }
-    if (syntax.isOptional || syntax.isRepeatable || syntax.match?.min?.val === 0) {
-        return true;
-    }
-    let nullable = nullableSyntaxes.get(syntax);
-    if (nullable == null) {
-        switch (syntax.typ) {
-            case ValidationTokenEnum.Bracket:
-                nullable = syntax.chi.every(isNullable);
-                break;
-            case ValidationTokenEnum.PipeToken:
-                nullable = syntax.chi.some((syntaxes) => syntaxes.every(isNullable));
-                break;
-            case ValidationTokenEnum.AmpersandToken:
-                nullable =
-                    syntax.l.every(isNullable) &&
-                        syntax.r.every(isNullable);
-                break;
-            default:
-                nullable = false;
-        }
-        nullableSyntaxes.set(syntax, nullable);
-    }
-    return nullable;
-}
-/**
  * index of the first syntax that must be matched, starting at index. -1 if the remaining syntaxes may match no token
  * @param syntaxes
  * @param index
@@ -1340,6 +1395,23 @@ function findMandatorySyntax(syntaxes, index) {
         }
     }
     return -1;
+}
+/**
+ * true if a token is a literal number or dimension of a syntax: `0`, `90deg`. the unit is case-insensitive
+ * @param arena
+ * @param token
+ * @param syntax
+ */
+function isLiteralNumber(arena, token, syntax) {
+    if (arena.hasFraction(token) || arena.numericValue[token] !== syntax.val) {
+        return false;
+    }
+    if (syntax.typ === ValidationTokenEnum.Number) {
+        return arena.dataTypes[token] === EnumToken.NumberTokenType;
+    }
+    const type = EnumToken[syntax.unit];
+    return (arena.dataTypes[token] === type &&
+        equalsIgnoreCase(arena.resolveString(arena.unit[token]), syntax.unitText));
 }
 /**
  * true if a numeric token is in the range of the syntax: `<integer [1,∞]>`
@@ -1369,6 +1441,43 @@ function isInRange(arena, token, syntax) {
         success = arena.numericValue[token] <= range.max.val;
     }
     return success;
+}
+/**
+ * the validation syntax of a function token (`name()`): looked up once per function name
+ * @param arena
+ * @param token
+ */
+function functionSyntax(arena, token) {
+    syntaxArena = arena;
+    return arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+}
+/**
+ * the arena of the function names read by {@link computeFunctionSyntax} and {@link computeSelectorFunctionSyntax}:
+ * the functions passed to the string table are not closures (no allocation per call)
+ */
+let syntaxArena = null;
+/**
+ * see {@link functionSyntax}
+ * @param id
+ */
+function computeFunctionSyntax(id) {
+    return getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxArena.resolveString(id) + "()");
+}
+/**
+ * see {@link selectorFunctionSyntax}
+ * @param id
+ */
+function computeSelectorFunctionSyntax(id) {
+    return getParsedSyntax(ValidationSyntaxGroupEnum.Selectors, syntaxArena.resolveString(id) + "()");
+}
+/**
+ * the validation syntax of a selector function token (`:name()`): looked up once per function name
+ * @param arena
+ * @param token
+ */
+function selectorFunctionSyntax(arena, token) {
+    syntaxArena = arena;
+    return arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
 }
 /**
  * the wildcard functions being matched with a syntax, see {@link matchWildCardFunction}
@@ -1494,7 +1603,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
     let isOptional;
     if (context.tokens.length === 1 &&
         arena.dataTypes[context.tokens[0]] === EnumToken.IdenTokenType &&
-        isCssWideKeyword(arena.strings[arena.stringValue[context.tokens[0]]])) {
+        isCssWideKeyword(arena.resolveString(arena.stringValue[context.tokens[0]]))) {
         context.end();
         return setMatch(out, true, true, context.peek(), context, null, noErrors);
     }
@@ -1524,9 +1633,9 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
             break;
         }
         if (arena.dataTypes[token] === EnumToken.WildCardFunctionTokenType &&
-            arena.strings[arena.stringValue[token]] === "var" &&
+            arena.resolveString(arena.stringValue[token]) === "var" &&
             wildCardProbes.get(token) !== syntaxes[i]) {
-            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, arena.tokens(token)), options, out);
+            result = matchSyntax(arena, functionSyntax(arena, token)?.[0]?.chi, createValidationContext(arena, arena.tokens(token)), options, out);
             if (result.success && result.context.done()) {
                 const wildCardResult = matchWildCardFunction(arena, syntaxes, i, context, token, token, options, out);
                 if (wildCardResult == null) {
@@ -1540,7 +1649,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
         arena.dataTypes[token] === EnumToken.WildCardFunctionTokenDefType &&
             wildCardProbes.get(token) !== syntaxes[i]) {
             const range = trimArray(arena, context.peekRange());
-            result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi, createValidationContext(arena, range.slice(1, -1)), options, out);
+            result = matchSyntax(arena, functionSyntax(arena, token)?.[0]?.chi, createValidationContext(arena, range.slice(1, -1)), options, out);
             if (result.success) {
                 const wildCardResult = matchWildCardFunction(arena, syntaxes, i, context, token, range.at(-1), options, out);
                 if (wildCardResult == null) {
@@ -1567,7 +1676,6 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
         if (syntaxes[i].isList) {
             result = matchListSyntax(arena, syntaxes[i], context.slice(), options);
             if (result.success) {
-                options.visited.get(token)?.delete?.(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
                     return setDoneMatch(out, syntaxes, i + 1, true, null, context, result.errors);
@@ -1583,7 +1691,6 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
         if (syntaxes[i].match != null) {
             result = matchOccurenceSyntax(arena, syntaxes[i], context.slice(), options);
             if (result.success) {
-                options.visited.get(token).delete(syntaxes[i]);
                 if (result.context.done()) {
                     context.end();
                     return setDoneMatch(out, syntaxes, i + 1, result.valid, result.token, context, result.errors);
@@ -1596,14 +1703,12 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
             }
             return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
         }
-        if (!options.visited.has(token)) {
-            options.visited.set(token, new Set());
-        }
-        if (options.visited.get(token).has(syntaxes[i])) {
+        if (isVisited(token, syntaxes[i])) {
             // cyclic definition
             return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
         }
-        options.visited.get(token).add(syntaxes[i]);
+        // the syntax is being matched at the token, until it is matched (see visitedSyntaxes)
+        const visit = enterSyntax(token, syntaxes[i]);
         success = false;
         try {
             switch (syntaxes[i].typ) {
@@ -1621,17 +1726,17 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                 case ValidationTokenEnum.Comma:
                     if (arena.dataTypes[token] === EnumToken.CommaTokenType) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.Keyword:
                     if (arena.dataTypes[token] === EnumToken.IdenTokenType &&
-                        lowercase(arena.strings[arena.stringValue[token]]) ===
+                        lowercase(arena.resolveString(arena.stringValue[token])) ===
                             lowercase(syntaxes[i].val)) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
@@ -1643,7 +1748,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntaxes[i].val), context, options, out);
                     if (result.success) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         if (result.context.done()) {
                             context.end();
                             return setDoneMatch(out, syntaxes, i + 1, result.valid, token, context, result.errors);
@@ -1702,7 +1807,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     }
                     else if (arena.dataTypes[token] === EnumToken.LiteralTokenType) {
                         success =
-                            arena.strings[arena.stringValue[token]] ===
+                            arena.resolveString(arena.stringValue[token]) ===
                                 syntaxes[i].val.slice(1, -1);
                     }
                     else if (arena.dataTypes[token] === EnumToken.Plus) {
@@ -1725,7 +1830,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                         return setMatch(out, false, true, context.current() ?? token, context, syntaxes[i], noErrors);
                     }
                     success = true;
-                    options.visited.get(token).delete(syntaxes[i]);
+                    visitedSyntaxes[visit] = null;
                     if (result.context.done()) {
                         if (!isInRange(arena, token, syntaxes[i])) {
                             return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
@@ -1741,9 +1846,15 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     {
                         // each alternative is matched in the same scratch result, the best match is copied
                         const scratch = createMatch();
+                        const alternatives = syntaxes[i].chi;
+                        // the alternatives that may match the token, in order (see matchingAlternatives()): the other
+                        // alternatives cannot match it. null: all the alternatives
+                        const candidates = matchingAlternatives(arena, alternatives, token);
+                        const count = candidates === null ? alternatives.length : candidates.length;
                         let best = null;
                         let tmp = null;
-                        for (const syntax of syntaxes[i].chi) {
+                        for (let k = 0; k < count; k++) {
+                            const syntax = alternatives[candidates === null ? k : candidates[k]];
                             tmp = matchSyntax(arena, syntax, context.slice(), options, scratch);
                             if (tmp.success) {
                                 // an alternative that consumes the tokens is skipped if mandatory syntaxes remain
@@ -1762,7 +1873,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                         result = best;
                         if (result?.success) {
                             success = true;
-                            options.visited.get(token).delete(syntaxes[i]);
+                            visitedSyntaxes[visit] = null;
                             context.update(result.context.current());
                             break;
                         }
@@ -1781,7 +1892,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options, out);
                     if (result.success) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         if (result.context.done()) {
                             context.end();
                             return setDoneMatch(out, syntaxes, i + 1, true, null, context, noErrors);
@@ -1799,7 +1910,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     result = matchColumnSyntax(arena, syntaxes[i], context.slice(), options);
                     if (result.success) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         if (result.context.done()) {
                             context.end();
                             return setDoneMatch(out, syntaxes, i + 1, true, null, context, noErrors);
@@ -1814,7 +1925,7 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     result = matchAmpersandSyntax(arena, syntaxes[i], context.slice(), options);
                     if (result.success) {
                         success = true;
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         if (result.context.done()) {
                             context.end();
                             return setDoneMatch(out, syntaxes, i + 1, true, null, context, noErrors);
@@ -1826,10 +1937,10 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.Function:
-                    if ((!tokensfuncDefMap.has(arena.dataTypes[token]) &&
+                    if ((!isFunctionDefType(arena.dataTypes[token]) &&
                         !funcLike.includes(arena.dataTypes[token]) &&
                         !funcTypes.includes(arena.dataTypes[token])) ||
-                        !equalsIgnoreCase(syntaxes[i].val, arena.strings[arena.stringValue[token]].toLowerCase())) {
+                        !equalsIgnoreCase(syntaxes[i].val, arena.resolveString(arena.stringValue[token]).toLowerCase())) {
                         return setMatch(out, false, true, token, context, syntaxes[i], [
                             {
                                 action: "drop",
@@ -1838,12 +1949,12 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                             },
                         ]);
                     }
-                    if (tokensfuncDefMap.has(arena.dataTypes[token])) {
+                    if (isFunctionDefType(arena.dataTypes[token])) {
                         const range = context.peekRange();
                         result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, range.slice(1, -1)), options, out);
                         if (result.success && result.context.done()) {
                             context.update(range.at(-1));
-                            options.visited.get(token).delete(syntaxes[i]);
+                            visitedSyntaxes[visit] = null;
                             break;
                         }
                     }
@@ -1851,38 +1962,52 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                         result = matchSyntax(arena, syntaxes[i].chi, createValidationContext(arena, arena.tokens(token)), options, out);
                         if (result.success && result.context.done()) {
                             success = true;
-                            options.visited.get(token).delete(syntaxes[i]);
+                            visitedSyntaxes[visit] = null;
                             context.next();
                             break;
                         }
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
+                case ValidationTokenEnum.Number:
+                case ValidationTokenEnum.Dimension:
+                    // a literal number or dimension: `-moz-force-broken-image-icon: 0 | 1`,
+                    // `glyph-orientation-vertical: auto | 0deg | 90deg | 0 | 90`
+                    if (isLiteralNumber(arena, token, syntaxes[i])) {
+                        success = true;
+                        visitedSyntaxes[visit] = null;
+                        context.next();
+                        break;
+                    }
+                    if (isOptional) {
+                        break;
+                    }
+                    return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.Separator:
                     if (arena.dataTypes[token] === EnumToken.LiteralTokenType &&
-                        arena.strings[arena.stringValue[token]] === "/") {
-                        options.visited.get(token).delete(syntaxes[i]);
+                        arena.resolveString(arena.stringValue[token]) === "/") {
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.FunctionDefinition:
-                    if (arena.strings[arena.stringValue[token]] &&
-                        equalsIgnoreCase(arena.strings[arena.stringValue[token]], syntaxes[i].val)) {
-                        if (tokensfuncDefMap.has(arena.dataTypes[token])) {
+                    if (arena.resolveString(arena.stringValue[token]) &&
+                        equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), syntaxes[i].val)) {
+                        if (isFunctionDefType(arena.dataTypes[token])) {
                             const children = trimArray(arena, context.peekRange());
                             result = matchSyntax(arena, (getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()")?.[0]).chi ?? [], createValidationContext(arena, children.slice(1, -1)), options, out);
                             if (result.success && result.context.done()) {
                                 success = true;
-                                options.visited.get(token).delete(syntaxes[i]);
+                                visitedSyntaxes[visit] = null;
                                 context.update(children.at(-1));
                                 break;
                             }
                         }
-                        else if (tokensfuncSet.has(arena.dataTypes[token])) {
+                        else if (isFunctionType(arena.dataTypes[token])) {
                             result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, syntaxes[i].val + "()") ?? [], createValidationContext(arena, [token]), options, out);
                             if (result.success && result.context.done()) {
                                 success = true;
-                                options.visited.get(token).delete(syntaxes[i]);
+                                visitedSyntaxes[visit] = null;
                                 context.next();
                                 break;
                             }
@@ -1891,21 +2016,21 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.OpenParenthesis:
                     if (arena.dataTypes[token] === EnumToken.StartParensTokenType) {
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.OpenCurlyBrace:
                     if (arena.dataTypes[token] === EnumToken.BlockStartTokenType) {
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
                     return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                 case ValidationTokenEnum.CloseParenthesis:
                     if (arena.dataTypes[token] === EnumToken.EndParensTokenType) {
-                        options.visited.get(token).delete(syntaxes[i]);
+                        visitedSyntaxes[visit] = null;
                         context.next();
                         break;
                     }
@@ -1917,7 +2042,8 @@ function matchSyntax(arena, syntaxes, context, options, out = createMatch()) {
         finally {
             // the syntax is no longer being matched: a token may be matched again with the same syntax (the
             // alternatives of an optional group, ...). only the syntaxes being matched detect a cyclic definition
-            options.visited.get(token)?.delete(syntaxes[i]);
+            visitedSyntaxes[visit] = null;
+            visitedLength = visit;
         }
         if (success && !isInRange(arena, token, syntaxes[i])) {
             return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
@@ -1995,10 +2121,15 @@ function searchUnorderedSyntaxes(arena, syntaxes, remaining, all, base, context,
         const key = remaining[k] + ":" + position;
         let next = cache.get(key);
         if (next === undefined) {
-            const result = matchSyntax(arena, syntaxes[remaining[k]], context.slice(), options);
             next = null;
+            // a syntax that cannot start with the token matches no token (see mayStartWith())
+            const result = mayStartWith(arena, syntaxes[remaining[k]], context.peek())
+                ? matchSyntax(arena, syntaxes[remaining[k]], context.slice(), options)
+                : null;
             // the syntax matched some tokens
-            if (result.success && (result.context.done() || result.context.current() !== context.current())) {
+            if (result != null &&
+                result.success &&
+                (result.context.done() || result.context.current() !== context.current())) {
                 next = context.slice();
                 if (result.context.done()) {
                     next.end();
@@ -2082,7 +2213,7 @@ function peekFeatureTokens(arena, context) {
     let depth = 0;
     for (let index = context.index + 1; index < context.tokens.length; index++) {
         const token = context.tokens[index];
-        if (arena.dataTypes[token] === EnumToken.StartParensTokenType || tokensfuncDefMap.has(arena.dataTypes[token])) {
+        if (arena.dataTypes[token] === EnumToken.StartParensTokenType || isFunctionDefType(arena.dataTypes[token])) {
             depth++;
         }
         else if (arena.dataTypes[token] === EnumToken.EndParensTokenType && depth-- === 0) {
@@ -2122,11 +2253,11 @@ function matchProperty(arena, property, context, options) {
             "calc-product",
         ].includes(property.val);
     if (checkCalc && !["number", "zero", "integer", "percentage", "length-percentage"].includes(property.val)) {
-        checkCalc = arena.strings[arena.stringValue[token]] === "calc";
+        checkCalc = arena.resolveString(arena.stringValue[token]) === "calc";
     }
     if (checkCalc) {
         let result;
-        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.strings[arena.stringValue[token]] + "()")?.[0]?.chi;
+        const syntax = getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, arena.resolveString(arena.stringValue[token]) + "()")?.[0]?.chi;
         if (t === EnumToken.MathFunctionTokenType) {
             result = matchSyntax(arena, syntax, createValidationContext(arena, arena.tokens(token)), options);
             if (result.success && result.context.done()) {
@@ -2183,7 +2314,7 @@ function matchProperty(arena, property, context, options) {
                     success = false;
                     while ((token = context.peek()) != null) {
                         if (arena.dataTypes[token] === EnumToken.StartParensTokenType ||
-                            tokensfuncDefMap.has(arena.dataTypes[token])) {
+                            isFunctionDefType(arena.dataTypes[token])) {
                             stack.push(token);
                         }
                         if (expectToken) {
@@ -2255,8 +2386,8 @@ function matchProperty(arena, property, context, options) {
                 if (
                 // inlined: arena.typeOf(token)
                 arena.dataTypes[token] === EnumToken.IdenTokenType &&
-                    ("even" === arena.strings[arena.stringValue[token]] ||
-                        "odd" === arena.strings[arena.stringValue[token]])) {
+                    ("even" === arena.resolveString(arena.stringValue[token]) ||
+                        "odd" === arena.resolveString(arena.stringValue[token]))) {
                     success = true;
                     break;
                 }
@@ -2270,7 +2401,7 @@ function matchProperty(arena, property, context, options) {
                 // inlined: arena.typeOf(token)
                 if (arena.dataTypes[token] === EnumToken.LiteralTokenType ||
                     arena.dataTypes[token] === EnumToken.IdenTokenType) {
-                    let match = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(arena.strings[arena.stringValue[token]]);
+                    let match = /^(([+-]?[0-9]*)?n)?([+-]?[0-9]+)?$/.exec(arena.resolveString(arena.stringValue[token]));
                     success = match != null;
                     // `n + 1`: the sign and the number follow the ident
                     if (success && match?.[3] == null) {
@@ -2321,7 +2452,7 @@ function matchProperty(arena, property, context, options) {
                 if (
                 // inlined: arena.typeOf(token)
                 arena.dataTypes[token] === EnumToken.DimensionTokenType &&
-                    arena.strings[arena.unit[token]] === "n") {
+                    arena.resolveString(arena.unit[token]) === "n") {
                     success = Number.isInteger(arena.numericValue[token]);
                     token = context.peek(1);
                     if (token == null) {
@@ -2368,7 +2499,7 @@ function matchProperty(arena, property, context, options) {
             // inlined: arena.typeOf(token)
             success =
                 arena.dataTypes[token] === EnumToken.IdenTokenType &&
-                    values.has(arena.strings[arena.stringValue[token]].toLowerCase());
+                    values.has(arena.resolveString(arena.stringValue[token]).toLowerCase());
             break;
         }
         case "mf-name":
@@ -2377,7 +2508,7 @@ function matchProperty(arena, property, context, options) {
                 success =
                     // inlined: arena.typeOf(token)
                     arena.dataTypes[token] === EnumToken.IdenTokenType &&
-                        arena.strings[arena.stringValue[token]].toLowerCase() in config.mediaFeatures;
+                        arena.resolveString(arena.stringValue[token]).toLowerCase() in config.mediaFeatures;
             }
             break;
         case "dashed-ident":
@@ -2398,7 +2529,7 @@ function matchProperty(arena, property, context, options) {
                     arena.dataTypes[token] === EnumToken.DashedIdenTokenType;
             // inlined: arena.typeOf(token)
             if (success && arena.dataTypes[token] === EnumToken.IdenTokenType) {
-                const val = arena.strings[arena.stringValue[token]].toLowerCase();
+                const val = arena.resolveString(arena.stringValue[token]).toLowerCase();
                 success = "none" !== val && !allValues.includes(val);
             }
             break;
@@ -2576,7 +2707,7 @@ function matchProperty(arena, property, context, options) {
             const token = context.peek();
             success =
                 arena.dataTypes[token] === EnumToken.DimensionTokenType &&
-                    equalsIgnoreCase(arena.strings[arena.unit[token]], property.val === "decibel" ? "dB" : "st");
+                    equalsIgnoreCase(arena.resolveString(arena.unit[token]), property.val === "decibel" ? "dB" : "st");
             break;
         }
         case "time":
@@ -2596,7 +2727,7 @@ function matchProperty(arena, property, context, options) {
                 const token = context.peek();
                 const errors = [];
                 // inlined: arena.typeOf(token)
-                if (tokensfuncDefMap.has((token == null ? null : arena.dataTypes[token]))) {
+                if (isFunctionDefType((token == null ? null : arena.dataTypes[token]))) {
                     const range = context.peekRange();
                     const newRange = range.map((t) => arena.clone(t, true));
                     parseTokens(arena, newRange, { parseColor: true }, errors);
@@ -2659,7 +2790,7 @@ function matchProperty(arena, property, context, options) {
         }
         case "function-token":
             // inlined: arena.typeOf(context.peek()). the type of a null id is undefined: not a key of the map either
-            if (tokensfuncDefMap.has(arena.dataTypes[context.peek()])) {
+            if (isFunctionDefType(arena.dataTypes[context.peek()])) {
                 // the token is consumed below
                 success = true;
                 break;
@@ -2678,8 +2809,8 @@ function matchProperty(arena, property, context, options) {
                 // inlined: arena.typeOf(token)
                 arena.dataTypes[token] === EnumToken.IdenTokenType &&
                     // @ts-expect-error
-                    config.languages.some((t) => t === arena.strings[arena.stringValue[token]] ||
-                        arena.strings[arena.stringValue[token]].startsWith(t + "-"));
+                    config.languages.some((t) => t === arena.resolveString(arena.stringValue[token]) ||
+                        arena.resolveString(arena.stringValue[token]).startsWith(t + "-"));
             break;
         }
         case "size-feature": {
@@ -2803,7 +2934,7 @@ function matchProperty(arena, property, context, options) {
             // `type(<number> | <transform-function>)`: the css type syntax
             if ((arena.dataTypes[token] === EnumToken.FunctionTokenDefType ||
                 arena.dataTypes[token] === EnumToken.FunctionTokenType) &&
-                equalsIgnoreCase(arena.strings[arena.stringValue[token]], "type")) {
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "type")) {
                 if (arena.dataTypes[token] === EnumToken.FunctionTokenDefType) {
                     context.update(context.peekRange().at(-1));
                 }
@@ -2828,7 +2959,7 @@ function matchProperty(arena, property, context, options) {
                 if (multiplier != null &&
                     (arena.dataTypes[multiplier] === EnumToken.Plus ||
                         (arena.dataTypes[multiplier] === EnumToken.LiteralTokenType &&
-                            arena.strings[arena.stringValue[multiplier]] === "#"))) {
+                            arena.resolveString(arena.stringValue[multiplier]) === "#"))) {
                     context.next();
                 }
                 return {
@@ -2899,7 +3030,7 @@ function matchProperty(arena, property, context, options) {
     if (!success &&
         // inlined: arena.typeOf(context.peek())
         arena.dataTypes[context.peek()] === EnumToken.IdenTokenType &&
-        allValues.includes(arena.strings[arena.stringValue[context.peek()]])) {
+        allValues.includes(arena.resolveString(arena.stringValue[context.peek()]))) {
         success = true;
     }
     if (success) {

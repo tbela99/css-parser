@@ -1,5 +1,10 @@
-import { identity, multiply } from "./utils.ts";
+import { multiplyInto, setIdentity } from "./utils.ts";
 import type { Matrix } from "./type.d.ts";
+
+/**
+ * the rotation matrix. the functions multiply the matrix they receive in place: `from = from × rotation`
+ */
+const matrix: Matrix = new Float64Array(16);
 
 /**
  * angle in radian
@@ -10,7 +15,8 @@ import type { Matrix } from "./type.d.ts";
  * @param from
  */
 export function rotate3D(angle: number, x: number, y: number, z: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+    setIdentity(matrix);
+
     const sc: number = Math.sin(angle / 2) * Math.cos(angle / 2);
     const sq: number = Math.sin(angle / 2) * Math.sin(angle / 2);
 
@@ -33,17 +39,22 @@ export function rotate3D(angle: number, x: number, y: number, z: number, from: M
     matrix[2 * 4 + 1] = 2 * (y * z * sq - x * sc);
     matrix[2 * 4 + 2] = 1 - 2 * (x * x + y * y) * sq;
 
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
+/**
+ * angle in radian
+ * @param angle
+ * @param from
+ */
 export function rotate(angle: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+    setIdentity(matrix);
     matrix[0] = Math.cos(angle);
     matrix[1] = Math.sin(angle);
     matrix[4] = -Math.sin(angle);
     matrix[4 + 1] = Math.cos(angle);
 
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
 export const rotateZ = rotate;

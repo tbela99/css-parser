@@ -69,7 +69,7 @@ function evaluateTokens(arena, tokens) {
     if (tokens.length === 1 &&
         (arena.dataTypes[tokens[0]] === EnumToken.MathFunctionTokenType ||
             arena.dataTypes[tokens[0]] === EnumToken.FunctionTokenType) &&
-        mathFuncs.includes(arena.strings[arena.stringValue[tokens[0]]])) {
+        mathFuncs.includes(arena.resolveString(arena.stringValue[tokens[0]]))) {
         const chi = [];
         for (let t = arena.firstToken[tokens[0]]; t !== 0; t = arena.nextSibling[t]) {
             const typ = arena.dataTypes[t];
@@ -96,7 +96,7 @@ function evaluateTokens(arena, tokens) {
             return tokens;
         }
         if (arena.dataTypes[result[0]] === EnumToken.MathFunctionTokenType &&
-            arena.strings[arena.stringValue[result[0]]] === "calc" &&
+            arena.resolveString(arena.stringValue[result[0]]) === "calc" &&
             arena.tokenCount(result[0]) === 1) {
             return arena.tokens(result[0]);
         }
@@ -110,9 +110,9 @@ function evaluateTokens(arena, tokens) {
             }
             if (arena.dataTypes[nodes[0]] === EnumToken.IdenTokenType &&
                 // @ts-expect-error
-                typeof Math[arena.strings[arena.stringValue[nodes[0]]].toUpperCase()] === "number") {
+                typeof Math[arena.resolveString(arena.stringValue[nodes[0]]).toUpperCase()] === "number") {
                 // @ts-ignore
-                const val = Math[arena.strings[arena.stringValue[nodes[0]]].toUpperCase()];
+                const val = Math[arena.resolveString(arena.stringValue[nodes[0]]).toUpperCase()];
                 arena.resetToken(nodes[0], EnumToken.NumberTokenType, val);
                 return nodes;
             }
@@ -190,7 +190,7 @@ function doEvaluate(arena, l, r, op) {
         return defaultReturn();
     }
     if (lType === EnumToken.IdenTokenType) {
-        const val = arena.strings[arena.stringValue[l]];
+        const val = arena.resolveString(arena.stringValue[l]);
         if (equalsIgnoreCase(val, "Infinity")) {
             arena.dataTypes[l] = lType = EnumToken.InfinityTokenType;
         }
@@ -202,7 +202,7 @@ function doEvaluate(arena, l, r, op) {
         }
     }
     if (rType === EnumToken.IdenTokenType) {
-        const val = arena.strings[arena.stringValue[r]];
+        const val = arena.resolveString(arena.stringValue[r]);
         if (equalsIgnoreCase(val, "Infinity")) {
             arena.dataTypes[r] = rType = EnumToken.InfinityTokenType;
         }
@@ -305,7 +305,7 @@ function computeNaN(arena, l, r, defaultReturn) {
         if (rType === EnumToken.NumberTokenType ||
             (rType === EnumToken.IdenTokenType &&
                 // @ts-expect-error
-                typeof Math[arena.strings[arena.stringValue[r]].toUpperCase()] === "string")) {
+                typeof Math[arena.resolveString(arena.stringValue[r]).toUpperCase()] === "string")) {
             return l;
         }
         // NaN Infinity e pi ...
@@ -324,7 +324,7 @@ function computeNaN(arena, l, r, defaultReturn) {
         if (lType === EnumToken.NumberTokenType ||
             (lType === EnumToken.IdenTokenType &&
                 // @ts-expect-error
-                typeof Math[arena.strings[arena.stringValue[l]].toUpperCase()] === "string")) {
+                typeof Math[arena.resolveString(arena.stringValue[l]).toUpperCase()] === "string")) {
             return r;
         }
         // inlined: arena.isNumeric(l)
@@ -413,7 +413,7 @@ function getValue(arena, t) {
     const typ = arena.dataTypes[t];
     if (typ === EnumToken.IdenTokenType) {
         // @ts-ignore
-        return Math[arena.strings[arena.stringValue[t]].toUpperCase()];
+        return Math[arena.resolveString(arena.stringValue[t]).toUpperCase()];
     }
     if (typ === EnumToken.FractionTokenType) {
         return arena.numericValue[arena.firstChild[t]] / arena.numericValue[arena.lastChild[t]];
@@ -440,8 +440,8 @@ function toRadians(arena, token) {
         // inlined: arena.setUnitString(token, "rad")
         arena.unit[token] = arena.internString("rad");
     }
-    else if (arena.dataTypes[token] === EnumToken.AngleTokenType && arena.strings[arena.unit[token]] !== "rad") {
-        switch (arena.strings[arena.unit[token]]) {
+    else if (arena.dataTypes[token] === EnumToken.AngleTokenType && arena.resolveString(arena.unit[token]) !== "rad") {
+        switch (arena.resolveString(arena.unit[token])) {
             case "deg":
                 arena.numericValue[token] *= Math.PI / 180;
                 // inlined: arena.setUnitString(token, "rad")
@@ -468,7 +468,7 @@ function toRadians(arena, token) {
  */
 function evaluateFunc(arena, token) {
     const values = arena.tokens(token);
-    const name = arena.strings[arena.stringValue[token]];
+    const name = arena.resolveString(arena.stringValue[token]);
     switch (name) {
         case "sin":
         case "cos":
@@ -570,7 +570,7 @@ function evaluateFunc(arena, token) {
         case "min":
         case "max": {
             const strategy = name === "round" && values.length > 0 && arena.dataTypes[values[0]] === EnumToken.IdenTokenType
-                ? arena.strings[arena.stringValue[values.shift()]]
+                ? arena.resolveString(arena.stringValue[values.shift()])
                 : null;
             const valuesMap = new Map();
             for (const curr of values) {
@@ -581,7 +581,7 @@ function evaluateFunc(arena, token) {
                 }
                 // the argument is evaluated on a copy: the function is returned unchanged when it cannot be computed
                 const result = evaluateTokens(arena, [arena.clone(curr, true)]);
-                const key = arena.dataTypes[result[0]] + arena.strings[arena.unit[result[0]]];
+                const key = arena.dataTypes[result[0]] + arena.resolveString(arena.unit[result[0]]);
                 if (!valuesMap.has(key)) {
                     valuesMap.set(key, []);
                 }
@@ -690,14 +690,14 @@ function isScalarToken(arena, token) {
     const typ = arena.dataTypes[token];
     return (arena.unit[token] !== 0 ||
         typ === EnumToken.MathFunctionTokenType ||
-        (typ === EnumToken.FunctionTokenType && mathFuncs.includes(arena.strings[arena.stringValue[token]])) ||
+        (typ === EnumToken.FunctionTokenType && mathFuncs.includes(arena.resolveString(arena.stringValue[token]))) ||
         (typ === EnumToken.IdenTokenType &&
             // @ts-ignore
-            typeof Math[arena.strings[arena.stringValue[token]].toUpperCase()] === "number") ||
-        (typ === EnumToken.IdenTokenType && arena.strings[arena.stringValue[token]] === "NaN") ||
+            typeof Math[arena.resolveString(arena.stringValue[token]).toUpperCase()] === "number") ||
+        (typ === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[token]) === "NaN") ||
         (typ === EnumToken.IdenTokenType &&
-            (equalsIgnoreCase(arena.strings[arena.stringValue[token]], "Infinity") ||
-                equalsIgnoreCase(arena.strings[arena.stringValue[token]], "-Infinity"))) ||
+            (equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "Infinity") ||
+                equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "-Infinity"))) ||
         typ === EnumToken.NumberTokenType ||
         typ === EnumToken.FractionTokenType ||
         typ === EnumToken.PercentageTokenType ||
@@ -736,7 +736,7 @@ function factorToken(arena, token) {
     const typ = arena.dataTypes[token];
     if (typ === EnumToken.ParensTokenType ||
         ((typ === EnumToken.MathFunctionTokenType || typ === EnumToken.FunctionTokenType) &&
-            arena.strings[arena.stringValue[token]] === "calc")) {
+            arena.resolveString(arena.stringValue[token]) === "calc")) {
         return buildExpression(arena, arena.tokens(token));
     }
     return token;
@@ -761,12 +761,12 @@ function factor(arena, tokens, ops) {
         isOp = opList.includes(typ === EnumToken.Plus ? EnumToken.Add : typ);
         if (isOp ||
             typ === EnumToken.Star ||
-            (typ === EnumToken.LiteralTokenType && ops.includes(arena.strings[arena.stringValue[tokens[i]]]))) {
+            (typ === EnumToken.LiteralTokenType && ops.includes(arena.resolveString(arena.stringValue[tokens[i]])))) {
             const op = isOp
                 ? typ === EnumToken.Plus
                     ? EnumToken.Add
                     : typ
-                : getArithmeticOperation(arena.strings[arena.stringValue[tokens[i]]]);
+                : getArithmeticOperation(arena.resolveString(arena.stringValue[tokens[i]]));
             const expression = arena.createBinaryExpression(op, factorToken(arena, tokens[i - 1]), factorToken(arena, tokens[i + 1]));
             arena.spanLocation(expression, tokens[i - 1], tokens[i + 1]);
             tokens.splice(i - 1, 3, expression);

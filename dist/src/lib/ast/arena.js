@@ -12,7 +12,7 @@ import { splitRule } from './minify.js';
 import { combinators } from '../syntax/constants.js';
 import { parseString } from '../parser/parse.js';
 import { renderValue } from '../printer/render.js';
-import { equalsIgnoreCase } from '../parser/utils/text.js';
+import { StringTable } from './strings.js';
 
 /**
  * position of the structured token fields in the children list
@@ -181,13 +181,9 @@ let visitTop = 0;
  */
 class Arena {
     /**
-     * string interner identifiers
+     * interned strings: ranges of the sources, of the canonical text, of the pool, or strings. see {@link StringTable}
      */
-    stringIds = new Map();
-    /**
-     * string interner values
-     */
-    strings = [];
+    stringTable = new StringTable();
     /**
      * root node
      */
@@ -375,18 +371,179 @@ class Arena {
     }
     /**
      * Interns a string and returns its unique ID. If the string has already been interned, it returns the existing ID.
+     * The strings are looked up by the hash of their code units, see {@link internRange}
      * @param str
      * @returns
      */
     internString(str) {
-        let id = this.stringIds.get(str);
-        if (id != null) {
-            return id;
-        }
-        id = this.strings.length;
-        this.stringIds.set(str, id);
-        this.strings.push(str);
-        return id;
+        return this.stringTable.intern(str);
+    }
+    /**
+     * Interns the string made of a range of code units and returns its unique ID. Same ID as {@link internString} for
+     * the same content. The range is looked up by its hash and compared with the code units of the interned strings:
+     * no string is created.
+     *
+     * - a range of a source (the code units read by the tokenizer): the source index and the offsets are stored, the
+     *   text of the source is set with {@link setSourceText}
+     * - `StringSource.Canonical`: a range of the canonical text (the spelling of the known units and function names)
+     * - `StringSource.Pool`: the code units are copied (decoded escape sequences, ...)
+     *
+     * @param codes code units
+     * @param start start offset of the range
+     * @param end end offset of the range
+     * @param source source index, `StringSource.Canonical` or `StringSource.Pool`
+     */
+    internRange(codes, start, end, source) {
+        return this.stringTable.internRange(codes, start, end, source);
+    }
+    /**
+     * set the text of a source: the strings interned from the source are ranges of the text, see {@link internRange}
+     * @param source source index
+     * @param text content of the source
+     * @param codes code units of the text while the source is tokenized (faster comparisons)
+     */
+    setSourceText(source, text, codes = null) {
+        this.stringTable.setText(source, text, codes);
+    }
+    /**
+     * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
+     * @param source source index
+     */
+    releaseSourceCodes(source) {
+        this.stringTable.releaseCodes(source);
+    }
+    /**
+     * id of an interned string, -1 when the string is not interned
+     * @param str
+     */
+    stringId(str) {
+        return this.stringTable.lookup(str);
+    }
+    /**
+     * length of an interned string. the string is not created
+     * @param id
+     */
+    stringLength(id) {
+        return this.stringTable.length(id);
+    }
+    /**
+     * code unit of an interned string. the string is not created
+     * @param id
+     * @param index
+     */
+    stringCodeAt(id, index) {
+        return this.stringTable.codeAt(id, index);
+    }
+    /**
+     * index of the first occurrence of a code unit in an interned string, -1 when it is not found. the string is not
+     * created
+     * @param id
+     * @param code
+     */
+    stringIndexOf(id, code) {
+        return this.stringTable.indexOfCode(id, code);
+    }
+    /**
+     * true if an interned string equals a string. the interned string is not created
+     * @param id
+     * @param str
+     */
+    stringEquals(id, str) {
+        return this.stringTable.equals(id, str);
+    }
+    /**
+     * true if an interned string equals a string, ignoring the case of the ascii letters. the interned string is not
+     * created
+     * @param id
+     * @param str
+     */
+    stringEqualsIgnoreCase(id, str) {
+        return this.stringTable.equalsIgnoreCase(id, str);
+    }
+    /**
+     * true if an interned string starts with a string. the interned string is not created
+     * @param id
+     * @param str
+     */
+    stringStartsWith(id, str) {
+        return this.stringTable.startsWith(id, str);
+    }
+    /**
+     * id of the lowercase version of an interned string (like `toLowerCase()`). no string is created when the string
+     * is ascii. the result is cached
+     * @param id
+     */
+    lowerStringId(id) {
+        return this.stringTable.lower(id);
+    }
+    /**
+     * copy an interned string to a byte buffer when it is ascii (UTF-8 encoding). the string is not created
+     * @param id
+     * @param target
+     * @param offset offset in the target. the target has room for the string ({@link stringLength})
+     * @returns the number of bytes, -1 when the string is not ascii
+     */
+    copyStringAscii(id, target, offset) {
+        return this.stringTable.copyAscii(id, target, offset);
+    }
+    /**
+     * a boolean property of an interned string, computed once per string id: the string is read once
+     * @param id
+     * @param flag
+     * @param compute computes the property from the string
+     */
+    stringFlag(id, flag, compute) {
+        return this.stringTable.flag(id, flag, compute);
+    }
+    /**
+     * a boolean property of an interned string, computed once per string id from the id (see {@link stringCodeAt})
+     * @param id
+     * @param flag
+     * @param compute computes the property from the string id
+     */
+    stringFlagId(id, flag, compute) {
+        return this.stringTable.flagId(id, flag, compute);
+    }
+    /**
+     * a value derived from an interned string, computed once per string id
+     * @param id
+     * @param slot
+     * @param compute computes the value from the string id
+     */
+    stringDerived(id, slot, compute) {
+        return this.stringTable.derived(id, slot, compute);
+    }
+    /**
+     * copy the code units of an interned string to a buffer. the string is not created
+     * @param id
+     * @param target the target has room for the string ({@link stringLength})
+     * @param offset
+     * @returns the number of code units
+     */
+    copyString(id, target, offset) {
+        return this.stringTable.copy(id, target, offset);
+    }
+    /**
+     * append an interned string to a builder. the string is not created
+     * @param builder
+     * @param id
+     */
+    appendString(builder, id) {
+        return builder.appendId(this.stringTable, id);
+    }
+    /**
+     * intern the string built by a builder: no string is created
+     * @param builder
+     */
+    internBuilder(builder) {
+        return builder.intern(this.stringTable);
+    }
+    /**
+     * identity of the string ids: a new object when the strings are renumbered ({@link compact},
+     * {@link compactStrings}). the caches keyed by string ids use it as a key
+     */
+    get stringEpoch() {
+        return this.stringTable.epoch;
     }
     /**
      *
@@ -423,7 +580,7 @@ class Arena {
      * @param id
      */
     getName(id) {
-        return this.strings[this.name[id]] ?? null;
+        return this.resolveString(this.name[id]) ?? null;
     }
     /**
      *
@@ -438,7 +595,7 @@ class Arena {
      * @param id
      */
     getValue(id) {
-        return this.strings[this.stringValue[id]] ?? null;
+        return this.resolveString(this.stringValue[id]) ?? null;
     }
     /**
      *
@@ -461,7 +618,7 @@ class Arena {
      * @param id
      */
     getUnit(id) {
-        return this.strings[this.unit[id]] ?? null;
+        return this.resolveString(this.unit[id]) ?? null;
     }
     /**
      *
@@ -530,7 +687,7 @@ class Arena {
      * number of interned strings
      */
     getStringCount() {
-        return this.strings.length;
+        return this.stringTable.count;
     }
     /**
      * replace the first child
@@ -945,7 +1102,9 @@ class Arena {
      * @param id
      */
     resolveString(id) {
-        return this.strings[id];
+        const str = this.stringTable.cache[id];
+        // the string is created the first time it is read
+        return str !== undefined ? str : this.stringTable.get(id);
     }
     /**
      * detach a node from its parent
@@ -1599,16 +1758,8 @@ class Arena {
      * @param string
      */
     equalsIgnoreCase(node, key, string) {
-        const id = key === "nam" ? this.name[node] : this.stringValue[node];
-        const stringId = this.stringIds.get(string);
-        if (stringId != null && id === stringId) {
-            return true;
-        }
-        const value = this.strings[id];
-        if (value == null || string.length !== value.length) {
-            return false;
-        }
-        return equalsIgnoreCase(value, string);
+        // the string of the node is not created
+        return this.stringTable.equalsIgnoreCase(key === "nam" ? this.name[node] : this.stringValue[node], string);
     }
     /**
      *
@@ -1617,16 +1768,8 @@ class Arena {
      * @param string
      */
     startsWith(node, key, string) {
-        const id = key === "nam" ? this.name[node] : this.stringValue[node];
-        const stringId = this.stringIds.get(string);
-        if (stringId != null && id === stringId) {
-            return true;
-        }
-        const value = this.strings[id];
-        if (value == null || string.length > value.length) {
-            return false;
-        }
-        return value.startsWith(string);
+        // the string of the node is not created
+        return this.stringTable.startsWith(key === "nam" ? this.name[node] : this.stringValue[node], string);
     }
     /**
      *
@@ -1688,7 +1831,7 @@ class Arena {
      * drop the interned strings that are no longer referenced by any node
      */
     compactStrings() {
-        const used = new Uint8Array(this.strings.length);
+        const used = new Uint8Array(this.stringTable.count);
         const size = this.current + 1;
         let count = 0;
         // the empty string is always kept
@@ -1701,29 +1844,16 @@ class Arena {
         for (let i = 0; i < used.length; i++) {
             count += used[i];
         }
-        if (count === this.strings.length) {
+        if (count === this.stringTable.count) {
             return;
         }
         // remap the string ids
-        const mapping = new Uint32Array(this.strings.length);
-        const strings = new Array(count);
-        const stringIds = new Map();
-        let next = 0;
-        for (let i = 0; i < used.length; i++) {
-            if (used[i]) {
-                mapping[i] = next;
-                strings[next] = this.strings[i];
-                stringIds.set(this.strings[i], next);
-                next++;
-            }
-        }
+        const mapping = this.stringTable.compact(used);
         for (let id = 1; id < size; id++) {
             this.name[id] = mapping[this.name[id]];
             this.stringValue[id] = mapping[this.stringValue[id]];
             this.unit[id] = mapping[this.unit[id]];
         }
-        this.strings = strings;
-        this.stringIds = stringIds;
     }
     /**
      * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
@@ -1768,7 +1898,7 @@ class Arena {
         const spans = new BigUint64Array(capacity);
         const spans32 = new Uint32Array(spans.buffer);
         const nodeErrors = new Map();
-        const used = new Uint8Array(this.strings.length);
+        const used = new Uint8Array(this.stringTable.count);
         // the empty string is always kept
         used[0] = 1;
         for (let target = 1; target < next; target++) {
@@ -1798,26 +1928,13 @@ class Arena {
         for (let i = 0; i < used.length; i++) {
             count += used[i];
         }
-        if (count < this.strings.length) {
-            const stringMapping = new Uint32Array(this.strings.length);
-            const strings = new Array(count);
-            const stringIds = new Map();
-            let index = 0;
-            for (let i = 0; i < used.length; i++) {
-                if (used[i]) {
-                    stringMapping[i] = index;
-                    strings[index] = this.strings[i];
-                    stringIds.set(this.strings[i], index);
-                    index++;
-                }
-            }
+        if (count < this.stringTable.count) {
+            const stringMapping = this.stringTable.compact(used);
             for (let id = 1; id < next; id++) {
                 name[id] = stringMapping[name[id]];
                 stringValue[id] = stringMapping[stringValue[id]];
                 unit[id] = stringMapping[unit[id]];
             }
-            this.strings = strings;
-            this.stringIds = stringIds;
         }
         for (const [id, list] of this.errors) {
             if (mapping[id] !== 0) {
@@ -1962,7 +2079,7 @@ class Arena {
         return {
             kind: "Arena",
             current: this.current,
-            strings: this.strings,
+            strings: this.stringTable.export(),
             errors: [...this.errors.entries()],
         };
     }
@@ -1995,8 +2112,7 @@ class Arena {
         this.spans32 = new Uint32Array(this.spans.buffer);
         this.capacity = this.dataTypes.length;
         this.current = properties.current;
-        this.strings = properties.strings.slice();
-        this.stringIds = new Map(this.strings.map((str, index) => [str, index]));
+        this.stringTable.import(properties.strings);
         this.errors = new Map(properties.errors);
     }
     /**
@@ -2030,17 +2146,22 @@ class Arena {
  */
 class AstArena extends Arena {
     /**
-     * raw selector (minification cache). sparse: only rules have an entry
+     * raw selector (minification cache), by rule id
      */
-    raw = [];
+    raw = new Map();
     /**
-     * optimized selector (minification cache). sparse: only rules have an entry
+     * optimized selector (minification cache), by rule id
      */
-    optimized = [];
+    optimized = new Map();
     /**
      * source ids. `spans` store the index in this table (8 bits)
      */
     sources = [];
+    /**
+     * length of the css parsed into a stylesheet, imported files included. sparse: only the stylesheets created by
+     * the parser have an entry. the render buffer is allocated from this length
+     */
+    inputLengths = [];
     /**
      *
      * @param size
@@ -2058,11 +2179,14 @@ class AstArena extends Arena {
         super.release(id, deep);
         if (id != null) {
             // drop the minification caches
-            if (this.raw[id] != null) {
-                this.raw[id] = undefined;
+            if (this.raw.get(id) != null) {
+                this.raw.delete(id);
             }
-            if (this.optimized[id] != null) {
-                this.optimized[id] = undefined;
+            if (this.optimized.get(id) != null) {
+                this.optimized.delete(id);
+            }
+            if (this.inputLengths[id] != null) {
+                this.inputLengths[id] = undefined;
             }
         }
     }
@@ -2072,8 +2196,16 @@ class AstArena extends Arena {
     compact(errors) {
         const mapping = super.compact(errors);
         // the minification caches are dropped
-        this.raw = [];
-        this.optimized = [];
+        this.raw = new Map();
+        this.optimized = new Map();
+        // the input lengths of the stylesheets that are kept
+        const inputLengths = [];
+        for (let id = 0; id < this.inputLengths.length; id++) {
+            if (this.inputLengths[id] != null && id < mapping.length && mapping[id] !== 0) {
+                inputLengths[mapping[id]] = this.inputLengths[id];
+            }
+        }
+        this.inputLengths = inputLengths;
         return mapping;
     }
     /**
@@ -2212,7 +2344,8 @@ class AstArena extends Arena {
     createRule(typ, sel, tokens, state, errors) {
         const id = this.allocate();
         this.dataTypes[id] = typ;
-        this.name[id] = this.internString(sel);
+        // a string or an interned string id
+        this.name[id] = typeof sel === "number" ? sel : this.internString(sel);
         this.flags[id] = EnumAstNodeStatus.HasChildren | ((state ?? 0) & EnumAstNodeStatus.StateMask);
         if (tokens != null) {
             this.appendTokenList(id, tokens);
@@ -2236,8 +2369,9 @@ class AstArena extends Arena {
     createAtRule(typ, nam, val, block, tokens, state, errors) {
         const id = this.allocate();
         this.dataTypes[id] = typ;
-        this.name[id] = this.internString(nam);
-        this.stringValue[id] = this.internString(val);
+        // strings or interned string ids
+        this.name[id] = typeof nam === "number" ? nam : this.internString(nam);
+        this.stringValue[id] = typeof val === "number" ? val : this.internString(val);
         this.flags[id] = (block ? EnumAstNodeStatus.HasChildren : 0) | ((state ?? 0) & EnumAstNodeStatus.StateMask);
         if (tokens != null) {
             this.appendTokenList(id, tokens);
@@ -2258,7 +2392,8 @@ class AstArena extends Arena {
     createDeclaration(typ, nam, val, state, errors) {
         const id = this.allocate();
         this.dataTypes[id] = typ;
-        this.name[id] = this.internString(nam);
+        // a string or an interned string id
+        this.name[id] = typeof nam === "number" ? nam : this.internString(nam);
         this.flags[id] = EnumAstNodeStatus.HasValues | ((state ?? 0) & EnumAstNodeStatus.StateMask);
         if (val != null) {
             this.appendTokenList(id, val);
@@ -2276,7 +2411,8 @@ class AstArena extends Arena {
     createComment(typ, val) {
         const id = this.allocate();
         this.dataTypes[id] = typ;
-        this.stringValue[id] = this.internString(val);
+        // a string or an interned string id
+        this.stringValue[id] = typeof val === "number" ? val : this.internString(val);
         this.flags[id] = 0;
         return id;
     }
@@ -2426,7 +2562,7 @@ class AstArena extends Arena {
      * @param id
      */
     str(id) {
-        return this.strings[this.stringValue[id]];
+        return this.resolveString(this.stringValue[id]);
     }
     /**
      * set the string value of a token (`val`)
@@ -2578,19 +2714,19 @@ class AstArena extends Arena {
                 break;
             case EnumToken.RuleNodeType:
             case EnumToken.KeyframesRuleNodeType:
-                node.sel = this.strings[this.name[id]];
+                node.sel = this.resolveString(this.name[id]);
                 break;
             case EnumToken.AtRuleNodeType:
             case EnumToken.KeyframesAtRuleNodeType:
-                node.nam = this.strings[this.name[id]];
-                node.val = this.strings[this.stringValue[id]];
+                node.nam = this.resolveString(this.name[id]);
+                node.val = this.resolveString(this.stringValue[id]);
                 break;
             case EnumToken.CommentNodeType:
             case EnumToken.CDOCOMMNodeType:
-                node.val = this.strings[this.stringValue[id]];
+                node.val = this.resolveString(this.stringValue[id]);
                 break;
             default:
-                node.nam = this.strings[this.name[id]];
+                node.nam = this.resolveString(this.name[id]);
                 node.val = [];
                 for (const token of this.tokens(id)) {
                     node.val.push(this.tokenToObject(token));
@@ -2618,11 +2754,11 @@ class AstArena extends Arena {
         if (this.errors.has(id)) {
             node.errors = this.errors.get(id);
         }
-        if (this.raw[id] != null) {
-            node.raw = this.raw[id];
+        if (this.raw.get(id) != null) {
+            node.raw = this.raw.get(id);
         }
-        if (this.optimized[id] != null) {
-            node.optimized = this.optimized[id];
+        if (this.optimized.get(id) != null) {
+            node.optimized = this.optimized.get(id);
         }
         return node;
     }
@@ -2634,7 +2770,7 @@ class AstArena extends Arena {
         const typ = this.dataTypes[id];
         const token = { typ };
         if (this.name[id] !== 0) {
-            token.nam = this.strings[this.name[id]];
+            token.nam = this.resolveString(this.name[id]);
         }
         if (typ === EnumToken.BinaryExpressionTokenType) {
             token.op = this.numericValue[id];
@@ -2652,17 +2788,17 @@ class AstArena extends Arena {
             token.val = fraction === 0 ? this.numericValue[id] : this.tokenToObject(fraction);
         }
         else if (this.stringValue[id] !== 0 || typ === EnumToken.IdenTokenType || typ === EnumToken.StringTokenType) {
-            token.val = this.strings[this.stringValue[id]];
+            token.val = this.resolveString(this.stringValue[id]);
         }
         if (this.unit[id] !== 0) {
             if (typ === EnumToken.ColorTokenType) {
-                token.cal = this.strings[this.unit[id]];
+                token.cal = this.resolveString(this.unit[id]);
             }
             else if (typ === EnumToken.MatchExpressionTokenType) {
-                token.attr = this.strings[this.unit[id]];
+                token.attr = this.resolveString(this.unit[id]);
             }
             else {
-                token.unit = this.strings[this.unit[id]];
+                token.unit = this.resolveString(this.unit[id]);
             }
         }
         if (typ === EnumToken.ColorTokenType && this.colorType[id] !== ColorType.NONE) {
@@ -2701,10 +2837,31 @@ class AstArena extends Arena {
         return token;
     }
     /**
-     * clone a node or a token. tokens are always cloned deeply
+     * copy the data of a node (type, strings, values, flags, location, errors): its tokens, its children and the
+     * minifier caches (`raw`, `optimized`) are not copied
      * @param id
-     * @param deep also clone the children (rules) or the value tokens (declarations)
-     * @param cloneMap map of the source ids to their clones
+     */
+    cloneNode(id) {
+        const target = this.allocate();
+        this.dataTypes[target] = this.dataTypes[id];
+        this.name[target] = this.name[id];
+        this.stringValue[target] = this.stringValue[id];
+        this.numericValue[target] = this.numericValue[id];
+        this.unit[target] = this.unit[id];
+        this.colorType[target] = this.colorType[id];
+        this.flags[target] = this.flags[id];
+        this.copySpan(target, id);
+        if (this.errors.size > 0 && this.errors.has(id)) {
+            this.errors.set(target, this.errors.get(id));
+        }
+        return target;
+    }
+    /**
+     * copy a node or a token. the tokens of a node are copied, its children are copied with `deep`. the values of a
+     * declaration are copied with `deep`
+     * @param id
+     * @param deep copy the children and the values of the declarations
+     * @param cloneMap records the copies: id of the copy by original id
      */
     clone(id, deep = false, cloneMap = null) {
         const target = this.allocate();
@@ -2718,11 +2875,11 @@ class AstArena extends Arena {
         this.colorType[target] = this.colorType[id];
         this.flags[target] = flags;
         this.copySpan(target, id);
-        if (this.raw[id] != null) {
-            this.raw[target] = this.raw[id];
+        if (this.raw.get(id) != null) {
+            this.raw.set(target, this.raw.get(id));
         }
-        if (this.optimized[id] != null) {
-            this.optimized[target] = this.optimized[id];
+        if (this.optimized.get(id) != null) {
+            this.optimized.set(target, this.optimized.get(id));
         }
         if (this.errors.size > 0 && this.errors.has(id)) {
             this.errors.set(target, this.errors.get(id));
@@ -2758,17 +2915,17 @@ class AstArena extends Arena {
         const target = this.allocate();
         const flags = source.flags[id];
         this.dataTypes[target] = source.dataTypes[id];
-        this.name[target] = this.internString(source.strings[source.name[id]] ?? "");
-        this.stringValue[target] = this.internString(source.strings[source.stringValue[id]] ?? "");
+        this.name[target] = this.internString(source.resolveString(source.name[id]) ?? "");
+        this.stringValue[target] = this.internString(source.resolveString(source.stringValue[id]) ?? "");
         this.numericValue[target] = source.numericValue[id];
-        this.unit[target] = this.internString(source.strings[source.unit[id]] ?? "");
+        this.unit[target] = this.internString(source.resolveString(source.unit[id]) ?? "");
         this.colorType[target] = source.colorType[id];
         this.flags[target] = flags & ~EnumAstNodeStatus.HasLocation;
-        if (source.raw[id] != null) {
-            this.raw[target] = source.raw[id];
+        if (source.raw.get(id) != null) {
+            this.raw.set(target, source.raw.get(id));
         }
-        if (source.optimized[id] != null) {
-            this.optimized[target] = source.optimized[id];
+        if (source.optimized.get(id) != null) {
+            this.optimized.set(target, source.optimized.get(id));
         }
         if (flags & EnumAstNodeStatus.HasLocation) {
             // inlined: source.getSource(id)
@@ -2880,7 +3037,7 @@ class AstArena extends Arena {
      * @param id
      */
     getSelector(id) {
-        return this.strings[this.name[id]];
+        return this.resolveString(this.name[id]);
     }
     /**
      * set the rule selector
@@ -2959,7 +3116,7 @@ class AstArena extends Arena {
         for (const t of new ValueWalker(this, tokens)) {
             if (this.dataTypes[t] === EnumToken.NestingSelectorTokenType) {
                 if (tokens.length === 2) {
-                    this.resetToken(t, EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.strings[this.stringValue[t]], replace));
+                    this.resetToken(t, EnumToken.LiteralTokenType, this.replaceCompoundLiteral(this.resolveString(this.stringValue[t]), replace));
                     continue;
                 }
                 const rule = splitRule(replace);
@@ -2976,8 +3133,9 @@ class AstArena extends Arena {
             ...super.exportProperties(),
             kind: "AstArena",
             sources: this.sources,
-            raw: this.raw,
-            optimized: this.optimized,
+            raw: [...this.raw],
+            optimized: [...this.optimized],
+            inputLengths: this.inputLengths,
         };
     }
     /**
@@ -2986,8 +3144,9 @@ class AstArena extends Arena {
     importProperties(properties, transferables) {
         super.importProperties(properties, transferables);
         this.sources = properties.sources?.slice() ?? [];
-        this.raw = properties.raw?.slice() ?? [];
-        this.optimized = properties.optimized?.slice() ?? [];
+        this.raw = new Map(properties.raw ?? []);
+        this.optimized = new Map(properties.optimized ?? []);
+        this.inputLengths = properties.inputLengths?.slice() ?? [];
     }
     // ---- nesting rules expansion ---------------------------------------------------------------
     /**
@@ -3007,10 +3166,10 @@ class AstArena extends Arena {
                 this.name[id] = this.internString((node.sel ?? node.nam ?? ""));
                 this.flags[id] = EnumAstNodeStatus.HasChildren;
                 if (node.raw != null) {
-                    this.raw[id] = node.raw;
+                    this.raw.set(id, node.raw);
                 }
                 if (node.optimized != null) {
-                    this.optimized[id] = node.optimized;
+                    this.optimized.set(id, node.optimized);
                 }
                 if (typeof node.val === "string") {
                     this.stringValue[id] = this.internString(node.val);
@@ -3169,7 +3328,7 @@ class AstArena extends Arena {
             return;
         }
         const ast = node;
-        const sel = this.strings[this.name[ast]];
+        const sel = this.resolveString(this.name[ast]);
         const place = (child) => {
             if (before === 0) {
                 this.appendChild(parent, child);
@@ -3185,7 +3344,7 @@ class AstArena extends Arena {
                 const typ = this.dataTypes[child];
                 if (typ === EnumToken.RuleNodeType) {
                     const rule = child;
-                    const ruleSel = this.strings[this.name[rule]];
+                    const ruleSel = this.resolveString(this.name[rule]);
                     if (!ruleSel.includes("&")) {
                         const selRule = splitRule(ruleSel);
                         const arSelf = splitRule(sel)
@@ -3222,7 +3381,7 @@ class AstArena extends Arena {
                             child = next;
                             continue;
                         }
-                        for (const sel of this.raw[rule] ?? splitRule(ruleSel)) {
+                        for (const sel of this.raw.get(rule) ?? splitRule(ruleSel)) {
                             const s = sel.join("");
                             if (s.includes("&") || parentSelector) {
                                 if (s.indexOf("&", 1) === -1) {
@@ -3305,9 +3464,9 @@ class AstArena extends Arena {
                 }
                 else if (typ === EnumToken.AtRuleNodeType) {
                     const astAtRule = child;
-                    const atRuleName = this.strings[this.name[astAtRule]];
+                    const atRuleName = this.resolveString(this.name[astAtRule]);
                     if (atRuleName === "scope") {
-                        const atRuleValue = this.strings[this.stringValue[astAtRule]];
+                        const atRuleValue = this.resolveString(this.stringValue[astAtRule]);
                         if (atRuleValue.includes("&")) {
                             // inlined: this.setValueString(astAtRule, this.replaceCompound(atRuleValue, sel))
                             this.stringValue[astAtRule] = this.internString(this.replaceCompound(atRuleValue, sel));
@@ -3315,7 +3474,7 @@ class AstArena extends Arena {
                         let hasNesting = false;
                         for (let t = this.firstChild[astAtRule]; t !== 0; t = this.nextSibling[t]) {
                             if (this.dataTypes[t] === EnumToken.RuleNodeType &&
-                                this.strings[this.name[t]].includes("&")) {
+                                this.resolveString(this.name[t]).includes("&")) {
                                 hasNesting = true;
                                 break;
                             }
@@ -3351,10 +3510,10 @@ class AstArena extends Arena {
                             const nextRule = this.nextSibling[r];
                             if (this.dataTypes[r] === EnumToken.AtRuleNodeType) {
                                 if (this.flags[r] & EnumAstNodeStatus.HasChildren) {
-                                    const val = this.strings[this.stringValue[astAtRule]];
-                                    const rVal = this.strings[this.stringValue[r]];
+                                    const val = this.resolveString(this.stringValue[astAtRule]);
+                                    const rVal = this.resolveString(this.stringValue[r]);
                                     if (val !== "" && rVal !== "") {
-                                        const rName = this.strings[this.name[r]];
+                                        const rName = this.resolveString(this.name[r]);
                                         if (atRuleName === "media" && rName === "media") {
                                             // inlined: this.setValueString(r, val + " and " + rVal)
                                             this.stringValue[r] = this.internString(val + " and " + rVal);

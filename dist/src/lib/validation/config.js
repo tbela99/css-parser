@@ -10,7 +10,11 @@ import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from './parser/typedef.js';
 import { memoize } from '../parser/utils/cache.js';
 
-const parsedSyntaxes = new Map();
+/**
+ * parsed syntaxes, by syntax node: the names that share a definition (`-webkit-transform` and `transform`, the aliases)
+ * share the parsed syntax, and the validations cached by syntax (see `matchDeclarationSyntax()`)
+ */
+const parsedSyntaxes = new WeakMap();
 Object.freeze(config);
 function getSyntaxConfig() {
     // @ts-expect-error
@@ -51,8 +55,17 @@ function lookupNode(group, key) {
  * @param key the type name without the angle brackets, or the function name followed by `()`
  */
 function hasSyntax(key) {
-    return lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+    let defined = definedSyntaxes.get(key);
+    if (defined === undefined) {
+        defined = lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+        definedSyntaxes.set(key, defined);
+    }
+    return defined;
 }
+/**
+ * the types and the functions that are defined, by name, see {@link hasSyntax}
+ */
+const definedSyntaxes = new Map();
 /**
  * return the raw syntax of a type or a function
  * @param key the type name without the angle brackets, or the function name followed by `()`
@@ -82,12 +95,12 @@ const getParsedSyntax = memoize((group, key) => {
     if (obj == null) {
         return null;
     }
-    const index = group + "." + key;
-    if (!parsedSyntaxes.has(index)) {
-        const syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
-        parsedSyntaxes.set(index, syntax);
+    let syntax = parsedSyntaxes.get(obj);
+    if (syntax === undefined) {
+        syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
+        parsedSyntaxes.set(obj, syntax);
     }
-    return parsedSyntaxes.get(index);
+    return syntax;
 });
 const getSyntaxRule = memoize((group, key) => {
     const node = findNode(group, key);

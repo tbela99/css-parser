@@ -8,7 +8,7 @@ category: Guides
 
 CSS-Parser is a high-performance, fault-tolerant, and dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 
-It implements the [CSS Syntax Module Level 3](https://www.w3.org/TR/css-syntax-3/) specification and validates CSS using syntax rules from [MDN Data](https://github.com/mdn/data). Every stylesheet is fully parsed into a structured AST, and token values are exposed as typed data so the library can support robust transformations, validation, and plugin-oriented workflows without falling back to raw strings.
+It implements the [CSS Syntax Module Level 3](https://www.w3.org/TR/css-syntax-3/) specification and validates CSS using the syntax definitions of the W3C specifications from [@webref/css](https://github.com/w3c/webref/tree/main/packages/css). Every stylesheet is fully parsed into a structured AST, and token values are exposed as typed data so the library can support robust transformations, validation, and plugin-oriented workflows without falling back to raw strings.
 
 In addition to parsing and validation, CSS-Parser provides advanced optimization and minification capabilities. According to [this benchmark](https://tbela99.github.io/css-parser/benchmark/index.html), it is the most efficient CSS minifier available, producing smaller output than competing solutions while maintaining competitive performance.
 
@@ -22,15 +22,17 @@ A non-exhaustive list of features is provided below:
 
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
-* **All-in-one CSS parsing solution** covering parsing, validation, transformation, minification, and AST manipulation.
-* **Standards-based CSS validation** powered by MDN data.
+* **All-in-one CSS parsing solution** for parsing, validation, transformation, and minification.
+* **Standards-based CSS validation** powered by the W3C specification definitions ([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)).
 * **Full CSS Modules support** for modern component-based workflows.
-* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always produces a complete, structured parse result.
-* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes so plugins and transforms can operate on semantic structures.
+* **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always yields a complete parse tree.
+* **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes for safer plugin and transform logic.
 * **High-performance minification** with safe optimizations and no unsafe transforms.
 * **Advanced color processing** with support for modern color spaces and functions, including `color()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color-mix()`, `light-dark()`, system colors, and relative colors.
 * **Color conversion engine** capable of transforming colors between all supported formats.
 * **Automatic CSS nesting generation** from compatible selectors.
+* **Nested CSS transpilation** to legacy-compatible syntax.
+* **`if()` function transpilation** for broader browser compatibility.
 * **Source map generation** for easier debugging and development workflows.
 * **Shorthand property computation** to reduce output size and improve optimization.
 * **Transform function optimization** for more compact CSS output.
@@ -38,8 +40,7 @@ A non-exhaustive list of features is provided below:
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
-* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
-* **51.5kb** once minified and gzipped.
+* **Vendor prefix cleanup** to modernize generated CSS.
 
 ## Installation
 
@@ -61,7 +62,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.0.1/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.0/web';
 
     const css = `
 
@@ -99,7 +100,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.0.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.2.0/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {
@@ -175,7 +176,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.0.1/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.0/web';
 
 const css = `
 
@@ -202,7 +203,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.0.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.2.0/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

@@ -872,6 +872,8 @@ var map = {
 				]
 			},
 			"text-emphasis-color": {
+				keywords: [
+				],
 				"default": [
 					"currentcolor"
 				],

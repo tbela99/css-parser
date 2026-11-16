@@ -163,7 +163,7 @@ function getOKLCHComponents(arena, token) {
     const h = getAngle(arena, t) * 360;
     // @ts-ignore
     t = components[3];
-    const alpha = t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none")
+    const alpha = t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[t]) === "none")
         ? 1
         : getNumber(arena, t);
     return [l, c, h, alpha];

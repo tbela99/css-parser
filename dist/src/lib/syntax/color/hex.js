@@ -123,7 +123,7 @@ function rgb2hexvalues(arena, token) {
     }
     for (let i = 0; i < 3; i++) {
         t = components[i];
-        value += (arena.dataTypes[t] === EnumToken.Iden && arena.strings[arena.stringValue[t]] === "none"
+        value += (arena.dataTypes[t] === EnumToken.Iden && arena.resolveString(arena.stringValue[t]) === "none"
             ? "0"
             : Math.round(getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1)))
             .toString(16)

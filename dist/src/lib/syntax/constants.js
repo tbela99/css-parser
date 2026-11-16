@@ -45,6 +45,29 @@ const tokensfuncDefMap = new Map([
 ]);
 const tokensfuncSet = new Set(tokensfuncDefMap.values());
 /**
+ * function definition token types (the keys of {@link tokensfuncDefMap}) and function token types (the values), by
+ * token type: a typed array lookup is faster than a Map lookup
+ */
+const functionTypes = new Uint8Array(256);
+for (const [def, type] of tokensfuncDefMap) {
+    functionTypes[def] |= 1;
+    functionTypes[type] |= 2;
+}
+/**
+ * true if the token type is a function definition (`name(`), like `tokensfuncDefMap.has(type)`
+ * @param type
+ */
+function isFunctionDefType(type) {
+    return (functionTypes[type] & 1) === 1;
+}
+/**
+ * true if the token type is a function, like `tokensfuncSet.has(type)`
+ * @param type
+ */
+function isFunctionType(type) {
+    return (functionTypes[type] & 2) === 2;
+}
+/**
  * Epsilon
  */
 const epsilon = 1e-5;
@@ -496,4 +519,4 @@ const trimTokenSpace = new Set([
 ]);
 const combinators = ["+", ">", "~", "||", "|"];
 
-export { COLORS_NAMES, D50, LOC, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, validationUnits, whenElseFunc, wildCardFuncs };
+export { COLORS_NAMES, D50, LOC, NAMES_COLORS, anglePrecision, colorDistancePrecision, colorFuncColorSpace, colorPrecision, colorRange, colorsFunc, combinators, containerFunc, deprecatedSystemColors, e, epsilon, funcLike, gridTemplateFunc, imageFunc, isFunctionDefType, isFunctionType, k, mFGT, mFLT, mathFuncs, mediaTypes, nonStandardColors, pageMarginBoxType, pseudoElements, regMatchLinearGradient, regMatchRadialGradient, supportFunc, systemColors, timelineFunc, timingFunc, tokensMap, tokensfuncDefMap, tokensfuncSet, transformFunctions, trimTokenSpace, urlFunc, urlTokenMatcher, validationUnits, whenElseFunc, wildCardFuncs };

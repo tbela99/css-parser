@@ -158,7 +158,7 @@ export class PropertyList {
         name =
             arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
-                : arena.strings[arena.name[declaration]];
+                : arena.resolveString(arena.name[declaration]);
 
         // do not compute shorthand for invalid declarations
         if (name == null) {
@@ -326,9 +326,13 @@ export class PropertyList {
             // @ts-ignore
             (<PropertySet>this.declarations.get(shorthand)).add(<AstDeclaration>declaration);
         } else {
+            if (shorthand != null) {
+                this.mapValues(declaration as AstDeclaration, shorthand as SinglePropertyTypeMapping);
+            }
 
-            const existing = this.declarations.get(propertyName);
+            const existing: AstNode | PropertySet | PropertyMap | undefined = this.declarations.get(propertyName);
 
+            // a previous declaration with the same name takes precedence when it is !important and the new one is not
             if (
                 existing != null &&
                 typeof existing === "number" &&
@@ -336,10 +340,6 @@ export class PropertyList {
                 (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0
             ) {
                 return this;
-            }
-
-            if (shorthand != null) {
-                this.mapValues(declaration as AstDeclaration, shorthand as SinglePropertyTypeMapping);
             }
 
             this.declarations.set(propertyName, declaration);
@@ -387,7 +387,7 @@ export class PropertyList {
                         default: {
                             for (const v of set) {
                                 if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
-                                    const value: string = arena.strings[arena.stringValue[v]].toLowerCase();
+                                    const value: string = arena.resolveString(arena.stringValue[v]).toLowerCase();
 
                                     if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
                                         val.push(v);
@@ -417,7 +417,7 @@ export class PropertyList {
 
         for (const val of declarationValues) {
             if (arena.dataTypes[val] === EnumToken.IdenTokenType) {
-                name = arena.strings[arena.stringValue[val]].toLowerCase();
+                name = arena.resolveString(arena.stringValue[val]).toLowerCase();
 
                 if (mapping.mapping[name] != null) {
                     const typ: EnumToken = EnumToken[mapping.mapping[name].typ as keyof typeof EnumToken] as EnumToken;

@@ -5,12 +5,20 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, multiply } from './utils.js';
+import { setIdentity, multiplyInto } from './utils.js';
 
+/**
+ * the perspective matrix. the function multiplies the matrix it receives in place: `from = from × perspective`
+ */
+const matrix = new Float64Array(16);
+/**
+ * @param x distance, `null` for `none`
+ * @param from
+ */
 function perspective(x, from) {
-    const matrix = identity();
-    matrix[2 * 4 + 3] = x == "none" ? 0 : x === 0 ? Number.NEGATIVE_INFINITY : -1 / x;
-    return multiply(from, matrix);
+    setIdentity(matrix);
+    matrix[2 * 4 + 3] = x === null ? 0 : x === 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+    return multiplyInto(from, matrix, from);
 }
 
 export { perspective };

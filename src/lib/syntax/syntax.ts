@@ -1,5 +1,6 @@
 import type { ErrorDescription, Token } from "../../@types/index.d.ts";
 import { type AstArena, TokenField } from "../ast/arena.ts";
+import { StringFlag } from "../ast/strings.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";
 import { ColorType, EnumToken, WalkerOptionEnum } from "../ast/types.ts";
 import { toDegrees } from "../parser/utils/angle.ts";
@@ -585,23 +586,23 @@ export function isFlexUnit(unit: string): boolean {
 }
 
 export function isLength(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isLengthUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 export function isResolution(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isResolutionUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isResolutionUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 export function isAngle(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isAngleUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isAngleUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 export function isTime(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isTimeUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isTimeUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 export function isFrequency(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isFrequencyUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isFrequencyUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 /**
@@ -842,7 +843,7 @@ export function reduceConicColorStops(arena: AstArena, stops: Token[]): Token[] 
 export function isRectangularOrthogonalColorspace(arena: AstArena, token: Token): boolean {
     return (
         arena.dataTypes[token] === EnumToken.IdenTokenType &&
-        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))
+        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token])))
     );
 }
 
@@ -855,7 +856,7 @@ export function isRectangularOrthogonalColorspace(arena: AstArena, token: Token)
 export function isPolarColorspace(arena: AstArena, token: Token): boolean {
     return (
         arena.dataTypes[token] === EnumToken.IdenTokenType &&
-        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]]))
+        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token])))
     );
 }
 
@@ -870,8 +871,23 @@ export function isIdentColor(arena: AstArena, token: Token): boolean {
         arena.dataTypes[token] === EnumToken.ColorTokenType &&
         arena.colorType[token] !== ColorType.NONE &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(arena.colorType[token]) &&
-        isIdent(arena.strings[arena.stringValue[token]])
+        isIdent(arena.resolveString(arena.stringValue[token]))
     );
+}
+
+/**
+ * true if the identifier is a color: a system color, a named color, `currentcolor` or `transparent`, ignoring the case
+ * @param str
+ */
+export function isColorName(str: string): boolean {
+    const val: string = lowercase(str);
+
+    if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
+        return true;
+    }
+
+    // named color
+    return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
 }
 
 /**
@@ -918,19 +934,13 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
     }
 
     if (typ === EnumToken.IdenTokenType) {
-        const val = lowercase(arena.strings[arena.stringValue[token]]);
-
-        if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
-            return true;
-        }
-
-        // named color
-        return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
+        // computed once per string id
+        return arena.stringFlag(arena.stringValue[token], StringFlag.Color, isColorName);
     }
 
     if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
         if (arena.firstToken[token] !== 0) {
-            const name: string = arena.strings[arena.stringValue[token]];
+            const name: string = arena.resolveString(arena.stringValue[token]);
 
             if (name === "light-dark") {
                 const children: Token[] = filterChildren(arena, token, [
@@ -968,7 +978,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                 if (colorSpace != null) {
                     for (const value of components) {
                         if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
-                            const val = arena.strings[arena.stringValue[value]].toLowerCase();
+                            const val = arena.resolveString(arena.stringValue[value]).toLowerCase();
 
                             if (
                                 // @ts-expect-error
@@ -988,13 +998,13 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                             }
                         } else if (
                             arena.dataTypes[value] === EnumToken.MathFunctionTokenType &&
-                            equalsIgnoreCase("calc", arena.strings[arena.stringValue[value]])
+                            equalsIgnoreCase("calc", arena.resolveString(arena.stringValue[value]))
                         ) {
                             let val: string;
                             // inlined: arena.walkValues(arena.tokens(value))
                             for (const v of new ValueWalker(arena, arena.tokens(value))) {
                                 if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
-                                    val = arena.strings[arena.stringValue[v]].toLowerCase();
+                                    val = arena.resolveString(arena.stringValue[v]).toLowerCase();
 
                                     if (
                                         // @ts-expect-error
@@ -1040,7 +1050,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                     parent != null &&
                     parent !== token &&
                     arena.dataTypes[parent] === EnumToken.MathFunctionTokenType &&
-                    arena.strings[arena.stringValue[parent]] === "calc"
+                    arena.resolveString(arena.stringValue[parent]) === "calc"
                 ) {
                     const children: Token[] = arena.tokens(parent);
 
@@ -1097,7 +1107,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                 ]);
                 const isRelative: boolean =
                     arena.dataTypes[children[0]] === EnumToken.IdenTokenType &&
-                    arena.strings[arena.stringValue[children[0]]] === "from";
+                    arena.resolveString(arena.stringValue[children[0]]) === "from";
 
                 let offset = 0;
                 if (isRelative) {
@@ -1126,7 +1136,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                             childType === EnumToken.PercentageTokenType ||
                             isColor(arena, children[i]) ||
                             (childType === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("none", arena.strings[arena.stringValue[children[i]]]))
+                                equalsIgnoreCase("none", arena.resolveString(arena.stringValue[children[i]])))
                         ) {
                             continue;
                         }
@@ -1161,7 +1171,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                 if (
                     children[j].length > 0 &&
                     arena.dataTypes[children[j][0]] === EnumToken.IdenTokenType &&
-                    equalsIgnoreCase("in", arena.strings[arena.stringValue[children[j][k]]])
+                    equalsIgnoreCase("in", arena.resolveString(arena.stringValue[children[j][k]]))
                 ) {
                     k++;
 
@@ -1171,10 +1181,10 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                                 if (k === children[j].length) {
                                 } else if (arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType) {
                                     return false;
-                                } else if (equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])) {
+                                } else if (equalsIgnoreCase("hue", arena.resolveString(arena.stringValue[children[j][k]]))) {
                                     k++;
                                 } else {
-                                    switch (arena.strings[arena.stringValue[children[j][k]]]) {
+                                    switch (arena.resolveString(arena.stringValue[children[j][k]])) {
                                         case "increasing":
                                         case "decreasing":
                                         case "longer":
@@ -1188,7 +1198,7 @@ export function isColor(arena: AstArena, token: Token, errors?: ErrorDescription
                                     if (
                                         k >= children[j].length ||
                                         arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType ||
-                                        !equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])
+                                        !equalsIgnoreCase("hue", arena.resolveString(arena.stringValue[children[j][k]]))
                                     ) {
                                         return false;
                                     }
@@ -1222,7 +1232,7 @@ export function parseColor(arena: AstArena, token: Token): Token {
     const typ: EnumToken = arena.dataTypes[token];
 
     if (typ === EnumToken.IdenTokenType) {
-        const val: string = arena.strings[arena.stringValue[token]].toLowerCase();
+        const val: string = arena.resolveString(arena.stringValue[token]).toLowerCase();
 
         if (nonStandardColors.has(val)) {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
@@ -1256,7 +1266,7 @@ export function parseColor(arena: AstArena, token: Token): Token {
     }
 
     if (typ === EnumToken.ColorTokenType) {
-        const val: string = arena.strings[arena.stringValue[token]];
+        const val: string = arena.resolveString(arena.stringValue[token]);
 
         if (arena.colorType[token] === ColorType.NONE && arena.stringValue[token] !== 0) {
             // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
@@ -1275,11 +1285,11 @@ export function parseColor(arena: AstArena, token: Token): Token {
             if (
                 tk != null &&
                 arena.dataTypes[tk] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[tk]] === "from"
+                arena.resolveString(arena.stringValue[tk]) === "from"
             ) {
                 // inlined: arena.setUnitString(token, "rel")
                 arena.unit[token] = "rel" == null ? 0 : arena.internString("rel");
-            } else if (val === "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] === "in") {
+            } else if (val === "color-mix" && tk != null && arena.resolveString(arena.stringValue[tk]) === "in") {
                 // inlined: arena.setUnitString(token, "mix")
                 arena.unit[token] = "mix" == null ? 0 : arena.internString("mix");
             }
@@ -1548,7 +1558,7 @@ export function isHash(name: string): boolean {
 // }
 
 export function isFlex(arena: AstArena, dimension: Token): boolean {
-    return arena.unit[dimension] !== 0 && isFlexUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isFlexUnit(arena.resolveString(arena.unit[dimension]));
 }
 
 export function parseDimension(
@@ -1696,7 +1706,7 @@ export function length2Px(arena: AstArena, value: Token): number | null {
         result = val;
     } else {
         // the absolute length units: 1in = 2.54cm = 96px. the units are case-insensitive
-        switch (arena.strings[arena.unit[value]]?.toLowerCase()) {
+        switch (arena.resolveString(arena.unit[value])?.toLowerCase()) {
             case "cm":
                 result = (val * 96) / 2.54;
                 break;

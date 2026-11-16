@@ -8,7 +8,7 @@
 import { PropertySet } from './set.js';
 import { getConfig } from '../utils/config.js';
 import { PropertyMap } from './map.js';
-import { EnumAstNodeStatus, EnumToken } from '../../ast/types.js';
+import { EnumToken, EnumAstNodeStatus } from '../../ast/types.js';
 import { getParsedSyntax } from '../../validation/config.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 import { isValidDeclarationValue } from '../../validation/match.js';
@@ -131,7 +131,7 @@ class PropertyList {
         name =
             arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
-                : arena.strings[arena.name[declaration]];
+                : arena.resolveString(arena.name[declaration]);
         // do not compute shorthand for invalid declarations
         if (name == null) {
             this.declarations.set(this.memo.key(arena, declaration), declaration);
@@ -269,15 +269,16 @@ class PropertyList {
             this.declarations.get(shorthand).add(declaration);
         }
         else {
+            if (shorthand != null) {
+                this.mapValues(declaration, shorthand);
+            }
             const existing = this.declarations.get(propertyName);
+            // a previous declaration with the same name takes precedence when it is !important and the new one is not
             if (existing != null &&
                 typeof existing === "number" &&
                 arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
                 (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0) {
                 return this;
-            }
-            if (shorthand != null) {
-                this.mapValues(declaration, shorthand);
             }
             this.declarations.set(propertyName, declaration);
         }
@@ -312,7 +313,7 @@ class PropertyList {
                         default: {
                             for (const v of set) {
                                 if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
-                                    const value = arena.strings[arena.stringValue[v]].toLowerCase();
+                                    const value = arena.resolveString(arena.stringValue[v]).toLowerCase();
                                     if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
                                         val.push(v);
                                         set.delete(v);
@@ -336,7 +337,7 @@ class PropertyList {
         }
         for (const val of declarationValues) {
             if (arena.dataTypes[val] === EnumToken.IdenTokenType) {
-                name = arena.strings[arena.stringValue[val]].toLowerCase();
+                name = arena.resolveString(arena.stringValue[val]).toLowerCase();
                 if (mapping.mapping[name] != null) {
                     const typ = EnumToken[mapping.mapping[name].typ];
                     arena.resetToken(val, typ, mapping.mapping[name].val);

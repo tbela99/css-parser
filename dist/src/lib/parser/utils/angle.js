@@ -12,7 +12,7 @@
  * @returns
  */
 function toDegrees(arena, angle) {
-    switch (arena.strings[arena.unit[angle]]) {
+    switch (arena.resolveString(arena.unit[angle])) {
         // case "deg":
         //     return angle;
         case "rad":

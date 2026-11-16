@@ -9,7 +9,7 @@ import { getAngle, convertColor } from '../syntax/color/color.js';
 import { reduceHexValue } from '../syntax/color/hex.js';
 import { EnumToken, ColorType, EnumAstNodeStatus } from '../ast/types.js';
 import { SourceMap } from './sourcemap/sourcemap.js';
-import { pseudoElements, anglePrecision, urlTokenMatcher, tokensfuncSet } from '../syntax/constants.js';
+import { pseudoElements, anglePrecision, urlTokenMatcher, isFunctionType } from '../syntax/constants.js';
 import { minifyNumber, toPrecisionAngle, toPrecisionValue, reducegradientBackgroundPosition, reduceConicColorStops, reduceColorStops, parseColor, isWhiteSpace } from '../syntax/syntax.js';
 import { equalsIgnoreCase } from '../parser/utils/text.js';
 import { toDegrees } from '../parser/utils/angle.js';
@@ -18,6 +18,8 @@ import { dirname } from '../fs/resolve.js';
 import { SourceFile } from '../parser/source.js';
 import { TokenField } from '../ast/arena.js';
 import { StructuralMemo } from '../ast/cache.js';
+import { Writer, DEFAULT_CAPACITY } from './writer.js';
+import { RenderResult } from './result.js';
 
 /**
  * Rendered strings shared by the renderer.
@@ -58,6 +60,17 @@ class RenderMemo {
      */
     constructs = new StructuralMemo();
     /**
+     * location of the declarations in the render buffer, by declaration slot: writer id, start offset, end offset and
+     * number of bytes minus the number of UTF-16 code units (4 values per slot). an identical declaration written to the
+     * same buffer is copied from there (see {@link Writer.copy})
+     */
+    locations = new Int32Array(1024);
+    /**
+     * rendered values of the declarations (without the name), by declaration slot: a declaration written to another
+     * buffer is not rendered again
+     */
+    values = [];
+    /**
      * a cleared memo
      */
     static acquire() {
@@ -72,8 +85,34 @@ class RenderMemo {
         if (RenderMemo.free.length < 4 && memo.declarations.footprint + memo.constructs.footprint <= 1 << 20) {
             memo.declarations.clear();
             memo.constructs.clear();
+            memo.values.length = 0;
+            // the writer ids are never reused: the locations are not cleared
             RenderMemo.free.push(memo);
         }
+    }
+    /**
+     * record the location of a declaration in a render buffer
+     * @param slot declaration slot
+     * @param writer render buffer
+     * @param start start offset
+     * @param extra value of {@link Writer.extra} at the start offset
+     */
+    locate(slot, writer, start, extra) {
+        let index = slot << 2;
+        if (index + 4 > this.locations.length) {
+            let size = this.locations.length * 2;
+            while (size < index + 4) {
+                size *= 2;
+            }
+            const locations = new Int32Array(size);
+            locations.set(this.locations);
+            this.locations = locations;
+        }
+        const locations = this.locations;
+        locations[index++] = writer.id;
+        locations[index++] = start;
+        locations[index++] = writer.length;
+        locations[index] = writer.extra - extra;
     }
 }
 /**
@@ -184,7 +223,8 @@ function resolveRenderOptions(options) {
 }
 /**
  * Render nodes with the same options: the options are resolved once and identical values are rendered once.
- * Same output as {@link doRender}, used by the minifier to compare the size of the nodes
+ * Same output as {@link doRender}, used by the minifier to compare the size of the nodes. The output is not kept: only
+ * its size is returned
  *
  * @internal
  */
@@ -231,6 +271,10 @@ class NodeRenderer {
      */
     direct;
     /**
+     * output buffer, reused by the renders: only the size of the output is read
+     */
+    writer = new Writer();
+    /**
      * @param options render options
      */
     constructor(options) {
@@ -244,11 +288,11 @@ class NodeRenderer {
                 this.resolved.output == null;
     }
     /**
-     * render a node
+     * rendered size of a node: the length of the rendered css (UTF-16 code units)
      * @param arena
      * @param node
      */
-    render(arena, node) {
+    size(arena, node) {
         if (this.arena !== arena) {
             if (this.arena != null) {
                 this.cache = new RenderCache(new RenderMemo(), this.resolved);
@@ -257,10 +301,39 @@ class NodeRenderer {
             this.reducer = createReducer(arena, this.resolved, this.cache);
         }
         if (!this.direct) {
-            return doRender(arena, node, this.options, null, this.cache.memo).code;
+            return RenderResult.codeLength(doRender(arena, node, this.options, null, this.cache.memo));
         }
-        return renderAstNode(arena, node, this.resolved, null, this.location, null, this.errors, this.reducer, this.cache, 0, this.indents);
+        // the output is not kept: the buffer is reused
+        const writer = this.writer;
+        writer.reset();
+        renderAstNode(arena, node, this.resolved, null, this.location, null, this.errors, this.reducer, this.cache, writer, 0, this.indents);
+        return writer.codeLength;
     }
+}
+/**
+ * extra capacity of the render buffer: the output may be larger than the input (beautified minified css, css modules
+ * exports, inline source map, ...)
+ */
+const OUTPUT_PADDING = 1 << 12;
+/**
+ * capacity of the buffer a node is rendered to. the minified or beautified output is usually not larger than the
+ * input: the length of the input the node was parsed from, padded
+ * - stylesheet: the length of the css parsed into the stylesheet, imported files included
+ * - other nodes: the length of their location in the source
+ * @param arena
+ * @param node
+ *
+ * @internal
+ */
+function outputCapacity(arena, node) {
+    let length = 0;
+    if (arena.dataTypes[node] === EnumToken.StyleSheetNodeType) {
+        length = arena.inputLengths[node] ?? 0;
+    }
+    else if (arena.flags[node] & EnumAstNodeStatus.HasLocation) {
+        length = arena.getSpanEnd(node) - arena.getSpanStart(node);
+    }
+    return length > 0 ? length + OUTPUT_PADDING : DEFAULT_CAPACITY;
 }
 /**
  * render ast
@@ -273,6 +346,8 @@ class NodeRenderer {
  */
 function doRender(arena, data, options = {}, mapping, memo) {
     options = resolveRenderOptions(options);
+    // estimated from the node to render: the nodes rendered below may be copies
+    const capacity = outputCapacity(arena, data);
     const expandNesting = options.expandNestingRules &&
         [EnumToken.StyleSheetNodeType, EnumToken.AtRuleNodeType, EnumToken.RuleNodeType].includes(arena.dataTypes[data]) &&
         (arena.flags[data] & EnumAstNodeStatus.HasChildren) !== 0;
@@ -313,8 +388,10 @@ function doRender(arena, data, options = {}, mapping, memo) {
         end: 0,
     };
     const linesMap = options.sourcemap ? new LineMap() : null;
-    let code = "";
+    // the generated css is written to the buffer. its size is estimated from the input: it should not grow
+    const writer = new Writer(capacity);
     if (mapping != null) {
+        let code = "";
         if (mapping.importMapping != null) {
             const absolutePath = options.resolve(options.output != null ? dirname(options.output) : dirname(options.src), options.cwd).absolute;
             for (let [key, value] of Object.entries(mapping.importMapping)) {
@@ -326,6 +403,7 @@ function doRender(arena, data, options = {}, mapping, memo) {
             }
         }
         code += `:export${options.indent}{${options.newLine}${Object.entries(mapping.mapping).reduce((acc, [k, v]) => acc + (acc.length > 0 ? options.newLine : "") + `${options.indent}${k}:${options.indent}${v};`, "")}${options.newLine}}${options.newLine}`;
+        writer.write(code);
         if (sourcemap != null) {
             move(sourceLocation, linesMap, code);
         }
@@ -334,13 +412,9 @@ function doRender(arena, data, options = {}, mapping, memo) {
         // @ts-ignore
         options.output = options.resolve(options.output, options.cwd).absolute;
     }
-    const result = {
-        code: code +
-            renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, createReducer(arena, options, cache), cache),
-        errors,
-        stats: {
-            total: `${(performance.now() - startTime).toFixed(2)}ms`,
-        },
+    renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, createReducer(arena, options, cache), cache, writer);
+    const stats = {
+        total: `${(performance.now() - startTime).toFixed(2)}ms`,
     };
     if (ownMemo) {
         RenderMemo.release(cache.memo);
@@ -358,12 +432,11 @@ function doRender(arena, data, options = {}, mapping, memo) {
             sourcemap.addSourceContent(source.id, source.file, source.content);
         }
         sourcemap.add(sourcemaps.maps);
-        result.map = sourcemap;
         if (options.sourcemap === "inline") {
-            result.code += `\n/*# sourceMappingURL=${result.map.toUrl()} */`;
+            writer.write(`\n/*# sourceMappingURL=${sourcemap.toUrl()} */`);
         }
     }
-    return result;
+    return new RenderResult(writer.bytes(), errors, stats, sourcemap ?? undefined, writer.codeLength);
 }
 /**
  * Update source map
@@ -497,7 +570,28 @@ function move(sourceLocation, linesMap, str, start, end) {
     }
 }
 /**
- * render ast node
+ * write an interned string: an ascii string is copied from the string table, the string is not created
+ * @param arena
+ * @param id
+ * @param writer
+ */
+function writeString(arena, id, writer) {
+    const length = arena.stringLength(id);
+    if (length === 0) {
+        return;
+    }
+    writer.reserve(length);
+    const written = arena.copyStringAscii(id, writer.buffer, writer.length);
+    if (written >= 0) {
+        writer.length += written;
+    }
+    else {
+        writer.write(arena.resolveString(id));
+    }
+}
+/**
+ * render ast node: the rendered css is written to the writer. nothing is written when the node is rendered as an empty
+ * string (removed comments, empty rules, ...)
  * @param arena
  * @param data node id
  * @param options
@@ -507,117 +601,210 @@ function move(sourceLocation, linesMap, str, start, end) {
  * @param errors
  * @param reducer
  * @param cache
+ * @param writer output
  * @param level
  * @param indents
  *
  * @internal
  */
-function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level = 0, indents = []) {
+function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, writer, level = 0, indents = []) {
     if (indents.length < level + 1) {
         indents.push(options.indent.repeat(level));
     }
     if (indents.length < level + 2) {
         indents.push(options.indent.repeat(level + 1));
     }
-    // @ts-ignore
-    let children = "";
-    let str = "";
     const indent = indents[level];
-    const indentSub = indents[level + 1];
     const typ = arena.dataTypes[data];
     switch (typ) {
         case EnumToken.DeclarationNodeType:
-            return `${arena.strings[arena.name[data]]}:${options.indent}${renderDeclarationValue(arena, data, options.minifyValues, reducer)}`;
+            writeString(arena, arena.name[data], writer);
+            writer.writeByte(0x3a);
+            writer.write(options.indent);
+            writer.write(renderDeclarationValue(arena, data, options.minifyValues, reducer));
+            return;
         case EnumToken.CommentNodeType:
         case EnumToken.CDOCOMMNodeType: {
-            const val = arena.strings[arena.stringValue[data]];
-            if (val.startsWith("/*# sourceMappingURL=")) {
+            const id = arena.stringValue[data];
+            if (arena.stringStartsWith(id, "/*# sourceMappingURL=")) {
                 // ignore sourcemap comment
-                return "";
+                return;
             }
-            return !options.removeComments || (options.preserveLicense && val.startsWith("/*!")) ? val : "";
+            // the removed comments are not created
+            if (!options.removeComments || (options.preserveLicense && arena.stringStartsWith(id, "/*!"))) {
+                writeString(arena, id, writer);
+            }
+            return;
         }
-        case EnumToken.StyleSheetNodeType:
+        case EnumToken.StyleSheetNodeType: {
+            const newLine = options.newLine;
+            let empty = true;
+            let mark;
+            let markExtra;
+            let start;
             for (let node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
-                str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level, indents);
-                if (str === "") {
+                mark = writer.length;
+                markExtra = writer.extra;
+                // the separator is dropped when the node is empty
+                if (!empty && newLine !== "") {
+                    writer.write(newLine);
+                }
+                start = writer.length;
+                renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, writer, level, indents);
+                if (writer.length === start) {
+                    writer.truncate(mark, markExtra);
                     continue;
                 }
-                if (children.length > 0) {
-                    str = options.newLine + str;
-                }
-                children += str;
-                if (sourcemaps != null && str !== "" && options.newLine) {
-                    move(sourceLocation, linesMap, options.newLine);
+                empty = false;
+                if (sourcemaps != null && newLine) {
+                    move(sourceLocation, linesMap, newLine);
                 }
             }
-            return children;
+            return;
+        }
         case EnumToken.AtRuleNodeType:
         case EnumToken.RuleNodeType:
         case EnumToken.KeyframesRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType: {
             const isAtRule = typ === EnumToken.AtRuleNodeType || typ === EnumToken.KeyframesAtRuleNodeType;
-            const nam = arena.strings[arena.name[data]];
-            const val = arena.strings[arena.stringValue[data]];
-            if (isAtRule && !(arena.flags[data] & EnumAstNodeStatus.HasChildren)) {
-                return `${(indent.length > 0 ? options.newLine : "") + indent}@${nam}${val === "" ? "" : options.indent || " "}${val};`;
+            // the name and the value are copied from the string table: the strings are not created
+            const nameId = arena.name[data];
+            const valueId = arena.stringValue[data];
+            const newLine = options.newLine;
+            // start of the node: the node is removed when it has no children
+            const start = writer.length;
+            const startExtra = writer.extra;
+            if (indent.length > 0 && newLine !== "") {
+                writer.write(newLine);
             }
+            if (indent.length > 0) {
+                writer.write(indent);
+            }
+            if (isAtRule) {
+                writer.writeByte(0x40);
+                writeString(arena, nameId, writer);
+                if (arena.stringLength(valueId) > 0) {
+                    writer.write(options.indent || " ");
+                    writeString(arena, valueId, writer);
+                }
+                if (!(arena.flags[data] & EnumAstNodeStatus.HasChildren)) {
+                    // @rule prelude;
+                    writer.writeByte(0x3b);
+                    return;
+                }
+            }
+            else {
+                writeString(arena, nameId, writer);
+            }
+            if (options.indent !== "") {
+                writer.write(options.indent);
+            }
+            writer.writeByte(0x7b);
             // inlined: linesMap.getLineStarts()
             const lineMapLength = linesMap ? linesMap.lineStarts.length : 0;
-            const prelude = (indent.length > 0 ? options.newLine : "") +
-                indent +
-                (isAtRule
-                    ? `@${nam}${val === "" ? "" : options.indent || " "}${val}${options.indent}{`
-                    : nam + `${options.indent}{`);
+            // the prelude is only needed by the source map
+            let prelude = "";
             if (sourcemaps != null) {
+                const nam = arena.resolveString(nameId);
+                const val = arena.resolveString(valueId);
+                prelude =
+                    (indent.length > 0 ? newLine : "") +
+                        indent +
+                        (isAtRule
+                            ? `@${nam}${val === "" ? "" : options.indent || " "}${val}${options.indent}{`
+                            : nam + `${options.indent}{`);
                 updateSourceMap(arena, data, options, cache, sourcemaps, sourceLocation, linesMap, prelude);
             }
+            const indentSub = indents[level + 1];
+            // the children are written after the prelude
+            const body = writer.length;
+            let str;
             let node;
             let nodeType;
+            let mark;
+            let childStart;
             let recordDeclarationSourceMap = typ === EnumToken.AtRuleNodeType;
-            // rendering of the last child, without its trailing semicolon, appended to the children when the next child
-            // is rendered. the trailing semicolon of the last child is dropped: it is known from the type of the child,
-            // the rendered strings are not read (reading a concatenated string flattens it)
-            let last = "";
+            // the last child ends with a semicolon that is not written yet: it is written before the next child.
+            // the semicolon that ends the last child is dropped
             let semicolon = false;
             for (node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
                 nodeType = arena.dataTypes[node];
+                if (nodeType === EnumToken.DeclarationNodeType && sourcemaps == null) {
+                    // fast path: the declaration is written to the buffer
+                    if (semicolon) {
+                        writer.writeByte(0x3b);
+                    }
+                    if (newLine !== "") {
+                        writer.write(newLine);
+                    }
+                    if (indentSub !== "") {
+                        writer.write(indentSub);
+                    }
+                    writeDeclaration(arena, node, options, cache, reducer, writer);
+                    semicolon = true;
+                    continue;
+                }
                 if (nodeType === EnumToken.CommentNodeType) {
-                    const comment = arena.strings[arena.stringValue[node]];
-                    str =
-                        options.removeComments && (!options.preserveLicense || !comment.startsWith("/*!"))
-                            ? ""
-                            : comment;
+                    const commentId = arena.stringValue[node];
+                    // the removed comments are not created
+                    if (options.removeComments &&
+                        (!options.preserveLicense || !arena.stringStartsWith(commentId, "/*!"))) {
+                        continue;
+                    }
+                    str = arena.resolveString(commentId);
                 }
                 else if (nodeType === EnumToken.DeclarationNodeType) {
                     // the semicolon is not part of the rendered declaration
                     str = renderDeclaration(arena, node, options, cache, reducer);
                 }
                 else {
-                    str = renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, level + 1, indents);
-                    if (str === "") {
+                    mark = writer.length;
+                    if (semicolon) {
+                        writer.writeByte(0x3b);
+                    }
+                    childStart = writer.length;
+                    renderAstNode(arena, node, options, sourcemaps, sourceLocation, linesMap, errors, reducer, cache, writer, level + 1, indents);
+                    if (writer.length === childStart) {
+                        // empty node: the pending semicolon is not written
+                        writer.length = mark;
                         continue;
                     }
-                    children += semicolon ? last + ";" : last;
                     // at-rules without a block ('@layer name;') end with a semicolon
-                    semicolon = endsWithSemicolon(arena, node, str);
-                    last = semicolon ? str.slice(0, -1) : str;
-                    str = "";
+                    semicolon = endsWithSemicolon(arena, node, writer);
+                    if (semicolon) {
+                        writer.length--;
+                    }
                     continue;
                 }
                 if (str === "") {
                     continue;
                 }
-                str = options.newLine + indentSub + str;
-                children += semicolon ? last + ";" : last;
+                if (semicolon) {
+                    writer.writeByte(0x3b);
+                }
+                if (sourcemaps == null) {
+                    // comments
+                    if (newLine !== "") {
+                        writer.write(newLine);
+                    }
+                    if (indentSub !== "") {
+                        writer.write(indentSub);
+                    }
+                    writer.write(str);
+                }
+                else {
+                    str = newLine + indentSub + str;
+                    writer.write(str);
+                }
                 if (nodeType === EnumToken.DeclarationNodeType) {
-                    last = str;
                     semicolon = true;
                 }
                 else {
-                    // comments are flat strings
-                    semicolon = str.charCodeAt(str.length - 1) === 0x3b;
-                    last = semicolon ? str.slice(0, -1) : str;
+                    // comments
+                    semicolon = writer.lastByte() === 0x3b;
+                    if (semicolon) {
+                        writer.length--;
+                    }
                 }
                 if (sourcemaps != null) {
                     if (nodeType === EnumToken.DeclarationNodeType && recordDeclarationSourceMap) {
@@ -642,32 +829,38 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             if (semicolon) {
                 sourceLocation.end--;
             }
-            children += last;
-            if (options.removeEmpty && children === "") {
+            if (options.removeEmpty && writer.length === body) {
                 if (sourcemaps != null) {
                     sourceLocation.end -= prelude.length;
                     // inlined: linesMap!.getLineStarts()
                     linesMap.lineStarts.length = lineMapLength;
                 }
-                return "";
+                writer.truncate(start, startExtra);
+                return;
             }
-            const end = options.newLine + indent + `}`;
+            if (newLine !== "") {
+                writer.write(newLine);
+            }
+            if (indent !== "") {
+                writer.write(indent);
+            }
+            writer.writeByte(0x7d);
             if (sourcemaps != null) {
-                move(sourceLocation, linesMap, end);
+                move(sourceLocation, linesMap, newLine + indent + "}");
             }
-            return prelude + children + end;
+            return;
         }
         default:
-            return "";
+            return;
     }
 }
 /**
  * true if a rendered child node ends with a semicolon
  * @param arena
  * @param node child node
- * @param rendered rendered child node, not empty
+ * @param writer output, the child node is the last node written, it is not empty
  */
-function endsWithSemicolon(arena, node, rendered) {
+function endsWithSemicolon(arena, node, writer) {
     switch (arena.dataTypes[node]) {
         case EnumToken.AtRuleNodeType:
         case EnumToken.KeyframesAtRuleNodeType:
@@ -679,7 +872,7 @@ function endsWithSemicolon(arena, node, rendered) {
             return false;
         default:
             // comments: flat strings
-            return rendered.charCodeAt(rendered.length - 1) === 0x3b;
+            return writer.lastByte() === 0x3b;
     }
 }
 function renderTokenList(tokens, reducer) {
@@ -688,6 +881,23 @@ function renderTokenList(tokens, reducer) {
         result = reducer(result, token);
     }
     return result;
+}
+/**
+ * render a declaration without memoization: `name:value`, without the semicolon
+ * @param arena
+ * @param node declaration
+ * @param options
+ * @param cache
+ * @param reducer
+ */
+function renderDeclarationString(arena, node, options, cache, reducer) {
+    if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+        // override options to avoid minifying values for custom properties
+        options = { ...options, minifyValues: false };
+        // override the reducer
+        reducer = createReducer(arena, options, cache);
+    }
+    return `${arena.resolveString(arena.name[node])}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
 }
 /**
  * render a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
@@ -700,29 +910,69 @@ function renderTokenList(tokens, reducer) {
  */
 function renderDeclaration(arena, node, options, cache, reducer) {
     const memo = getRenderMemo(cache, options);
-    let minifyValues = options.minifyValues;
-    if (minifyValues) {
-        minifyValues = !arena.startsWith(node, "nam", "--");
-        if (!minifyValues) {
-            // override options to avoid minifying values for custom properties
-            options = { ...options, minifyValues: false };
-            // override the reducer
-            reducer = createReducer(arena, options, cache);
-        }
-    }
     if (memo == null) {
-        return `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+        return renderDeclarationString(arena, node, options, cache, reducer);
     }
     // the name is part of the key
     const slot = memo.declarations.list(arena, arena.firstToken[node], arena.name[node]);
     // inlined: memo.declarations.get(slot)
     let rendered = memo.declarations.values[slot];
     if (rendered === undefined) {
-        rendered = `${arena.strings[arena.name[node]]}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+        rendered = renderDeclarationString(arena, node, options, cache, reducer);
         // inlined: memo.declarations.set(slot, rendered)
         memo.declarations.values[slot] = rendered;
     }
     return rendered;
+}
+/**
+ * write a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
+ * tokens) are rendered and encoded once per render: the bytes written first are copied
+ * @param arena
+ * @param node declaration
+ * @param options
+ * @param cache
+ * @param reducer
+ * @param writer
+ */
+function writeDeclaration(arena, node, options, cache, reducer, writer) {
+    const memo = getRenderMemo(cache, options);
+    let slot = -1;
+    if (memo !== null) {
+        // the name is part of the key
+        slot = memo.declarations.list(arena, arena.firstToken[node], arena.name[node]);
+        const index = slot << 2;
+        // an identical declaration is already written to the buffer: its bytes are copied
+        if (index < memo.locations.length && memo.locations[index] === writer.id) {
+            writer.copy(memo.locations[index + 1], memo.locations[index + 2], memo.locations[index + 3]);
+            return;
+        }
+    }
+    const start = writer.length;
+    const extra = writer.extra;
+    // the rendered value of an identical declaration, rendered to another buffer (see NodeRenderer)
+    let value = memo === null ? undefined : memo.values[slot];
+    if (value === undefined) {
+        if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+            // override options to avoid minifying values for custom properties
+            options = { ...options, minifyValues: false };
+            // override the reducer
+            reducer = createReducer(arena, options, cache);
+        }
+        value = renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd();
+        if (memo !== null) {
+            memo.values[slot] = value;
+        }
+    }
+    // the parts are written directly: `name`, `:`, `indent`, `value`. the name is copied from the string table
+    writeString(arena, arena.name[node], writer);
+    writer.writeByte(0x3a);
+    if (options.indent !== "") {
+        writer.write(options.indent);
+    }
+    writer.write(value);
+    if (memo !== null) {
+        memo.locate(slot, writer, start, extra);
+    }
 }
 /**
  * render the value tokens of a declaration with the reducer. with minifyValues, the whitespace that is not needed is
@@ -764,7 +1014,7 @@ function renderDeclarationValue(arena, node, minifyValues, reducer) {
             pending = 0;
             check = false;
         }
-        else if (tokensfuncSet.has(type) &&
+        else if (isFunctionType(type) &&
             // color keywords and hex colors are not functions
             (type !== EnumToken.ColorTokenType || arena.firstToken[token] !== 0) &&
             type !== EnumToken.WildCardFunctionTokenType &&
@@ -795,10 +1045,10 @@ const defaultCache = Object.create(null);
 function createReducer(arena, options, cache, errors) {
     const reducer = (acc, curr) => {
         if (arena.dataTypes[curr] === EnumToken.CommentTokenType && options.removeComments) {
-            if (!options.preserveLicense || !arena.strings[arena.stringValue[curr]].startsWith("/*!")) {
+            if (!options.preserveLicense || !arena.resolveString(arena.stringValue[curr]).startsWith("/*!")) {
                 return acc;
             }
-            return acc + arena.strings[arena.stringValue[curr]];
+            return acc + arena.resolveString(arena.stringValue[curr]);
         }
         return acc + renderValue(arena, curr, options, cache, reducer);
     };
@@ -821,8 +1071,8 @@ function renderReduced(arena, first, options, cache, reducer, errors) {
             result = reducer(result, token);
         }
         else if (arena.dataTypes[token] === EnumToken.CommentTokenType && options.removeComments) {
-            if (options.preserveLicense && arena.strings[arena.stringValue[token]].startsWith("/*!")) {
-                result += arena.strings[arena.stringValue[token]];
+            if (options.preserveLicense && arena.resolveString(arena.stringValue[token]).startsWith("/*!")) {
+                result += arena.resolveString(arena.stringValue[token]);
             }
         }
         else {
@@ -881,25 +1131,25 @@ function renderColor(arena, token, options, cache, reducer, errors) {
             token = value;
         }
         if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-            return reduceHexValue(arena.strings[arena.stringValue[token]]);
+            return reduceHexValue(arena.resolveString(arena.stringValue[token]));
         }
     }
     if (arena.colorType[token] === ColorType.SYS ||
         arena.colorType[token] === ColorType.DPSYS ||
         arena.colorType[token] === ColorType.NON_STD) {
-        return arena.strings[arena.stringValue[token]];
+        return arena.resolveString(arena.stringValue[token]);
     }
     if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-        return arena.strings[arena.stringValue[token]];
+        return arena.resolveString(arena.stringValue[token]);
     }
     if (arena.firstToken[token] === 0) {
         // rendered like a function (no argument)
-        return ((arena.strings[arena.stringValue[token]] ?? "") +
+        return ((arena.resolveString(arena.stringValue[token]) ?? "") +
             "(" +
             renderReduced(arena, arena.firstToken[token], options, cache, reducer) +
             ")");
     }
-    const fnName = arena.strings[arena.stringValue[token]];
+    const fnName = arena.resolveString(arena.stringValue[token]);
     const count = arena.tokenCount(token);
     const isLegacy = legacyColorFunctions.has(fnName);
     const hasAlpha = alphaColorFunctions.has(fnName);
@@ -922,7 +1172,7 @@ function renderColor(arena, token, options, cache, reducer, errors) {
             result = result.trimEnd() + " ";
         }
         else if (arena.dataTypes[curr] === EnumToken.CommaTokenType ||
-            (arena.dataTypes[curr] === EnumToken.LiteralTokenType && arena.strings[arena.stringValue[curr]] === "/")) {
+            (arena.dataTypes[curr] === EnumToken.LiteralTokenType && arena.resolveString(arena.stringValue[curr]) === "/")) {
             result = result.trimEnd() + (arena.dataTypes[curr] === EnumToken.CommaTokenType ? "," : "/");
         }
         else {
@@ -975,7 +1225,7 @@ function renderValue(arena, token, options = defaultRenderOptions, cache = defau
  */
 function renderToken(arena, token, options, cache, reducer, errors) {
     if (arena.dataTypes[token] === EnumToken.WhenElseFunctionTokenType &&
-        equalsIgnoreCase(arena.strings[arena.stringValue[token]], "supports")) {
+        equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), "supports")) {
         options = { ...options, minifyValues: false, minify: false, convertColor: false };
         reducer = null;
     }
@@ -999,7 +1249,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.GeneralEnclosedFunctionTokenDefType:
         case EnumToken.CustomFunctionTokenDefType:
         case EnumToken.WildCardFunctionTokenDefType:
-            return arena.strings[arena.stringValue[token]] + "(";
+            return arena.resolveString(arena.stringValue[token]) + "(";
         case EnumToken.ListToken:
             return renderList(arena, arena.firstToken[token], options, cache);
         case EnumToken.BinaryExpressionTokenType: {
@@ -1068,7 +1318,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                     }
                     result += renderValue(arena, curr, options, cache);
                 }
-                return arena.strings[arena.stringValue[token]] + "(" + result + ")";
+                return arena.resolveString(arena.stringValue[token]) + "(" + result + ")";
             }
             return renderColor(arena, token, options, cache, reducer);
         }
@@ -1080,7 +1330,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 }
                 for (let child = arena.firstToken[token]; child !== 0; child = arena.nextSibling[child]) {
                     if (arena.dataTypes[child] === EnumToken.StringTokenType) {
-                        const val = arena.strings[arena.stringValue[child]];
+                        const val = arena.resolveString(arena.stringValue[child]);
                         if (val.slice(1, 5) !== "data:" && urlTokenMatcher.test(val)) {
                             arena.dataTypes[child] = EnumToken.UrlTokenTokenType;
                             // inlined: arena.setStr(child, val.slice(1, -1))
@@ -1096,7 +1346,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.ImageFunctionTokenType:
             if (options.minifyValues && arena.dataTypes[token] === EnumToken.ImageFunctionTokenType) {
                 const slice = arena.tokens(token);
-                switch (arena.strings[arena.stringValue[token]]) {
+                switch (arena.resolveString(arena.stringValue[token])) {
                     case "linear-gradient":
                     case "repeating-linear-gradient":
                         {
@@ -1110,7 +1360,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                     break;
                                 }
                                 if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "to")) {
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "to")) {
                                     k = i + 1;
                                     while (k < slice.length &&
                                         (arena.dataTypes[slice[k]] === EnumToken.WhitespaceTokenType ||
@@ -1119,7 +1369,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                     }
                                     if (k < slice.length && arena.dataTypes[slice[k]] === EnumToken.IdenTokenType) {
                                         // convert keyword to angle
-                                        key = arena.strings[arena.stringValue[slice[k]]].toLowerCase();
+                                        key = arena.resolveString(arena.stringValue[slice[k]]).toLowerCase();
                                         switch (key) {
                                             case "right":
                                                 slice.splice(i, k - i + 1, arena.createToken(EnumToken.AngleTokenType, 90, "deg"));
@@ -1200,16 +1450,16 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                             const size = [];
                             const colorSpaceDef = [];
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType) {
-                                if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-corner") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "ellipse")) {
+                                if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "farthest-corner") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "ellipse")) {
                                     i++;
                                 }
-                                else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-side") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-corner") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-side")) {
+                                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "closest-side") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "closest-corner") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "farthest-side")) {
                                     size.push(slice[i++]);
                                 }
-                                else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "circle")) {
+                                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "circle")) {
                                     form.push(slice[i++]);
                                 }
                                 while (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
@@ -1218,16 +1468,16 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 }
                             }
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType) {
-                                if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-corner") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "ellipse")) {
+                                if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "farthest-corner") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "ellipse")) {
                                     i++;
                                 }
-                                else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-side") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "closest-corner") ||
-                                    equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "farthest-side")) {
+                                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "closest-side") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "closest-corner") ||
+                                    equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "farthest-side")) {
                                     size.push(slice[i++]);
                                 }
-                                else if (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "circle")) {
+                                else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "circle")) {
                                     form.push(slice[i++]);
                                 }
                                 while (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
@@ -1236,7 +1486,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 }
                             }
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "at")) {
+                                equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "at")) {
                                 i++;
                             }
                             while (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
@@ -1247,14 +1497,14 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 (arena.dataTypes[slice[i]] === EnumToken.NumberTokenType &&
                                     0 === arena.numericValue[slice[i]]) ||
                                 (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                    (equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "center") ||
-                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "top") ||
-                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "bottom") ||
-                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "left") ||
-                                        equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "right")))) {
+                                    (equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "center") ||
+                                        equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "top") ||
+                                        equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "bottom") ||
+                                        equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "left") ||
+                                        equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "right")))) {
                                 do {
                                     if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                        "in" === arena.strings[arena.stringValue[slice[i]]]) {
+                                        "in" === arena.resolveString(arena.stringValue[slice[i]])) {
                                         break;
                                     }
                                     positions.push(slice[i]);
@@ -1274,10 +1524,10 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 for (k = 0; k < positions.length; k++) {
                                     if (arena.dataTypes[positions[k]] === EnumToken.IdenTokenType) {
                                         if (position1.length === 0) {
-                                            position1 = arena.strings[arena.stringValue[positions[k]]];
+                                            position1 = arena.resolveString(arena.stringValue[positions[k]]);
                                         }
                                         else {
-                                            position2 = arena.strings[arena.stringValue[positions[k]]];
+                                            position2 = arena.resolveString(arena.stringValue[positions[k]]);
                                         }
                                     }
                                     else if (arena.dataTypes[positions[k]] === EnumToken.PercentageTokenType ||
@@ -1404,7 +1654,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                             //     i++;
                             // }
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "from")) {
+                                equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "from")) {
                                 angles.push(slice[i++]);
                                 while (i < slice.length &&
                                     (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
@@ -1428,7 +1678,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 }
                             }
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase(arena.strings[arena.stringValue[slice[i]]], "at")) {
+                                equalsIgnoreCase(arena.resolveString(arena.stringValue[slice[i]]), "at")) {
                                 i++;
                                 while (i < slice.length &&
                                     (arena.dataTypes[slice[i]] === EnumToken.WhitespaceTokenType ||
@@ -1438,8 +1688,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 let position1 = "";
                                 let position2 = "";
                                 if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                    !equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])) {
-                                    position1 = arena.strings[arena.stringValue[slice[i]]];
+                                    !equalsIgnoreCase("in", arena.resolveString(arena.stringValue[slice[i]]))) {
+                                    position1 = arena.resolveString(arena.stringValue[slice[i]]);
                                     positions.push(slice[i++]);
                                 }
                                 else if (arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
@@ -1453,8 +1703,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                     positions.push(slice[i++]);
                                 }
                                 if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                    !equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])) {
-                                    position2 = arena.strings[arena.stringValue[slice[i]]];
+                                    !equalsIgnoreCase("in", arena.resolveString(arena.stringValue[slice[i]]))) {
+                                    position2 = arena.resolveString(arena.stringValue[slice[i]]);
                                     positions.push(slice[i++]);
                                 }
                                 else if (arena.dataTypes[slice[i]] === EnumToken.PercentageTokenType ||
@@ -1477,7 +1727,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                 i++;
                             }
                             if (arena.dataTypes[slice[i]] === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("in", arena.strings[arena.stringValue[slice[i]]])) {
+                                equalsIgnoreCase("in", arena.resolveString(arena.stringValue[slice[i]]))) {
                                 while (i < slice.length && arena.dataTypes[slice[i]] !== EnumToken.CommaTokenType) {
                                     colorSpaceDef.push(slice[i++]);
                                 }
@@ -1524,7 +1774,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                         }
                         break;
                 }
-                return (arena.strings[arena.stringValue[token]] +
+                return (arena.resolveString(arena.stringValue[token]) +
                     "(" +
                     renderTokenList(slice, reducer ?? createReducer(arena, options, cache)) +
                     ")");
@@ -1548,7 +1798,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                     firstType !== EnumToken.FractionTokenType &&
                     firstType !== EnumToken.IdenTokenType &&
                     !arena.hasFraction(first)) {
-                    return (arena.strings[arena.stringValue[token]] +
+                    return (arena.resolveString(arena.stringValue[token]) +
                         "(" +
                         renderValue(arena, first, options, cache, 
                         // the reducer renders with the options of this token
@@ -1556,7 +1806,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                         ")");
                 }
             }
-            return ((arena.strings[arena.stringValue[token]] ?? "") +
+            return ((arena.resolveString(arena.stringValue[token]) ?? "") +
                 "(" +
                 renderReduced(arena, arena.firstToken[token], options, cache, reducer) +
                 ")");
@@ -1630,13 +1880,13 @@ function renderToken(arena, token, options, cache, reducer, errors) {
             let val = arena.hasFraction(token)
                 ? renderValue(arena, arena.getFraction(token), options, cache)
                 : minifyNumber(arena.numericValue[token]);
-            let unit = arena.strings[arena.unit[token]];
+            let unit = arena.resolveString(arena.unit[token]);
             if (arena.dataTypes[token] === EnumToken.AngleTokenType && !val.includes("/")) {
                 const angle = getAngle(arena, token);
                 let v;
                 let value = val + unit;
                 for (const u of angleUnits) {
-                    if (arena.strings[arena.unit[token]] === u) {
+                    if (arena.resolveString(arena.unit[token]) === u) {
                         continue;
                     }
                     switch (u) {
@@ -1725,19 +1975,19 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.NaNTokenType:
             return "NaN";
         case EnumToken.AtRuleTokenType:
-            return "@" + arena.strings[arena.name[token]];
+            return "@" + arena.resolveString(arena.name[token]);
         case EnumToken.CommentTokenType:
         case EnumToken.CDOCOMMNodeType:
             if (options.removeComments &&
-                (!options.preserveLicense || !arena.strings[arena.stringValue[token]].startsWith("/*!"))) {
+                (!options.preserveLicense || !arena.resolveString(arena.stringValue[token]).startsWith("/*!"))) {
                 return "";
             }
         case EnumToken.PseudoClassTokenType:
         case EnumToken.PseudoElementTokenType:
             // https://www.w3.org/TR/selectors-4/#single-colon-pseudos
             if (arena.dataTypes[token] === EnumToken.PseudoElementTokenType &&
-                pseudoElements.includes(arena.strings[arena.stringValue[token]].slice(1))) {
-                return arena.strings[arena.stringValue[token]].slice(1);
+                pseudoElements.includes(arena.resolveString(arena.stringValue[token]).slice(1))) {
+                return arena.resolveString(arena.stringValue[token]).slice(1);
             }
         case EnumToken.CssTypeTokenType:
         case EnumToken.UrlTokenTokenType:
@@ -1749,7 +1999,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
         case EnumToken.DashedIdenTokenType:
         case EnumToken.PseudoPageTokenType:
         case EnumToken.ClassSelectorTokenType:
-            return arena.strings[arena.stringValue[token]];
+            return arena.resolveString(arena.stringValue[token]);
         case EnumToken.NestingSelectorTokenType:
             return "&";
         case EnumToken.SupportsQueryUnaryConditionTokenType:
@@ -1777,7 +2027,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 (options.indent ?? "") +
                 renderValue(arena, arena.field(token, TokenField.R), options, cache, reducer));
         case EnumToken.DeclarationNodeType:
-            return (arena.strings[arena.name[token]] +
+            return (arena.resolveString(arena.name[token]) +
                 ":" +
                 renderTokenList(options.minifyValues ? filterValues(arena, arena.tokens(token)) : arena.tokens(token), (acc, curr) => acc + renderValue(arena, curr, options, cache, reducer)));
         case EnumToken.MediaQueryUnaryFeatureTokenType:
@@ -1808,7 +2058,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                 renderValue(arena, arena.field(token, TokenField.Op2), options, cache, reducer) +
                 renderField(arena, token, TokenField.R, options, cache, reducer));
         case EnumToken.MediaFeatureTokenType:
-            return arena.strings[arena.stringValue[token]];
+            return arena.resolveString(arena.stringValue[token]);
         case EnumToken.NotTokenType:
             return "not";
         case EnumToken.OnlyTokenType:
@@ -1845,7 +2095,7 @@ function filterValues(arena, values) {
             arena.dataTypes[values[i - 1]] === EnumToken.WhitespaceTokenType) {
             values.splice(i - 1, 1);
         }
-        else if (tokensfuncSet.has(arena.dataTypes[values[i]]) &&
+        else if (isFunctionType(arena.dataTypes[values[i]]) &&
             // color keywords and hex colors are not functions
             (arena.dataTypes[values[i]] !== EnumToken.ColorTokenType || arena.firstToken[values[i]] !== 0) &&
             arena.dataTypes[values[i]] !== EnumToken.WildCardFunctionTokenType &&
@@ -1856,4 +2106,4 @@ function filterValues(arena, values) {
     return values;
 }
 
-export { NodeRenderer, RenderMemo, doRender, filterValues, move, renderValue };
+export { NodeRenderer, RenderMemo, doRender, filterValues, move, outputCapacity, renderValue };

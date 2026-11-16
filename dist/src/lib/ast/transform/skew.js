@@ -5,26 +5,34 @@
 	Version: 2.1.0
 	License: MIT
  */
-import { identity, multiply } from './utils.js';
+import { setIdentity, multiplyInto } from './utils.js';
 
+/**
+ * the skew matrix. the functions multiply the matrix they receive in place: `from = from × skew`. angles in radian
+ */
+const matrix = new Float64Array(16);
 function skewX(x, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[4] = Math.tan(x);
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 function skewY(y, from) {
-    const matrix = identity();
+    setIdentity(matrix);
     matrix[1] = Math.tan(y);
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
-// convert angle to radian
-function skew(values, from) {
-    const matrix = identity();
-    matrix[4] = Math.tan(values[0]);
-    if (values.length > 1) {
-        matrix[1] = Math.tan(values[1]);
+/**
+ * @param x
+ * @param y ignored if undefined
+ * @param from
+ */
+function skew(x, y, from) {
+    setIdentity(matrix);
+    matrix[4] = Math.tan(x);
+    if (y !== undefined) {
+        matrix[1] = Math.tan(y);
     }
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
 export { skew, skewX, skewY };

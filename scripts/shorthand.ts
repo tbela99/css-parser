@@ -413,6 +413,7 @@ export const map: ShorthandMapType = (<ShorthandMapType[][]>[
             {
                 shorthand: "text-emphasis-color",
                 properties: {
+                    keywords: [],
                     default: ["currentcolor"],
                     types: ["Color"],
                 },

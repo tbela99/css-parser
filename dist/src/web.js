@@ -9,6 +9,7 @@ import { doParse, doParseSync } from './lib/parser/parse.js';
 export { parseDeclarations, parseString } from './lib/parser/parse.js';
 import { doRender } from './lib/printer/render.js';
 export { renderValue } from './lib/printer/render.js';
+import { TransformResult, RenderResult } from './lib/printer/result.js';
 import { ModuleScopeEnumOptions } from './lib/ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
 import { createParseInfo, Tokenizer } from './lib/parser/tokenize.js';
@@ -16,7 +17,7 @@ import { isCssInput } from './lib/parser/input.js';
 import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './lib/parser/source.js';
-import { parseResult, validateSyncArguments } from './utils/sync.js';
+import { validateSyncArguments, parseResult } from './utils/sync.js';
 export { minify } from './lib/ast/minify.js';
 export { convertColor } from './lib/syntax/color/color.js';
 export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
@@ -102,13 +103,16 @@ async function load(url, currentDirectory = ".", responseType = false) {
  * ```
  */
 function render(arena, data, options = {}, mapping) {
-    return doRender(arena, data, Object.assign(options, {
+    return doRender(arena, data, 
+    // the options of the caller are not modified
+    {
+        ...options,
         resolve,
         dirname,
         cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
             ? self.location.pathname
             : dirname(self.location.pathname),
-    }), mapping);
+    }, mapping);
 }
 /**
  * Parse CSS
@@ -141,7 +145,15 @@ function parseSync(...args) {
     if (options != null) {
         validateSyncArguments(options);
     }
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseSyncInput(stream, { ...options });
+}
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+function parseSyncInput(stream, options) {
     options.src ??= "";
     options.sourcesMap ??= new Map();
     Object.assign(options, {
@@ -190,10 +202,13 @@ function transformSync(...args) {
         options = opt;
         stream = input;
     }
-    options ??= {};
+    if (options != null) {
+        validateSyncArguments(options);
+    }
+    // the options of the caller are not modified: they may be reused
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
-    const parseResult = parseSync(stream, options);
+    const parseResult = parseSyncInput(stream, options);
     let mapping = null;
     let importMapping = null;
     if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
@@ -208,17 +223,12 @@ function transformSync(...args) {
         ...options,
         expandNestingRules: false,
     }, mapping != null ? { mapping, importMapping } : null);
-    return {
-        ...parseResult,
-        ...rendered,
-        errors: parseResult.errors.concat(rendered.errors),
-        stats: {
-            bytesOut: rendered.code.length,
-            ...parseResult.stats,
-            render: rendered.stats.total,
-            total: `${(performance.now() - startTime).toFixed(2)}ms`,
-        },
-    };
+    return new TransformResult(parseResult, rendered, {
+        bytesOut: RenderResult.codeLength(rendered),
+        ...parseResult.stats,
+        render: rendered.stats.total,
+        total: `${(performance.now() - startTime).toFixed(2)}ms`,
+    });
 }
 /**
  * Parse CSS
@@ -268,7 +278,15 @@ async function parse(...args) {
             stream = input;
         }
     }
-    options ??= {};
+    // the options of the caller are not modified: they may be reused
+    return parseInput(stream, { ...options });
+}
+/**
+ * parse a css input. the options belong to the call: they are modified (source, parse info, ...)
+ * @param stream
+ * @param options
+ */
+async function parseInput(stream, options) {
     options.src ??= "";
     options.sourcesMap ??= new Map();
     Object.assign(options, {
@@ -337,7 +355,7 @@ async function transform(...args) {
     }
     options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
-    return parse(stream, options).then((parseResult) => {
+    return parseInput(stream, options).then((parseResult) => {
         let mapping = null;
         let importMapping = null;
         if ((typeof options.module === "number" && options.module & ModuleScopeEnumOptions.ICSS) ||
@@ -352,18 +370,13 @@ async function transform(...args) {
             ...options,
             expandNestingRules: false,
         }, mapping != null ? { mapping, importMapping } : null);
-        return {
-            ...parseResult,
-            ...rendered,
-            errors: parseResult.errors.concat(rendered.errors),
-            stats: {
-                bytesOut: rendered.code.length,
-                ...parseResult.stats,
-                render: rendered.stats.total,
-                total: `${(performance.now() - startTime).toFixed(2)}ms`,
-            },
-        };
+        return new TransformResult(parseResult, rendered, {
+            bytesOut: RenderResult.codeLength(rendered),
+            ...parseResult.stats,
+            render: rendered.stats.total,
+            total: `${(performance.now() - startTime).toFixed(2)}ms`,
+        });
     });
 }
 
-export { ModuleScopeEnumOptions, ResponseType, dirname, load, parse, parseSync, render, resolve, transform, transformSync };
+export { ModuleScopeEnumOptions, RenderResult, ResponseType, TransformResult, dirname, load, parse, parseSync, render, resolve, transform, transformSync };

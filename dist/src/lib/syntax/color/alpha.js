@@ -34,7 +34,7 @@ function alpha(arena, color, alpha) {
         // inlined: arena.walkValues(arena.tokens(alpha))
         for (const value of new ValueWalker(arena, arena.tokens(alpha))) {
             if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
-                if (equalsIgnoreCase(arena.strings[arena.stringValue[value]], "alpha")) {
+                if (equalsIgnoreCase(arena.resolveString(arena.stringValue[value]), "alpha")) {
                     // replace the identifier with the alpha value
                     if (components?.[3]) {
                         arena.copyToken(value, components[3]);
@@ -44,7 +44,7 @@ function alpha(arena, color, alpha) {
                     }
                     // continue;
                 }
-                // else if (equalsIgnoreCase(arena.strings[arena.stringValue[value]], "none")) {
+                // else if (equalsIgnoreCase(arena.resolveString(arena.stringValue[value]), "none")) {
                 //     Object.assign(value, {
                 //         typ: EnumToken.NumberTokenType,
                 //         val: 0,
@@ -68,13 +68,13 @@ function alpha(arena, color, alpha) {
         return null;
     }
     if (arena.dataTypes[alpha] === EnumToken.IdenTokenType) {
-        if (equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "NaN") ||
-            equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "Infinity") ||
-            equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "-Infinity")) {
+        if (equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "NaN") ||
+            equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "Infinity") ||
+            equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "-Infinity")) {
             return null;
         }
     }
-    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.strings[arena.unit[color]] === "rel") {
+    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.resolveString(arena.unit[color]) === "rel") {
         const converted = convertColor(arena, color, getColorType(arena, color));
         if (converted == null) {
             return null;
@@ -86,13 +86,13 @@ function alpha(arena, color, alpha) {
         return null;
     }
     if (arena.dataTypes[alpha] === EnumToken.IdenTokenType) {
-        // if (equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "alpha")) {
+        // if (equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "alpha")) {
         //     alpha = components[3] ?? {
         //         typ: EnumToken.NumberTokenType,
         //         val: 1,
         //     };
         // } else
-        if (equalsIgnoreCase(arena.strings[arena.stringValue[alpha]], "none")) {
+        if (equalsIgnoreCase(arena.resolveString(arena.stringValue[alpha]), "none")) {
             arena.resetToken(alpha, EnumToken.NumberTokenType, 0);
         }
     }

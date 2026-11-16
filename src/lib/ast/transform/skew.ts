@@ -1,30 +1,37 @@
-import { identity, multiply } from "./utils.ts";
+import { multiplyInto, setIdentity } from "./utils.ts";
 import type { Matrix } from "./type.d.ts";
 
-export function skewX(x: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+/**
+ * the skew matrix. the functions multiply the matrix they receive in place: `from = from × skew`. angles in radian
+ */
+const matrix: Matrix = new Float64Array(16);
 
+export function skewX(x: number, from: Matrix): Matrix {
+    setIdentity(matrix);
     matrix[4] = Math.tan(x);
 
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }
 
 export function skewY(y: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
-
+    setIdentity(matrix);
     matrix[1] = Math.tan(y);
-    return multiply(from, matrix);
+
+    return multiplyInto(from, matrix, from);
 }
 
-// convert angle to radian
-export function skew(values: [number] | [number, number], from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+/**
+ * @param x
+ * @param y ignored if undefined
+ * @param from
+ */
+export function skew(x: number, y: number | undefined, from: Matrix): Matrix {
+    setIdentity(matrix);
+    matrix[4] = Math.tan(x);
 
-    matrix[4] = Math.tan(values[0]);
-
-    if (values.length > 1) {
-        matrix[1] = Math.tan(values[1]!);
+    if (y !== undefined) {
+        matrix[1] = Math.tan(y);
     }
 
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }

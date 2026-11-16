@@ -6,7 +6,7 @@
 	License: MIT
  */
 import { EnumToken } from '../../ast/types.js';
-import { tokensfuncSet } from '../../syntax/constants.js';
+import { isFunctionType } from '../../syntax/constants.js';
 import { isColor } from '../../syntax/syntax.js';
 
 const mathTokenTypes = [
@@ -34,8 +34,10 @@ const mathTokenTypes = [
  */
 function matchType(arena, val, properties) {
     const typ = arena.dataTypes[val];
-    if ((typ === EnumToken.IdenTokenType && properties.keywords.includes(arena.strings[arena.stringValue[val]])) ||
-        properties.types.some(
+    if ((typ === EnumToken.IdenTokenType &&
+        // a property may have no keyword (`text-emphasis-color`)
+        properties.keywords?.includes(arena.resolveString(arena.stringValue[val]))) ||
+        properties.types?.some(
         // @ts-expect-error
         (t) => 
         // @ts-expect-error
@@ -46,13 +48,13 @@ function matchType(arena, val, properties) {
     }
     if (typ === EnumToken.NumberTokenType && arena.numericValue[val] === 0) {
         // @ts-ignore
-        return properties.types.some((type) => {
+        return (properties.types ?? []).some((type) => {
             // @ts-ignore
             const typ = EnumToken[type];
             return typ === EnumToken.LengthTokenType || typ === EnumToken.AngleTokenType;
         });
     }
-    if (tokensfuncSet.has(typ) && typ === EnumToken.MathFunctionTokenType) {
+    if (isFunctionType(typ) && typ === EnumToken.MathFunctionTokenType) {
         for (let t = arena.firstToken[val]; t !== 0; t = arena.nextSibling[t]) {
             if (!mathTokenTypes.includes(arena.dataTypes[t]) && !matchType(arena, t, properties)) {
                 return false;

@@ -2,7 +2,7 @@ import type { Token, ErrorDescription, ParserOptions } from "../../../@types/ind
 import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { trimArray } from "../../validation/match.ts";
-import { tokensfuncDefMap } from "../../syntax/constants.ts";
+import { tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 import { parseMediaqueryList } from "./at-rule-media.ts";
 import { parseAtRuleSupportSyntax } from "./at-rule-support.ts";
 
@@ -42,7 +42,7 @@ export function matchAtRuleWhenElseSyntax(
         switch (arena.dataTypes[stream[i]]) {
             case EnumToken.IdenTokenType:
                 {
-                    const val = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
 
                     if ("and" === val || "or" === val) {
                         arena.dataTypes[stream[i]] = "or" === val ? EnumToken.OrTokenType : EnumToken.AndTokenType;
@@ -69,14 +69,14 @@ export function matchAtRuleWhenElseSyntax(
                             }
                         } else if (
                             arena.dataTypes[stream[j]] === EnumToken.StartParensTokenType ||
-                            tokensfuncDefMap.has(arena.dataTypes[stream[j]])
+                            isFunctionDefType(arena.dataTypes[stream[j]])
                         ) {
                             matchCount++;
                         }
                     }
 
                     const slice = stream.slice(i, j + 1);
-                    const funcName: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    const funcName: string = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     // the function token may be converted by the sub parsers
                     const isSupportsFunction: boolean =
                         arena.dataTypes[stream[i]] === EnumToken.SupportsFunctionTokenDefType;

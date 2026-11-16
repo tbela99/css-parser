@@ -30,7 +30,7 @@ $ deno add @tbela99/css-parser
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
 * **All-in-one CSS parsing solution** covering parsing, validation, transformation, minification, and AST manipulation.
-* **Standards-based CSS validation** powered by MDN data.
+* **Standards-based CSS validation** powered by the W3C specification definitions ([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)).
 * **Full CSS Modules support** for modern component-based workflows.
 * **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always produces a complete, structured parse result.
 * **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes so plugins and transforms can operate on semantic structures.

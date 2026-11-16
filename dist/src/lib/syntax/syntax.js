@@ -568,7 +568,7 @@ function isFlexUnit(unit) {
     return flexUnitSet.has(unit.toLowerCase());
 }
 function isLength(arena, dimension) {
-    return arena.unit[dimension] !== 0 && isLengthUnit(arena.strings[arena.unit[dimension]]);
+    return arena.unit[dimension] !== 0 && isLengthUnit(arena.resolveString(arena.unit[dimension]));
 }
 /**
  * Reduce color stops
@@ -754,7 +754,7 @@ function reduceConicColorStops(arena, stops) {
  */
 function isRectangularOrthogonalColorspace(arena, token) {
     return (arena.dataTypes[token] === EnumToken.IdenTokenType &&
-        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]])));
+        colorFuncColorSpace.some((t) => equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token]))));
 }
 /**
  * Is polar colorspace
@@ -764,7 +764,7 @@ function isRectangularOrthogonalColorspace(arena, token) {
  */
 function isPolarColorspace(arena, token) {
     return (arena.dataTypes[token] === EnumToken.IdenTokenType &&
-        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, arena.strings[arena.stringValue[token]])));
+        ["hsl", "hwb", "lch", "oklch"].some((t) => equalsIgnoreCase(t, arena.resolveString(arena.stringValue[token]))));
 }
 /**
  * Is ident color
@@ -776,7 +776,19 @@ function isIdentColor(arena, token) {
     return (arena.dataTypes[token] === EnumToken.ColorTokenType &&
         arena.colorType[token] !== ColorType.NONE &&
         [ColorType.SYS, ColorType.DPSYS, ColorType.LIT].includes(arena.colorType[token]) &&
-        isIdent(arena.strings[arena.stringValue[token]]));
+        isIdent(arena.resolveString(arena.stringValue[token])));
+}
+/**
+ * true if the identifier is a color: a system color, a named color, `currentcolor` or `transparent`, ignoring the case
+ * @param str
+ */
+function isColorName(str) {
+    const val = lowercase(str);
+    if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
+        return true;
+    }
+    // named color
+    return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
 }
 /**
  * color function arguments without whitespace and comments
@@ -815,16 +827,12 @@ function isColor(arena, token, errors) {
         }
     }
     if (typ === EnumToken.IdenTokenType) {
-        const val = lowercase(arena.strings[arena.stringValue[token]]);
-        if (systemColors.has(val) || deprecatedSystemColors.has(val) || nonStandardColors.has(val)) {
-            return true;
-        }
-        // named color
-        return val in COLORS_NAMES || "currentcolor" === val || "transparent" === val;
+        // computed once per string id
+        return arena.stringFlag(arena.stringValue[token], 0 /* StringFlag.Color */, isColorName);
     }
     if (typ === EnumToken.FunctionTokenType || typ === EnumToken.ColorTokenType) {
         if (arena.firstToken[token] !== 0) {
-            const name = arena.strings[arena.stringValue[token]];
+            const name = arena.resolveString(arena.stringValue[token]);
             if (name === "light-dark") {
                 const children = filterChildren(arena, token, [
                     EnumToken.IdenTokenType,
@@ -855,7 +863,7 @@ function isColor(arena, token, errors) {
                 if (colorSpace != null) {
                     for (const value of components) {
                         if (arena.dataTypes[value] === EnumToken.IdenTokenType) {
-                            const val = arena.strings[arena.stringValue[value]].toLowerCase();
+                            const val = arena.resolveString(arena.stringValue[value]).toLowerCase();
                             if (
                             // @ts-expect-error
                             typeof Math[val.toUpperCase()] !== "number" &&
@@ -872,12 +880,12 @@ function isColor(arena, token, errors) {
                             }
                         }
                         else if (arena.dataTypes[value] === EnumToken.MathFunctionTokenType &&
-                            equalsIgnoreCase("calc", arena.strings[arena.stringValue[value]])) {
+                            equalsIgnoreCase("calc", arena.resolveString(arena.stringValue[value]))) {
                             let val;
                             // inlined: arena.walkValues(arena.tokens(value))
                             for (const v of new ValueWalker(arena, arena.tokens(value))) {
                                 if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
-                                    val = arena.strings[arena.stringValue[v]].toLowerCase();
+                                    val = arena.resolveString(arena.stringValue[v]).toLowerCase();
                                     if (
                                     // @ts-expect-error
                                     typeof Math[val.toUpperCase()] !== "number" &&
@@ -915,7 +923,7 @@ function isColor(arena, token, errors) {
                 else if (parent != null &&
                     parent !== token &&
                     arena.dataTypes[parent] === EnumToken.MathFunctionTokenType &&
-                    arena.strings[arena.stringValue[parent]] === "calc") {
+                    arena.resolveString(arena.stringValue[parent]) === "calc") {
                     const children = arena.tokens(parent);
                     l = k + 1;
                     while (l + 1 < children.length) {
@@ -959,7 +967,7 @@ function isColor(arena, token, errors) {
                     EnumToken.PercentageTokenType,
                 ]);
                 const isRelative = arena.dataTypes[children[0]] === EnumToken.IdenTokenType &&
-                    arena.strings[arena.stringValue[children[0]]] === "from";
+                    arena.resolveString(arena.stringValue[children[0]]) === "from";
                 let offset = 0;
                 if (isRelative) {
                     offset = 2;
@@ -983,7 +991,7 @@ function isColor(arena, token, errors) {
                             childType === EnumToken.PercentageTokenType ||
                             isColor(arena, children[i]) ||
                             (childType === EnumToken.IdenTokenType &&
-                                equalsIgnoreCase("none", arena.strings[arena.stringValue[children[i]]]))) {
+                                equalsIgnoreCase("none", arena.resolveString(arena.stringValue[children[i]])))) {
                             continue;
                         }
                         return false;
@@ -1009,7 +1017,7 @@ function isColor(arena, token, errors) {
                 let k = 0;
                 if (children[j].length > 0 &&
                     arena.dataTypes[children[j][0]] === EnumToken.IdenTokenType &&
-                    equalsIgnoreCase("in", arena.strings[arena.stringValue[children[j][k]]])) {
+                    equalsIgnoreCase("in", arena.resolveString(arena.stringValue[children[j][k]]))) {
                     k++;
                     if (k < children[j].length && arena.dataTypes[children[j][k]] === EnumToken.IdenTokenType) {
                         if (!isRectangularOrthogonalColorspace(arena, children[j][k])) {
@@ -1018,11 +1026,11 @@ function isColor(arena, token, errors) {
                                 else if (arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType) {
                                     return false;
                                 }
-                                else if (equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])) {
+                                else if (equalsIgnoreCase("hue", arena.resolveString(arena.stringValue[children[j][k]]))) {
                                     k++;
                                 }
                                 else {
-                                    switch (arena.strings[arena.stringValue[children[j][k]]]) {
+                                    switch (arena.resolveString(arena.stringValue[children[j][k]])) {
                                         case "increasing":
                                         case "decreasing":
                                         case "longer":
@@ -1034,7 +1042,7 @@ function isColor(arena, token, errors) {
                                     }
                                     if (k >= children[j].length ||
                                         arena.dataTypes[children[j][k]] !== EnumToken.IdenTokenType ||
-                                        !equalsIgnoreCase("hue", arena.strings[arena.stringValue[children[j][k]]])) {
+                                        !equalsIgnoreCase("hue", arena.resolveString(arena.stringValue[children[j][k]]))) {
                                         return false;
                                     }
                                     k++;
@@ -1062,7 +1070,7 @@ function isColor(arena, token, errors) {
 function parseColor(arena, token) {
     const typ = arena.dataTypes[token];
     if (typ === EnumToken.IdenTokenType) {
-        const val = arena.strings[arena.stringValue[token]].toLowerCase();
+        const val = arena.resolveString(arena.stringValue[token]).toLowerCase();
         if (nonStandardColors.has(val)) {
             arena.dataTypes[token] = EnumToken.ColorTokenType;
             // inlined: arena.setColorType(token, ColorType.NON_STD)
@@ -1091,7 +1099,7 @@ function parseColor(arena, token) {
         }
     }
     if (typ === EnumToken.ColorTokenType) {
-        const val = arena.strings[arena.stringValue[token]];
+        const val = arena.resolveString(arena.stringValue[token]);
         if (arena.colorType[token] === ColorType.NONE && arena.stringValue[token] !== 0) {
             // inlined: arena.setColorType(token, ColorType[val.replaceAll("-", "_").toUpperCase()] ?? 0)
             // @ts-expect-error
@@ -1102,11 +1110,11 @@ function parseColor(arena, token) {
                 arena.dataTypes[t] !== EnumToken.CommentTokenType);
             if (tk != null &&
                 arena.dataTypes[tk] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[tk]] === "from") {
+                arena.resolveString(arena.stringValue[tk]) === "from") {
                 // inlined: arena.setUnitString(token, "rel")
                 arena.unit[token] = arena.internString("rel");
             }
-            else if (val === "color-mix" && tk != null && arena.strings[arena.stringValue[tk]] === "in") {
+            else if (val === "color-mix" && tk != null && arena.resolveString(arena.stringValue[tk]) === "in") {
                 // inlined: arena.setUnitString(token, "mix")
                 arena.unit[token] = arena.internString("mix");
             }
@@ -1377,7 +1385,7 @@ function length2Px(arena, value) {
     }
     else {
         // the absolute length units: 1in = 2.54cm = 96px. the units are case-insensitive
-        switch (arena.strings[arena.unit[value]]?.toLowerCase()) {
+        switch (arena.resolveString(arena.unit[value])?.toLowerCase()) {
             case "cm":
                 result = (val * 96) / 2.54;
                 break;
@@ -1476,4 +1484,4 @@ function toPrecisionAngle(angle, precision = anglePrecision, correctValue = true
     return angle;
 }
 
-export { angleUnits, dimensionUnits, flexUnits, frequencyUnits, isAngleUnit, isColor, isDigit, isFlexUnit, isFrequencyUnit, isFunction, isHash, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLengthUnit, isLetter, isNewLine, isNonPrintable, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolutionUnit, isTimeUnit, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, resolutionUnits, timeUnits, toPrecisionAngle, toPrecisionValue };
+export { angleUnits, dimensionUnits, flexUnits, frequencyUnits, isAngleUnit, isColor, isColorName, isDigit, isFlexUnit, isFrequencyUnit, isFunction, isHash, isIdent, isIdentCodepoint, isIdentColor, isIdentStart, isLength, isLengthUnit, isLetter, isNewLine, isNonPrintable, isPolarColorspace, isPseudo, isRectangularOrthogonalColorspace, isResolutionUnit, isTimeUnit, isWhiteSpace, length2Px, minifyNumber, parseColor, parseDimension, pseudoAliasMap, reduceColorStops, reduceConicColorStops, reducegradientBackgroundPosition, renamedStandardProperties, resolutionUnits, timeUnits, toPrecisionAngle, toPrecisionValue };

@@ -1,10 +1,23 @@
 # Changelog
 
-# v2.1.1
+# v2.2.0
 
 ## Bugs
 
-- [x] important overriden by normal property
+- [x] a declaration that is not `!important` no longer overrides a previous `!important` declaration of the same property: `.a{color:red !important;color:blue}` -> `.a{color:red!important}`
+- [x] minifier: the merge of two rules is kept only when the output is smaller (or has the same size and removes a rule). the merge of a rule into a rule that keeps some declarations repeated the selector of that rule: `html{margin:0}body,div,...{margin:0;font:inherit}` became `html,body,div,...{margin:0}body,div,...{font:inherit}`. the minified output
+- [x] minifier: `text-emphasis` declarations threw `Cannot read properties of undefined (reading 'includes')` (`text-emphasis-color` has no keyword)
+- [x] `parse()`, `parseSync()`, `transform()`, `transformSync()` and `render()` no longer modify the options object of the caller: a reused options object kept the source and the code units of the first input, and its validation (sync api) traversed them at every call. the sync api options check only traverses the plain objects and the arrays of `blueprint.css` was larger than the output of the fast mode (`minify: false`)
+
+## Feature
+- [x] `RenderResult` and `TransformResult` are classes. the generated css is accumulated as UTF-8 bytes in `result.write` (`Uint8Array`), `result.code` is a getter that decodes the bytes once, when it is first read.
+
+## Performance
+- [x] avoid temporary strings allocation
+- [x] faster css transform minification
+
+## Validation
+- [x] rewrite validation to reduce execution time
 
 # v2.1.0
 
@@ -17,7 +30,7 @@
 ## Feature
 
 - [x] now accepting arraybuffer as input data: transformSync(arraybuffer);
-- [x] renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
+- [ ]  renamed 'word-wrap' to 'overflow-wrap', 'grid-gap' to 'gap', 'grid-row-gap' to 'row-gap', 'grid-column-gap' to 'column-gap', 'font-stretch' to 'font-width'.
 
 ## Validation
 - [x] switching syntax definitions source from mdn-data to webref/css

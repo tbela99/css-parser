@@ -1,41 +1,58 @@
-import { identity, multiply } from "./utils.ts";
+import { multiplyInto, setIdentity } from "./utils.ts";
 import type { Matrix } from "./type.d.ts";
 
-export function translateX(x: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+/**
+ * the translation matrix. the functions multiply the matrix they receive in place: `from = from × translation`
+ */
+const matrix: Matrix = new Float64Array(16);
 
+export function translateX(x: number, from: Matrix): Matrix {
+    setIdentity(matrix);
     matrix[3 * 4] = x;
 
-    return multiply(from, matrix) as Matrix;
+    return multiplyInto(from, matrix, from);
 }
 
 export function translateY(y: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+    setIdentity(matrix);
     matrix[3 * 4 + 1] = y;
 
-    return multiply(from, matrix) as Matrix;
+    return multiplyInto(from, matrix, from);
 }
 
 export function translateZ(z: number, from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+    setIdentity(matrix);
     matrix[3 * 4 + 2] = z;
 
-    return multiply(from, matrix) as Matrix;
+    return multiplyInto(from, matrix, from);
 }
 
-export function translate(translate: [number] | [number, number], from: Matrix): Matrix {
-    const matrix: Matrix = identity();
-    matrix[3 * 4] = translate[0];
-    matrix[3 * 4 + 1] = translate[1] ?? 0;
+/**
+ * @param x
+ * @param y 0 if undefined
+ * @param from
+ */
+export function translate(x: number, y: number | undefined, from: Matrix): Matrix {
+    setIdentity(matrix);
+    matrix[3 * 4] = x;
+    matrix[3 * 4 + 1] = y ?? 0;
 
-    return multiply(from, matrix) as Matrix;
+    return multiplyInto(from, matrix, from);
 }
 
-export function translate3d(translate: [number, number, number], from: Matrix): Matrix {
-    const matrix: Matrix = identity();
-    matrix[3 * 4] = translate[0];
-    matrix[3 * 4 + 1] = translate[1];
-    matrix[3 * 4 + 2] = translate[2];
+/**
+ * @param x
+ * @param y NaN if undefined
+ * @param z NaN if undefined
+ * @param from
+ */
+export function translate3d(x: number, y: number | undefined, z: number | undefined, from: Matrix): Matrix {
+    setIdentity(matrix);
+    matrix[3 * 4] = x;
+    // @ts-ignore undefined is stored as NaN
+    matrix[3 * 4 + 1] = y;
+    // @ts-ignore undefined is stored as NaN
+    matrix[3 * 4 + 2] = z;
 
-    return multiply(from, matrix) as Matrix;
+    return multiplyInto(from, matrix, from);
 }

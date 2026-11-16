@@ -9,7 +9,7 @@ import { EnumToken } from '../../ast/types.js';
 import { getSyntaxRule } from '../../validation/config.js';
 import { trimArray } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
-import { tokensfuncDefMap } from '../../syntax/constants.js';
+import { tokensfuncDefMap, isFunctionDefType } from '../../syntax/constants.js';
 import { parseMediaqueryList } from './at-rule-media.js';
 import { parseAtRuleSupportSyntax } from './at-rule-support.js';
 
@@ -38,7 +38,7 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
                 matchCount--;
             }
             else if (arena.dataTypes[stream[k]] === EnumToken.StartParensTokenType ||
-                tokensfuncDefMap.has(arena.dataTypes[stream[k]])) {
+                isFunctionDefType(arena.dataTypes[stream[k]])) {
                 matchCount++;
             }
             if (matchCount === 0) {
@@ -77,11 +77,11 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
     }
     // layer | layer(<layer-name>)
     if (arena.dataTypes[stream[index]] === EnumToken.IdenTokenType &&
-        "layer".localeCompare(arena.strings[arena.stringValue[stream[index]]]) === 0) {
+        "layer".localeCompare(arena.resolveString(arena.stringValue[stream[index]])) === 0) {
         tokens.push(stream[index++]);
     }
-    else if (tokensfuncDefMap.has(arena.dataTypes[stream[index]]) &&
-        "layer".localeCompare(arena.strings[arena.stringValue[stream[index]]]) === 0) {
+    else if (isFunctionDefType(arena.dataTypes[stream[index]]) &&
+        "layer".localeCompare(arena.resolveString(arena.stringValue[stream[index]])) === 0) {
         stack.push(stream[index]);
         tokens.push(stream[index++]);
         // <layer-name">
@@ -140,8 +140,8 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
     }
     // supports([ <supports-condition> | <declaration> ])
     if (index < stream.length &&
-        tokensfuncDefMap.has(arena.dataTypes[stream[index]]) &&
-        "supports".localeCompare(arena.strings[arena.stringValue[stream[index]]]) === 0) {
+        isFunctionDefType(arena.dataTypes[stream[index]]) &&
+        "supports".localeCompare(arena.resolveString(arena.stringValue[stream[index]])) === 0) {
         stack.push(stream[index]);
         tokens.push(stream[index++]);
         matchCount = 1;
@@ -150,7 +150,7 @@ function matchAtRuleImportSyntax(arena, atRule, stream, options) {
         // match the next ')'
         while (index < stream.length && matchCount > 0) {
             if (arena.dataTypes[stream[index]] === EnumToken.StartParensTokenType ||
-                tokensfuncDefMap.has(arena.dataTypes[stream[index]])) {
+                isFunctionDefType(arena.dataTypes[stream[index]])) {
                 matchCount++;
             }
             else if (arena.dataTypes[stream[index]] === EnumToken.EndParensTokenType) {

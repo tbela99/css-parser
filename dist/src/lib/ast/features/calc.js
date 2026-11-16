@@ -9,7 +9,7 @@ import { TokenField, numericTokenTypes } from '../arena.js';
 import { EnumToken, EnumAstNodeStatus } from '../types.js';
 import { evaluate } from '../math/expression.js';
 import { FeatureWalkMode } from './type.js';
-import { tokensfuncSet, mathFuncs } from '../../syntax/constants.js';
+import { isFunctionType, mathFuncs } from '../../syntax/constants.js';
 import { ValueWalker } from '../walk.js';
 
 class ComputeCalcExpressionFeature {
@@ -62,12 +62,12 @@ class ComputeCalcExpressionFeature {
                     catch (e) { }
                     continue;
                 }
-                if (tokensfuncSet.has(typ)) {
+                if (isFunctionType(typ)) {
                     set ??= new Set();
                     if (!set.has(value)) {
                         set.add(value);
                         if (parent != null) {
-                            const name = arena.strings[arena.stringValue[value]];
+                            const name = arena.resolveString(arena.stringValue[value]);
                             const shouldEvaluate = typ === EnumToken.MathFunctionTokenType ||
                                 (typ === EnumToken.FunctionTokenType && mathFuncs.includes(name));
                             if (shouldEvaluate) {
@@ -96,13 +96,13 @@ class ComputeCalcExpressionFeature {
                                     const parentType = arena.dataTypes[parent];
                                     const wrap = !(parentType === EnumToken.MathFunctionTokenType ||
                                         (parentType === EnumToken.FunctionTokenType &&
-                                            arena.strings[arena.stringValue[parent]] === "calc")) &&
+                                            arena.resolveString(arena.stringValue[parent]) === "calc")) &&
                                         // inlined: arena.isNumeric(values[0])
                                         (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
                                             arena.hasFraction(values[0])) &&
                                         !(arena.dataTypes[values[0]] === EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] === EnumToken.FunctionTokenType &&
-                                                mathFuncs.includes(arena.strings[arena.stringValue[values[0]]])));
+                                                mathFuncs.includes(arena.resolveString(arena.stringValue[values[0]]))));
                                     arena.replaceToken(value, wrap ? createCalc(arena, value, values) : values[0]);
                                 }
                                 else {
@@ -137,7 +137,7 @@ function createCalc(arena, source, values) {
 function hasExpression(arena, node) {
     for (let token = arena.firstToken[node]; token !== 0; token = arena.nextSibling[token]) {
         if (arena.dataTypes[token] === EnumToken.BinaryExpressionTokenType ||
-            tokensfuncSet.has(arena.dataTypes[token]) ||
+            isFunctionType(arena.dataTypes[token]) ||
             arena.firstToken[token] !== 0 ||
             arena.firstChild[token] !== 0) {
             return true;

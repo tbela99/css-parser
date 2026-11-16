@@ -1588,18 +1588,11 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
         );
     });
 
-    it("normal properties do not override !important #66", async () => {
+    it("!important declarations are not overridden by later declarations #66", async () => {
         const options = {
-            input: `
-    
-    .a {
-    
-    color: red!important; color: blue;}
-
-    .a {
-    color: Coral!important; color: aqua;}
-    .a {color: blue }
-    `,
+            input: `.a{color:red !important;color:blue}
+.a{color:Coral!important}
+.a{color:blue}`,
             beautify: true,
         };
 
@@ -1608,5 +1601,20 @@ color: color-mix(in oklch, oklch(78.3% 0.108 326.5), oklch(39.2% 0.4 none)) ;
  color: coral!important
 }`),
         );
+    });
+
+    it("!important declaration in a single rule #67", async () => {
+        return Promise.all([
+            transform(`.a{color:red !important;color:blue}`).then((result) =>
+                expect(result.code).equals(`.a{color:red!important}`),
+            ),
+            transform(`.a{color:blue;color:red !important}`).then((result) =>
+                expect(result.code).equals(`.a{color:red!important}`),
+            ),
+            transform(`.a{color:red !important;color:blue !important}`).then((result) =>
+                expect(result.code).equals(`.a{color:blue!important}`),
+            ),
+            transform(`.a{color:red;color:blue}`).then((result) => expect(result.code).equals(`.a{color:blue}`)),
+        ]);
     });
 }

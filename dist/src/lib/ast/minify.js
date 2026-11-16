@@ -9,6 +9,7 @@ import { eq, eqToken } from '../parser/utils/eq.js';
 import { renderValue, NodeRenderer } from '../printer/render.js';
 import * as index from './features/index.js';
 import { EnumToken, EnumAstNodeStatus } from './types.js';
+import { StringBuilder } from './strings.js';
 import { isWhiteSpace, isIdent, isFunction, isIdentStart } from '../syntax/syntax.js';
 import { FeatureWalkMode } from './features/type.js';
 import { trimArray } from '../validation/match.js';
@@ -20,60 +21,6 @@ import { ValueWalker } from './walk.js';
 const notEndingWith = ["(", "["].concat(combinators);
 // @ts-ignore
 const features = Object.values(index).sort((a, b) => a.ordering - b.ordering);
-/**
- * run the features on every node of the tree
- * @param arena
- * @param ast
- * @param options2
- * @param context
- * @param mode
- */
-function runFeatures(arena, ast, options2, context, mode) {
-    // breadth first traversal
-    const queue = [ast];
-    let node;
-    let typ;
-    let replacement;
-    for (let k = 0; k < queue.length; k++) {
-        node = queue[k];
-        typ = arena.dataTypes[node];
-        if (typ === EnumToken.CommentTokenType || typ === EnumToken.CDOCOMMTokenType) {
-            continue;
-        }
-        replacement = node;
-        for (const feature of options2.features) {
-            if ((feature.processMode & mode) === 0 || (feature.accept != null && !feature.accept.has(typ))) {
-                continue;
-            }
-            if (Array.isArray(replacement)) {
-                break;
-            }
-            // the prelude tokens of the rules whose selector has been rewritten are not parsed again:
-            // the features and the renderer use the selector / prelude string
-            const result = feature.run(arena, replacement, options2, arena.parents[node] === 0 ? ast : arena.parents[node], context, mode);
-            if (result != null) {
-                replacement = result;
-            }
-        }
-        if (replacement != null &&
-            (!Array.isArray(replacement) || replacement.length > 0) &&
-            replacement != node &&
-            arena.parents[node] !== 0) {
-            arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
-        }
-        if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
-            for (let child = arena.firstChild[replacement]; child !== 0; child = arena.nextSibling[child]) {
-                queue.push(child);
-            }
-        }
-    }
-    for (const feature of options2.features) {
-        if (feature.processMode & mode && "cleanup" in feature) {
-            // @ts-ignore
-            feature.cleanup(arena, ast, options2, context, mode);
-        }
-    }
-}
 /**
  * Apply minification rules to the ast tree
  * @param arena
@@ -112,12 +59,62 @@ function minify(arena, ast, options = {}, recursive = false, errors, nestingCont
             postprocess = true;
         }
     }
+    /**
+     * run the features on every node of the tree
+     * @param mode
+     */
+    const runFeatures = (mode) => {
+        // breadth first traversal
+        const queue = [ast];
+        let node;
+        let typ;
+        let replacement;
+        for (let k = 0; k < queue.length; k++) {
+            node = queue[k];
+            typ = arena.dataTypes[node];
+            if (typ === EnumToken.CommentTokenType || typ === EnumToken.CDOCOMMTokenType) {
+                continue;
+            }
+            replacement = node;
+            for (const feature of options2.features) {
+                if ((feature.processMode & mode) === 0 || (feature.accept != null && !feature.accept.has(typ))) {
+                    continue;
+                }
+                if (Array.isArray(replacement)) {
+                    break;
+                }
+                // the prelude tokens of the rules whose selector has been rewritten are not parsed again:
+                // the features and the renderer use the selector / prelude string
+                const result = feature.run(arena, replacement, options2, arena.parents[node] === 0 ? ast : arena.parents[node], context, mode);
+                if (result != null) {
+                    replacement = result;
+                }
+            }
+            if (replacement != null &&
+                (!Array.isArray(replacement) || replacement.length > 0) &&
+                replacement != node &&
+                arena.parents[node] !== 0) {
+                arena.replaceChild(node, ...(Array.isArray(replacement) ? replacement : [replacement]));
+            }
+            if (!Array.isArray(replacement) && arena.flags[replacement] & EnumAstNodeStatus.HasChildren) {
+                for (let child = arena.firstChild[replacement]; child !== 0; child = arena.nextSibling[child]) {
+                    queue.push(child);
+                }
+            }
+        }
+        for (const feature of options2.features) {
+            if (feature.processMode & mode && "cleanup" in feature) {
+                // @ts-ignore
+                feature.cleanup(arena, ast, options2, context, mode);
+            }
+        }
+    };
     if (preprocess) {
-        runFeatures(arena, ast, options2, context, FeatureWalkMode.Pre);
+        runFeatures(FeatureWalkMode.Pre);
     }
     doMinify(arena, ast, options2, recursive, errors, nestingContent, context);
     if (postprocess) {
-        runFeatures(arena, ast, options2, context, FeatureWalkMode.Post);
+        runFeatures(FeatureWalkMode.Post);
     }
     return ast;
 }
@@ -244,7 +241,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
             nodeType = arena.dataTypes[node];
             previousType = previous == null ? null : arena.dataTypes[previous];
             if (nodeType === EnumToken.AtRuleNodeType) {
-                const nam = arena.strings[arena.name[node]];
+                const nam = arena.resolveString(arena.name[node]);
                 if (nam === "font-face") {
                     cursor = arena.nextSibling[node];
                     continue;
@@ -260,7 +257,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             continue;
                         }
                         if (arena.dataTypes[k] === EnumToken.DeclarationNodeType &&
-                            equalsIgnoreCase(arena.strings[arena.name[k]], "result")) {
+                            equalsIgnoreCase(arena.resolveString(arena.name[k]), "result")) {
                             slice = true;
                             break;
                         }
@@ -296,7 +293,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                     // do not merge keyframes
                     // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes#resolving_duplicates
                     arena.moveChildren(node, previous);
-                    options.cache?.delete?.(previous);
+                    options.cache?.delete(previous);
                     arena.detach(node);
                     cursor = arena.nextSibling[previous];
                     continue;
@@ -323,7 +320,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 }
             }
             else if (nodeType === EnumToken.AtRuleNodeType) {
-                const nam = arena.strings[arena.name[node]];
+                const nam = arena.resolveString(arena.name[node]);
                 const tokens = arena.firstToken[node] === 0 ? null : arena.tokens(node);
                 const renderPrelude = (acc, curr, index, arr) => acc +
                     (arena.dataTypes[curr] === EnumToken.CommentTokenType ||
@@ -344,7 +341,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             arena.stringValue[node] = arena.internString(slice.reduce(renderPrelude, ""));
                         }
                     }
-                    if (["all", ""].includes(arena.strings[arena.stringValue[node]])) {
+                    if (["all", ""].includes(arena.resolveString(arena.stringValue[node]))) {
                         // the node is replaced by its children
                         cursor = arena.firstChild[node] || arena.nextSibling[node];
                         arena.moveChildren(node, ast, node);
@@ -360,7 +357,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         if (arena.dataTypes[token] === EnumToken.ParensTokenType ||
                             arena.dataTypes[token] === EnumToken.MediaQueryConditionTokenType ||
                             (arena.dataTypes[token] === EnumToken.IdenTokenType &&
-                                "layer" !== arena.strings[arena.stringValue[token]])) {
+                                "layer" !== arena.resolveString(arena.stringValue[token]))) {
                             break;
                         }
                     }
@@ -405,23 +402,37 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                 continue;
             }
             else if (nodeType === EnumToken.RuleNodeType) {
-                reduceRuleSelector(arena, node);
+                // a single selector that does not end with a combinator is not reduced (see isSimpleSelector()): the
+                // selector is not read
+                if (!isSimpleSelector(arena, arena.name[node])) {
+                    reduceRuleSelector(arena, node);
+                }
                 let wrapper = null;
                 let match;
                 if (options.nestingRules) {
                     if (previousType === EnumToken.RuleNodeType) {
-                        reduceRuleSelector(arena, previous);
-                        match = matchSelectors(arena.raw[previous], arena.raw[node]);
-                        if (match != null) {
-                            wrapper = wrapNodes(arena, previous, node, match, reducer);
+                        if (!isSimpleSelector(arena, arena.name[previous])) {
+                            reduceRuleSelector(arena, previous);
+                        }
+                        // the selectors are split when their first parts are equal: they do not match otherwise
+                        if (mayMatchSelectors(arena, previous, node)) {
+                            match = matchSelectors(rawSelector(arena, previous), rawSelector(arena, node));
+                            if (match != null) {
+                                wrapper = wrapNodes(arena, previous, node, match, reducer);
+                            }
                         }
                     }
                     if (wrapper != null) {
                         // wrap the following rules that match the wrapper selector
                         let nextNode = arena.nextSibling[wrapper];
                         while (nextNode !== 0 && arena.dataTypes[nextNode] === EnumToken.RuleNodeType) {
-                            reduceRuleSelector(arena, nextNode);
-                            match = matchSelectors(arena.raw[wrapper], arena.raw[nextNode]);
+                            if (!isSimpleSelector(arena, arena.name[nextNode])) {
+                                reduceRuleSelector(arena, nextNode);
+                            }
+                            // the selector is split when its first part matches the wrapper selector
+                            match = mayMatchSelectors(arena, wrapper, nextNode)
+                                ? matchSelectors(rawSelector(arena, wrapper), rawSelector(arena, nextNode))
+                                : null;
                             if (match == null) {
                                 break;
                             }
@@ -433,19 +444,20 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         doMinify(arena, wrapper, options, recursive, errors, nestingContent, context);
                         continue;
                     }
-                    else if (arena.optimized[node] != null &&
-                        arena.optimized[node].match &&
-                        arena.optimized[node].selector.length > 1) {
-                        const optimized = arena.optimized[node];
-                        wrapper = arena.clone(node);
+                    else if (arena.optimized.get(node) != null &&
+                        arena.optimized.get(node).match &&
+                        arena.optimized.get(node).selector.length > 1) {
+                        const optimized = arena.optimized.get(node);
+                        wrapper = arena.cloneNode(node);
+                        arena.optimized.set(wrapper, arena.optimized.get(node));
                         // inlined: arena.setSelector(wrapper, optimized.optimized[0])
                         arena.name[wrapper] = arena.internString(optimized.optimized[0]);
-                        arena.raw[wrapper] = [[optimized.optimized[0]]];
+                        arena.raw.set(wrapper, [[optimized.optimized[0]]]);
                         // inlined: arena.setTokens(wrapper)
                         arena.setTokenList(wrapper, []);
                         // inlined: arena.setSelector(node, optimized.selector.reduce(reducer, []).join(","))
                         arena.name[node] = arena.internString(optimized.selector.reduce(reducer, []).join(","));
-                        arena.raw[node] = optimized.selector.slice();
+                        arena.raw.set(node, optimized.selector.slice());
                         // inlined: arena.setTokens(node)
                         arena.setTokenList(node, []);
                         // the wrapper takes the place of the node
@@ -454,8 +466,8 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         node = wrapper;
                         nodeType = EnumToken.RuleNodeType;
                     }
-                    else if (arena.optimized[node]?.reducible) {
-                        const optimized = arena.optimized[node];
+                    else if (arena.optimized.get(node)?.reducible) {
+                        const optimized = arena.optimized.get(node);
                         if (optimized.optimized.length === 1) {
                             const sel1 = optimized.optimized[0] +
                                 ":is(" +
@@ -478,8 +490,8 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         }
                     }
                 }
-                else if (arena.optimized[node]?.match) {
-                    const optimizedSelector = arena.optimized[node];
+                else if (arena.optimized.get(node)?.match) {
+                    const optimizedSelector = arena.optimized.get(node);
                     let wrap = true;
                     const selector = optimizedSelector.selector.reduce((acc, curr) => {
                         if (curr[0] === "&" && curr.length > 1) {
@@ -567,15 +579,15 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                             .join(",");
                     }
                     let sel = wrap ? optimizedSelector.optimized.join("") + `:is(${rule})` : rule;
-                    if (sel.length < arena.strings[arena.name[node]].length) {
+                    if (sel.length < arena.resolveString(arena.name[node]).length) {
                         // inlined: arena.setSelector(node, sel)
                         arena.name[node] = arena.internString(sel);
                         // inlined: arena.setTokens(node)
                         arena.setTokenList(node, []);
                     }
                 }
-                else if (arena.optimized[node]?.reducible) {
-                    const optimized = arena.optimized[node];
+                else if (arena.optimized.get(node)?.reducible) {
+                    const optimized = arena.optimized.get(node);
                     if (optimized.optimized.length === 1) {
                         const sel1 = optimized.optimized[0] + ":is(" + optimized.selector.reduce(reducer, []).join(",") + ")";
                         const sel2 = optimized.selector.reduce((acc, curr) => (acc.length > 0 ? acc + "," : "") + optimized.optimized[0] + curr.join(""), "");
@@ -594,13 +606,13 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                         arena.setTokenList(node, []);
                     }
                 }
-                else if (arena.optimized[node]?.optimized.length > 0) {
-                    const optimized = arena.optimized[node];
+                else if (arena.optimized.get(node)?.optimized.length > 0) {
+                    const optimized = arena.optimized.get(node);
                     const sel = optimized.optimized.join("");
-                    if (sel.length < arena.strings[arena.name[node]].length) {
+                    if (sel.length < arena.resolveString(arena.name[node]).length) {
                         // inlined: arena.setSelector(node, sel)
                         arena.name[node] = arena.internString(sel);
-                        arena.raw[node] = [optimized.optimized.slice()];
+                        arena.raw.set(node, [optimized.optimized.slice()]);
                         // inlined: arena.setTokens(node)
                         arena.setTokenList(node, []);
                     }
@@ -627,7 +639,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
                                 nodeType === EnumToken.KeyframesRuleNodeType) &&
                                 arena.name[node] === arena.name[previous]) ||
                                 (nodeType === EnumToken.AtRuleNodeType &&
-                                    arena.strings[arena.name[node]] !== "font-face" &&
+                                    arena.resolveString(arena.name[node]) !== "font-face" &&
                                     arena.name[node] === arena.name[previous])) {
                                 arena.moveChildren(previous, node, arena.firstChild[node]);
                                 options.cache?.delete(node);
@@ -682,7 +694,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
             if (!nestingContent &&
                 previous != null &&
                 arena.dataTypes[previous] === EnumToken.RuleNodeType &&
-                arena.strings[arena.name[previous]].includes("&")) {
+                arena.stringIndexOf(arena.name[previous], 0x26) !== -1) {
                 fixSelector(arena, previous);
             }
             previous = node;
@@ -691,7 +703,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
         if (recursive && node != null && arena.flags[node] & EnumAstNodeStatus.HasChildren) {
             if (arena.dataTypes[node] === EnumToken.KeyframesAtRuleNodeType || !hasDeclarationChild(arena, node)) {
                 if (!(arena.dataTypes[node] === EnumToken.AtRuleNodeType &&
-                    arena.strings[arena.name[node]] !== "font-face")) {
+                    arena.resolveString(arena.name[node]) !== "font-face")) {
                     doMinify(arena, node, options, recursive, errors, nestingContent, context);
                 }
             }
@@ -699,7 +711,7 @@ function doMinify(arena, ast, options = {}, recursive = false, errors, nestingCo
         if (!nestingContent &&
             node != null &&
             arena.dataTypes[node] === EnumToken.RuleNodeType &&
-            arena.strings[arena.name[node]].includes("&")) {
+            arena.stringIndexOf(arena.name[node], 0x26) !== -1) {
             fixSelector(arena, node);
         }
     }
@@ -1173,13 +1185,13 @@ function matchSelectors(selector1, selector2) {
  * @private
  */
 function fixSelector(arena, node) {
-    const sel = arena.strings[arena.name[node]];
+    const sel = arena.resolveString(arena.name[node]);
     if (sel.includes("&")) {
         const attributes = parseString(arena, sel);
         // inlined: arena.walkValues(attributes)
         for (const attr of new ValueWalker(arena, attributes)) {
             if (arena.dataTypes[attr] === EnumToken.PseudoClassFuncTokenType &&
-                arena.strings[arena.stringValue[attr]] === ":is") {
+                arena.resolveString(arena.stringValue[attr]) === ":is") {
                 let child = arena.lastToken[attr];
                 while (child !== 0) {
                     const previous = arena.previousSibling[child];
@@ -1211,12 +1223,15 @@ function wrapNodes(arena, previous, node, match, reducer) {
     let pSel = match.selector1.reduce(reducer, []).join(",");
     // @ts-ignore
     let nSel = match.selector2.reduce(reducer, []).join(",");
-    const wrapper = arena.clone(previous);
+    const wrapper = arena.cloneNode(previous);
     // inlined: arena.setSelector(wrapper, match.match.reduce(reducer, []).join(","))
     // @ts-ignore
     arena.name[wrapper] = arena.internString(match.match.reduce(reducer, []).join(","));
-    arena.raw[wrapper] = match.match.map((t) => t.slice());
-    arena.optimized[wrapper] = null;
+    arena.raw.set(wrapper, match.match.map((t) => t.slice()));
+    // not copied by cloneNode()
+    if (arena.optimized.get(wrapper) != null) {
+        arena.optimized.set(wrapper, null);
+    }
     // inlined: arena.setTokens(wrapper)
     arena.setTokenList(wrapper, []);
     const parent = arena.parents[node];
@@ -1246,14 +1261,14 @@ function wrapNodes(arena, previous, node, match, reducer) {
     if (arena.parents[previous] === wrapper) {
         // inlined: arena.setSelector(previous, pSel)
         arena.name[previous] = arena.internString(pSel);
-        arena.raw[previous] = match.selector1;
+        arena.raw.set(previous, match.selector1);
         // inlined: arena.setTokens(previous)
         arena.setTokenList(previous, []);
     }
     if (arena.parents[node] === wrapper) {
         // inlined: arena.setSelector(node, nSel)
         arena.name[node] = arena.internString(nSel);
-        arena.raw[node] = match.selector2;
+        arena.raw.set(node, match.selector2);
         // inlined: arena.setTokens(node)
         arena.setTokenList(node, []);
     }
@@ -1285,9 +1300,23 @@ function diff(arena, n1, n2, options, context) {
         node2 = t;
         exchanged = true;
     }
-    const raw1 = arena.raw[node1];
-    const raw2 = arena.raw[node2];
-    if (raw1 != null && raw2 != null) {
+    const raw1 = arena.raw.get(node1);
+    const raw2 = arena.raw.get(node2);
+    if (raw1 == null || raw2 == null) {
+        // the selectors that are not split (see isSimpleSelector()): the vendor prefixes of the pseudo classes are
+        // read from the code units of the selectors
+        const prefixes1 = raw1 == null ? selectorPrefixes(arena, arena.name[node1]) : rawSelectorPrefixes(raw1);
+        const prefixes2 = raw2 == null ? selectorPrefixes(arena, arena.name[node2]) : rawSelectorPrefixes(raw2);
+        if (prefixes1.size !== prefixes2.size) {
+            return null;
+        }
+        for (const prefix of prefixes1) {
+            if (!prefixes2.has(prefix)) {
+                return null;
+            }
+        }
+    }
+    else {
         const prefixes1 = new Set();
         const prefixes2 = new Set();
         for (const token1 of raw1) {
@@ -1359,25 +1388,30 @@ function diff(arena, n1, n2, options, context) {
     // identical values are rendered once
     const renderer = (context.renderer ??= new NodeRenderer(options));
     const renderedSize = (node, cache) => {
-        let css = cache ? options.cache.get(node) : undefined;
-        if (css == null) {
-            css = renderer.render(arena, node);
+        let size = cache ? options.cache.get(node) : undefined;
+        if (size === undefined) {
+            size = renderer.size(arena, node);
             if (cache) {
-                options.cache.set(node, css);
+                options.cache.set(node, size);
             }
         }
-        return arena.firstChild[node] === 0 ? 0 : css.length;
+        return arena.firstChild[node] === 0 ? 0 : size;
     };
     // size of the original nodes
     const size = renderedSize(n1, true) + renderedSize(n2, true);
     // the shared declarations are moved into the result node
-    const result = arena.clone(node1);
-    // inlined: arena.setSelector(result, [ ...new Set(splitRule(arena.strings[arena.name[node1]]) .concat(splitRule(arena.strings[arena.name[node2]])) .map((s) => s.join(""))), ].join(","))
-    arena.name[result] = arena.internString([
-        ...new Set(splitRule(arena.strings[arena.name[node1]])
-            .concat(splitRule(arena.strings[arena.name[node2]]))
-            .map((s) => s.join(""))),
-    ].join(","));
+    const result = arena.cloneNode(node1);
+    // the distinct selectors of both rules: built from the code units of the selectors when they are normalized
+    let merged = mergeSelectors(arena, arena.name[node1], arena.name[node2]);
+    if (merged === -1) {
+        // inlined: arena.setSelector(result, [ ...new Set(splitRule(arena.resolveString(arena.name[node1])) .concat(splitRule(arena.resolveString(arena.name[node2]))) .map((s) => s.join(""))), ].join(","))
+        merged = arena.internString([
+            ...new Set(splitRule(arena.resolveString(arena.name[node1]))
+                .concat(splitRule(arena.resolveString(arena.name[node2])))
+                .map((s) => s.join(""))),
+        ].join(","));
+    }
+    arena.name[result] = merged;
     // the matched declarations of node1 are moved into the result, the duplicates in node2 are dropped.
     // the moves are recorded (node, parent, next sibling) to be undone when the result is not smaller
     const moves = [];
@@ -1403,9 +1437,12 @@ function diff(arena, n1, n2, options, context) {
     arena.insertBefore(n1, result);
     options.cache.delete(node1);
     options.cache.delete(node2);
-    if (size <= renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false) &&
-        arena.firstChild[node1] !== 0 &&
-        arena.firstChild[node2] !== 0) {
+    // the merge is kept when the output is smaller, or when it has the same size and removes a rule (an emptied rule is
+    // removed, its size is 0). the other rule keeps its selector, which is repeated in the merged selector: the merge of
+    // `html{margin:0}` and `body,div,...{margin:0;font:inherit}` is larger than the rules
+    const mergedSize = renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
+    if (size < mergedSize ||
+        (size === mergedSize && arena.firstChild[node1] !== 0 && arena.firstChild[node2] !== 0)) {
         // restore the nodes: undo the moves in reverse order
         for (let k = moves.length - 3; k >= 0; k -= 3) {
             if (moves[k + 2] === 0) {
@@ -1420,9 +1457,14 @@ function diff(arena, n1, n2, options, context) {
     }
     // inlined: arena.setTokens(result)
     arena.setTokenList(result, []);
-    arena.raw[result] = null;
-    arena.optimized[result] = null;
-    const optimized = optimizeSelector(splitRule(arena.strings[arena.name[result]]));
+    // the raw and optimized selectors are not copied by cloneNode()
+    if (arena.raw.get(result) != null) {
+        arena.raw.set(result, null);
+    }
+    if (arena.optimized.get(result) != null) {
+        arena.optimized.set(result, null);
+    }
+    const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
     if (optimized?.match) {
         const rule = optimized.selector.reduce((acc, curr) => {
             if (acc.length > 0) {
@@ -1438,7 +1480,7 @@ function diff(arena, n1, n2, options, context) {
         }, "");
         const match = optimized.optimized.join("");
         const sel = match + ":is(" + arena.replaceCompound(rule, match) + ")";
-        if (sel.length < arena.strings[arena.name[result]].length) {
+        if (sel.length < arena.resolveString(arena.name[result]).length) {
             // inlined: arena.setSelector(result, sel)
             arena.name[result] = arena.internString(sel);
             // inlined: arena.setTokens(result)
@@ -1494,6 +1536,507 @@ function eqNode(arena, a, b) {
     return true;
 }
 /**
+ * builder of the merged selectors, see {@link mergeSelectors}
+ */
+const mergedSelectors = new StringBuilder();
+/**
+ * start and end of the selectors read by {@link selectorRanges}, in {@link mergedSelectors}
+ */
+let selectorBounds = new Int32Array(64);
+/**
+ * append the comma separated selectors of a selector string to {@link mergedSelectors} and record their bounds. the
+ * selectors are the selectors of splitRule() joined: false when the selector string is not normalized (whitespace
+ * other than a single space between two parts, a space after a comma)
+ * @param arena
+ * @param id selector string id
+ * @param count number of selectors recorded
+ * @returns the number of selectors recorded, -1 when the selector string is not normalized
+ */
+function selectorRanges(arena, id, count) {
+    const length = arena.stringLength(id);
+    const offset = mergedSelectors.length;
+    arena.appendString(mergedSelectors, id);
+    const codes = mergedSelectors.codes;
+    let start = offset;
+    const add = (end) => {
+        if ((count + 1) * 2 > selectorBounds.length) {
+            const bounds = new Int32Array(selectorBounds.length * 2);
+            bounds.set(selectorBounds);
+            selectorBounds = bounds;
+        }
+        selectorBounds[count * 2] = start;
+        selectorBounds[count * 2 + 1] = end;
+        count++;
+    };
+    for (let i = offset; i < offset + length; i++) {
+        const code = codes[i];
+        if (isWhiteSpace(code)) {
+            // a single space between two parts
+            if (code !== 0x20 || i === start || isWhiteSpace(codes[i - 1])) {
+                return -1;
+            }
+            continue;
+        }
+        if (code === 0x2c) {
+            add(i);
+            start = i + 1;
+            continue;
+        }
+        if (code === 0x5c) {
+            i++;
+            continue;
+        }
+        // ( [: the part ends with the matching ) ]
+        if (code === 0x28 || code === 0x5b) {
+            const close = code === 0x28 ? 0x29 : 0x5d;
+            let depth = 1;
+            let k = i;
+            let c;
+            while (++k < offset + length) {
+                c = codes[k];
+                if (c === 0x5c) {
+                    k++;
+                    continue;
+                }
+                if (c === code) {
+                    depth++;
+                }
+                else if (c === close) {
+                    depth--;
+                }
+                if (depth === 0) {
+                    break;
+                }
+            }
+            i = k;
+        }
+    }
+    add(offset + length);
+    return count;
+}
+/**
+ * the distinct selectors of two selector strings, comma separated, like
+ * `[...new Set(splitRule(sel1).concat(splitRule(sel2)).map((s) => s.join("")))].join(",")`. the selectors are read
+ * from the string table and the result is interned: no string is created
+ * @param arena
+ * @param id1
+ * @param id2
+ * @returns the string id, -1 when a selector string is not normalized (see {@link selectorRanges})
+ */
+function mergeSelectors(arena, id1, id2) {
+    mergedSelectors.reset();
+    let count = selectorRanges(arena, id1, 0);
+    if (count === -1 || (count = selectorRanges(arena, id2, count)) === -1) {
+        return -1;
+    }
+    const codes = mergedSelectors.codes;
+    const end = mergedSelectors.length;
+    // the result is built after the selectors
+    for (let i = 0, written = 0; i < count; i++) {
+        const start1 = selectorBounds[i * 2];
+        const end1 = selectorBounds[i * 2 + 1];
+        let duplicate = false;
+        for (let k = 0; k < i && !duplicate; k++) {
+            const start2 = selectorBounds[k * 2];
+            const end2 = selectorBounds[k * 2 + 1];
+            if (end2 - start2 === end1 - start1) {
+                let j = 0;
+                while (j < end1 - start1 && codes[start1 + j] === codes[start2 + j]) {
+                    j++;
+                }
+                duplicate = j === end1 - start1;
+            }
+        }
+        if (duplicate) {
+            continue;
+        }
+        if (written++ > 0) {
+            mergedSelectors.appendCode(0x2c);
+        }
+        for (let j = start1; j < end1; j++) {
+            // the builder may have been reallocated
+            mergedSelectors.appendCode(mergedSelectors.codes[j]);
+        }
+    }
+    // intern the result only
+    const result = mergedSelectors.codes;
+    return arena.internRange(result, end, mergedSelectors.length, -1 /* StringSource.Pool */);
+}
+/**
+ * the split selector of a rule (see splitRule()): computed when it is not cached
+ * @param arena
+ * @param node
+ */
+function rawSelector(arena, node) {
+    let raw = arena.raw.get(node);
+    if (raw == null) {
+        raw = splitRule(arena.resolveString(arena.name[node]));
+        arena.raw.set(node, raw);
+    }
+    return raw;
+}
+/**
+ * start and end of the first part of a selector (see splitRule()): the leading whitespace is
+ * skipped. the end is -1 when the first selector is empty
+ * @param arena
+ * @param id selector string id
+ * @param part
+ */
+function firstPartRange(arena, id, part) {
+    // the code units are read until the end of the first part: the selector is not copied
+    const length = arena.stringLength(id);
+    let start = -1;
+    let i = 0;
+    part.end = -1;
+    while (i < length && isWhiteSpace(arena.stringCodeAt(id, i))) {
+        i++;
+    }
+    part.start = i;
+    for (; i < length; i++) {
+        const code = arena.stringCodeAt(id, i);
+        if (isWhiteSpace(code)) {
+            part.end = i;
+            return;
+        }
+        // ,
+        if (code === 0x2c) {
+            part.end = start === -1 ? -1 : i;
+            return;
+        }
+        // . :
+        if (code === 0x2e || code === 0x3a) {
+            if (start !== -1) {
+                part.end = i;
+                return;
+            }
+            start = i;
+            if (code === 0x3a && arena.stringCodeAt(id, i + 1) === 0x3a) {
+                i++;
+            }
+            continue;
+        }
+        // the combinators: a part
+        if (code === 0x2b || code === 0x3e || code === 0x7e || code === 0x7c) {
+            part.end = start !== -1 ? i : code === 0x7c && arena.stringCodeAt(id, i + 1) === 0x7c ? i + 2 : i + 1;
+            return;
+        }
+        if (start === -1) {
+            start = i;
+        }
+        // \: the escaped character
+        if (code === 0x5c) {
+            i++;
+            continue;
+        }
+        // ( [: the part ends with the matching ) ]
+        if (code === 0x28 || code === 0x5b) {
+            const close = code === 0x28 ? 0x29 : 0x5d;
+            let depth = 1;
+            let k = i;
+            let c;
+            while (++k < length) {
+                c = arena.stringCodeAt(id, k);
+                if (c === 0x5c) {
+                    k++;
+                    continue;
+                }
+                if (c === code) {
+                    depth++;
+                }
+                else if (c === close) {
+                    depth--;
+                }
+                if (depth === 0) {
+                    break;
+                }
+            }
+            i = k;
+        }
+    }
+    part.end = start === -1 ? -1 : Math.min(i, length);
+}
+const firstPart1 = { str: null, start: 0, end: 0 };
+const firstPart2 = { str: null, start: 0, end: 0 };
+/**
+ * the first part of the first selector of a rule. false when the first selector is empty
+ * @param arena
+ * @param node
+ * @param part
+ */
+function firstPart(arena, node, part) {
+    const raw = arena.raw.get(node);
+    if (raw != null) {
+        // the split selector: the first part is a string
+        part.str = raw.length > 0 && raw[0].length > 0 ? raw[0][0] : null;
+        return part.str != null;
+    }
+    part.str = null;
+    firstPartRange(arena, arena.name[node], part);
+    return part.end !== -1;
+}
+/**
+ * false when the selectors of two rules cannot match (see matchSelectors()): the first parts of their first selectors
+ * are different. the selectors that are not split are read from the string table: they are not split
+ * @param arena
+ * @param node1
+ * @param node2
+ */
+function mayMatchSelectors(arena, node1, node2) {
+    if (!firstPart(arena, node1, firstPart1) || !firstPart(arena, node2, firstPart2)) {
+        return false;
+    }
+    const id1 = arena.name[node1];
+    const id2 = arena.name[node2];
+    const str1 = firstPart1.str;
+    const str2 = firstPart2.str;
+    const length1 = str1 != null ? str1.length : firstPart1.end - firstPart1.start;
+    const length2 = str2 != null ? str2.length : firstPart2.end - firstPart2.start;
+    if (length1 !== length2) {
+        return false;
+    }
+    for (let i = 0; i < length1; i++) {
+        const code1 = str1 != null ? str1.charCodeAt(i) : arena.stringCodeAt(id1, firstPart1.start + i);
+        const code2 = str2 != null ? str2.charCodeAt(i) : arena.stringCodeAt(id2, firstPart2.start + i);
+        if (code1 !== code2) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * code units of the selector read by {@link selectorPrefixes}
+ */
+let selectorCodes = new Uint16Array(256);
+/**
+ * copy the code units of a selector to {@link selectorCodes}
+ * @param arena
+ * @param id
+ * @returns the number of code units
+ */
+function readSelector(arena, id) {
+    const length = arena.stringLength(id);
+    if (selectorCodes.length < length) {
+        selectorCodes = new Uint16Array(length * 2);
+    }
+    return arena.copyString(id, selectorCodes, 0);
+}
+/**
+ * true if a rule selector is not modified by {@link reduceRuleSelector}: a single selector (no comma), that does not
+ * start with `&`, does not end with `)` (`:is()`), a combinator or a whitespace, and has no whitespace other than single
+ * spaces. the selector is read from the string table, the result is computed once per string id
+ * @param arena
+ * @param id selector string id
+ */
+function isSimpleSelector(arena, id) {
+    selectorArena = arena;
+    return arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+}
+/**
+ * the arena of the selector read by {@link computeSimpleSelector} and {@link hasVendorPrefix}: the functions passed to
+ * the string table are not closures (no allocation per call)
+ */
+let selectorArena = null;
+/**
+ * see {@link isSimpleSelector}
+ * @param id selector string id
+ */
+function computeSimpleSelector(id) {
+    {
+        const length = readSelector(selectorArena, id);
+        const codes = selectorCodes;
+        if (length === 0 || codes[0] === 0x26) {
+            return false;
+        }
+        let previous = 0;
+        for (let i = 0; i < length; i++) {
+            const code = codes[i];
+            if (code === 0x2c) {
+                return false;
+            }
+            if (isWhiteSpace(code)) {
+                // a single space between two parts
+                if (code !== 0x20 || i === 0 || isWhiteSpace(previous)) {
+                    return false;
+                }
+            }
+            previous = code;
+        }
+        // ) + > ~ | and the whitespace
+        return !(previous === 0x29 ||
+            previous === 0x2b ||
+            previous === 0x3e ||
+            previous === 0x7e ||
+            previous === 0x7c ||
+            isWhiteSpace(previous));
+    }
+}
+/**
+ * the first vendor prefix of a part of a selector: `::?-([a-z]+)-`, null when there is none
+ * @param codes
+ * @param start
+ * @param end
+ */
+function partPrefix(codes, start, end) {
+    for (let p = start; p < end; p++) {
+        if (codes[p] !== 0x3a) {
+            continue;
+        }
+        let q = p + 1;
+        if (q < end && codes[q] === 0x3a) {
+            q++;
+        }
+        if (q >= end || codes[q] !== 0x2d) {
+            continue;
+        }
+        let k = q + 1;
+        while (k < end && codes[k] >= 0x61 && codes[k] <= 0x7a) {
+            k++;
+        }
+        if (k > q + 1 && k < end && codes[k] === 0x2d) {
+            return String.fromCharCode.apply(null, codes.subarray(q + 1, k));
+        }
+    }
+    return null;
+}
+/**
+ * no vendor prefix. read only
+ */
+const emptyPrefixes = new Set();
+/**
+ * true if a selector contains `:-` (`::?-([a-z]+)-` matches `:-`)
+ * @param id
+ */
+function hasVendorPrefix(id) {
+    const length = readSelector(selectorArena, id);
+    for (let i = 0; i + 1 < length; i++) {
+        if (selectorCodes[i] === 0x3a && selectorCodes[i + 1] === 0x2d) {
+            return true;
+        }
+    }
+    return false;
+}
+/**
+ * the vendor prefixes of the pseudo classes of a selector, like the prefixes read from the parts of the split selector
+ * in diff(): the parts are the parts of splitRule(), the first prefix of each part that contains `:`. the selector is
+ * read from the string table, it is not split into strings
+ * @param arena
+ * @param id selector string id
+ */
+function selectorPrefixes(arena, id) {
+    // the selectors without `:-` are skipped: computed once per string id
+    selectorArena = arena;
+    if (!arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix)) {
+        return emptyPrefixes;
+    }
+    const prefixes = new Set();
+    const length = readSelector(arena, id);
+    const codes = selectorCodes;
+    // the part boundaries of splitRule()
+    let start = -1;
+    let code;
+    const addPart = (end) => {
+        for (let k = start; k < end; k++) {
+            if (codes[k] === 0x3a) {
+                const prefix = partPrefix(codes, start, end);
+                if (prefix != null) {
+                    prefixes.add(prefix);
+                }
+                break;
+            }
+        }
+        return prefixes.size > 1;
+    };
+    for (let i = 0; i < length; i++) {
+        code = codes[i];
+        if (isWhiteSpace(code) || code === 0x2c) {
+            if (start !== -1 && addPart(i)) {
+                return prefixes;
+            }
+            start = -1;
+            continue;
+        }
+        if (code === 0x2e || code === 0x3a) {
+            if (start !== -1 && addPart(i)) {
+                return prefixes;
+            }
+            start = i;
+            if (code === 0x3a && codes[i + 1] === 0x3a) {
+                i++;
+            }
+            continue;
+        }
+        if (code === 0x2b || code === 0x3e || code === 0x7e || code === 0x7c) {
+            if (start !== -1 && addPart(i)) {
+                return prefixes;
+            }
+            start = -1;
+            if (code === 0x7c && codes[i + 1] === 0x7c) {
+                i++;
+            }
+            continue;
+        }
+        if (start === -1) {
+            start = i;
+        }
+        if (code === 0x5c) {
+            i++;
+            continue;
+        }
+        if (code === 0x28 || code === 0x5b) {
+            const close = code === 0x28 ? 0x29 : 0x5d;
+            let depth = 1;
+            let k = i;
+            let c;
+            while (++k < length) {
+                c = codes[k];
+                if (c === 0x5c) {
+                    k++;
+                    continue;
+                }
+                if (c === code) {
+                    depth++;
+                }
+                else if (c === close) {
+                    depth--;
+                }
+                if (depth === 0) {
+                    break;
+                }
+            }
+            i = k;
+        }
+    }
+    if (start !== -1) {
+        addPart(length);
+    }
+    return prefixes;
+}
+/**
+ * the vendor prefixes of the pseudo classes of a split selector, see diff()
+ * @param raw
+ */
+function rawSelectorPrefixes(raw) {
+    const prefixes = new Set();
+    for (const token of raw) {
+        for (const t of token) {
+            if (t.includes(":")) {
+                const matches = t.match(/::?-([a-z]+)-/);
+                if (matches == null) {
+                    continue;
+                }
+                prefixes.add(matches[1]);
+                if (prefixes.size > 1) {
+                    break;
+                }
+            }
+        }
+        if (prefixes.size > 1) {
+            break;
+        }
+    }
+    return prefixes;
+}
+/**
  * Reduce rule selector
  * @param arena
  * @param node
@@ -1501,14 +2044,16 @@ function eqNode(arena, a, b) {
  * @private
  */
 function reduceRuleSelector(arena, node) {
-    if (arena.raw[node] == null) {
-        arena.raw[node] = splitRule(arena.strings[arena.name[node]]);
+    if (arena.raw.get(node) == null) {
+        arena.raw.set(node, splitRule(arena.resolveString(arena.name[node])));
     }
-    const raw = arena.raw[node];
+    const raw = arena.raw.get(node);
     const singleSelectorWithoutIs = raw.length === 1 && (raw[0].at(-1) == null || !raw[0].at(-1).startsWith(":is("));
-    let optimized = optimizeSelector(singleSelectorWithoutIs ? raw : raw.map((curr) => curr.slice()));
+    let optimized = optimizeSelector(singleSelectorWithoutIs
+        ? raw
+        : raw.map((curr) => curr.slice()));
     if (optimized != null) {
-        arena.optimized[node] = optimized;
+        arena.optimized.set(node, optimized);
     }
     if (optimized != null && optimized.match && optimized.reducible && optimized.selector.length > 1) {
         for (const selector of optimized.selector) {
@@ -1544,10 +2089,10 @@ function reduceRuleSelector(arena, node) {
             [optimized.optimized[0], reduced.length === 1 ? reduced.join("") : ":is("].concat(reduced).concat(")"),
         ];
         const sel = raw[0].join("");
-        if (sel.length < arena.strings[arena.name[node]].length) {
+        if (sel.length < arena.resolveString(arena.name[node]).length) {
             // inlined: arena.setSelector(node, sel)
             arena.name[node] = arena.internString(sel);
-            arena.raw[node] = raw;
+            arena.raw.set(node, raw);
             // inlined: arena.setTokens(node)
             arena.setTokenList(node, []);
         }

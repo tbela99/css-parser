@@ -52,17 +52,17 @@ h1 { font-size: 2em }
             const declaration = arena.firstChild[rule];
 
             expect(arena.dataTypes[comment]).equals(EnumToken.CommentNodeType);
-            expect(arena.strings[arena.stringValue[comment]]).equals("/* comment */");
+            expect(arena.resolveString(arena.stringValue[comment])).equals("/* comment */");
 
             expect(arena.dataTypes[imp]).equals(EnumToken.AtRuleNodeType);
-            expect(arena.strings[arena.name[imp]]).equals("import");
-            expect(arena.strings[arena.stringValue[imp]]).equals("'foo.css'");
+            expect(arena.resolveString(arena.name[imp])).equals("import");
+            expect(arena.resolveString(arena.stringValue[imp])).equals("'foo.css'");
             // at-rules without a block have no children list
             expect(arena.flags[imp] & EnumAstNodeStatus.HasChildren).equals(0);
             expect(arena.flags[media] & EnumAstNodeStatus.HasChildren).not.equals(0);
 
             expect(arena.dataTypes[rule]).equals(EnumToken.RuleNodeType);
-            expect(arena.strings[arena.name[rule]]).equals(".foo,.bar");
+            expect(arena.resolveString(arena.name[rule])).equals(".foo,.bar");
             expect(arena.getSelector(rule)).equals(".foo,.bar");
             // the selector tokens are stored in the rule token list
             expect(arena.tokenCount(rule)).equals(3);
@@ -100,7 +100,7 @@ h1 { font-size: 2em }
 
             expect(arena.dataTypes[left]).equals(EnumToken.LengthTokenType);
             expect(arena.numericValue[left]).equals(1);
-            expect(arena.strings[arena.unit[left]]).equals("px");
+            expect(arena.resolveString(arena.unit[left])).equals("px");
             expect(arena.numericValue[right]).equals(2);
             expect(arena.getUnit(right)).equals("px");
             expect(arena.getSpanStart(calc)).to.be.below(arena.getSpanStart(left));
@@ -621,6 +621,7 @@ h1 { font-size: 2em }
             const arena = result.arena;
             const expected = render(arena, result.ast).code;
             const location = arena.getLocation(arena.firstChild[arena.getChildAt(result.ast, 2)]);
+            const strings = Array.from({ length: arena.getStringCount() }, (_, id) => arena.resolveString(id));
             const [properties, transferables] = AstArena.toTransferableArenaObject(arena);
 
             expect(properties.kind).equals("AstArena");
@@ -643,7 +644,11 @@ h1 { font-size: 2em }
             expect(copy.current).equals(properties.current);
             // the columns are views on the transferred buffers
             expect(copy.dataTypes.buffer).equals(message.transferables[0]);
-            expect(copy.strings).deep.equals(properties.strings);
+            expect(copy.getStringCount()).equals(arena.getStringCount());
+
+            for (let id = 0; id < copy.getStringCount(); id++) {
+                expect(copy.resolveString(id)).equals(strings[id]);
+            }
             expect(copy.internString("color")).equals(copy.name[copy.firstChild[copy.firstChild[copy.getChildAt(message.ast, 2)]]]);
             expect(render(copy, message.ast).code).equals(expected);
 
@@ -714,7 +719,7 @@ h1 { font-size: 2em }
 
             expect(arena.getCapacity()).equals(arena.dataTypes.length);
             expect(arena.getLastId()).equals(arena.current);
-            expect(arena.getStringCount()).equals(arena.strings.length);
+            expect(arena.getStringCount()).to.be.above(0);
 
             for (let id = 1; id <= arena.getLastId(); id++) {
                 expect(arena.getType(id)).equals(arena.dataTypes[id]);

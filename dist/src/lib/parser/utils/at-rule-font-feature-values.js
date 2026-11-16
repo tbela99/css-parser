@@ -10,7 +10,7 @@ import { trimArray, matchAllSyntaxes, createValidationContext } from '../../vali
 import { ValidationSyntaxGroupEnum } from '../../validation/parser/typedef.js';
 
 function parseAtRuleFontFeatureValues(arena, stream, context, options = {}) {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[context]));
     const syntax = syntaxRules?.getPreludeRules()?.slice?.(1);
     trimArray(arena, stream);
     const { success, errors /* , ...all */ } = matchAllSyntaxes(arena, syntax, createValidationContext(arena, stream), options);

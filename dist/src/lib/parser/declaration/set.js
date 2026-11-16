@@ -57,7 +57,7 @@ class PropertySet {
     }
     add(declaration) {
         const arena = this.arena;
-        const nam = arena.strings[arena.name[declaration]];
+        const nam = arena.resolveString(arena.name[declaration]);
         if (nam === this.config.shorthand) {
             this.declarations = new Map();
         }
@@ -86,7 +86,7 @@ class PropertySet {
                     }
                     if (typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType) {
                         if (typ === EnumToken.IdenTokenType &&
-                            this.config.keywords.includes(arena.strings[arena.stringValue[token]])) {
+                            this.config.keywords.includes(arena.resolveString(arena.stringValue[token]))) {
                             if (tokens.length === 0) {
                                 tokens.push([]);
                                 current++;
@@ -94,7 +94,7 @@ class PropertySet {
                             tokens[current].push(token);
                         }
                         if (typ === EnumToken.LiteralTokenType &&
-                            arena.strings[arena.stringValue[token]] === this.config.separator?.val) {
+                            arena.resolveString(arena.stringValue[token]) === this.config.separator?.val) {
                             tokens.push([]);
                             current++;
                             continue;

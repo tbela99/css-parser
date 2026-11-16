@@ -5,6 +5,10 @@ import json from "@rollup/plugin-json";
 import commonjs from "@rollup/plugin-commonjs";
 import versionInjector from "rollup-plugin-version-injector";
 import config from "./package.json" with { type: "json" };
+import info from "./package.json" with { type: "json" };   
+import { writeFileSync } from "node:fs";
+
+writeFileSync('src/version.ts', `/**\n * Version number\n */\nexport const version = ${JSON.stringify(info.version)};`);
 
 const versionInjectoroptions = {
     injectInComments: {

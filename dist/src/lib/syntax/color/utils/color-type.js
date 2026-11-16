@@ -13,13 +13,13 @@ import { ColorType } from '../../../ast/types.js';
  * @param color
  */
 function getColorType(arena, color) {
-    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.strings[arena.unit[color]] === "rel") {
+    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.resolveString(arena.unit[color]) === "rel") {
         const token = arena.getTokenAt(color, 2);
         if (token == null) {
             return null;
         }
         return arena.colorType[color] === ColorType.COLOR_MIX
-            ? ColorType[arena.strings[arena.stringValue[token]]
+            ? ColorType[arena.resolveString(arena.stringValue[token])
                 ?.toUpperCase?.()
                 ?.replace?.("-", "_")]
             : getColorType(arena, token);
