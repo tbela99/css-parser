@@ -829,7 +829,14 @@ function renderAstNode(arena, data, options, sourcemaps, sourceLocation, linesMa
             if (semicolon) {
                 sourceLocation.end--;
             }
-            if (options.removeEmpty && writer.length === body) {
+            // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+            // an empty mixin or custom function is a definition
+            if (options.removeEmpty &&
+                writer.length === body &&
+                !(typ === EnumToken.AtRuleNodeType &&
+                    (arena.stringEquals(nameId, "apply") ||
+                        arena.stringEquals(nameId, "mixin") ||
+                        arena.stringEquals(nameId, "function")))) {
                 if (sourcemaps != null) {
                     sourceLocation.end -= prelude.length;
                     // inlined: linesMap!.getLineStarts()
@@ -891,13 +898,24 @@ function renderTokenList(tokens, reducer) {
  * @param reducer
  */
 function renderDeclarationString(arena, node, options, cache, reducer) {
-    if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+    if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
         // override options to avoid minifying values for custom properties
         options = { ...options, minifyValues: false };
         // override the reducer
         reducer = createReducer(arena, options, cache);
     }
     return `${arena.resolveString(arena.name[node])}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+}
+/**
+ * true if the value of the declaration is not minified:
+ * - the custom properties
+ * - the `initial-value` descriptor of `@property`: the value is parsed with the syntax of the registered custom
+ *   property, a zero dimension keeps its unit: `0deg` is a valid `<angle>`, `0` is not
+ * @param arena
+ * @param node declaration
+ */
+function isUnminifiedDeclaration(arena, node) {
+    return arena.startsWith(node, "nam", "--") || arena.stringEquals(arena.name[node], "initial-value");
 }
 /**
  * render a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
@@ -952,7 +970,7 @@ function writeDeclaration(arena, node, options, cache, reducer, writer) {
     // the rendered value of an identical declaration, rendered to another buffer (see NodeRenderer)
     let value = memo === null ? undefined : memo.values[slot];
     if (value === undefined) {
-        if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+        if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
             // override options to avoid minifying values for custom properties
             options = { ...options, minifyValues: false };
             // override the reducer

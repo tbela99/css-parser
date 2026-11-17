@@ -19,6 +19,7 @@ import type { AstArena } from "./arena.ts";
 import { StringBuilder, StringFlag, StringSource } from "./strings.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
+import { moveResult } from "./features/utils.ts";
 import { trimArray } from "../validation/match.ts";
 import { combinators } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
@@ -190,6 +191,44 @@ export function minify(
     return ast;
 }
 
+/**
+ * `@apply --mixin()` is equivalent to `@apply --mixin`: a mixin applied without arguments is referenced by its name
+ * https://drafts.csswg.org/css-mixins-1/#apply-rule
+ * @param arena
+ * @param node `@apply` rule
+ */
+function minifyApplyPrelude(arena: AstArena, node: AstNode): void {
+    let reference: Token = arena.firstToken[node];
+
+    while (
+        reference !== 0 &&
+        (arena.dataTypes[reference] === EnumToken.WhitespaceTokenType ||
+            arena.dataTypes[reference] === EnumToken.CommentTokenType)
+    ) {
+        reference = arena.nextSibling[reference];
+    }
+
+    if (reference === 0 || arena.dataTypes[reference] !== EnumToken.CustomFunctionTokenType) {
+        return;
+    }
+
+    // the comments and the whitespace are ignored: `@apply --mixin(/* comment */)` has no argument
+    for (let token: Token = arena.firstToken[reference]; token !== 0; token = arena.nextSibling[token]) {
+        if (
+            arena.dataTypes[token] !== EnumToken.WhitespaceTokenType &&
+            arena.dataTypes[token] !== EnumToken.CommentTokenType
+        ) {
+            return;
+        }
+    }
+
+    const name: string = arena.resolveString(arena.stringValue[reference]);
+
+    arena.setTokenList(node, [arena.createToken(EnumToken.DashedIdenTokenType, name)]);
+    // inlined: arena.setValueString(node, name)
+    arena.stringValue[node] = arena.internString(name);
+}
+
 function transformAtRuleMediaPrelude(arena: AstArena, values: Token[]) {
     return { hasUpdates: false, values: trimArray(arena, values) };
 }
@@ -296,6 +335,85 @@ function reduce(acc: string[], curr: string[]): string[] {
 }
 
 /**
+ * true if the selector part is a simple selector that can be moved into `:is()`: it is not a combinator, a whitespace
+ * (descendant combinator), the nesting selector or a pseudo-element (a pseudo-element is not allowed in `:is()`)
+ * @param part
+ */
+function isCompoundPart(part: string): boolean {
+    return (
+        part.trim() !== "" &&
+        part !== "&" &&
+        !combinators.includes(part) &&
+        !part.startsWith("::") &&
+        !/^:(before|after|first-line|first-letter)$/i.test(part)
+    );
+}
+
+/**
+ * factor the common prefix of the selectors of a rule into `:is()`. the selectors are relative to the common prefix,
+ * see {@link optimizeSelector}: `["&"]` is the prefix itself, `["&", ".a"]` is a compound selector (`.foo.a`),
+ * `["&", " ", ".a"]` a descendant selector (`.foo .a`) and `[">", ".a"]` a child selector (`.foo>.a`).
+ *
+ * - `.foo.a,.foo.b` -> `.foo:is(.a,.b)`. `.foo,.foo.b` -> `.foo:is(*,.b)`
+ * - `.foo .a,.foo .b` -> `.foo :is(.a,.b)`, `.foo>.a,.foo>.b` -> `.foo>:is(.a,.b)`
+ *
+ * the selectors are factored only when the suffixes are compound selectors joined to the prefix with the same
+ * combinator: `.foo .a .b,.foo .c` is not `.foo :is(.a .b,.c)`. null when the selectors cannot be factored
+ * @param optimized
+ */
+function factorSelector(optimized: OptimizedSelector): string | null {
+    const prefix: string[] = optimized.optimized;
+
+    if (
+        prefix.length === 0 ||
+        !prefix.every((part: string): boolean => part === " " || isCompoundPart(part) || combinators.includes(part))
+    ) {
+        return null;
+    }
+
+    let combinator: string | null = null;
+    const members: string[] = [];
+
+    for (const selector of optimized.selector) {
+        // the parts that follow the prefix. the whitespace around the combinators is removed
+        const suffix: string[] = (selector[0] === "&" ? selector.slice(1) : selector.slice()).filter(
+            (part: string, index: number, parts: string[]): boolean =>
+                part.trim() !== "" ||
+                (!combinators.includes(parts[index - 1]) && !combinators.includes(parts[index + 1])),
+        );
+
+        // the prefix itself
+        if (suffix.length === 0) {
+            if (combinator != null && combinator !== "") {
+                return null;
+            }
+
+            combinator = "";
+            members.push("*");
+            continue;
+        }
+
+        // the combinator that joins the suffix to the prefix. "" for a compound selector
+        const current: string = suffix[0].trim() === "" ? " " : combinators.includes(suffix[0]) ? suffix[0] : "";
+        const compound: string[] = current === "" ? suffix : suffix.slice(1);
+
+        if (
+            (combinator != null && combinator !== current) ||
+            current === "|" ||
+            compound.length === 0 ||
+            !compound.every(isCompoundPart)
+        ) {
+            return null;
+        }
+
+        combinator = current;
+        members.push(compound.join(""));
+    }
+
+    return prefix.join("") + combinator + ":is(" + members.join(",") + ")";
+}
+
+/**
  * Apply minification rules to the ast tree
  * @param arena
  * @param ast
@@ -379,44 +497,10 @@ function doMinify(
                     continue;
                 }
 
-                // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                // there is no early return: the result that precedes the conditional rules is moved after them.
+                // the conditional rules are never removed
                 if (equalsIgnoreCase(nam, "function")) {
-                    let k: AstNode = arena.lastChild[node];
-                    let slice: boolean = false;
-
-                    while (k !== 0) {
-                        if (
-                            arena.dataTypes[k] === EnumToken.CommentNodeType ||
-                            arena.dataTypes[k] === EnumToken.WhitespaceTokenType
-                        ) {
-                            k = arena.previousSibling[k];
-                            continue;
-                        }
-
-                        if (
-                            arena.dataTypes[k] === EnumToken.DeclarationNodeType &&
-                            equalsIgnoreCase(arena.resolveString(arena.name[k]), "result")
-                        ) {
-                            slice = true;
-                            break;
-                        }
-
-                        k = arena.previousSibling[k];
-                    }
-
-                    if (k !== 0 && slice) {
-                        k = arena.previousSibling[k];
-
-                        while (k !== 0) {
-                            const previousNode: AstNode = arena.previousSibling[k];
-
-                            if (arena.dataTypes[k] === EnumToken.AtRuleNodeType) {
-                                arena.detach(k);
-                            }
-
-                            k = previousNode;
-                        }
-                    }
+                    moveResult(arena, node);
                 }
             }
 
@@ -492,7 +576,10 @@ function doMinify(
                         ? ""
                         : renderValue(arena, curr));
 
-                if (nam === "media") {
+                if (nam === "apply") {
+                    // `@apply --mixin()` is equivalent to `@apply --mixin`
+                    minifyApplyPrelude(arena, node);
+                } else if (nam === "media") {
                     if (tokens != null) {
                         const slice = tokens.slice();
                         minifyAtRuleMedia(arena, slice);
@@ -589,7 +676,12 @@ function doMinify(
                 let match;
 
                 if (options.nestingRules) {
-                    if (previousType === EnumToken.RuleNodeType) {
+                    // the rules that apply a mixin are not merged
+                    if (
+                        previousType === EnumToken.RuleNodeType &&
+                        !hasAtRuleStatement(arena, previous as AstNode) &&
+                        !hasAtRuleStatement(arena, node)
+                    ) {
                         if (!isSimpleSelector(arena, arena.name[previous as AstNode])) {
                             reduceRuleSelector(arena, previous as AstNode);
                         }
@@ -608,7 +700,11 @@ function doMinify(
                         // wrap the following rules that match the wrapper selector
                         let nextNode: AstNode = arena.nextSibling[wrapper];
 
-                        while (nextNode !== 0 && arena.dataTypes[nextNode] === EnumToken.RuleNodeType) {
+                        while (
+                            nextNode !== 0 &&
+                            arena.dataTypes[nextNode] === EnumToken.RuleNodeType &&
+                            !hasAtRuleStatement(arena, nextNode)
+                        ) {
                             if (!isSimpleSelector(arena, arena.name[nextNode])) {
                                 reduceRuleSelector(arena, nextNode);
                             }
@@ -693,113 +789,9 @@ function doMinify(
                         }
                     }
                 } else if (arena.optimized.get(node)?.match) {
-                    const optimizedSelector: OptimizedSelector = arena.optimized.get(node) as OptimizedSelector;
-                    let wrap: boolean = true;
-                    const selector: string[][] = optimizedSelector.selector.reduce(
-                        (acc: string[][], curr: string[]): string[][] => {
-                            if (curr[0] === "&" && curr.length > 1) {
-                                if (curr[1] === " ") {
-                                    curr.splice(0, 2);
-                                } else {
-                                    curr.splice(0, 1);
-                                }
-                            } else if (combinators.includes(curr[0])) {
-                                curr.unshift("&");
-                                wrap = false;
-                            }
+                    const sel: string | null = factorSelector(arena.optimized.get(node) as OptimizedSelector);
 
-                            acc.push(curr);
-                            return acc;
-                        },
-                        [],
-                    );
-
-                    if (!wrap) {
-                        wrap = selector.some((s: string[]): boolean => s[0] !== "&");
-                    }
-
-                    let rule: string | null = null;
-                    const optimized = optimizedSelector.optimized.slice() as string[];
-
-                    if (optimized.length > 1) {
-                        const check = optimized.at(-2) as string;
-
-                        if (!combinators.includes(check)) {
-                            const last = optimized[optimized.length - 1] as string;
-                            const all = new Array(Math.max(optimized.length - 1, 0));
-                            let write = 0;
-
-                            for (let read = 0; read < optimized.length - 1; read++) {
-                                all[write++] = optimized[read];
-                            }
-
-                            optimized.length = 0;
-                            for (let index = 0; index < write; index++) {
-                                optimized[index] = all[index];
-                            }
-
-                            wrap = false;
-                            rule =
-                                optimized.join("") +
-                                `:is(${selector
-                                    .map((s) => {
-                                        const next = s[0] === "&" ? new Array(s.length) : new Array(s.length + 1);
-                                        let write = 0;
-
-                                        if (s[0] === "&") {
-                                            next[write++] = last;
-                                            for (let read = 1; read < s.length; read++) {
-                                                next[write++] = s[read];
-                                            }
-                                        } else {
-                                            next[write++] = last;
-                                            for (let read = 0; read < s.length; read++) {
-                                                next[write++] = s[read];
-                                            }
-                                        }
-
-                                        const rebuilt = new Array(write);
-                                        for (let index = 0; index < write; index++) {
-                                            rebuilt[index] = next[index];
-                                        }
-
-                                        return rebuilt.join("");
-                                    })
-                                    .join(",")})`;
-                        }
-                    }
-
-                    if (rule == null) {
-                        rule = selector
-                            .map((s: string[]): string => {
-                                if (s[0] === "&") {
-                                    const replacement = optimizedSelector.optimized;
-                                    const all = new Array(Math.max(s.length - 1 + replacement.length, 0));
-                                    let write = 0;
-
-                                    for (let read = 0; read < replacement.length; read++) {
-                                        all[write++] = replacement[read];
-                                    }
-                                    for (let read = 1; read < s.length; read++) {
-                                        all[write++] = s[read];
-                                    }
-
-                                    const rebuilt = new Array(write);
-                                    for (let index = 0; index < write; index++) {
-                                        rebuilt[index] = all[index];
-                                    }
-
-                                    return rebuilt.join("");
-                                }
-
-                                return s.join("");
-                            })
-                            .join(",");
-                    }
-
-                    let sel: string = wrap ? optimizedSelector.optimized.join("") + `:is(${rule})` : rule;
-
-                    if (sel.length < arena.resolveString(arena.name[node]).length) {
+                    if (sel != null && sel.length < arena.resolveString(arena.name[node]).length) {
                         // inlined: arena.setSelector(node, sel)
                         arena.name[node] = arena.internString(sel);
                         // inlined: arena.setTokens(node)
@@ -873,7 +865,12 @@ function doMinify(
                             break;
                         }
 
-                        if (shouldMerge) {
+                        // the rules that apply a mixin are not merged
+                        if (
+                            shouldMerge &&
+                            (nodeType !== EnumToken.RuleNodeType ||
+                                (!hasAtRuleStatement(arena, previous as AstNode) && !hasAtRuleStatement(arena, node)))
+                        ) {
                             if (
                                 ((nodeType === EnumToken.RuleNodeType ||
                                     nodeType === EnumToken.KeyframesRuleNodeType) &&
@@ -1692,6 +1689,25 @@ function wrapNodes(
 }
 
 /**
+ * true if a child of the node is an at-rule without a block or an `@apply` rule: `@apply --mixin;`,
+ * `@apply --mixin { color: red }`
+ * @param arena
+ * @param node
+ */
+function hasAtRuleStatement(arena: AstArena, node: AstNode): boolean {
+    for (let child: AstNode = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+        if (
+            arena.dataTypes[child] === EnumToken.AtRuleNodeType &&
+            (!(arena.flags[child] & EnumAstNodeStatus.HasChildren) || arena.stringEquals(arena.name[child], "apply"))
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Diff nodes: move the declarations shared by both rules into a new rule
  * @param arena
  * @param n1
@@ -1710,6 +1726,12 @@ function diff(
         [key: string]: any;
     },
 ): { result: AstRule | null; node1: AstRule; node2: AstRule } | null {
+    // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
+    // the declarations that follow it override them
+    if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
+        return null;
+    }
+
     if (!("cache" in options)) {
         options.cache = new Map<AstNode, number>();
     }
@@ -1943,24 +1965,9 @@ function diff(
     const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
 
     if (optimized?.match) {
-        const rule = optimized.selector.reduce((acc, curr) => {
-            if (acc.length > 0) {
-                acc += ",";
-            }
+        const sel: string | null = factorSelector(optimized);
 
-            if (curr.length > 2 && curr[0] === "&" && curr[1] === " ") {
-                return acc + curr.slice(2).join("");
-            } else if (curr.length > 1 && curr[0] === "&") {
-                return acc + curr.slice(1).join("");
-            }
-
-            return acc + curr.join("");
-        }, "");
-
-        const match = optimized.optimized.join("");
-        const sel = match + ":is(" + arena.replaceCompound(rule, match) + ")";
-
-        if (sel.length < arena.resolveString(arena.name[result]).length) {
+        if (sel != null && sel.length < arena.resolveString(arena.name[result]).length) {
             // inlined: arena.setSelector(result, sel)
             arena.name[result] = arena.internString(sel);
             // inlined: arena.setTokens(result)

@@ -3,9 +3,9 @@
   "description": "CSS parser, minifier and validator for node and the browser",
   "version": "2.2.0",
   "exports": {
-    ".": "./dist/src/node.js",
-    "./node": "./dist/src/node.js",
-    "./web": "./dist/src/web.js"
+    ".": "./dist/node.js",
+    "./node": "./dist/node.js",
+    "./web": "./dist/web.js"
   },
   "type": "module",
   "typings": "dist/index.d.ts",

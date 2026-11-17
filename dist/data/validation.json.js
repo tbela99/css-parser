@@ -240,6 +240,9 @@ var atRules = {
 			"initial-value": "<declaration-value>?"
 		}
 	},
+	"@result": {
+		syntax: "@result { <block-contents> }"
+	},
 	"@right-bottom": {
 		syntax: " @right-bottom { <declaration-list> }"
 	},

@@ -900,4 +900,75 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
             );
         });
     });
+    describe("universal selector", function () {
+        it("universal selector followed by a combinator #1", function () {
+            // the universal selector was removed before a combinator: `.foo *+.x` became `.foo +.x`
+            expect(transformSync(".foo{color:blue}.foo *{color:red}.foo *+.x{color:blue}").code).equals(
+                ".foo{color:blue;*{color:red;+.x{color:blue}}}",
+            );
+        });
+
+        it("universal selector followed by a descendant combinator #2", function () {
+            expect(
+                transformSync(
+                    ".a * .b{color:red}.c *>.d{color:blue}* span{color:green}* .dark{color:#000}*.x{top:0}.y *:hover{top:1px}",
+                ).code,
+            ).equals(".a * .b{color:red}.c *>.d{color:blue}span{color:green}* .dark{color:#000}.x{top:0}.y :hover{top:1px}");
+        });
+
+        it("universal selector with a namespace #3", function () {
+            expect(transformSync("*|*{color:red}ns|*.x{color:blue}").code).equals("*|*{color:red}ns|*.x{color:blue}");
+        });
+    });
+
+    describe("factor selectors", function () {
+        it("descendant selectors are not compound selectors #1", function () {
+            // `.foo .b,.foo .c` was factored into `.foo:is(.b,.c)`
+            expect(
+                transformSync(".foo{color:blue}.foo .b{color:blue}.foo .c{color:blue}", { nestingRules: false }).code,
+            ).equals(".foo,.foo .b,.foo .c{color:blue}");
+        });
+
+        it("descendant selectors are not compound selectors #2", function () {
+            expect(
+                transformSync(
+                    ".foo .very-long-a,.foo .very-long-b,.foo .very-long-c{color:blue}.bar.very-long-a,.bar.very-long-b{color:red}",
+                    { nestingRules: false },
+                ).code,
+            ).equals(
+                ".foo :is(.very-long-a,.very-long-b,.very-long-c){color:blue}.bar.very-long-a,.bar.very-long-b{color:red}",
+            );
+        });
+    });
+
+    describe("@property rule", function () {
+        it("the unit of the initial value is kept #1", function () {
+            // `0` is not a valid <angle> or <percentage>: the @property rule was invalid
+            expect(
+                transformSync(
+                    '@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}@property --b{syntax:"<percentage>";inherits:false;initial-value:0%}',
+                ).code,
+            ).equals(
+                '@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}@property --b{syntax:"<percentage>";inherits:false;initial-value:0%}',
+            );
+        });
+    });
+
+    describe("@apply rule", function () {
+        it("the declarations are not moved across @apply #1", function () {
+            expect(
+                transformSync(
+                    ".c{margin-top:0;@apply --m(red,blue);width:1px;margin-right:0;margin-bottom:0;margin-left:0}.d{@apply --m;width:1px}",
+                ).code,
+            ).equals(
+                ".c{margin-top:0;@apply --m(red,blue);width:1px;margin-right:0;margin-bottom:0;margin-left:0}.d{@apply --m;width:1px}",
+            );
+        });
+
+        it("the declarations are not moved across @apply with a contents block #2", function () {
+            expect(transformSync(".q{top:0;@apply --y{color:blue}left:0}.r{@apply --z{}}").code).equals(
+                ".q{top:0;@apply --y{color:blue}left:0}.r{@apply --z{}}",
+            );
+        });
+    });
 }

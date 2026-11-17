@@ -45,7 +45,9 @@ $ deno add @tbela99/css-parser
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
+* **Vendor prefix cleanup** to modernize generated CSS.
 * **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **Experimental**: evaluate @mixin and @function
 * **51.5kb** once minified and gzipped.
 
 ## Vendor prefix removal
@@ -55,6 +57,7 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
+* **CSS mixins and custom functions evaluation** the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result.
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark
@@ -321,11 +324,15 @@ See [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide
 - [x] inset
 - [x] list-style
 - [x] margin
+- [x] margin-block
+- [x] margin-inline
 - [ ] mask
 - [ ] offset
 - [x] outline
 - [x] overflow
 - [x] padding
+- [x] padding-block
+- [x] padding-inline
 - [ ] place-content
 - [ ] place-items
 - [ ] place-self

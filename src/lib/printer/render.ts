@@ -1119,7 +1119,18 @@ function renderAstNode(
                 sourceLocation.end--;
             }
 
-            if (options.removeEmpty && writer.length === body) {
+            // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+            // an empty mixin or custom function is a definition
+            if (
+                options.removeEmpty &&
+                writer.length === body &&
+                !(
+                    typ === EnumToken.AtRuleNodeType &&
+                    (arena.stringEquals(nameId, "apply") ||
+                        arena.stringEquals(nameId, "mixin") ||
+                        arena.stringEquals(nameId, "function"))
+                )
+            ) {
                 if (sourcemaps != null) {
                     sourceLocation.end -= prelude.length;
                     // inlined: linesMap!.getLineStarts()
@@ -1201,7 +1212,7 @@ function renderDeclarationString(
     cache: RenderCache,
     reducer: (acc: string, curr: Token) => string,
 ): string {
-    if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+    if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
         // override options to avoid minifying values for custom properties
         options = { ...options, minifyValues: false };
         // override the reducer
@@ -1209,6 +1220,18 @@ function renderDeclarationString(
     }
 
     return `${arena.resolveString(arena.name[node])}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues as boolean, reducer).trimEnd()}`;
+}
+
+/**
+ * true if the value of the declaration is not minified:
+ * - the custom properties
+ * - the `initial-value` descriptor of `@property`: the value is parsed with the syntax of the registered custom
+ *   property, a zero dimension keeps its unit: `0deg` is a valid `<angle>`, `0` is not
+ * @param arena
+ * @param node declaration
+ */
+function isUnminifiedDeclaration(arena: AstArena, node: AstNode): boolean {
+    return arena.startsWith(node, "nam", "--") || arena.stringEquals(arena.name[node], "initial-value");
 }
 
 /**
@@ -1287,7 +1310,7 @@ function writeDeclaration(
     let value: string | undefined = memo === null ? undefined : memo.values[slot];
 
     if (value === undefined) {
-        if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+        if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
             // override options to avoid minifying values for custom properties
             options = { ...options, minifyValues: false };
             // override the reducer

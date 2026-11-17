@@ -3089,7 +3089,10 @@ class AstArena extends Arena {
                 // the expanded rules are inserted after the rule
                 this.expandRule(node, ast, next);
             }
-            else if (typ === EnumToken.AtRuleNodeType && this.flags[node] & EnumAstNodeStatus.HasChildren) {
+            else if (typ === EnumToken.AtRuleNodeType &&
+                this.flags[node] & EnumAstNodeStatus.HasChildren &&
+                // the mixin body is nested in the rule the mixin is applied to
+                !this.stringEquals(this.name[node], "mixin")) {
                 let j = this.lastChild[node];
                 while (j !== 0) {
                     if (this.dataTypes[j] === EnumToken.RuleNodeType ||
@@ -3462,6 +3465,9 @@ class AstArena extends Arena {
                     place(rule);
                     this.expandRule(rule, parent, before);
                 }
+                else if (typ === EnumToken.AtRuleNodeType &&
+                    (!(this.flags[child] & EnumAstNodeStatus.HasChildren) ||
+                        this.stringEquals(this.name[child], "apply"))) ;
                 else if (typ === EnumToken.AtRuleNodeType) {
                     const astAtRule = child;
                     const atRuleName = this.resolveString(this.name[astAtRule]);

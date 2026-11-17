@@ -196,7 +196,10 @@ function parseDeclaration(arena, tokens, parent, options, errors) {
         }
     }
     // inlined: arena.typeOf(name)
-    if (tokens.length === 0 && arena.dataTypes[name] !== EnumToken.DashedIdenTokenType) {
+    if (tokens.length === 0 &&
+        arena.dataTypes[name] !== EnumToken.DashedIdenTokenType &&
+        // the result of a custom function may be empty: `result: <declaration-value>?`
+        !(parentNam === "function" && equalsIgnoreCase(arena.resolveString(arena.stringValue[name]), "result"))) {
         errors.push({
             action: "drop",
             message: "declaration value missing",

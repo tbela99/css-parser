@@ -128,7 +128,7 @@ border-left-color: red;
                 nestingRules: false,
             }).then((result) =>
                 expect(result.code).equals(
-                    `.nav-pills:is(.nav-link.active,.show>.nav-link){color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`,
+                    `.nav-pills .nav-link.active,.nav-pills .show>.nav-link{color:var(--bs-nav-pills-link-active-color);background-color:var(--bs-nav-pills-link-active-bg)}`,
                 ),
             );
         });
@@ -186,7 +186,7 @@ content: '\\21 now\\21';
                 nestingRules: false,
             }).then((result) =>
                 expect(result.code).equals(
-                    `:root:is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`,
+                    `:root :is(.fa-flip-both,.fa-flip-horizontal,.fa-flip-vertical,.fa-rotate-180,.fa-rotate-270,.fa-rotate-90){-webkit-filter:none;filter:none}`,
                 ),
             );
         });

@@ -1,7 +1,7 @@
-import { ColorType, EnumAstNodeStatus, EnumToken, ModuleScopeEnumOptions } from "../../../dist/src/lib/ast/types.js";
-import { AstArena, TokenField } from "../../../dist/src/lib/ast/arena.js";
-import { ARENA, ARENAID, AstArenaNode } from "../../../dist/src/lib/ast/arena-node.js";
-import { renderValue as renderToken } from "../../../dist/src/lib/printer/render.js";
+import { ColorType, EnumAstNodeStatus, EnumToken, ModuleScopeEnumOptions } from "../../../dist/lib/ast/types.js";
+import { AstArena, TokenField } from "../../../dist/lib/ast/arena.js";
+import { ARENA, ARENAID, AstArenaNode } from "../../../dist/lib/ast/arena-node.js";
+import { renderValue as renderToken } from "../../../dist/lib/printer/render.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("object views of the arena nodes", function () {

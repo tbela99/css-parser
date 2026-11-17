@@ -1,7 +1,7 @@
-import { AstArena } from "../../../dist/src/lib/ast/arena.js";
-import { EnumToken } from "../../../dist/src/lib/ast/types.js";
-import { parseString } from "../../../dist/src/lib/parser/parse.js";
-import { StringBuilder } from "../../../dist/src/lib/ast/strings.js";
+import { AstArena } from "../../../dist/lib/ast/arena.js";
+import { EnumToken } from "../../../dist/lib/ast/types.js";
+import { parseString } from "../../../dist/lib/parser/parse.js";
+import { StringBuilder } from "../../../dist/lib/ast/strings.js";
 
 export function run(describe, expect, it, transform, parse, render) {
     describe("string interning", function () {

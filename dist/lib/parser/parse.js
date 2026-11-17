@@ -34,6 +34,7 @@ import { memoize } from './utils/cache.js';
 import { SourceFile } from './source.js';
 import { dirname } from '../fs/resolve.js';
 import { NodeWalker, ValueWalker } from '../ast/walk.js';
+import { EvaluateMixinFeature } from '../ast/features/mixin.js';
 
 function renderTokens(arena, tokens, options) {
     if (tokens == null || tokens.length === 0)
@@ -650,6 +651,8 @@ function doParseSync(tokenizer, options = {}) {
         computeShorthand: true,
         computeCalcExpression: true,
         inlineCssVariables: false,
+        evaluateMixins: false,
+        keepMixins: false,
         setParent: true,
         removePrefix: false,
         validation: false,
@@ -695,6 +698,10 @@ function doParseSync(tokenizer, options = {}) {
     // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
+    // '{' opened inside parentheses and not closed yet: `@apply --mixin({a, b})`. their '}' does not end a block
+    let parensBlockMatch = 0;
+    // the current '{' or '}' belongs to a block opened inside parentheses
+    let parensBlock;
     // tokens are located in the tokenizer source (the imported file when parsing an @import)
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
     const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
@@ -727,8 +734,20 @@ function doParseSync(tokenizer, options = {}) {
         }
         else if (itemType === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
+            if (parensMatch === 0) {
+                parensBlockMatch = 0;
+            }
         }
-        if (itemType === EnumToken.BlockStartTokenType) {
+        parensBlock = false;
+        if (parensMatch > 0 && itemType === EnumToken.BlockStartTokenType) {
+            parensBlockMatch++;
+            parensBlock = true;
+        }
+        else if (parensMatch > 0 && parensBlockMatch > 0 && itemType === EnumToken.BlockEndTokenType) {
+            parensBlockMatch--;
+            parensBlock = true;
+        }
+        else if (itemType === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
         }
         else if (itemType === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
@@ -783,7 +802,9 @@ function doParseSync(tokenizer, options = {}) {
             errorStart = errors.length;
             invalidStart = invalidNodes.length;
         }
-        else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
+        else if (!parensBlock &&
+            (parensMatch === 0 || curlyBracketMatch === 0) &&
+            itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
             arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
@@ -792,6 +813,9 @@ function doParseSync(tokenizer, options = {}) {
             if (options.removeEmpty &&
                 previousNode != null &&
                 arena.firstChild[previousNode] === 0 &&
+                // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+                // an empty mixin or custom function is a definition
+                !isDefinitionBlock(arena, previousNode) &&
                 arena.lastChild[context] === previousNode) {
                 arena.detach(previousNode);
             }
@@ -801,6 +825,7 @@ function doParseSync(tokenizer, options = {}) {
             errorStart = errors.length;
             invalidStart = invalidNodes.length;
             parensMatch = 0;
+            parensBlockMatch = 0;
             curlyBracketMatch = 0;
         }
     }
@@ -814,6 +839,15 @@ function doParseSync(tokenizer, options = {}) {
         }
     }
     const endParseTime = performance.now();
+    // the mixins are evaluated before the nesting rules are expanded: the mixin body is nested in the rule it is
+    // applied to. the imported stylesheets are evaluated with the stylesheet that imports them
+    // the mixins are evaluated once
+    const minifyOptions = options.evaluateMixins ? { ...options, evaluateMixins: false } : options;
+    if (options.evaluateMixins) {
+        // the invalid nodes are not evaluated
+        dropInvalidNodes(arena, invalidNodes, options);
+        EvaluateMixinFeature.evaluate(arena, ast, options);
+    }
     if (options.expandNestingRules) {
         ast = arena.expand(ast);
     }
@@ -965,26 +999,12 @@ function doParseSync(tokenizer, options = {}) {
         }
         nodes = null;
     }
-    if (invalidNodes.length > 0) {
-        for (const node of invalidNodes) {
-            if (options.lenient && arena.flags[node] & EnumAstNodeStatus.Unknown) {
-                continue;
-            }
-            if (arena.flags[node] &
-                (EnumAstNodeStatus.Invalid |
-                    EnumAstNodeStatus.Unknown |
-                    EnumAstNodeStatus.Unparsed |
-                    EnumAstNodeStatus.Malformed |
-                    EnumAstNodeStatus.Disallowed)) {
-                arena.detach(node);
-            }
-        }
-    }
+    dropInvalidNodes(arena, invalidNodes, options);
     if (options.minifyAST) {
         if (arena.firstChild[ast] !== 0) {
             let passes = options.pass ?? 1;
             while (passes--) {
-                minify(arena, ast, options, true, errors, false);
+                minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
     }
@@ -1562,6 +1582,8 @@ async function doParse(iter, options = {}) {
         computeShorthand: true,
         computeCalcExpression: true,
         inlineCssVariables: false,
+        evaluateMixins: false,
+        keepMixins: false,
         setParent: true,
         removePrefix: false,
         validation: false,
@@ -1612,6 +1634,10 @@ async function doParse(iter, options = {}) {
     // @ts-ignore ignore error
     let parensMatch = 0;
     let curlyBracketMatch = 0;
+    // '{' opened inside parentheses and not closed yet: `@apply --mixin({a, b})`. their '}' does not end a block
+    let parensBlockMatch = 0;
+    // the current '{' or '}' belongs to a block opened inside parentheses
+    let parensBlock;
     // tokens are located in the tokenizer source (the imported file when parsing an @import)
     arena.setLocation(ast, tokenizer.sourceId, 0, 0);
     const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
@@ -1644,8 +1670,20 @@ async function doParse(iter, options = {}) {
         }
         else if (itemType === EnumToken.EndParensTokenType && parensMatch > 0) {
             parensMatch--;
+            if (parensMatch === 0) {
+                parensBlockMatch = 0;
+            }
         }
-        if (itemType === EnumToken.BlockStartTokenType) {
+        parensBlock = false;
+        if (parensMatch > 0 && itemType === EnumToken.BlockStartTokenType) {
+            parensBlockMatch++;
+            parensBlock = true;
+        }
+        else if (parensMatch > 0 && parensBlockMatch > 0 && itemType === EnumToken.BlockEndTokenType) {
+            parensBlockMatch--;
+            parensBlock = true;
+        }
+        else if (itemType === EnumToken.BlockStartTokenType) {
             curlyBracketMatch++;
         }
         else if (itemType === EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
@@ -1704,7 +1742,9 @@ async function doParse(iter, options = {}) {
             errorStart = errors.length;
             invalidStart = invalidNodes.length;
         }
-        else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === EnumToken.BlockEndTokenType) {
+        else if (!parensBlock &&
+            (parensMatch === 0 || curlyBracketMatch === 0) &&
+            itemType === EnumToken.BlockEndTokenType) {
             parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
             // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
             arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
@@ -1713,6 +1753,9 @@ async function doParse(iter, options = {}) {
             if (options.removeEmpty &&
                 previousNode != null &&
                 arena.firstChild[previousNode] === 0 &&
+                // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+                // an empty mixin or custom function is a definition
+                !isDefinitionBlock(arena, previousNode) &&
                 arena.lastChild[context] === previousNode) {
                 arena.detach(previousNode);
             }
@@ -1722,6 +1765,7 @@ async function doParse(iter, options = {}) {
             errorStart = errors.length;
             invalidStart = invalidNodes.length;
             parensMatch = 0;
+            parensBlockMatch = 0;
             curlyBracketMatch = 0;
         }
     }
@@ -1762,6 +1806,8 @@ async function doParse(iter, options = {}) {
                     : new Tokenizer(parseInfo), Object.assign({}, options, {
                     minify: false,
                     setParent: false,
+                    // the mixins are evaluated once the imported stylesheet is merged
+                    evaluateMixins: false,
                     src: options.resolve(url, options.src || options.cwd).relative,
                 }));
                 stats.importedBytesIn += root.stats.bytesIn;
@@ -1786,6 +1832,15 @@ async function doParse(iter, options = {}) {
         }));
     }
     const endParseTime = performance.now();
+    // the mixins are evaluated before the nesting rules are expanded: the mixin body is nested in the rule it is
+    // applied to. the imported stylesheets are evaluated with the stylesheet that imports them
+    // the mixins are evaluated once
+    const minifyOptions = options.evaluateMixins ? { ...options, evaluateMixins: false } : options;
+    if (options.evaluateMixins) {
+        // the invalid nodes are not evaluated
+        dropInvalidNodes(arena, invalidNodes, options);
+        EvaluateMixinFeature.evaluate(arena, ast, options);
+    }
     if (options.expandNestingRules) {
         ast = arena.expand(ast);
     }
@@ -1940,26 +1995,12 @@ async function doParse(iter, options = {}) {
         }
         nodes = null;
     }
-    if (invalidNodes.length > 0) {
-        for (const node of invalidNodes) {
-            if (options.lenient && arena.flags[node] & EnumAstNodeStatus.Unknown) {
-                continue;
-            }
-            if (arena.flags[node] &
-                (EnumAstNodeStatus.Invalid |
-                    EnumAstNodeStatus.Unknown |
-                    EnumAstNodeStatus.Unparsed |
-                    EnumAstNodeStatus.Malformed |
-                    EnumAstNodeStatus.Disallowed)) {
-                arena.detach(node);
-            }
-        }
-    }
+    dropInvalidNodes(arena, invalidNodes, options);
     if (options.minifyAST) {
         if (arena.firstChild[ast] !== 0) {
             let passes = options.pass ?? 1;
             while (passes--) {
-                minify(arena, ast, options, true, errors, false);
+                minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
     }
@@ -2068,6 +2109,7 @@ async function doParse(iter, options = {}) {
                     source,
                     minify: false,
                     setParent: false,
+                    evaluateMixins: false,
                     src: src.relative,
                 }));
                 // options.parseInfo!.time += parseInfo.time;
@@ -2219,6 +2261,7 @@ async function doParse(iter, options = {}) {
                                 : new Tokenizer(createParseInfo(stream, new SourceFile("", [], src.relative))), Object.assign({}, options, {
                                 minify: false,
                                 setParent: false,
+                                evaluateMixins: false,
                                 src: src.relative,
                             }));
                             let srcIndex = options.resolve(src.absolute, resolvedSrc.absolute).relative;
@@ -2779,6 +2822,56 @@ function parseNode(arena, tokens, context, options, errors, stats, invalidNodes,
         }
     }
     return null;
+}
+/**
+ * detach the invalid nodes: the nodes that are not valid, not parsed, malformed or not allowed. the unknown nodes are
+ * kept in lenient mode
+ * @param arena
+ * @param invalidNodes
+ * @param options
+ */
+function dropInvalidNodes(arena, invalidNodes, options) {
+    for (const node of invalidNodes) {
+        if (options.lenient && arena.flags[node] & EnumAstNodeStatus.Unknown) {
+            continue;
+        }
+        if (arena.flags[node] &
+            (EnumAstNodeStatus.Invalid |
+                EnumAstNodeStatus.Unknown |
+                EnumAstNodeStatus.Unparsed |
+                EnumAstNodeStatus.Malformed |
+                EnumAstNodeStatus.Disallowed)) {
+            arena.detach(node);
+        }
+    }
+}
+/**
+ * true if the node is an at-rule whose block is kept when it is empty: `@apply --mixin {}`, `@mixin --name {}`,
+ * `@function --name() {}`
+ * @param arena
+ * @param node
+ */
+function isDefinitionBlock(arena, node) {
+    return (arena.dataTypes[node] === EnumToken.AtRuleNodeType &&
+        (arena.stringEquals(arena.name[node], "apply") ||
+            arena.stringEquals(arena.name[node], "mixin") ||
+            arena.stringEquals(arena.name[node], "function")));
+}
+/**
+ * true if a mixin can be defined in the node: the stylesheet, or a conditional group rule (`@media`, `@supports`,
+ * `@container`, `@when`, `@else`) or a cascade layer (`@layer`) that is not nested in a style rule
+ * @param arena
+ * @param node
+ */
+function isMixinScope(arena, node) {
+    while (node !== 0 && arena.dataTypes[node] !== EnumToken.StyleSheetNodeType) {
+        if (arena.dataTypes[node] !== EnumToken.AtRuleNodeType ||
+            !["media", "supports", "container", "layer", "when", "else"].includes(arena.resolveString(arena.name[node]))) {
+            return false;
+        }
+        node = arena.parents[node];
+    }
+    return true;
 }
 /**
  * @param arena
@@ -3496,7 +3589,9 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             atRuleErrors = result.errors;
             switch (nam) {
                 case "mixin":
-                    if (contextType !== EnumToken.StyleSheetNodeType) {
+                    // a mixin is defined at the top level of the stylesheet, or in a conditional group rule or a
+                    // cascade layer that is not nested in a style rule
+                    if (!isMixinScope(arena, context)) {
                         atRuleState |= EnumAstNodeStatus.Disallowed;
                         atRuleErrors.push({
                             action: "drop",
@@ -3510,6 +3605,7 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                     }
                     break;
                 case "contents":
+                case "result":
                     let parent = context;
                     let valid = false;
                     while (parent !== 0) {
@@ -3524,7 +3620,7 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         atRuleState |= EnumAstNodeStatus.Disallowed;
                         atRuleErrors.push({
                             action: "drop",
-                            message: "contents rule cannot be used outside mixin rule",
+                            message: `${nam} rule cannot be used outside mixin rule`,
                             // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
                             location: [
                                 options.source.file,
@@ -3595,6 +3691,42 @@ function parseDeclarations(declaration, arena) {
         node = next;
     }
     return { arena: result.arena, nodes };
+}
+/**
+ * Parse a string as the content of a style rule: declarations, nested rules and at-rules. the nested rules are
+ * relative to the style rule (`&`). the nodes are allocated in the arena and detached, the comments are dropped
+ * @param content
+ * @param arena
+ * @param options parser options: `parseColor`
+ *
+ * @internal
+ */
+function parseRuleContent(content, arena, options = {}) {
+    const source = new SourceFile("", [], "");
+    const result = doParseSync(new Tokenizer(createParseInfo(`.x{${content}}`, source)), {
+        setParent: false,
+        minify: false,
+        validation: false,
+        lenient: true,
+        nestingRules: true,
+        expandNestingRules: false,
+        evaluateMixins: false,
+        parseColor: options.parseColor ?? true,
+        arena,
+        source,
+        sourcesMap: new Map([[source.id, source]]),
+    });
+    const rule = arena.firstChild[result.ast];
+    const nodes = [];
+    for (let node = rule === 0 ? 0 : arena.firstChild[rule]; node !== 0;) {
+        const next = arena.nextSibling[node];
+        if (arena.dataTypes[node] !== EnumToken.CommentNodeType) {
+            arena.detach(node);
+            nodes.push(node);
+        }
+        node = next;
+    }
+    return nodes;
 }
 /**
  * Parse css string and return an array of tokens
@@ -3883,4 +4015,4 @@ function parseTokens(arena, tokens, options, errors) {
     return tokens;
 }
 
-export { doParse, doParseSync, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, parseAtRule, parseDeclarations, parseString, parseTokens, trimWhiteSpace };
+export { doParse, doParseSync, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, isDefinitionBlock, parseAtRule, parseDeclarations, parseRuleContent, parseString, parseTokens, trimWhiteSpace };

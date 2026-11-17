@@ -266,7 +266,12 @@ function parseSelector(arena, tokens, context, options, errors) {
             parent = arena.parents[parent];
             continue;
         }
-        nested = arena.dataTypes[parent] === EnumToken.RuleNodeType;
+        // the rules of a mixin body are nested in the rule the mixin is applied to:
+        // '&' represents the rule that contains the '@apply' rule
+        nested =
+            arena.dataTypes[parent] === EnumToken.RuleNodeType ||
+                (arena.dataTypes[parent] === EnumToken.AtRuleNodeType &&
+                    "mixin" === arena.resolveString(arena.name[parent]));
         if (nested) {
             break;
         }
@@ -565,6 +570,46 @@ function isPartCode(index, count, code) {
     return partOffsets[index * 2 + 1] - start === 1 && partBuilder.codes[start] === code;
 }
 /**
+ * true if the rendered token is a simple selector that is not a type selector: a class (`.a`), an id (`#a`), an
+ * attribute (`[a]`), a pseudo-class (`:hover`) or a pseudo-element (`::before`)
+ * @param index index of the rendered token
+ * @param count number of rendered tokens
+ */
+function isSubclassPart(index, count) {
+    if (index < 0 || index >= count || partOffsets[index * 2 + 1] === partOffsets[index * 2]) {
+        return false;
+    }
+    const code = partBuilder.codes[partOffsets[index * 2]];
+    // '.', '#', ':', '['
+    return code === 0x2e || code === 0x23 || code === 0x3a || code === 0x5b;
+}
+/**
+ * true if the rendered token is a type selector other than `html`: `span`, `svg|circle`
+ * @param index index of the rendered token
+ * @param count number of rendered tokens
+ */
+function isTypePart(index, count) {
+    if (index >= count) {
+        return false;
+    }
+    const start = partOffsets[index * 2];
+    const end = partOffsets[index * 2 + 1];
+    const code = partBuilder.codes[start];
+    // a namespace prefix: `ns|span`
+    if (isPartCode(index + 1, count, 0x7c)) {
+        return false;
+    }
+    if (!((code >= 0x61 && code <= 0x7a) || (code >= 0x41 && code <= 0x5a) || code === 0x5f || code >= 0x80)) {
+        return false;
+    }
+    // `html`, case-insensitive
+    return !(end - start === 4 &&
+        (partBuilder.codes[start] | 0x20) === 0x68 &&
+        (partBuilder.codes[start + 1] | 0x20) === 0x74 &&
+        (partBuilder.codes[start + 2] | 0x20) === 0x6d &&
+        (partBuilder.codes[start + 3] | 0x20) === 0x6c);
+}
+/**
  * add the current selector (the rendered tokens in {@link partBuilder}) to the selectors of the rule when it is not
  * already present. a universal selector is removed before a compound selector
  * @param count number of rendered tokens
@@ -572,16 +617,22 @@ function isPartCode(index, count, code) {
  * @returns the number of selectors
  */
 function addSelectorCodes(count, selectors) {
-    // `*` followed by a token: removed unless the token is a combinator. the index of the combinator is
-    // relative to the start of the selector, like addSelector()
-    for (let i = 0; i < count; i++) {
-        if (i + 1 < count && isPartCode(i, count, 0x2a)) {
-            const index = isPartCode(i + 1, count, 0x20) ? 2 : 1;
-            if (!isPartCode(index, count, 0x3e) && !isPartCode(index, count, 0x7e) && !isPartCode(index, count, 0x2b)) {
-                partOffsets.copyWithin(i * 2, (i + index) * 2, count * 2);
-                count -= index;
-            }
+    // `*` is removed when it is followed by another simple selector of the same compound selector:
+    // `*.a` -> `.a`, `*:hover` -> `:hover`, `*[a]` -> `[a]`, `*::before` -> `::before`.
+    // it is kept when it is the only simple selector of the compound selector: it is followed by a combinator
+    // (`.a * .b`, `.a *+.b`) or it ends the selector. it is kept in a namespace selector: `*|*`, `ns|*.a`
+    for (let i = 0; i + 1 < count; i++) {
+        if (isPartCode(i, count, 0x2a) && !isPartCode(i - 1, count, 0x7c) && isSubclassPart(i + 1, count)) {
+            partOffsets.copyWithin(i * 2, (i + 1) * 2, count * 2);
+            count--;
         }
+    }
+    // a leading `* ` is removed before a type selector: `* span` -> `span`. every element but the root element has a
+    // parent element, the root element is `html`. it is kept before the other selectors: `* .dark` does not match
+    // `html.dark`
+    if (count > 2 && isPartCode(0, count, 0x2a) && isPartCode(1, count, 0x20) && isTypePart(2, count)) {
+        partOffsets.copyWithin(0, 4, count * 2);
+        count -= 2;
     }
     // the selector: the rendered tokens, at the end of the selector builder
     const start = selectorBuilder.length + (selectors > 0 ? 1 : 0);

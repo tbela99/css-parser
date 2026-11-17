@@ -367,6 +367,8 @@ class ValidationTokenContext implements ValidationContext {
         let token: Token = this.tokens[index];
         // track balanced parens
         let matchCount: number = 0;
+        // track balanced curly braces: `{a, b}` is a single comma containing value (mixin arguments)
+        let blockCount: number = 0;
         const tokens: Token[] = [];
 
         while (
@@ -386,13 +388,17 @@ class ValidationTokenContext implements ValidationContext {
                 matchCount++;
             } else if (this.arena.dataTypes[token] === EnumToken.EndParensTokenType) {
                 matchCount--;
+            } else if (this.arena.dataTypes[token] === EnumToken.BlockStartTokenType) {
+                blockCount++;
+            } else if (this.arena.dataTypes[token] === EnumToken.BlockEndTokenType && blockCount > 0) {
+                blockCount--;
             }
 
             if (matchCount >= 0) {
                 tokens.push(token);
             }
 
-            if (matchCount === 0) {
+            if (matchCount === 0 && blockCount === 0) {
                 if (close !== EnumToken.EndParensTokenType && this.arena.dataTypes[token] === close) {
                     counter--;
                 }
@@ -679,9 +685,13 @@ export function matchSelectorSyntax(
             case EnumToken.GtTokenType:
                 arena.dataTypes[token] = selectorEnumMap.get(arena.dataTypes[token])!;
 
+            case EnumToken.UniversalSelectorTokenType:
+                // `*` is a type selector, not a combinator: the whitespace that follows it is a descendant
+                // combinator and is kept. `.a * .b` is not `.a .b`
+                break;
+
             case EnumToken.ColumnCombinatorTokenType:
             case EnumToken.ChildCombinatorTokenType:
-            case EnumToken.UniversalSelectorTokenType:
             case EnumToken.DescendantCombinatorTokenType:
             case EnumToken.NextSiblingCombinatorTokenType:
             case EnumToken.SubsequentSiblingCombinatorTokenType:

@@ -12,6 +12,7 @@ import { FeatureWalkMode } from './type.js';
 import { mathFuncs } from '../../syntax/constants.js';
 import { TokenField } from '../arena.js';
 import { ValueWalker } from '../walk.js';
+import { isInTemplate } from '../mixins/utils.js';
 
 /**
  * inline a binary expression into a parens token: (l op r)
@@ -87,7 +88,8 @@ class InlineCssVariablesFeature {
      * @param context
      */
     run(arena, ast, _options = {}, parent, context) {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the variables of a mixin or a custom function body are private variables
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
         if (!("variableScope" in context)) {

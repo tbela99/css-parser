@@ -15,6 +15,7 @@ import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
 import { type AstArena, TokenField } from "../arena.ts";
 import { ValueWalker } from "../walk.ts";
+import { isInTemplate } from "./utils.ts";
 
 /**
  * inline a binary expression into a parens token: (l op r)
@@ -124,7 +125,8 @@ export class InlineCssVariablesFeature {
             [key: string]: any;
         },
     ): AstNode | null {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the variables of a mixin or a custom function body are private variables
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
 

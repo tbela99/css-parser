@@ -7,7 +7,7 @@
  */
 import config from '../../data/validation.json.js';
 import { trimSyntaxArray, parseSyntax } from './parser/parse.js';
-import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from './parser/typedef.js';
+import { ValidationTokenEnum, ValidationSyntaxGroupEnum } from './parser/typedef.js';
 import { memoize } from '../parser/utils/cache.js';
 
 /**

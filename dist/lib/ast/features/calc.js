@@ -11,6 +11,7 @@ import { evaluate } from '../math/expression.js';
 import { FeatureWalkMode } from './type.js';
 import { isFunctionType, mathFuncs } from '../../syntax/constants.js';
 import { ValueWalker } from '../walk.js';
+import { isInTemplate } from '../mixins/utils.js';
 
 class ComputeCalcExpressionFeature {
     accept = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -32,7 +33,8 @@ class ComputeCalcExpressionFeature {
      * @param ast
      */
     run(arena, ast) {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the mixin and custom function bodies are templates: the expressions are computed once they are used
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
         for (let node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {

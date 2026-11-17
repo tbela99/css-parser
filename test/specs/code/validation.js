@@ -1,4 +1,4 @@
-import { EnumAstNodeStatus } from "../../../dist/src/lib/ast/types.js";
+import { EnumAstNodeStatus } from "../../../dist/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const root = new URL(dirname(import.meta.url) + "/../../../");
@@ -70,7 +70,7 @@ export function run(describe, expect, it, transform, parse, render, dirname, rea
                 { validation: true, nestingRules: false },
             ).then((result) =>
                 expect(render(result.arena, result.ast, { beautify: true }).code)
-                    .equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+                    .equals(`.s :is([type=text],[type=text i],[type=text s]),.s [type=text i]+b,.s:focus {
  --animate-duration: 1s
 }`),
             );
@@ -278,7 +278,7 @@ html, body, div, span, applet, object, iframe,
                 { nestingRules: false },
             ).then((result) =>
                 expect(render(result.arena, result.ast, { minify: false, validation: true }).code)
-                    .equals(`.s:is([type=text],[type=text i],[type=text s],[type=text i]+b,:focus) {
+                    .equals(`.s :is([type=text],[type=text i],[type=text s]),.s [type=text i]+b,.s:focus {
  --animate-duration: 1s
 }`),
             );

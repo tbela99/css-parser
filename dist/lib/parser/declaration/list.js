@@ -109,16 +109,23 @@ class PropertyList {
      */
     memo;
     /**
+     * syntaxes of the descriptors of the at-rule that contains the declarations: `result` in `@function`. the
+     * declarations that are not validated are validated with them
+     */
+    descriptors;
+    /**
      *
      * @param arena
      * @param options
      * @param memo keys shared by the lists that use the same arena
+     * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
      */
-    constructor(arena, options = {}, memo = null) {
+    constructor(arena, options = {}, memo = null, descriptors = null) {
         this.arena = arena;
         this.options = options;
         this.declarations = new Map();
         this.memo = memo ?? new DeclarationMemo();
+        this.descriptors = descriptors;
     }
     /**
      * add a declaration
@@ -162,7 +169,9 @@ class PropertyList {
             return this;
         }
         if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
-            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
+            syntaxRules =
+                this.descriptors?.[lowercase(name)] ??
+                    getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
             if (syntaxRules != null) {
                 arena.flags[declaration] |=
                     (isValidDeclarationValue(arena, syntaxRules, declaration, this.options)

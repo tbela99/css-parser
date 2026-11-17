@@ -41,6 +41,9 @@ A non-exhaustive list of features is provided below:
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
 * **Vendor prefix cleanup** to modernize generated CSS.
+* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **Experimental**: evaluate @mixin and @function
+* **51.5kb** once minified and gzipped.
 
 ## Installation
 

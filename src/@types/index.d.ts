@@ -187,6 +187,39 @@ export interface MinifyOptions {
      */
     inlineCssVariables?: boolean;
     /**
+     * Evaluate css mixins and custom functions: the `@apply` rules are replaced by the body of the mixin they reference,
+     * the private variables (`@private`, mixin arguments and the custom properties of the rule) are substituted.
+     * the custom function calls (`--fn(1px)`) are replaced by the result of the function.
+     * see https://drafts.csswg.org/css-mixins-1/
+     *
+     * ```ts
+     *
+     * import {transform} from '@tbela99/css-parser';
+     *
+     * const css = `
+     * @mixin --only-descs(--arg) {
+     *   color: var(--arg);
+     *   & * { color: var(--arg, red); }
+     * }
+     * .foo {
+     *   @apply --only-descs(green);
+     * }
+     * `;
+     *
+     * const result = await transform(css, {evaluateMixins: true, expandNestingRules: true});
+     *
+     * console.log(result.code);
+     * // .foo,.foo *{color:green}
+     * ```
+     */
+    evaluateMixins?: boolean;
+    /**
+     * Keep the mixins and the custom functions once they are evaluated, see {@link evaluateMixins}.
+     * By default, the evaluated mixins and custom functions, and the mixins that are not referenced, are dropped and
+     * replaced with a comment
+     */
+    keepMixins?: boolean;
+    /**
      * Remove empty ast nodes
      */
     removeEmpty?: boolean;

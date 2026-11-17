@@ -268,6 +268,8 @@ class ValidationTokenContext {
         let token = this.tokens[index];
         // track balanced parens
         let matchCount = 0;
+        // track balanced curly braces: `{a, b}` is a single comma containing value (mixin arguments)
+        let blockCount = 0;
         const tokens = [];
         while (index + 1 < this.tokens.length &&
             this.arena.dataTypes[this.tokens[index + 1]] === EnumToken.WhitespaceTokenType) {
@@ -282,10 +284,16 @@ class ValidationTokenContext {
             else if (this.arena.dataTypes[token] === EnumToken.EndParensTokenType) {
                 matchCount--;
             }
+            else if (this.arena.dataTypes[token] === EnumToken.BlockStartTokenType) {
+                blockCount++;
+            }
+            else if (this.arena.dataTypes[token] === EnumToken.BlockEndTokenType && blockCount > 0) {
+                blockCount--;
+            }
             if (matchCount >= 0) {
                 tokens.push(token);
             }
-            if (matchCount === 0) {
+            if (matchCount === 0 && blockCount === 0) {
                 if (close !== EnumToken.EndParensTokenType && this.arena.dataTypes[token] === close) {
                     counter--;
                 }
@@ -501,9 +509,12 @@ function matchSelectorSyntax(arena, stream, errors, options, nested = true) {
             case EnumToken.Tilda:
             case EnumToken.GtTokenType:
                 arena.dataTypes[token] = selectorEnumMap.get(arena.dataTypes[token]);
+            case EnumToken.UniversalSelectorTokenType:
+                // `*` is a type selector, not a combinator: the whitespace that follows it is a descendant
+                // combinator and is kept. `.a * .b` is not `.a .b`
+                break;
             case EnumToken.ColumnCombinatorTokenType:
             case EnumToken.ChildCombinatorTokenType:
-            case EnumToken.UniversalSelectorTokenType:
             case EnumToken.DescendantCombinatorTokenType:
             case EnumToken.NextSiblingCombinatorTokenType:
             case EnumToken.SubsequentSiblingCombinatorTokenType:

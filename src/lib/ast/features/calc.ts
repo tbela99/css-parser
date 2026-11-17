@@ -6,6 +6,7 @@ import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, isFunctionType } from "../../syntax/constants.ts";
 import { ValueWalker } from "../walk.ts";
+import { isInTemplate } from "./utils.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -31,7 +32,8 @@ export class ComputeCalcExpressionFeature {
      * @param ast
      */
     run(arena: AstArena, ast: AstRule | AstAtRule): AstNode | null {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the mixin and custom function bodies are templates: the expressions are computed once they are used
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
 

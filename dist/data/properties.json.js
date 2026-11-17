@@ -88,6 +88,50 @@ var properties = {
 	"margin-left": {
 		shorthand: "margin"
 	},
+	"margin-inline": {
+		shorthand: "margin-inline",
+		properties: [
+			"margin-inline-start",
+			"margin-inline-end"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		multiple: false,
+		separator: null,
+		keywords: [
+			"auto"
+		]
+	},
+	"margin-inline-start": {
+		shorthand: "margin-inline"
+	},
+	"margin-inline-end": {
+		shorthand: "margin-inline"
+	},
+	"margin-block": {
+		shorthand: "margin-block",
+		properties: [
+			"margin-block-start",
+			"margin-block-end"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		multiple: false,
+		separator: null,
+		keywords: [
+			"auto"
+		]
+	},
+	"margin-block-start": {
+		shorthand: "margin-block"
+	},
+	"margin-block-end": {
+		shorthand: "margin-block"
+	},
 	padding: {
 		shorthand: "padding",
 		properties: [
@@ -114,6 +158,44 @@ var properties = {
 	},
 	"padding-left": {
 		shorthand: "padding"
+	},
+	"padding-inline": {
+		shorthand: "padding-inline",
+		properties: [
+			"padding-inline-start",
+			"padding-inline-end"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		keywords: [
+		]
+	},
+	"padding-inline-start": {
+		shorthand: "padding-inline"
+	},
+	"padding-inline-end": {
+		shorthand: "padding-inline"
+	},
+	"padding-block": {
+		shorthand: "padding-block",
+		properties: [
+			"padding-block-start",
+			"padding-block-end"
+		],
+		types: [
+			"Length",
+			"Perc"
+		],
+		keywords: [
+		]
+	},
+	"padding-block-start": {
+		shorthand: "padding-block"
+	},
+	"padding-block-end": {
+		shorthand: "padding-block"
 	},
 	"scroll-margin": {
 		shorthand: "scroll-margin",

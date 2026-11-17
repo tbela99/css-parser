@@ -2222,6 +2222,9 @@
     			"initial-value": "<declaration-value>?"
     		}
     	},
+    	"@result": {
+    		syntax: "@result { <block-contents> }"
+    	},
     	"@right-bottom": {
     		syntax: " @right-bottom { <declaration-list> }"
     	},
@@ -6320,7 +6323,7 @@
     		syntax: "'~'"
     	}
     };
-    var syntaxes = {
+    var syntaxes$1 = {
     	"-legacy-gradient": {
     		syntax: "<-webkit-gradient()> | <-legacy-linear-gradient> | <-legacy-repeating-linear-gradient> | <-legacy-radial-gradient> | <-legacy-repeating-radial-gradient>"
     	},
@@ -8457,7 +8460,7 @@
     	languages: languages,
     	mediaFeatures: mediaFeatures,
     	selectors: selectors,
-    	syntaxes: syntaxes,
+    	syntaxes: syntaxes$1,
     	types: types,
     	units: units
     };
@@ -11795,7 +11798,7 @@
      * @param arena
      * @param tokens
      */
-    function evaluate(arena, tokens) {
+    function evaluate$1(arena, tokens) {
         return evaluateTokens(arena, tokens.map((token) => arena.clone(token, true)));
     }
     /**
@@ -12727,7 +12730,7 @@
                         mathFuncs.includes(arena.resolveString(arena.stringValue[exp])))) &&
                     arena.resolveString(arena.stringValue[exp]) !== "calc"
                     ? evaluateFunc(arena, exp)
-                    : evaluate(arena, arena.tokens(exp));
+                    : evaluate$1(arena, arena.tokens(exp));
                 if (result.length === 1 && arena.dataTypes[result[0]] !== exports.EnumToken.BinaryExpressionTokenType) {
                     expr[key] = result[0];
                 }
@@ -14799,6 +14802,8 @@
             let token = this.tokens[index];
             // track balanced parens
             let matchCount = 0;
+            // track balanced curly braces: `{a, b}` is a single comma containing value (mixin arguments)
+            let blockCount = 0;
             const tokens = [];
             while (index + 1 < this.tokens.length &&
                 this.arena.dataTypes[this.tokens[index + 1]] === exports.EnumToken.WhitespaceTokenType) {
@@ -14813,10 +14818,16 @@
                 else if (this.arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
                     matchCount--;
                 }
+                else if (this.arena.dataTypes[token] === exports.EnumToken.BlockStartTokenType) {
+                    blockCount++;
+                }
+                else if (this.arena.dataTypes[token] === exports.EnumToken.BlockEndTokenType && blockCount > 0) {
+                    blockCount--;
+                }
                 if (matchCount >= 0) {
                     tokens.push(token);
                 }
-                if (matchCount === 0) {
+                if (matchCount === 0 && blockCount === 0) {
                     if (close !== exports.EnumToken.EndParensTokenType && this.arena.dataTypes[token] === close) {
                         counter--;
                     }
@@ -15032,9 +15043,12 @@
                 case exports.EnumToken.Tilda:
                 case exports.EnumToken.GtTokenType:
                     arena.dataTypes[token] = selectorEnumMap.get(arena.dataTypes[token]);
+                case exports.EnumToken.UniversalSelectorTokenType:
+                    // `*` is a type selector, not a combinator: the whitespace that follows it is a descendant
+                    // combinator and is kept. `.a * .b` is not `.a .b`
+                    break;
                 case exports.EnumToken.ColumnCombinatorTokenType:
                 case exports.EnumToken.ChildCombinatorTokenType:
-                case exports.EnumToken.UniversalSelectorTokenType:
                 case exports.EnumToken.DescendantCombinatorTokenType:
                 case exports.EnumToken.NextSiblingCombinatorTokenType:
                 case exports.EnumToken.SubsequentSiblingCombinatorTokenType:
@@ -17730,7 +17744,7 @@
                     // }
                 }
             }
-            const result = evaluate(arena, [alpha]);
+            const result = evaluate$1(arena, [alpha]);
             if (result.length === 1) {
                 alpha = result[0];
             }
@@ -18927,7 +18941,7 @@
      *
      * @private
      */
-    const resolve = memoize(function (url, currentDirectory, cwd) {
+    const resolve$1 = memoize(function (url, currentDirectory, cwd) {
         if (matchUrl.test(url)) {
             return {
                 absolute: url,
@@ -20558,7 +20572,14 @@
                 if (semicolon) {
                     sourceLocation.end--;
                 }
-                if (options.removeEmpty && writer.length === body) {
+                // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+                // an empty mixin or custom function is a definition
+                if (options.removeEmpty &&
+                    writer.length === body &&
+                    !(typ === exports.EnumToken.AtRuleNodeType &&
+                        (arena.stringEquals(nameId, "apply") ||
+                            arena.stringEquals(nameId, "mixin") ||
+                            arena.stringEquals(nameId, "function")))) {
                     if (sourcemaps != null) {
                         sourceLocation.end -= prelude.length;
                         // inlined: linesMap!.getLineStarts()
@@ -20620,13 +20641,24 @@
      * @param reducer
      */
     function renderDeclarationString(arena, node, options, cache, reducer) {
-        if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+        if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
             // override options to avoid minifying values for custom properties
             options = { ...options, minifyValues: false };
             // override the reducer
             reducer = createReducer(arena, options, cache);
         }
         return `${arena.resolveString(arena.name[node])}:${options.indent}${renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd()}`;
+    }
+    /**
+     * true if the value of the declaration is not minified:
+     * - the custom properties
+     * - the `initial-value` descriptor of `@property`: the value is parsed with the syntax of the registered custom
+     *   property, a zero dimension keeps its unit: `0deg` is a valid `<angle>`, `0` is not
+     * @param arena
+     * @param node declaration
+     */
+    function isUnminifiedDeclaration(arena, node) {
+        return arena.startsWith(node, "nam", "--") || arena.stringEquals(arena.name[node], "initial-value");
     }
     /**
      * render a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
@@ -20681,7 +20713,7 @@
         // the rendered value of an identical declaration, rendered to another buffer (see NodeRenderer)
         let value = memo === null ? undefined : memo.values[slot];
         if (value === undefined) {
-            if (options.minifyValues && arena.startsWith(node, "nam", "--")) {
+            if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
                 // override options to avoid minifying values for custom properties
                 options = { ...options, minifyValues: false };
                 // override the reducer
@@ -22378,6 +22410,49 @@
     }
 
     /**
+     * true if the node is a `@mixin` or a `@function` rule, or is located inside one of them.
+     * the body of a mixin or a custom function is a template: it is evaluated when the mixin is applied or the function is
+     * called, its variables are private variables
+     * @param arena
+     * @param node
+     */
+    function isInTemplate(arena, node) {
+        while (node !== 0) {
+            if (arena.dataTypes[node] === exports.EnumToken.AtRuleNodeType &&
+                (arena.stringEquals(arena.name[node], "mixin") || arena.stringEquals(arena.name[node], "function"))) {
+                return true;
+            }
+            node = arena.parents[node];
+        }
+        return false;
+    }
+    /**
+     * move the last `result` descriptor of a custom function after its conditional rules: there is no early return.
+     * `result: 16px; @media (...) { result: 20px }` -> `@media (...) { result: 20px } result: 16px`.
+     * the conditional rules are never removed
+     * @param arena
+     * @param node `@function` rule
+     */
+    function moveResult(arena, node) {
+        let last = arena.lastChild[node];
+        // the last result
+        while (last !== 0 &&
+            !(arena.dataTypes[last] === exports.EnumToken.DeclarationNodeType && arena.stringEquals(arena.name[last], "result"))) {
+            last = arena.previousSibling[last];
+        }
+        if (last === 0) {
+            return;
+        }
+        for (let next = arena.nextSibling[last]; next !== 0; next = arena.nextSibling[next]) {
+            if (arena.dataTypes[next] === exports.EnumToken.AtRuleNodeType) {
+                arena.detach(last);
+                arena.appendChild(node, last);
+                return;
+            }
+        }
+    }
+
+    /**
      * inline a binary expression into a parens token: (l op r)
      * @param arena
      * @param token
@@ -22451,7 +22526,8 @@
          * @param context
          */
         run(arena, ast, _options = {}, parent, context) {
-            if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
+            // the variables of a mixin or a custom function body are private variables
+            if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
                 return null;
             }
             if (!("variableScope" in context)) {
@@ -22526,6 +22602,1944 @@
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * variables of a style rule: the custom properties declared by the rule
+     */
+    class RuleScope {
+        properties;
+        functions;
+        dynamic;
+        /**
+         * @param properties custom properties of the rule
+         * @param functions
+         * @param dynamic the variables visible from the custom functions called from the rule, see
+         * {@link VariableScope.dynamic}
+         */
+        constructor(properties, functions = null, dynamic = null) {
+            this.properties = properties;
+            this.functions = functions;
+            this.dynamic = dynamic;
+        }
+        lookup(name) {
+            return this.properties.get(name) ?? null;
+        }
+    }
+    /**
+     * at-rules that may contain mixin and custom function definitions: the conditional group rules and the cascade layers
+     */
+    const scopeRules = ["media", "supports", "container", "layer", "when", "else"];
+    /**
+     * source of the validation errors of the parameter types
+     */
+    const validationSource = new SourceFile("", [], "");
+    /**
+     * parsed syntaxes of the parameter types
+     */
+    const syntaxes = new Map();
+    /**
+     * render options of the tokens: the values are parsed again, the colors are not converted
+     */
+    const renderOptions = { convertColor: false };
+    /**
+     * returned by {@link VariableScope.lookup} when the variable is a private variable that is not visible (or not
+     * defined):
+     * the fallback of var() is used, otherwise the value is not valid: it is left as is
+     */
+    const UNDEFINED = Symbol("undefined");
+    /**
+     * true if the token is a whitespace or a comment
+     * @param arena
+     * @param token
+     */
+    function isBlank(arena, token) {
+        const typ = arena.dataTypes[token];
+        return typ === exports.EnumToken.WhitespaceTokenType || typ === exports.EnumToken.CommentTokenType;
+    }
+    /**
+     * true if the token is a comment
+     * @param arena
+     * @param token
+     */
+    function isComment(arena, token) {
+        return arena.dataTypes[token] === exports.EnumToken.CommentTokenType;
+    }
+    /**
+     * remove the leading and trailing whitespace and comments
+     * @param arena
+     * @param tokens
+     */
+    function trim(arena, tokens) {
+        let start = 0;
+        let end = tokens.length;
+        while (start < end && isBlank(arena, tokens[start])) {
+            start++;
+        }
+        while (end > start && isBlank(arena, tokens[end - 1])) {
+            end--;
+        }
+        return start === 0 && end === tokens.length ? tokens : tokens.slice(start, end);
+    }
+    /**
+     * remove the curly braces that wrap a comma containing value: `{a, b}` -> `a, b`
+     * @param arena
+     * @param tokens trimmed tokens
+     */
+    function unwrap(arena, tokens) {
+        // the curly braces of a declaration value: `--fn({a, b})`
+        if (tokens.length === 1 && arena.dataTypes[tokens[0]] === exports.EnumToken.WrappedValuesTokenType) {
+            return trim(arena, arena.tokens(tokens[0]));
+        }
+        if (tokens.length < 2 ||
+            arena.dataTypes[tokens[0]] !== exports.EnumToken.BlockStartTokenType ||
+            arena.dataTypes[tokens[tokens.length - 1]] !== exports.EnumToken.BlockEndTokenType) {
+            return tokens;
+        }
+        let depth = 0;
+        for (let i = 0; i < tokens.length; i++) {
+            if (arena.dataTypes[tokens[i]] === exports.EnumToken.BlockStartTokenType) {
+                depth++;
+            }
+            else if (arena.dataTypes[tokens[i]] === exports.EnumToken.BlockEndTokenType) {
+                depth--;
+                // the first brace is closed before the end: `{a} b {c}`
+                if (depth === 0 && i < tokens.length - 1) {
+                    return tokens;
+                }
+            }
+        }
+        return trim(arena, tokens.slice(1, -1));
+    }
+    /**
+     * split a list of tokens on the commas that are not wrapped in curly braces
+     * @param arena
+     * @param tokens
+     */
+    function splitArguments(arena, tokens) {
+        const result = [[]];
+        let depth = 0;
+        for (const token of tokens) {
+            const typ = arena.dataTypes[token];
+            // the comments are ignored
+            if (isComment(arena, token)) {
+                continue;
+            }
+            if (typ === exports.EnumToken.BlockStartTokenType) {
+                depth++;
+            }
+            else if (typ === exports.EnumToken.BlockEndTokenType && depth > 0) {
+                depth--;
+            }
+            else if (typ === exports.EnumToken.CommaTokenType && depth === 0) {
+                result.push([]);
+                continue;
+            }
+            result[result.length - 1].push(token);
+        }
+        return result.map((part) => trim(arena, part));
+    }
+    /**
+     * first token that is not a whitespace or a comment
+     * @param arena
+     * @param tokens
+     */
+    function firstToken(arena, tokens) {
+        for (const token of tokens) {
+            if (!isBlank(arena, token)) {
+                return token;
+            }
+        }
+        return null;
+    }
+    /**
+     * true if the token is a var() function
+     * @param arena
+     * @param token
+     */
+    function isVar(arena, token) {
+        return (arena.dataTypes[token] === exports.EnumToken.WildCardFunctionTokenType &&
+            arena.stringEqualsIgnoreCase(arena.stringValue[token], "var"));
+    }
+    /**
+     * true if a token or one of its descendants is a var() function, or a custom function call (`--fn()`)
+     * @param arena
+     * @param token
+     * @param functions the custom function calls are evaluated
+     */
+    function hasReference(arena, token, functions = false) {
+        if (isVar(arena, token) || (functions && arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenType)) {
+            return true;
+        }
+        if (arena.firstToken[token] === 0 && arena.firstChild[token] === 0) {
+            return false;
+        }
+        for (const child of arena.subTokens(token)) {
+            if (hasReference(arena, child, functions)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * render tokens
+     * @param arena
+     * @param tokens
+     */
+    function render$1(arena, tokens) {
+        let result = "";
+        for (const token of tokens) {
+            result += renderValue(arena, token, renderOptions);
+        }
+        return result;
+    }
+    /**
+     * render tokens, the var() functions that reference a private variable are replaced by a copy of the variable value,
+     * the custom function calls are replaced by their result when the scope evaluates them.
+     * null is returned when a variable is invalid and var() has no fallback: the value is not valid, it is left as is
+     * @param arena
+     * @param tokens
+     * @param scope
+     * @param descendant the tokens are used by a descendant of the element the mixin is applied to
+     */
+    function substitute(arena, tokens, scope, descendant) {
+        const functions = scope.functions != null;
+        if (!tokens.some((token) => hasReference(arena, token, functions))) {
+            return render$1(arena, tokens);
+        }
+        // the copies of the tokens are modified: the var() functions are replaced by their value
+        const list = arena.createList(exports.EnumToken.ListTokenType, tokens.map((token) => arena.clone(token, true)));
+        if (!replaceVariables(arena, list, scope, descendant)) {
+            return null;
+        }
+        return render$1(arena, arena.tokens(list));
+    }
+    /**
+     * replace the var() functions that reference a private variable with literal tokens holding the value
+     * @param arena
+     * @param parent
+     * @param scope
+     * @param descendant
+     * @returns false when the value is not valid
+     */
+    function replaceVariables(arena, parent, scope, descendant) {
+        for (const token of arena.subTokens(parent)) {
+            if (isVar(arena, token)) {
+                const value = substituteVariable(arena, token, scope, descendant);
+                if (value === null) {
+                    return false;
+                }
+                if (value !== undefined) {
+                    arena.replaceToken(token, arena.createToken(exports.EnumToken.LiteralTokenType, value));
+                }
+            }
+            else if (scope.functions != null && arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenType) {
+                // custom function call: `--fn(1px)`
+                const value = scope.functions.call(arena, token, scope, descendant);
+                if (value === null) {
+                    return false;
+                }
+                if (value !== undefined) {
+                    arena.replaceToken(token, arena.createToken(exports.EnumToken.LiteralTokenType, value));
+                }
+                else if (!replaceVariables(arena, token, scope, descendant)) {
+                    // the call is not evaluated: its arguments may reference variables
+                    return false;
+                }
+            }
+            else if ((arena.firstToken[token] !== 0 || arena.firstChild[token] !== 0) &&
+                !replaceVariables(arena, token, scope, descendant)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * value of a var() function
+     * - a string: the value that replaces the var() function
+     * - undefined: the var() function is not modified, it does not reference a private variable
+     * - null: the variable is invalid and var() has no fallback
+     * @param arena
+     * @param token
+     * @param scope
+     * @param descendant
+     */
+    function substituteVariable(arena, token, scope, descendant) {
+        const children = arena.tokens(token);
+        const nameToken = firstToken(arena, children);
+        if (nameToken == null || arena.dataTypes[nameToken] !== exports.EnumToken.DashedIdenTokenType) {
+            return undefined;
+        }
+        const name = arena.resolveString(arena.stringValue[nameToken]);
+        const comma = children.findIndex((child) => arena.dataTypes[child] === exports.EnumToken.CommaTokenType);
+        const fallback = comma === -1 ? null : trim(arena, children.slice(comma + 1));
+        const found = scope.lookup(name, descendant);
+        if (found === null) {
+            // not a private variable: the fallback may reference private variables `var(--color, var(--private))`
+            if (fallback != null &&
+                fallback.some((child) => hasReference(arena, child, scope.functions != null))) {
+                const value = substitute(arena, fallback, scope, descendant);
+                // an invalid fallback is equivalent to no fallback
+                return value === null ? `var(${name})` : `var(${name},${value})`;
+            }
+            return undefined;
+        }
+        if (found !== UNDEFINED) {
+            const value = resolve(arena, found, descendant);
+            if (value !== null) {
+                return value;
+            }
+        }
+        // the variable is not defined or is invalid
+        return fallback == null ? null : substitute(arena, fallback, scope, descendant);
+    }
+    /**
+     * resolved value of a variable. null when the value is invalid
+     * @param arena
+     * @param entry
+     * @param descendant the variable is used by a descendant of the element the mixin is applied to: the typed arguments
+     * it references are the values computed on the element, see {@link TypedArgument}
+     */
+    function resolve(arena, entry, descendant) {
+        // the value is already resolved: the custom properties of the rule, the arguments
+        if (entry.tokens == null || entry.scope == null) {
+            return entry.text ?? null;
+        }
+        const key = descendant ? "descendantText" : "text";
+        if (entry[key] !== undefined) {
+            return entry[key];
+        }
+        // dependency cycle
+        if (entry.resolving) {
+            return null;
+        }
+        entry.resolving = true;
+        entry[key] = substitute(arena, entry.tokens, entry.scope, descendant);
+        entry.resolving = false;
+        return entry[key];
+    }
+    /**
+     * value tokens of a declaration, without `!important`
+     * @param arena
+     * @param declaration
+     */
+    function declarationValue(arena, declaration) {
+        const tokens = trim(arena, arena.tokens(declaration));
+        if (tokens.length > 0 && arena.dataTypes[tokens[tokens.length - 1]] === exports.EnumToken.ImportantTokenType) {
+            return trim(arena, tokens.slice(0, -1));
+        }
+        return tokens;
+    }
+    /**
+     * true if the node is an at-rule with the given name
+     * @param arena
+     * @param node
+     * @param name
+     */
+    function isAtRule(arena, node, name) {
+        return arena.dataTypes[node] === exports.EnumToken.AtRuleNodeType && arena.stringEquals(arena.name[node], name);
+    }
+    /**
+     * true if the node is an at-rule with a block that may contain mixin definitions, see {@link scopeRules}. the name of
+     * the at-rule is not created
+     * @param arena
+     * @param node
+     */
+    function isScopeRule(arena, node) {
+        if (arena.dataTypes[node] !== exports.EnumToken.AtRuleNodeType || !(arena.flags[node] & exports.EnumAstNodeStatus.HasChildren)) {
+            return false;
+        }
+        for (const name of scopeRules) {
+            if (arena.stringEquals(arena.name[node], name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * true if the node is a custom property declaration
+     * @param arena
+     * @param node
+     */
+    function isCustomProperty(arena, node) {
+        return arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType && arena.stringStartsWith(arena.name[node], "--");
+    }
+    /**
+     * custom properties declared by the children of a node
+     * - the `!important` declarations override the other declarations
+     * - the last declaration wins
+     * @param arena
+     * @param node
+     * @param result
+     */
+    function collectProperties(arena, node, result) {
+        const important = new Set();
+        const properties = new Map();
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (!isCustomProperty(arena, child)) {
+                continue;
+            }
+            const name = arena.resolveString(arena.name[child]);
+            const isImportant = (arena.flags[child] & exports.EnumAstNodeStatus.ImportantDeclaration) !== 0;
+            if (important.has(name) && !isImportant) {
+                continue;
+            }
+            if (isImportant) {
+                important.add(name);
+            }
+            properties.set(name, { tokens: null, text: render$1(arena, declarationValue(arena, child)), scope: null });
+        }
+        for (const [name, entry] of properties) {
+            // the declarations of the inner nodes override the declarations of the outer nodes
+            if (!result.has(name)) {
+                result.set(name, entry);
+            }
+        }
+    }
+    /**
+     * syntax of a parameter type: `<color>` -> `<color>`, `type(<length> | auto)` -> `<length> | auto`.
+     * null when the parameter is not typed or accepts any value
+     * @param arena
+     * @param tokens tokens between the parameter name and the default value
+     */
+    function parameterSyntax(arena, tokens) {
+        const type = trim(arena, tokens.filter((token) => !isComment(arena, token)));
+        if (type.length === 0) {
+            return null;
+        }
+        let syntax;
+        if (type.length === 1 &&
+            arena.dataTypes[type[0]] === exports.EnumToken.FunctionTokenType &&
+            arena.stringEqualsIgnoreCase(arena.stringValue[type[0]], "type")) {
+            syntax = render$1(arena, trim(arena, arena.tokens(type[0]))).trim();
+        }
+        else {
+            syntax = render$1(arena, type).trim();
+        }
+        return syntax === "" || syntax === "*" ? null : syntax;
+    }
+    /**
+     * the values that are resolved by the browser: the variables, the environment variables, the conditions and the math
+     * functions (their type depends on the values they compute)
+     */
+    const unresolvedValue = new RegExp("(^|[^\\w-])(" +
+        [
+            "var", "env", "attr", "if",
+            "calc", "min", "max", "clamp", "round", "mod", "rem", "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+            "pow", "sqrt", "hypot", "log", "exp", "abs", "sign", "calc-size", "progress", "random",
+        ].join("|") +
+        ")\\(", "i");
+    /**
+     * true if a value matches the type of a parameter. a value that is resolved by the browser is not checked: a variable
+     * (`var()`, `env()`, ...) or a math function (`calc()`, `min()`, ...)
+     * @param arena
+     * @param syntax
+     * @param value
+     * @param options
+     */
+    function matchesType(arena, syntax, value, options) {
+        if (syntax == null || unresolvedValue.test(value)) {
+            return true;
+        }
+        if (!syntaxes.has(syntax)) {
+            let parsed = null;
+            try {
+                parsed = parseSyntax(syntax);
+            }
+            catch (e) {
+                // the type is not supported: the values are not checked
+            }
+            syntaxes.set(syntax, parsed == null || parsed.length === 0 ? null : parsed);
+        }
+        const parsed = syntaxes.get(syntax);
+        if (parsed == null) {
+            return true;
+        }
+        // the value is parsed as a declaration value: the math functions are parsed into expressions
+        const declaration = parseDeclarations("--value:" + value, arena).nodes.find((node) => arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType);
+        if (declaration == null) {
+            return false;
+        }
+        const tokens = arena.tokens(declaration);
+        return matchAllSyntaxes(arena, parsed, createValidationContext(arena, tokens), {
+            ...options,
+            source: validationSource,
+        }).success;
+    }
+    /**
+     * custom properties of the rule the `@apply` rule belongs to: the declarations of the nearest style rule and of the
+     * at-rules between them. null when the `@apply` rule is not inside a style rule
+     * @param arena
+     * @param node
+     */
+    function ruleProperties(arena, node) {
+        const result = new Map();
+        let parent = arena.parents[node];
+        while (parent !== 0) {
+            if (arena.dataTypes[parent] === exports.EnumToken.AtRuleNodeType) {
+                collectProperties(arena, parent, result);
+            }
+            else if (arena.dataTypes[parent] === exports.EnumToken.RuleNodeType) {
+                collectProperties(arena, parent, result);
+                return result;
+            }
+            else {
+                return null;
+            }
+            parent = arena.parents[parent];
+        }
+        return null;
+    }
+    /**
+     * parse the parameters of a mixin or a custom function: `--name(--a, --b <color>: red)`. null when the parameters are
+     * not valid. the comments are ignored
+     * @param arena
+     * @param reference function token
+     */
+    function parseParameters(arena, reference) {
+        const parameters = [];
+        const children = trim(arena, arena.tokens(reference));
+        if (children.every((token) => isBlank(arena, token))) {
+            return parameters;
+        }
+        const list = splitArguments(arena, children);
+        // trailing comma: `@mixin --name(--a, --b,)`
+        if (list.length > 1 && list[list.length - 1].length === 0) {
+            list.pop();
+        }
+        for (const parameter of list) {
+            if (parameter.length === 0 || arena.dataTypes[parameter[0]] !== exports.EnumToken.DashedIdenTokenType) {
+                return null;
+            }
+            // <dashed-ident> <css-type>? [ : <default-value> ]?
+            const colon = parameter.findIndex((token) => arena.dataTypes[token] === exports.EnumToken.ColonTokenType);
+            const name = arena.resolveString(arena.stringValue[parameter[0]]);
+            // the parameters are unique
+            if (parameters.some((parameter) => parameter.name === name)) {
+                return null;
+            }
+            parameters.push({
+                name,
+                syntax: parameterSyntax(arena, parameter.slice(1, colon === -1 ? parameter.length : colon)),
+                defaultValue: colon === -1 ? null : unwrap(arena, trim(arena, parameter.slice(colon + 1))),
+            });
+        }
+        return parameters;
+    }
+    /**
+     * arguments of a mixin or a custom function call: the comments and the whitespace are ignored, the curly braces are
+     * removed. `--name(/* comment *\/)` has no argument
+     * @param arena
+     * @param reference function token
+     */
+    function parseArguments(arena, reference) {
+        const children = arena.tokens(reference);
+        return children.every((token) => isBlank(arena, token))
+            ? []
+            : splitArguments(arena, children).map((arg) => unwrap(arena, arg));
+    }
+    /**
+     * name of a mixin or a custom function definition: `@mixin --name(...)`, `@function --name(...)`
+     * @param arena
+     * @param node
+     */
+    function definitionName(arena, node) {
+        const reference = firstToken(arena, arena.tokens(node));
+        return reference == null ? null : arena.resolveString(arena.stringValue[reference]);
+    }
+    /**
+     * collect the mixin or custom function definitions of a stylesheet, a conditional group rule or a cascade layer
+     * @param arena
+     * @param node
+     * @param name at-rule name: `mixin`, `function`
+     * @param parse parse a definition. null when the definition is not valid
+     * @param conditional the node is a conditional group rule or is located in a conditional group rule
+     * @param definitions valid definitions by name, in document order
+     * @param invalid the definitions that are not valid: they are ignored
+     */
+    function collectDefinitions(arena, node, name, parse, conditional, definitions, invalid) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (isAtRule(arena, child, name)) {
+                const key = definitionName(arena, child);
+                const definition = key == null ? null : parse(arena, child, conditional);
+                if (definition == null) {
+                    invalid.push(child);
+                    continue;
+                }
+                if (!definitions.has(key)) {
+                    definitions.set(key, []);
+                }
+                definitions.get(key).push(definition);
+            }
+            else if (isScopeRule(arena, child)) {
+                collectDefinitions(arena, child, name, parse, conditional || !arena.stringEquals(arena.name[child], "layer"), definitions, invalid);
+            }
+        }
+        return definitions;
+    }
+    /**
+     * the mixin or custom function at-rules of a stylesheet, with the scope they are defined in
+     * @param arena
+     * @param node
+     * @param name at-rule name: `mixin`, `function`
+     * @param result
+     */
+    function collectAtRules(arena, node, name, result = []) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (isAtRule(arena, child, name)) {
+                result.push(child);
+            }
+            else if (isScopeRule(arena, child)) {
+                collectAtRules(arena, child, name, result);
+            }
+        }
+        return result;
+    }
+    /**
+     * finalize the mixin or custom function definitions once they are evaluated
+     * - the evaluated definitions are dropped and replaced with a comment, unless `keep` is set
+     * - the definitions that are kept are reduced to their last definition in the same scope
+     * - the definitions that are not valid are left as is
+     * @param arena
+     * @param ast
+     * @param name at-rule name: `mixin`, `function`
+     * @param kept names of the definitions that are kept: they are not evaluated, or they are referenced by a definition
+     * that is kept
+     * @param keep keep the evaluated definitions
+     * @param invalid the definitions that are not valid
+     */
+    function finalizeDefinitions(arena, ast, name, kept, keep, invalid) {
+        // the last definition in the same scope
+        const last = new Map();
+        for (const node of collectAtRules(arena, ast, name)) {
+            const key = definitionName(arena, node);
+            if (key == null || invalid.includes(node)) {
+                continue;
+            }
+            if (!kept.has(key)) {
+                if (!keep) {
+                    // the comments of the prelude are removed: the comments are not nested
+                    const comment = arena.createComment(exports.EnumToken.CommentTokenType, `/* @${name} ${arena
+                    .resolveString(arena.stringValue[node])
+                    .replace(/\/\*[\s\S]*?\*\//g, "")
+                    .replace(/\(\s+/g, "(")
+                    .replace(/\s+([),])/g, "$1")
+                    .trim()} */`);
+                    arena.copyLocation(comment, node);
+                    arena.replaceChild(node, comment);
+                }
+                continue;
+            }
+            const parent = arena.parents[node];
+            if (!last.has(parent)) {
+                last.set(parent, new Map());
+            }
+            const previous = last.get(parent).get(key);
+            // the definition is defined only once in the same scope: the last definition wins
+            if (previous !== undefined) {
+                arena.detach(previous);
+            }
+            last.get(parent).set(key, node);
+        }
+    }
+
+    /**
+     * maximum number of nested custom function calls
+     */
+    const MAX_DEPTH$1 = 32;
+    /**
+     * variables visible from the body of a custom function
+     */
+    class FunctionScope {
+        locals;
+        args;
+        parent;
+        functions;
+        /**
+         * @param locals local variables
+         * @param args arguments and default values
+         * @param parent scope of the call: the calling function, or the element
+         * @param functions
+         */
+        constructor(locals, args, parent, functions) {
+            this.locals = locals;
+            this.args = args;
+            this.parent = parent;
+            this.functions = functions;
+        }
+        lookup(name, descendant) {
+            return this.locals.get(name) ?? this.args.get(name) ?? this.parent.lookup(name, descendant);
+        }
+    }
+    /**
+     * parse a custom function definition. null if the prelude is not valid
+     *
+     * ```css
+     * @function --name(--a <length>: 1px) returns <length> { result: calc(2 * var(--a)) }
+     * ```
+     * @param arena
+     * @param node
+     * @param conditional the function is defined in a conditional group rule
+     */
+    function parseFunction(arena, node, conditional) {
+        const tokens = arena.tokens(node);
+        const reference = firstToken(arena, tokens);
+        if (reference == null || arena.dataTypes[reference] !== exports.EnumToken.CustomFunctionTokenType) {
+            return null;
+        }
+        const parameters = parseParameters(arena, reference);
+        if (parameters == null) {
+            return null;
+        }
+        // [ returns <css-type> ]?
+        let returns = null;
+        const index = tokens.findIndex((token) => arena.dataTypes[token] === exports.EnumToken.IdenTokenType &&
+            arena.stringEqualsIgnoreCase(arena.stringValue[token], "returns"));
+        if (index !== -1) {
+            returns = parameterSyntax(arena, tokens.slice(index + 1));
+        }
+        const definition = {
+            node,
+            name: arena.resolveString(arena.stringValue[reference]),
+            parameters,
+            returns,
+            conditional,
+            conditionalBody: false,
+            locals: new Map(),
+            result: null,
+        };
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] === exports.EnumToken.AtRuleNodeType) {
+                definition.conditionalBody = true;
+            }
+            else if (isCustomProperty(arena, child)) {
+                definition.locals.set(arena.resolveString(arena.name[child]), declarationValue(arena, child));
+            }
+            else if (arena.dataTypes[child] === exports.EnumToken.DeclarationNodeType &&
+                arena.stringEquals(arena.name[child], "result")) {
+                definition.result = declarationValue(arena, child);
+            }
+        }
+        return definition;
+    }
+    /**
+     * local variable of a custom function. the css-wide keywords of the local variables:
+     * - `initial`: the value of the parameter with the same name (the argument or the default value), otherwise the value
+     *   is not valid
+     * - `inherit`, `unset`: the value of the variable with the same name in the calling context (the calling function or
+     *   the custom properties of the call site). otherwise the var() function is evaluated by the browser
+     * @param arena
+     * @param name
+     * @param tokens
+     * @param values arguments and default values
+     * @param context calling context
+     * @param scope scope of the function body
+     * @param descendant
+     */
+    function localVariable(arena, name, tokens, values, context, scope, descendant) {
+        if (tokens.length === 1 && arena.dataTypes[tokens[0]] === exports.EnumToken.IdenTokenType) {
+            if (arena.stringEqualsIgnoreCase(arena.stringValue[tokens[0]], "initial")) {
+                return values.get(name) ?? { tokens: null, text: null, scope: null };
+            }
+            if (arena.stringEqualsIgnoreCase(arena.stringValue[tokens[0]], "inherit") ||
+                arena.stringEqualsIgnoreCase(arena.stringValue[tokens[0]], "unset")) {
+                const found = context.lookup(name, descendant);
+                if (found === UNDEFINED) {
+                    return { tokens: null, text: null, scope: null };
+                }
+                return found ?? { tokens: null, text: `var(${name})`, scope: null };
+            }
+        }
+        return { tokens, scope };
+    }
+    /**
+     * evaluate the custom function calls
+     */
+    class FunctionRegistry {
+        definitions;
+        options;
+        /**
+         * names of the functions that have been evaluated
+         */
+        evaluated = new Set();
+        /**
+         * names of the functions whose calls have not been evaluated
+         */
+        pending = new Set();
+        /**
+         * number of evaluated calls
+         */
+        count = 0;
+        /**
+         * the calls are located in a custom property declaration
+         */
+        customProperty = false;
+        /**
+         * functions being evaluated
+         */
+        stack = [];
+        /**
+         * the functions that call themselves, directly or through other functions
+         */
+        recursive = new Map();
+        /**
+         * @param definitions function definitions by name, in document order. the definitions that are not valid are null
+         * @param options
+         */
+        constructor(definitions, options) {
+            this.definitions = definitions;
+            this.options = options;
+        }
+        call(arena, token, caller, descendant) {
+            const name = arena.resolveString(arena.stringValue[token]);
+            const definitions = this.definitions.get(name);
+            // the function is not defined in the stylesheet
+            if (definitions == null) {
+                return undefined;
+            }
+            // the function is defined only once
+            const definition = definitions.length === 1 ? definitions[0] : null;
+            if (definition == null ||
+                definition.conditional ||
+                definition.conditionalBody ||
+                this.stack.length >= MAX_DEPTH$1 ||
+                this.isRecursive(arena, name) ||
+                (this.customProperty &&
+                    (definition.returns != null ||
+                        definition.parameters.some((parameter) => parameter.syntax != null)))) {
+                this.pending.add(name);
+                return undefined;
+            }
+            const result = this.evaluate(arena, definition, token, caller, descendant);
+            if (result === undefined) {
+                this.pending.add(name);
+            }
+            else {
+                this.evaluated.add(name);
+                this.count++;
+            }
+            return result;
+        }
+        /**
+         * evaluate a call
+         * @param arena
+         * @param definition
+         * @param token call token
+         * @param caller
+         * @param descendant
+         * @returns the result, undefined when the arguments do not match the parameters or the result is not valid
+         */
+        evaluate(arena, definition, token, caller, descendant) {
+            const args = parseArguments(arena, token);
+            if (args.length > definition.parameters.length) {
+                return undefined;
+            }
+            const values = new Map();
+            const locals = new Map();
+            // the variables of the call site: the custom properties of the rule, or the variables of the calling function
+            const context = caller.dynamic ?? caller;
+            const scope = new FunctionScope(locals, values, context, this);
+            for (let index = 0; index < definition.parameters.length; index++) {
+                const parameter = definition.parameters[index];
+                if (index < args.length) {
+                    // the arguments are evaluated in the scope of the call
+                    const text = substitute(arena, args[index], context, descendant);
+                    if (text === null) {
+                        return undefined;
+                    }
+                    values.set(parameter.name, { tokens: null, text, scope: null });
+                }
+                else if (parameter.defaultValue != null) {
+                    values.set(parameter.name, { tokens: parameter.defaultValue, scope });
+                }
+                else {
+                    return undefined;
+                }
+            }
+            for (const [name, tokens] of definition.locals) {
+                locals.set(name, localVariable(arena, name, tokens, values, context, scope, descendant));
+            }
+            this.stack.push(definition.name);
+            try {
+                for (const parameter of definition.parameters) {
+                    const value = resolve(arena, values.get(parameter.name), descendant);
+                    if (value === null || !matchesType(arena, parameter.syntax, value, this.options)) {
+                        return undefined;
+                    }
+                }
+                // no result: guaranteed-invalid value. the call is left as is
+                if (definition.result == null) {
+                    return undefined;
+                }
+                const result = substitute(arena, definition.result, scope, descendant);
+                // an invalid result or a result that does not match the return type: the call is left as is
+                if (result === null || !matchesType(arena, definition.returns, result, this.options)) {
+                    return undefined;
+                }
+                return result;
+            }
+            finally {
+                this.stack.pop();
+            }
+        }
+        /**
+         * true if a function calls itself, directly or through the functions it calls: it cannot be evaluated
+         * @param arena
+         * @param name
+         * @param stack functions being checked
+         */
+        isRecursive(arena, name, stack = []) {
+            if (stack.includes(name)) {
+                return true;
+            }
+            if (this.recursive.has(name)) {
+                return this.recursive.get(name);
+            }
+            let result = false;
+            stack.push(name);
+            for (const definition of this.definitions.get(name) ?? []) {
+                const values = [...definition.locals.values()];
+                if (definition.result != null) {
+                    values.push(definition.result);
+                }
+                for (const parameter of definition.parameters) {
+                    if (parameter.defaultValue != null) {
+                        values.push(parameter.defaultValue);
+                    }
+                }
+                for (const tokens of values) {
+                    for (const call of findCalls(arena, tokens)) {
+                        if (this.definitions.has(arena.resolveString(arena.stringValue[call])) &&
+                            this.isRecursive(arena, arena.resolveString(arena.stringValue[call]), stack)) {
+                            result = true;
+                            break;
+                        }
+                    }
+                    if (result) {
+                        break;
+                    }
+                }
+                if (result) {
+                    break;
+                }
+            }
+            stack.pop();
+            // a function that reaches one of the functions being checked is part of a cycle
+            this.recursive.set(name, result);
+            return result;
+        }
+    }
+    /**
+     * the custom function calls of a list of tokens and their descendants
+     * @param arena
+     * @param tokens
+     * @param result
+     */
+    function findCalls(arena, tokens, result = []) {
+        for (const token of tokens) {
+            if (arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenType) {
+                result.push(token);
+            }
+            if (arena.firstToken[token] !== 0 || arena.firstChild[token] !== 0) {
+                findCalls(arena, arena.subTokens(token), result);
+            }
+        }
+        return result;
+    }
+    /**
+     * replace the custom function calls of the declarations of a stylesheet with their result. the bodies of the mixins
+     * and of the custom functions are not modified: they are evaluated when they are used
+     * @param arena
+     * @param ast
+     * @param registry
+     */
+    function evaluateFunctions(arena, ast, registry) {
+        const stack = [];
+        for (let child = arena.lastChild[ast]; child !== 0; child = arena.previousSibling[child]) {
+            stack.push(child);
+        }
+        while (stack.length > 0) {
+            const node = stack.pop();
+            if (isAtRule(arena, node, "mixin") || isAtRule(arena, node, "function")) {
+                continue;
+            }
+            if (arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType) {
+                evaluateDeclaration(arena, node, registry);
+                continue;
+            }
+            if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
+                for (let child = arena.lastChild[node]; child !== 0; child = arena.previousSibling[child]) {
+                    stack.push(child);
+                }
+            }
+        }
+    }
+    /**
+     * replace the custom function calls of a declaration with their result
+     * @param arena
+     * @param declaration
+     * @param registry
+     */
+    function evaluateDeclaration(arena, declaration, registry) {
+        const tokens = arena.tokens(declaration);
+        if (!tokens.some((token) => hasReference(arena, token, true))) {
+            return;
+        }
+        // the var() functions of the declaration are not modified. the custom functions see the custom properties of
+        // the rule: the call site
+        const scope = new RuleScope(new Map(), registry, new RuleScope(ruleProperties(arena, declaration) ?? new Map(), registry));
+        const count = registry.count;
+        registry.customProperty = isCustomProperty(arena, declaration);
+        const value = substitute(arena, tokens, scope, false);
+        // no call has been evaluated, or the value is not valid: the declaration is left as is
+        if (registry.count === count || value === null) {
+            return;
+        }
+        const nodes = parseDeclarations(arena.resolveString(arena.name[declaration]) + ":" + value, arena).nodes.filter((node) => arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType);
+        if (nodes.length === 1) {
+            arena.copyLocation(nodes[0], declaration);
+            arena.replaceChild(declaration, nodes[0]);
+        }
+    }
+
+    /**
+     * the subject of the rule is the element the mixin is applied to: `&`, `&.active`, `&::before`
+     */
+    const SELF = 0;
+    /**
+     * the subject of the rule is a descendant of the element the mixin is applied to: `& *`, `& > *`, `.child`
+     */
+    const DESCENDANT = 1;
+    /**
+     * the subject of the rule is not in the subtree of the element the mixin is applied to: `& + *`, `& ~ *`
+     */
+    const OUTSIDE = 2;
+    /**
+     * maximum number of nested `@apply` rules: guard against the mixins that apply each other
+     */
+    const MAX_DEPTH = 32;
+    /**
+     * application of a mixin: the variables shared by the scopes of the mixin body
+     */
+    class MixinApplication {
+        name;
+        properties;
+        contents;
+        names;
+        /**
+         * mixin arguments and default values
+         */
+        args = new Map();
+        /**
+         * the typed arguments that depend on the element the mixin is applied to
+         */
+        typed = new Map();
+        /**
+         * registered custom properties of the typed arguments
+         */
+        registered = [];
+        /**
+         * the mixin cannot be evaluated: a typed argument cannot be registered
+         */
+        failed = false;
+        /**
+         * @param name mixin name
+         * @param properties custom properties declared in the rule the mixin is applied to
+         * @param contents serialized contents block of the `@apply` rule. null when the `@apply` rule has no contents block
+         * @param names names of the custom properties of the stylesheet
+         */
+        constructor(name, properties, contents, names) {
+            this.name = name;
+            this.properties = properties;
+            this.contents = contents;
+            this.names = names;
+        }
+        /**
+         * variable that references the registered custom property of a typed argument. null when the argument cannot be
+         * registered
+         * @param name
+         */
+        typedEntry(name) {
+            const argument = this.typed.get(name);
+            if (argument.entry == null) {
+                const initialValue = initialValueOf(argument.syntax);
+                if (initialValue == null || this.names == null) {
+                    this.failed = true;
+                    return null;
+                }
+                const prefix = `--${this.name.slice(2)}-${name.slice(2)}-`;
+                let index = 1;
+                while (this.names.has(prefix + index)) {
+                    index++;
+                }
+                argument.property = prefix + index;
+                argument.entry = { tokens: null, text: `var(${argument.property})`, scope: null };
+                argument.entry.descendantText = argument.entry.text;
+                this.names.add(argument.property);
+                this.registered.push({
+                    name: argument.property,
+                    syntax: argument.syntax,
+                    initialValue,
+                    value: argument.value,
+                });
+            }
+            return argument.entry;
+        }
+    }
+    /**
+     * variables visible from a node of a mixin body
+     */
+    class MixinScope {
+        levels;
+        application;
+        masked;
+        /**
+         * the custom function calls of the mixin body are evaluated once the mixin is applied
+         */
+        functions = null;
+        /**
+         * @param levels variables declared by the mixin body and the rules that contain the current node, outer first
+         * @param application the mixin application
+         * @param masked custom properties declared in the mixin body: they override the rule custom properties
+         */
+        constructor(levels, application, masked) {
+            this.levels = levels;
+            this.application = application;
+            this.masked = masked;
+        }
+        /**
+         * the subject of the current rule is a descendant of the element the mixin is applied to
+         */
+        get descendant() {
+            return this.levels[0].relation === DESCENDANT;
+        }
+        /**
+         * scope of a nested rule
+         * @param relation relation of the subject of the nested rule to the subject of the current rule
+         * @param masked custom properties declared in the nested rule
+         */
+        child(relation, masked) {
+            const levels = this.levels.map((level) => ({
+                privates: level.privates,
+                relation: compose(level.relation, relation),
+            }));
+            levels.push({ privates: new Map(), relation: SELF });
+            return new MixinScope(levels, this.application, masked.size === 0 ? this.masked : new Set([...this.masked, ...masked]));
+        }
+        /**
+         * find a variable
+         * - the variable entry
+         * - {@link UNDEFINED} if the variable is a private variable that is not visible
+         * - null if the variable is not a private variable: the var() function is evaluated by the browser
+         * @param name
+         * @param descendant the variable is referenced by a descendant of the element the mixin is applied to
+         */
+        lookup(name, descendant) {
+            // the inner declarations override the outer declarations. the private variables of a nested rule are private
+            // variables of its nested rules: each nested rule has its own context
+            for (let i = this.levels.length - 1; i > 0; i--) {
+                const entry = this.levels[i].privates.get(name);
+                if (entry !== undefined) {
+                    return entry;
+                }
+            }
+            // the private variables of the mixin body are not visible from the siblings of the element the mixin is
+            // applied to
+            const visible = this.levels[0].relation !== OUTSIDE;
+            const isPrivate = this.levels[0].privates.has(name);
+            if (isPrivate && visible) {
+                return this.levels[0].privates.get(name);
+            }
+            const application = this.application;
+            if (application.args.has(name)) {
+                if (!visible) {
+                    return UNDEFINED;
+                }
+                // the descendants inherit the value computed on the element
+                if (descendant && application.typed.has(name)) {
+                    return application.typedEntry(name) ?? application.args.get(name);
+                }
+                return application.args.get(name);
+            }
+            if (isPrivate) {
+                return UNDEFINED;
+            }
+            // the custom properties of the rule the mixin is applied to. the descendants inherit them
+            if (visible && !this.masked.has(name) && application.properties.has(name)) {
+                return application.properties.get(name);
+            }
+            return null;
+        }
+    }
+    /**
+     * initial value of a registered custom property: a computationally independent value that matches the syntax.
+     * null when the syntax is not supported
+     * @param syntax
+     */
+    function initialValueOf(syntax) {
+        const defaults = {
+            length: "0px",
+            "length-percentage": "0px",
+            percentage: "0%",
+            number: "0",
+            integer: "0",
+            angle: "0deg",
+            time: "0s",
+            resolution: "1dppx",
+            color: "transparent",
+            "custom-ident": "none",
+            string: '""',
+            "transform-function": "scale(1)",
+            "transform-list": "scale(1)",
+        };
+        for (const component of syntax.split("|")) {
+            const match = component.trim().match(/^(?:<([a-z-]+)>|([a-z][a-z0-9-]*))[+#]?$/i);
+            if (match == null) {
+                // the syntax is not supported by a registered custom property
+                return null;
+            }
+            if (match[2] != null) {
+                return match[2];
+            }
+            if (match[1].toLowerCase() in defaults) {
+                return defaults[match[1].toLowerCase()];
+            }
+        }
+        return null;
+    }
+    /**
+     * relation of the subject of a nested rule to the subject of an outer rule
+     * @param outer relation of the current rule to the outer rule
+     * @param relation relation of the nested rule to the current rule
+     */
+    function compose(outer, relation) {
+        if (outer === SELF) {
+            return relation;
+        }
+        // the siblings and the descendants of a descendant are descendants.
+        // the siblings and the descendants of an element outside the subtree are outside the subtree
+        return outer;
+    }
+    /**
+     * names of the custom properties declared by a mixin body or a rule. the declarations of the nested at-rules
+     * (`@media`, `@supports`, ...) are included, the declarations of the nested rules and `@private` are not
+     * @param arena
+     * @param node
+     * @param result
+     */
+    function collectMasked(arena, node, result = new Set()) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (isCustomProperty(arena, child)) {
+                result.add(arena.resolveString(arena.name[child]));
+            }
+            else if (arena.dataTypes[child] === exports.EnumToken.AtRuleNodeType &&
+                arena.flags[child] & exports.EnumAstNodeStatus.HasChildren &&
+                !isAtRule(arena, child, "private")) {
+                collectMasked(arena, child, result);
+            }
+        }
+        return result;
+    }
+    /**
+     * declare the private variables (`@private`) of a mixin body or a rule in the innermost level of the scope
+     * @param arena
+     * @param node
+     * @param scope
+     */
+    function declarePrivates(arena, node, scope) {
+        const privates = scope.levels[scope.levels.length - 1].privates;
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (!isAtRule(arena, child, "private")) {
+                continue;
+            }
+            for (let node = arena.firstChild[child]; node !== 0; node = arena.nextSibling[node]) {
+                if (isCustomProperty(arena, node)) {
+                    // the last declaration wins
+                    privates.set(arena.resolveString(arena.name[node]), { tokens: declarationValue(arena, node), scope });
+                }
+            }
+        }
+    }
+    /**
+     * true if a node contains nested rules
+     * @param arena
+     * @param node
+     */
+    function hasNestedRules(arena, node) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] === exports.EnumToken.RuleNodeType ||
+                (arena.dataTypes[child] === exports.EnumToken.AtRuleNodeType &&
+                    arena.flags[child] & exports.EnumAstNodeStatus.HasChildren &&
+                    hasNestedRules(arena, child))) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * true if the compound selector part references the nesting selector: `&`, `:is(&)`, `:where(&)`
+     * @param part
+     */
+    function isNestingPart(part) {
+        return part === "&" || /^:(is|where)\(\s*&\s*\)$/i.test(part);
+    }
+    /**
+     * relation of the subject of a nested selector to the subject of the rule that contains it
+     * @param parts complex selector parts, see {@link splitRule}
+     */
+    function selectorRelation(parts) {
+        const compounds = [[]];
+        const combinators = [];
+        let whitespace = false;
+        for (const part of parts) {
+            if (part.trim() === "") {
+                whitespace = true;
+                continue;
+            }
+            if (part === ">" || part === "+" || part === "~" || part === "||") {
+                combinators.push(part);
+                compounds.push([]);
+                whitespace = false;
+                continue;
+            }
+            if (whitespace && compounds[compounds.length - 1].length > 0) {
+                // descendant combinator
+                combinators.push(" ");
+                compounds.push([]);
+            }
+            whitespace = false;
+            compounds[compounds.length - 1].push(part);
+        }
+        // relative selector: `> .child`, `+ .sibling`
+        if (compounds[0].length === 0) {
+            compounds[0].push("&");
+        }
+        let index = -1;
+        for (let i = compounds.length - 1; i >= 0; i--) {
+            if (compounds[i].some(isNestingPart)) {
+                index = i;
+                break;
+            }
+        }
+        if (index === -1) {
+            // '&' used in a way that is not handled: `:not(&)`, `:has(+ &)`. the relation is unknown
+            if (parts.some((part) => part.includes("&"))) {
+                return OUTSIDE;
+            }
+            // the selector is implicitly prefixed with `& `
+            return DESCENDANT;
+        }
+        if (index === compounds.length - 1) {
+            return SELF;
+        }
+        return combinators[index] === " " || combinators[index] === ">" ? DESCENDANT : OUTSIDE;
+    }
+    /**
+     * serialize a declaration of a mixin body. the declaration is left as is when it references an invalid variable
+     * without fallback
+     * @param arena
+     * @param declaration
+     * @param scope
+     */
+    function serializeDeclaration(arena, declaration, scope) {
+        const name = arena.resolveString(arena.name[declaration]);
+        // a custom property is inherited by the descendants: a typed argument is the value computed on the element
+        const value = substitute(arena, arena.tokens(declaration), scope, scope.descendant || arena.startsWith(declaration, "nam", "--"));
+        // an invalid value is left as is
+        return name + ":" + (value ?? render$1(arena, arena.tokens(declaration)));
+    }
+    /**
+     * serialize an `@apply` rule of a mixin body. its arguments may reference the private variables
+     * @param arena
+     * @param node
+     * @param scope
+     */
+    function serializeApply(arena, node, scope) {
+        const tokens = arena.tokens(node);
+        const reference = firstToken(arena, tokens);
+        let prelude;
+        if (reference != null && arena.dataTypes[reference] === exports.EnumToken.CustomFunctionTokenType) {
+            // the arguments are substituted one by one: an invalid argument is kept
+            prelude =
+                arena.resolveString(arena.stringValue[reference]) +
+                    "(" +
+                    splitArguments(arena, arena.tokens(reference))
+                        .map((arg) => substitute(arena, arg, scope, scope.descendant) ?? render$1(arena, arg))
+                        .join(",") +
+                    ")";
+        }
+        else {
+            prelude = render$1(arena, trim(arena, tokens));
+        }
+        return ("@apply " +
+            prelude +
+            (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren
+                ? "{" + serializeDeclarations(arena, node, scope) + "}"
+                : ";"));
+    }
+    /**
+     * serialize the declarations of a contents block: `@apply --mixin { color: red }`, `@contents { color: red }`
+     * @param arena
+     * @param node
+     * @param scope
+     */
+    function serializeDeclarations(arena, node, scope) {
+        let result = "";
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] === exports.EnumToken.DeclarationNodeType) {
+                result += serializeDeclaration(arena, child, scope) + ";";
+            }
+            else if (isAtRule(arena, child, "contents")) {
+                // the contents block is forwarded: `@apply --mixin { @contents; }`
+                result += serializeContents(arena, child, scope);
+            }
+        }
+        return result;
+    }
+    /**
+     * serialize a `@contents` rule: the contents block of the `@apply` rule, otherwise the default contents block of the
+     * `@contents` rule, otherwise nothing. the contents block is a copy: it is parsed again
+     * @param arena
+     * @param node `@contents` rule
+     * @param scope
+     */
+    function serializeContents(arena, node, scope) {
+        if (scope.application.contents != null) {
+            return scope.application.contents;
+        }
+        return arena.flags[node] & exports.EnumAstNodeStatus.HasChildren ? serializeDeclarations(arena, node, scope) : "";
+    }
+    /**
+     * serialize a nested rule of a mixin body. the rule is split when its selectors do not have the same relation to the
+     * rule the mixin is applied to: the private variables are visible to some of them only
+     * @param arena
+     * @param rule
+     * @param scope
+     */
+    function serializeRule(arena, rule, scope) {
+        const groups = new Map();
+        // the element and its descendants see the same variables, unless the rule has nested rules (the relation of the
+        // nested rules depends on it) or a typed argument is computed on the element (the descendants inherit it)
+        const merge = !hasNestedRules(arena, rule) && scope.application.typed.size === 0;
+        for (const parts of splitRule(arena.resolveString(arena.name[rule]))) {
+            let relation = selectorRelation(parts);
+            if (merge && relation === DESCENDANT) {
+                relation = SELF;
+            }
+            if (!groups.has(relation)) {
+                groups.set(relation, []);
+            }
+            groups.get(relation).push(parts.join(""));
+        }
+        let result = "";
+        const masked = collectMasked(arena, rule);
+        for (const [relation, selectors] of groups) {
+            const child = scope.child(relation, masked);
+            declarePrivates(arena, rule, child);
+            result += selectors.join(",") + "{" + serializeBlock(arena, rule, child) + "}";
+        }
+        return result;
+    }
+    /**
+     * serialize the children of a mixin body, a nested rule or a nested at-rule. the private variables are substituted
+     * @param arena
+     * @param node
+     * @param scope
+     */
+    function serializeBlock(arena, node, scope) {
+        let result = "";
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            switch (arena.dataTypes[child]) {
+                case exports.EnumToken.DeclarationNodeType:
+                    result += serializeDeclaration(arena, child, scope) + ";";
+                    break;
+                case exports.EnumToken.RuleNodeType:
+                    result += serializeRule(arena, child, scope);
+                    break;
+                case exports.EnumToken.AtRuleNodeType: {
+                    // the private variables are substituted
+                    if (arena.stringEquals(arena.name[child], "private")) {
+                        break;
+                    }
+                    if (arena.stringEquals(arena.name[child], "apply")) {
+                        result += serializeApply(arena, child, scope);
+                        break;
+                    }
+                    // the content of `@result` is the result of the mixin
+                    if (arena.stringEquals(arena.name[child], "result")) {
+                        result += serializeBlock(arena, child, scope);
+                        break;
+                    }
+                    if (arena.stringEquals(arena.name[child], "contents")) {
+                        result += serializeContents(arena, child, scope);
+                        break;
+                    }
+                    const prelude = arena.resolveString(arena.stringValue[child]);
+                    result +=
+                        "@" +
+                            arena.resolveString(arena.name[child]) +
+                            (prelude === "" ? "" : " " + prelude) +
+                            (arena.flags[child] & exports.EnumAstNodeStatus.HasChildren
+                                ? "{" + serializeBlock(arena, child, scope) + "}"
+                                : ";");
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+    /**
+     * the generated nodes are located at the `@apply` rule
+     * @param arena
+     * @param node
+     * @param location
+     */
+    function locate(arena, node, location) {
+        arena.copyLocation(node, location);
+        if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
+            for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+                locate(arena, child, location);
+            }
+        }
+    }
+    /**
+     * parse a mixin definition. null if the prelude is not valid
+     * @param arena
+     * @param node
+     * @param conditional the mixin is defined in a conditional group rule
+     */
+    function parseMixin(arena, node, conditional) {
+        const reference = firstToken(arena, arena.tokens(node));
+        if (reference == null) {
+            return null;
+        }
+        let parameters = [];
+        if (arena.dataTypes[reference] === exports.EnumToken.CustomFunctionTokenType) {
+            parameters = parseParameters(arena, reference);
+            if (parameters == null) {
+                return null;
+            }
+        }
+        else if (arena.dataTypes[reference] !== exports.EnumToken.DashedIdenTokenType) {
+            return null;
+        }
+        return {
+            node,
+            name: arena.resolveString(arena.stringValue[reference]),
+            parameters,
+            conditional,
+        };
+    }
+    /**
+     * parse the prelude of an `@apply` rule: the name of the mixin and the arguments. the comments and the whitespace
+     * are ignored: `@apply --mixin( /* comment *\/ )` has no argument
+     * @param arena
+     * @param node
+     */
+    function parseApply(arena, node) {
+        const reference = firstToken(arena, arena.tokens(node));
+        if (reference == null) {
+            return null;
+        }
+        if (arena.dataTypes[reference] === exports.EnumToken.DashedIdenTokenType) {
+            return { name: arena.resolveString(arena.stringValue[reference]), args: [] };
+        }
+        if (arena.dataTypes[reference] !== exports.EnumToken.CustomFunctionTokenType) {
+            return null;
+        }
+        return { name: arena.resolveString(arena.stringValue[reference]), args: parseArguments(arena, reference) };
+    }
+    /**
+     * bind the arguments to the mixin parameters. false when the arguments do not match the parameters:
+     * - more arguments than parameters
+     * - a parameter without default value has no argument
+     * - an argument or a default value does not match the type of the parameter, or is invalid
+     * @param arena
+     * @param definition
+     * @param args argument tokens
+     * @param caller scope of the `@apply` rule, the arguments are evaluated in this scope
+     * @param scope scope of the mixin body, the default values are evaluated in this scope
+     * @param options
+     */
+    function bindParameters(arena, definition, args, caller, scope, options) {
+        const application = scope.application;
+        if (args.length > definition.parameters.length) {
+            return false;
+        }
+        for (let index = 0; index < definition.parameters.length; index++) {
+            const parameter = definition.parameters[index];
+            if (index < args.length) {
+                application.args.set(parameter.name, {
+                    tokens: null,
+                    text: substitute(arena, args[index], caller, false),
+                    scope,
+                });
+            }
+            else if (parameter.defaultValue != null) {
+                // the default value may reference the other variables: it is resolved once the variables are declared
+                application.args.set(parameter.name, { tokens: parameter.defaultValue, scope });
+            }
+            else {
+                return false;
+            }
+        }
+        // the private variables may be referenced by the default values
+        declarePrivates(arena, definition.node, scope);
+        for (const parameter of definition.parameters) {
+            const value = resolve(arena, application.args.get(parameter.name), false);
+            if (value === null || !matchesType(arena, parameter.syntax, value, options)) {
+                return false;
+            }
+            // the value of a typed argument is computed on the element the mixin is applied to
+            if (parameter.syntax != null) {
+                application.typed.set(parameter.name, { value, syntax: parameter.syntax, property: null, entry: null });
+            }
+        }
+        return true;
+    }
+    /**
+     * create the registered custom property of a typed argument
+     * ```css
+     * @property --same-size-size-1 { syntax: "<length>"; inherits: true; initial-value: 0px }
+     * ```
+     * @param arena
+     * @param property
+     */
+    function registerProperty(arena, property) {
+        const node = arena.createAtRule(exports.EnumToken.AtRuleNodeType, "property", property.name, true, [arena.createToken(exports.EnumToken.DashedIdenTokenType, property.name)], exports.EnumAstNodeStatus.Validated, null);
+        arena.appendChildList(node, parseDeclarations(`syntax:${JSON.stringify(property.syntax)};inherits:true;initial-value:${property.initialValue}`, arena).nodes);
+        return node;
+    }
+    /**
+     * true if a mixin applies itself, directly or through the mixins it applies: it cannot be evaluated
+     * @param arena
+     * @param name
+     * @param state
+     * @param stack mixins being checked
+     */
+    function isRecursive(arena, name, state, stack = []) {
+        if (stack.includes(name)) {
+            return true;
+        }
+        if (state.recursive.has(name)) {
+            return state.recursive.get(name);
+        }
+        const definitions = state.definitions.get(name) ?? [];
+        let result = false;
+        stack.push(name);
+        for (const definition of definitions) {
+            for (const id of arena.walk(definition.node)) {
+                if (id !== definition.node && isAtRule(arena, id, "apply")) {
+                    const reference = parseApply(arena, id);
+                    if (reference != null && isRecursive(arena, reference.name, state, stack)) {
+                        result = true;
+                        break;
+                    }
+                }
+            }
+            if (result) {
+                break;
+            }
+        }
+        stack.pop();
+        // a mixin that reaches one of the mixins being checked is part of a cycle
+        state.recursive.set(name, result);
+        return result;
+    }
+    /**
+     * replace an `@apply` rule with the evaluated body of the mixin. the `@apply` rule is left as is when it cannot be
+     * evaluated
+     * @param arena
+     * @param node
+     * @param state
+     * @returns the inserted nodes, null when the `@apply` rule is not evaluated
+     */
+    function apply(arena, node, state) {
+        const reference = parseApply(arena, node);
+        if (reference == null) {
+            return null;
+        }
+        const definitions = state.definitions.get(reference.name) ?? [];
+        // the mixin is defined only once
+        const definition = definitions.length === 1 ? definitions[0] : null;
+        const properties = ruleProperties(arena, node);
+        const chain = state.chains.get(node) ?? [];
+        if (definition == null ||
+            definition.conditional ||
+            properties == null ||
+            // a mixin that applies itself
+            isRecursive(arena, reference.name, state) ||
+            chain.includes(reference.name) ||
+            chain.length >= MAX_DEPTH) {
+            state.pending.add(reference.name);
+            return null;
+        }
+        // the contents block is a declaration list. its variables are not private variables: they are not substituted
+        const contents = arena.flags[node] & exports.EnumAstNodeStatus.HasChildren
+            ? serializeDeclarations(arena, node, new MixinScope([{ privates: new Map(), relation: SELF }], new MixinApplication(reference.name, new Map(), null, null), new Set()))
+            : null;
+        const application = new MixinApplication(reference.name, properties, contents, state.names);
+        // the arguments are evaluated in the context of the `@apply` rule
+        const caller = new MixinScope([{ privates: new Map(), relation: SELF }], new MixinApplication(reference.name, properties, null, null), new Set());
+        const scope = new MixinScope([{ privates: new Map(), relation: SELF }], application, collectMasked(arena, definition.node));
+        if (!bindParameters(arena, definition, reference.args, caller, scope, state.options)) {
+            state.pending.add(reference.name);
+            return null;
+        }
+        let css = serializeBlock(arena, definition.node, scope);
+        // a typed argument cannot be registered
+        if (application.failed) {
+            state.pending.add(reference.name);
+            return null;
+        }
+        state.evaluated.add(reference.name);
+        if (application.registered.length > 0) {
+            // the top level node that contains the `@apply` rule
+            let top = node;
+            while (arena.parents[top] !== state.ast && arena.parents[top] !== 0) {
+                top = arena.parents[top];
+            }
+            for (const property of application.registered) {
+                const registered = registerProperty(arena, property);
+                locate(arena, registered, node);
+                arena.insertBefore(top, registered);
+                // the value is computed on the element the mixin is applied to
+                css = property.name + ":" + property.value + ";" + css;
+            }
+        }
+        // the body is parsed as the content of the rule the mixin is applied to: '&' is that rule
+        const nodes = parseRuleContent(css, arena, state.options);
+        const nested = chain.concat(reference.name);
+        for (const child of nodes) {
+            locate(arena, child, node);
+            arena.insertBefore(node, child);
+            // the `@apply` rules of the mixin body
+            for (const id of arena.walk(child)) {
+                if (isAtRule(arena, id, "apply")) {
+                    state.chains.set(id, nested);
+                }
+            }
+        }
+        arena.detach(node);
+        return nodes;
+    }
+    /**
+     * names of the mixins applied by the `@apply` rules of a node and its descendants
+     * @param arena
+     * @param node
+     * @param result
+     */
+    function appliedMixins(arena, node, result) {
+        for (const id of arena.walk(node)) {
+            if (id !== node && isAtRule(arena, id, "apply")) {
+                const reference = parseApply(arena, id);
+                if (reference != null) {
+                    result.add(reference.name);
+                }
+            }
+        }
+    }
+    /**
+     * names of the custom functions called by the values of a node and its descendants
+     * @param arena
+     * @param node
+     * @param result
+     */
+    function calledFunctions(arena, node, result) {
+        for (const id of arena.walk(node)) {
+            for (const call of findCalls(arena, arena.tokens(id))) {
+                result.add(arena.resolveString(arena.stringValue[call]));
+            }
+        }
+    }
+    /**
+     * names of the definitions that are kept: the mixins referenced by an `@apply` rule that is not evaluated, the
+     * custom functions that are not evaluated, and the definitions referenced by the definitions that are kept or not
+     * valid (a mixin that is kept may apply a mixin or call a function that is evaluated). the mixins that are not
+     * referenced are dropped
+     * @param arena
+     * @param mixins
+     * @param functions
+     * @param state
+     * @param registry
+     */
+    function keptDefinitions(arena, mixins, functions, state, registry) {
+        const keptMixins = new Set();
+        const keptFunctions = new Set();
+        // the mixins that are not valid are left as is: the definitions they reference are kept
+        for (const node of state.invalid) {
+            appliedMixins(arena, node, keptMixins);
+            calledFunctions(arena, node, keptFunctions);
+        }
+        // the mixins that are not referenced are dropped: a mixin is kept when an `@apply` rule that references it is not
+        // evaluated
+        for (const name of mixins.keys()) {
+            if (state.pending.has(name)) {
+                keptMixins.add(name);
+            }
+        }
+        for (const name of functions.keys()) {
+            if (!registry.evaluated.has(name) || registry.pending.has(name)) {
+                keptFunctions.add(name);
+            }
+        }
+        let size;
+        do {
+            size = keptMixins.size + keptFunctions.size;
+            for (const name of [...keptMixins]) {
+                for (const definition of mixins.get(name) ?? []) {
+                    appliedMixins(arena, definition.node, keptMixins);
+                    calledFunctions(arena, definition.node, keptFunctions);
+                }
+            }
+            for (const name of [...keptFunctions]) {
+                for (const definition of functions.get(name) ?? []) {
+                    calledFunctions(arena, definition.node, keptFunctions);
+                }
+            }
+        } while (keptMixins.size + keptFunctions.size !== size);
+        return { mixins: keptMixins, functions: keptFunctions };
+    }
+    /**
+     * evaluate the mixins and the custom functions of a stylesheet
+     * @param arena
+     * @param ast
+     * @param options
+     */
+    function evaluate(arena, ast, options) {
+        const invalidMixins = [];
+        const invalidFunctions = [];
+        const state = {
+            definitions: collectDefinitions(arena, ast, "mixin", parseMixin, false, new Map(), invalidMixins),
+            invalid: invalidMixins,
+            evaluated: new Set(),
+            pending: new Set(),
+            chains: new Map(),
+            recursive: new Map(),
+            ast,
+            names: new Set(),
+            options,
+        };
+        const registry = new FunctionRegistry(collectDefinitions(arena, ast, "function", parseFunction, false, new Map(), invalidFunctions), options);
+        // the custom functions that are not valid are dropped
+        for (const node of invalidFunctions) {
+            arena.detach(node);
+        }
+        if (state.definitions.size === 0 && registry.definitions.size === 0) {
+            return;
+        }
+        if (state.definitions.size > 0) {
+            for (const id of arena.walk(ast)) {
+                if (isCustomProperty(arena, id)) {
+                    state.names.add(arena.resolveString(arena.name[id]));
+                }
+                else if (isAtRule(arena, id, "property")) {
+                    state.names.add(arena.resolveString(arena.stringValue[id]).trim());
+                }
+            }
+            // depth first traversal, in document order
+            const stack = [];
+            for (let child = arena.lastChild[ast]; child !== 0; child = arena.previousSibling[child]) {
+                stack.push(child);
+            }
+            while (stack.length > 0) {
+                const node = stack.pop();
+                if (arena.dataTypes[node] === exports.EnumToken.AtRuleNodeType) {
+                    // the mixin and the function bodies are evaluated when they are used
+                    if (isAtRule(arena, node, "mixin") || isAtRule(arena, node, "function")) {
+                        continue;
+                    }
+                    if (isAtRule(arena, node, "apply")) {
+                        const nodes = apply(arena, node, state);
+                        if (nodes != null) {
+                            // the mixin body may apply other mixins
+                            for (let i = nodes.length - 1; i >= 0; i--) {
+                                stack.push(nodes[i]);
+                            }
+                            continue;
+                        }
+                    }
+                }
+                if (arena.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
+                    for (let child = arena.lastChild[node]; child !== 0; child = arena.previousSibling[child]) {
+                        stack.push(child);
+                    }
+                }
+            }
+        }
+        // the custom function calls, including the calls of the evaluated mixins
+        if (registry.definitions.size > 0) {
+            evaluateFunctions(arena, ast, registry);
+        }
+        const kept = keptDefinitions(arena, state.definitions, registry.definitions, state, registry);
+        finalizeDefinitions(arena, ast, "mixin", kept.mixins, !!options.keepMixins, invalidMixins);
+        finalizeDefinitions(arena, ast, "function", kept.functions, !!options.keepMixins, []);
+    }
+    /**
+     * Evaluate the css mixins and the custom functions: the `@apply` rules are replaced by the body of the mixin they
+     * reference, the custom function calls are replaced by the result of the function.
+     * the feature is enabled with the {@link ParserOptions.evaluateMixins} option.
+     *
+     * https://drafts.csswg.org/css-mixins-1/
+     *
+     * ```ts
+     * import {transform} from '@tbela99/css-parser';
+     *
+     * const css = `
+     * @mixin --only-descs(--arg) {
+     *   color: var(--arg);
+     *   & * { color: var(--arg, red); }
+     *   & + * { color: var(--arg, red); }
+     * }
+     * .foo {
+     *   @apply --only-descs(green);
+     * }
+     * `;
+     *
+     * const result = await transform(css, {evaluateMixins: true, expandNestingRules: true, beautify: true});
+     *
+     * console.log(result.code);
+     * // .foo,.foo * {
+     * //  color: green
+     * // }
+     * // .foo+* {
+     * //  color: red
+     * // }
+     * ```
+     */
+    class EvaluateMixinFeature {
+        accept = new Set([exports.EnumToken.StyleSheetNodeType]);
+        get ordering() {
+            return 0;
+        }
+        get processMode() {
+            return exports.FeatureWalkMode.Pre;
+        }
+        static register(options) {
+            if (options.evaluateMixins) {
+                // @ts-ignore
+                options.features.push(new EvaluateMixinFeature());
+            }
+        }
+        /**
+         * evaluate the mixins of a stylesheet
+         * @param arena
+         * @param ast
+         * @param options
+         */
+        static evaluate(arena, ast, options = {}) {
+            evaluate(arena, ast, options);
+        }
+        /**
+         *
+         * @param arena
+         * @param ast
+         * @param options
+         */
+        run(arena, ast, options = {}) {
+            evaluate(arena, ast, options);
+            return null;
         }
     }
 
@@ -22816,6 +24830,50 @@
     	"margin-left": {
     		shorthand: "margin"
     	},
+    	"margin-inline": {
+    		shorthand: "margin-inline",
+    		properties: [
+    			"margin-inline-start",
+    			"margin-inline-end"
+    		],
+    		types: [
+    			"Length",
+    			"Perc"
+    		],
+    		multiple: false,
+    		separator: null,
+    		keywords: [
+    			"auto"
+    		]
+    	},
+    	"margin-inline-start": {
+    		shorthand: "margin-inline"
+    	},
+    	"margin-inline-end": {
+    		shorthand: "margin-inline"
+    	},
+    	"margin-block": {
+    		shorthand: "margin-block",
+    		properties: [
+    			"margin-block-start",
+    			"margin-block-end"
+    		],
+    		types: [
+    			"Length",
+    			"Perc"
+    		],
+    		multiple: false,
+    		separator: null,
+    		keywords: [
+    			"auto"
+    		]
+    	},
+    	"margin-block-start": {
+    		shorthand: "margin-block"
+    	},
+    	"margin-block-end": {
+    		shorthand: "margin-block"
+    	},
     	padding: {
     		shorthand: "padding",
     		properties: [
@@ -22842,6 +24900,44 @@
     	},
     	"padding-left": {
     		shorthand: "padding"
+    	},
+    	"padding-inline": {
+    		shorthand: "padding-inline",
+    		properties: [
+    			"padding-inline-start",
+    			"padding-inline-end"
+    		],
+    		types: [
+    			"Length",
+    			"Perc"
+    		],
+    		keywords: [
+    		]
+    	},
+    	"padding-inline-start": {
+    		shorthand: "padding-inline"
+    	},
+    	"padding-inline-end": {
+    		shorthand: "padding-inline"
+    	},
+    	"padding-block": {
+    		shorthand: "padding-block",
+    		properties: [
+    			"padding-block-start",
+    			"padding-block-end"
+    		],
+    		types: [
+    			"Length",
+    			"Perc"
+    		],
+    		keywords: [
+    		]
+    	},
+    	"padding-block-start": {
+    		shorthand: "padding-block"
+    	},
+    	"padding-block-end": {
+    		shorthand: "padding-block"
     	},
     	"scroll-margin": {
     		shorthand: "scroll-margin",
@@ -25658,16 +27754,23 @@
          */
         memo;
         /**
+         * syntaxes of the descriptors of the at-rule that contains the declarations: `result` in `@function`. the
+         * declarations that are not validated are validated with them
+         */
+        descriptors;
+        /**
          *
          * @param arena
          * @param options
          * @param memo keys shared by the lists that use the same arena
+         * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
          */
-        constructor(arena, options = {}, memo = null) {
+        constructor(arena, options = {}, memo = null, descriptors = null) {
             this.arena = arena;
             this.options = options;
             this.declarations = new Map();
             this.memo = memo ?? new DeclarationMemo();
+            this.descriptors = descriptors;
         }
         /**
          * add a declaration
@@ -25711,7 +27814,9 @@
                 return this;
             }
             if (arena.flags[declaration] & exports.EnumAstNodeStatus.Unvalidated) {
-                syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
+                syntaxRules =
+                    this.descriptors?.[lowercase(name)] ??
+                        getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
                 if (syntaxRules != null) {
                     arena.flags[declaration] |=
                         (isValidDeclarationValue(arena, syntaxRules, declaration, this.options)
@@ -25961,52 +28066,83 @@
             }
             // the keys of the declarations are shared by the rules of the minification
             const memo = context == null ? null : (context.declarations ??= new DeclarationMemo());
-            const list = new PropertyList(arena, options, memo);
             let doNotSort = false;
-            let hasDeclarations = false;
+            // the descriptors of a custom function: the `result` descriptors are deduplicated when the declarations are
+            // not validated by the parser
+            let descriptors = null;
+            let isFunction = false;
             if (arena.dataTypes[ast] === exports.EnumToken.AtRuleNodeType) {
                 switch (arena.resolveString(arena.name[ast])) {
                     case "function":
+                        doNotSort = true;
+                        isFunction = true;
+                        descriptors =
+                            getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@function")?.getPropertyDescriptors() ?? null;
+                        break;
                     case "mixin":
                         doNotSort = true;
                         break;
                 }
             }
-            // the declarations (with their leading comments) are moved into the property list,
-            // the rules (with their leading comments) stay in place
+            // the children are processed by segments: an at-rule without a block or an `@apply` rule inserts declarations
+            // at its position, the declarations are not moved across it
             let child = arena.firstChild[ast];
             while (child !== 0) {
-                let last = child;
-                if (!doNotSort) {
-                    // capture comments with the next node
-                    while (arena.nextSibling[last] !== 0 && arena.dataTypes[last] === exports.EnumToken.CommentNodeType) {
-                        last = arena.nextSibling[last];
+                const list = new PropertyList(arena, options, memo, descriptors);
+                let hasDeclarations = false;
+                // first node of the segment that is not moved into the property list
+                let first = 0;
+                // at-rule without a block that ends the segment
+                let boundary = 0;
+                // the declarations (with their leading comments) are moved into the property list,
+                // the rules (with their leading comments) stay in place
+                while (child !== 0) {
+                    let last = child;
+                    if (!doNotSort) {
+                        // capture comments with the next node
+                        while (arena.nextSibling[last] !== 0 && arena.dataTypes[last] === exports.EnumToken.CommentNodeType) {
+                            last = arena.nextSibling[last];
+                        }
+                    }
+                    const next = arena.nextSibling[last];
+                    if (arena.dataTypes[last] === exports.EnumToken.AtRuleNodeType &&
+                        (!(arena.flags[last] & exports.EnumAstNodeStatus.HasChildren) ||
+                            arena.stringEquals(arena.name[last], "apply"))) {
+                        boundary = child;
+                        child = next;
+                        break;
+                    }
+                    // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                    if (doNotSort || arena.dataTypes[last] === exports.EnumToken.DeclarationNodeType) {
+                        hasDeclarations = true;
+                        for (let node = child; node !== next;) {
+                            const nextNode = arena.nextSibling[node];
+                            arena.detach(node);
+                            list.addDeclaration(node);
+                            node = nextNode;
+                        }
+                    }
+                    else if (first === 0) {
+                        first = child;
+                    }
+                    child = next;
+                }
+                if (hasDeclarations) {
+                    // the declarations are inserted before the rules of the segment
+                    const reference = first !== 0 ? first : boundary;
+                    for (const node of list) {
+                        if (reference === 0) {
+                            arena.appendChild(ast, node);
+                        }
+                        else {
+                            arena.insertBefore(reference, node);
+                        }
                     }
                 }
-                const next = arena.nextSibling[last];
-                // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
-                if (doNotSort || arena.dataTypes[last] === exports.EnumToken.DeclarationNodeType) {
-                    hasDeclarations = true;
-                    for (let node = child; node !== next;) {
-                        const nextNode = arena.nextSibling[node];
-                        arena.detach(node);
-                        list.addDeclaration(node);
-                        node = nextNode;
-                    }
-                }
-                child = next;
             }
-            if (hasDeclarations) {
-                // the declarations are inserted before the rules
-                const first = arena.firstChild[ast];
-                for (const node of list) {
-                    if (first === 0) {
-                        arena.appendChild(ast, node);
-                    }
-                    else {
-                        arena.insertBefore(first, node);
-                    }
-                }
+            // the deduplicated result keeps the position of the first result: it is moved after the conditional rules
+            if (isFunction) {
+                moveResult(arena, ast);
             }
             return ast;
         }
@@ -26032,7 +28168,8 @@
          * @param ast
          */
         run(arena, ast) {
-            if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren)) {
+            // the mixin and custom function bodies are templates: the expressions are computed once they are used
+            if (!(arena.flags[ast] & exports.EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
                 return null;
             }
             for (let node = arena.firstChild[ast]; node !== 0; node = arena.nextSibling[node]) {
@@ -26053,7 +28190,7 @@
                     }
                     const typ = arena.dataTypes[value];
                     if (typ === exports.EnumToken.BinaryExpressionTokenType) {
-                        const result = evaluate(arena, [value]);
+                        const result = evaluate$1(arena, [value]);
                         try {
                             if (result.length > 0) {
                                 arena.replaceToken(value, ...result);
@@ -26072,7 +28209,7 @@
                                     (typ === exports.EnumToken.FunctionTokenType && mathFuncs.includes(name));
                                 if (shouldEvaluate) {
                                     const cp = name !== "calc" ? [value] : arena.tokens(value);
-                                    const values = evaluate(arena, cp);
+                                    const values = evaluate$1(arena, cp);
                                     // fix a + -b into a - b
                                     // inlined: arena.walkValues(values)
                                     for (const value of new ValueWalker(arena, values)) {
@@ -28008,6 +30145,7 @@
         ComputeCalcExpressionFeature: ComputeCalcExpressionFeature,
         ComputePrefixFeature: ComputePrefixFeature,
         ComputeShorthandFeature: ComputeShorthandFeature,
+        EvaluateMixinFeature: EvaluateMixinFeature,
         ExpandIfFeature: ExpandIfFeature,
         InlineCssVariablesFeature: InlineCssVariablesFeature,
         TransformCssFeature: TransformCssFeature
@@ -29163,6 +31301,34 @@
         }
         return ast;
     }
+    /**
+     * `@apply --mixin()` is equivalent to `@apply --mixin`: a mixin applied without arguments is referenced by its name
+     * https://drafts.csswg.org/css-mixins-1/#apply-rule
+     * @param arena
+     * @param node `@apply` rule
+     */
+    function minifyApplyPrelude(arena, node) {
+        let reference = arena.firstToken[node];
+        while (reference !== 0 &&
+            (arena.dataTypes[reference] === exports.EnumToken.WhitespaceTokenType ||
+                arena.dataTypes[reference] === exports.EnumToken.CommentTokenType)) {
+            reference = arena.nextSibling[reference];
+        }
+        if (reference === 0 || arena.dataTypes[reference] !== exports.EnumToken.CustomFunctionTokenType) {
+            return;
+        }
+        // the comments and the whitespace are ignored: `@apply --mixin(/* comment */)` has no argument
+        for (let token = arena.firstToken[reference]; token !== 0; token = arena.nextSibling[token]) {
+            if (arena.dataTypes[token] !== exports.EnumToken.WhitespaceTokenType &&
+                arena.dataTypes[token] !== exports.EnumToken.CommentTokenType) {
+                return;
+            }
+        }
+        const name = arena.resolveString(arena.stringValue[reference]);
+        arena.setTokenList(node, [arena.createToken(exports.EnumToken.DashedIdenTokenType, name)]);
+        // inlined: arena.setValueString(node, name)
+        arena.stringValue[node] = arena.internString(name);
+    }
     function transformAtRuleMediaPrelude(arena, values) {
         return { hasUpdates: false, values: trimArray(arena, values) };
     }
@@ -29232,6 +31398,65 @@
         return acc;
     }
     /**
+     * true if the selector part is a simple selector that can be moved into `:is()`: it is not a combinator, a whitespace
+     * (descendant combinator), the nesting selector or a pseudo-element (a pseudo-element is not allowed in `:is()`)
+     * @param part
+     */
+    function isCompoundPart(part) {
+        return (part.trim() !== "" &&
+            part !== "&" &&
+            !combinators.includes(part) &&
+            !part.startsWith("::") &&
+            !/^:(before|after|first-line|first-letter)$/i.test(part));
+    }
+    /**
+     * factor the common prefix of the selectors of a rule into `:is()`. the selectors are relative to the common prefix,
+     * see {@link optimizeSelector}: `["&"]` is the prefix itself, `["&", ".a"]` is a compound selector (`.foo.a`),
+     * `["&", " ", ".a"]` a descendant selector (`.foo .a`) and `[">", ".a"]` a child selector (`.foo>.a`).
+     *
+     * - `.foo.a,.foo.b` -> `.foo:is(.a,.b)`. `.foo,.foo.b` -> `.foo:is(*,.b)`
+     * - `.foo .a,.foo .b` -> `.foo :is(.a,.b)`, `.foo>.a,.foo>.b` -> `.foo>:is(.a,.b)`
+     *
+     * the selectors are factored only when the suffixes are compound selectors joined to the prefix with the same
+     * combinator: `.foo .a .b,.foo .c` is not `.foo :is(.a .b,.c)`. null when the selectors cannot be factored
+     * @param optimized
+     */
+    function factorSelector(optimized) {
+        const prefix = optimized.optimized;
+        if (prefix.length === 0 ||
+            !prefix.every((part) => part === " " || isCompoundPart(part) || combinators.includes(part))) {
+            return null;
+        }
+        let combinator = null;
+        const members = [];
+        for (const selector of optimized.selector) {
+            // the parts that follow the prefix. the whitespace around the combinators is removed
+            const suffix = (selector[0] === "&" ? selector.slice(1) : selector.slice()).filter((part, index, parts) => part.trim() !== "" ||
+                (!combinators.includes(parts[index - 1]) && !combinators.includes(parts[index + 1])));
+            // the prefix itself
+            if (suffix.length === 0) {
+                if (combinator != null && combinator !== "") {
+                    return null;
+                }
+                combinator = "";
+                members.push("*");
+                continue;
+            }
+            // the combinator that joins the suffix to the prefix. "" for a compound selector
+            const current = suffix[0].trim() === "" ? " " : combinators.includes(suffix[0]) ? suffix[0] : "";
+            const compound = current === "" ? suffix : suffix.slice(1);
+            if ((combinator != null && combinator !== current) ||
+                current === "|" ||
+                compound.length === 0 ||
+                !compound.every(isCompoundPart)) {
+                return null;
+            }
+            combinator = current;
+            members.push(compound.join(""));
+        }
+        return prefix.join("") + combinator + ":is(" + members.join(",") + ")";
+    }
+    /**
      * Apply minification rules to the ast tree
      * @param arena
      * @param ast
@@ -29291,33 +31516,10 @@
                         cursor = arena.nextSibling[node];
                         continue;
                     }
-                    // https://drafts.csswg.org/css-mixins/#:~:text=The%20value%20of%20the%20result%20descriptor%20is%20always%2016px%20in%20the%20above%20example
+                    // there is no early return: the result that precedes the conditional rules is moved after them.
+                    // the conditional rules are never removed
                     if (equalsIgnoreCase(nam, "function")) {
-                        let k = arena.lastChild[node];
-                        let slice = false;
-                        while (k !== 0) {
-                            if (arena.dataTypes[k] === exports.EnumToken.CommentNodeType ||
-                                arena.dataTypes[k] === exports.EnumToken.WhitespaceTokenType) {
-                                k = arena.previousSibling[k];
-                                continue;
-                            }
-                            if (arena.dataTypes[k] === exports.EnumToken.DeclarationNodeType &&
-                                equalsIgnoreCase(arena.resolveString(arena.name[k]), "result")) {
-                                slice = true;
-                                break;
-                            }
-                            k = arena.previousSibling[k];
-                        }
-                        if (k !== 0 && slice) {
-                            k = arena.previousSibling[k];
-                            while (k !== 0) {
-                                const previousNode = arena.previousSibling[k];
-                                if (arena.dataTypes[k] === exports.EnumToken.AtRuleNodeType) {
-                                    arena.detach(k);
-                                }
-                                k = previousNode;
-                            }
-                        }
+                        moveResult(arena, node);
                     }
                 }
                 if (nodeType === exports.EnumToken.KeyframesAtRuleNodeType) {
@@ -29376,7 +31578,11 @@
                                 (index + 3 < arr.length || arena.dataTypes[arr[index + 2]] === exports.EnumToken.WhitespaceTokenType))
                             ? ""
                             : renderValue(arena, curr));
-                    if (nam === "media") {
+                    if (nam === "apply") {
+                        // `@apply --mixin()` is equivalent to `@apply --mixin`
+                        minifyApplyPrelude(arena, node);
+                    }
+                    else if (nam === "media") {
                         if (tokens != null) {
                             const slice = tokens.slice();
                             minifyAtRuleMedia(arena, slice);
@@ -29455,7 +31661,10 @@
                     let wrapper = null;
                     let match;
                     if (options.nestingRules) {
-                        if (previousType === exports.EnumToken.RuleNodeType) {
+                        // the rules that apply a mixin are not merged
+                        if (previousType === exports.EnumToken.RuleNodeType &&
+                            !hasAtRuleStatement(arena, previous) &&
+                            !hasAtRuleStatement(arena, node)) {
                             if (!isSimpleSelector(arena, arena.name[previous])) {
                                 reduceRuleSelector(arena, previous);
                             }
@@ -29470,7 +31679,9 @@
                         if (wrapper != null) {
                             // wrap the following rules that match the wrapper selector
                             let nextNode = arena.nextSibling[wrapper];
-                            while (nextNode !== 0 && arena.dataTypes[nextNode] === exports.EnumToken.RuleNodeType) {
+                            while (nextNode !== 0 &&
+                                arena.dataTypes[nextNode] === exports.EnumToken.RuleNodeType &&
+                                !hasAtRuleStatement(arena, nextNode)) {
                                 if (!isSimpleSelector(arena, arena.name[nextNode])) {
                                     reduceRuleSelector(arena, nextNode);
                                 }
@@ -29536,95 +31747,8 @@
                         }
                     }
                     else if (arena.optimized.get(node)?.match) {
-                        const optimizedSelector = arena.optimized.get(node);
-                        let wrap = true;
-                        const selector = optimizedSelector.selector.reduce((acc, curr) => {
-                            if (curr[0] === "&" && curr.length > 1) {
-                                if (curr[1] === " ") {
-                                    curr.splice(0, 2);
-                                }
-                                else {
-                                    curr.splice(0, 1);
-                                }
-                            }
-                            else if (combinators.includes(curr[0])) {
-                                curr.unshift("&");
-                                wrap = false;
-                            }
-                            acc.push(curr);
-                            return acc;
-                        }, []);
-                        if (!wrap) {
-                            wrap = selector.some((s) => s[0] !== "&");
-                        }
-                        let rule = null;
-                        const optimized = optimizedSelector.optimized.slice();
-                        if (optimized.length > 1) {
-                            const check = optimized.at(-2);
-                            if (!combinators.includes(check)) {
-                                const last = optimized[optimized.length - 1];
-                                const all = new Array(Math.max(optimized.length - 1, 0));
-                                let write = 0;
-                                for (let read = 0; read < optimized.length - 1; read++) {
-                                    all[write++] = optimized[read];
-                                }
-                                optimized.length = 0;
-                                for (let index = 0; index < write; index++) {
-                                    optimized[index] = all[index];
-                                }
-                                wrap = false;
-                                rule =
-                                    optimized.join("") +
-                                        `:is(${selector
-                                        .map((s) => {
-                                        const next = s[0] === "&" ? new Array(s.length) : new Array(s.length + 1);
-                                        let write = 0;
-                                        if (s[0] === "&") {
-                                            next[write++] = last;
-                                            for (let read = 1; read < s.length; read++) {
-                                                next[write++] = s[read];
-                                            }
-                                        }
-                                        else {
-                                            next[write++] = last;
-                                            for (let read = 0; read < s.length; read++) {
-                                                next[write++] = s[read];
-                                            }
-                                        }
-                                        const rebuilt = new Array(write);
-                                        for (let index = 0; index < write; index++) {
-                                            rebuilt[index] = next[index];
-                                        }
-                                        return rebuilt.join("");
-                                    })
-                                        .join(",")})`;
-                            }
-                        }
-                        if (rule == null) {
-                            rule = selector
-                                .map((s) => {
-                                if (s[0] === "&") {
-                                    const replacement = optimizedSelector.optimized;
-                                    const all = new Array(Math.max(s.length - 1 + replacement.length, 0));
-                                    let write = 0;
-                                    for (let read = 0; read < replacement.length; read++) {
-                                        all[write++] = replacement[read];
-                                    }
-                                    for (let read = 1; read < s.length; read++) {
-                                        all[write++] = s[read];
-                                    }
-                                    const rebuilt = new Array(write);
-                                    for (let index = 0; index < write; index++) {
-                                        rebuilt[index] = all[index];
-                                    }
-                                    return rebuilt.join("");
-                                }
-                                return s.join("");
-                            })
-                                .join(",");
-                        }
-                        let sel = wrap ? optimizedSelector.optimized.join("") + `:is(${rule})` : rule;
-                        if (sel.length < arena.resolveString(arena.name[node]).length) {
+                        const sel = factorSelector(arena.optimized.get(node));
+                        if (sel != null && sel.length < arena.resolveString(arena.name[node]).length) {
                             // inlined: arena.setSelector(node, sel)
                             arena.name[node] = arena.internString(sel);
                             // inlined: arena.setTokens(node)
@@ -29679,7 +31803,10 @@
                                 shouldMerge = arena.dataTypes[k] === exports.EnumToken.DeclarationNodeType;
                                 break;
                             }
-                            if (shouldMerge) {
+                            // the rules that apply a mixin are not merged
+                            if (shouldMerge &&
+                                (nodeType !== exports.EnumToken.RuleNodeType ||
+                                    (!hasAtRuleStatement(arena, previous) && !hasAtRuleStatement(arena, node)))) {
                                 if (((nodeType === exports.EnumToken.RuleNodeType ||
                                     nodeType === exports.EnumToken.KeyframesRuleNodeType) &&
                                     arena.name[node] === arena.name[previous]) ||
@@ -30323,6 +32450,21 @@
         return wrapper;
     }
     /**
+     * true if a child of the node is an at-rule without a block or an `@apply` rule: `@apply --mixin;`,
+     * `@apply --mixin { color: red }`
+     * @param arena
+     * @param node
+     */
+    function hasAtRuleStatement(arena, node) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] === exports.EnumToken.AtRuleNodeType &&
+                (!(arena.flags[child] & exports.EnumAstNodeStatus.HasChildren) || arena.stringEquals(arena.name[child], "apply"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
      * Diff nodes: move the declarations shared by both rules into a new rule
      * @param arena
      * @param n1
@@ -30333,6 +32475,11 @@
      * @private
      */
     function diff(arena, n1, n2, options, context) {
+        // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
+        // the declarations that follow it override them
+        if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
+            return null;
+        }
         if (!("cache" in options)) {
             options.cache = new Map();
         }
@@ -30511,21 +32658,8 @@
         }
         const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
         if (optimized?.match) {
-            const rule = optimized.selector.reduce((acc, curr) => {
-                if (acc.length > 0) {
-                    acc += ",";
-                }
-                if (curr.length > 2 && curr[0] === "&" && curr[1] === " ") {
-                    return acc + curr.slice(2).join("");
-                }
-                else if (curr.length > 1 && curr[0] === "&") {
-                    return acc + curr.slice(1).join("");
-                }
-                return acc + curr.join("");
-            }, "");
-            const match = optimized.optimized.join("");
-            const sel = match + ":is(" + arena.replaceCompound(rule, match) + ")";
-            if (sel.length < arena.resolveString(arena.name[result]).length) {
+            const sel = factorSelector(optimized);
+            if (sel != null && sel.length < arena.resolveString(arena.name[result]).length) {
                 // inlined: arena.setSelector(result, sel)
                 arena.name[result] = arena.internString(sel);
                 // inlined: arena.setTokens(result)
@@ -34219,7 +36353,10 @@
                     // the expanded rules are inserted after the rule
                     this.expandRule(node, ast, next);
                 }
-                else if (typ === exports.EnumToken.AtRuleNodeType && this.flags[node] & exports.EnumAstNodeStatus.HasChildren) {
+                else if (typ === exports.EnumToken.AtRuleNodeType &&
+                    this.flags[node] & exports.EnumAstNodeStatus.HasChildren &&
+                    // the mixin body is nested in the rule the mixin is applied to
+                    !this.stringEquals(this.name[node], "mixin")) {
                     let j = this.lastChild[node];
                     while (j !== 0) {
                         if (this.dataTypes[j] === exports.EnumToken.RuleNodeType ||
@@ -34592,6 +36729,9 @@
                         place(rule);
                         this.expandRule(rule, parent, before);
                     }
+                    else if (typ === exports.EnumToken.AtRuleNodeType &&
+                        (!(this.flags[child] & exports.EnumAstNodeStatus.HasChildren) ||
+                            this.stringEquals(this.name[child], "apply"))) ;
                     else if (typ === exports.EnumToken.AtRuleNodeType) {
                         const astAtRule = child;
                         const atRuleName = this.resolveString(this.name[astAtRule]);
@@ -38729,7 +40869,12 @@
                 parent = arena.parents[parent];
                 continue;
             }
-            nested = arena.dataTypes[parent] === exports.EnumToken.RuleNodeType;
+            // the rules of a mixin body are nested in the rule the mixin is applied to:
+            // '&' represents the rule that contains the '@apply' rule
+            nested =
+                arena.dataTypes[parent] === exports.EnumToken.RuleNodeType ||
+                    (arena.dataTypes[parent] === exports.EnumToken.AtRuleNodeType &&
+                        "mixin" === arena.resolveString(arena.name[parent]));
             if (nested) {
                 break;
             }
@@ -39028,6 +41173,46 @@
         return partOffsets[index * 2 + 1] - start === 1 && partBuilder.codes[start] === code;
     }
     /**
+     * true if the rendered token is a simple selector that is not a type selector: a class (`.a`), an id (`#a`), an
+     * attribute (`[a]`), a pseudo-class (`:hover`) or a pseudo-element (`::before`)
+     * @param index index of the rendered token
+     * @param count number of rendered tokens
+     */
+    function isSubclassPart(index, count) {
+        if (index < 0 || index >= count || partOffsets[index * 2 + 1] === partOffsets[index * 2]) {
+            return false;
+        }
+        const code = partBuilder.codes[partOffsets[index * 2]];
+        // '.', '#', ':', '['
+        return code === 0x2e || code === 0x23 || code === 0x3a || code === 0x5b;
+    }
+    /**
+     * true if the rendered token is a type selector other than `html`: `span`, `svg|circle`
+     * @param index index of the rendered token
+     * @param count number of rendered tokens
+     */
+    function isTypePart(index, count) {
+        if (index >= count) {
+            return false;
+        }
+        const start = partOffsets[index * 2];
+        const end = partOffsets[index * 2 + 1];
+        const code = partBuilder.codes[start];
+        // a namespace prefix: `ns|span`
+        if (isPartCode(index + 1, count, 0x7c)) {
+            return false;
+        }
+        if (!((code >= 0x61 && code <= 0x7a) || (code >= 0x41 && code <= 0x5a) || code === 0x5f || code >= 0x80)) {
+            return false;
+        }
+        // `html`, case-insensitive
+        return !(end - start === 4 &&
+            (partBuilder.codes[start] | 0x20) === 0x68 &&
+            (partBuilder.codes[start + 1] | 0x20) === 0x74 &&
+            (partBuilder.codes[start + 2] | 0x20) === 0x6d &&
+            (partBuilder.codes[start + 3] | 0x20) === 0x6c);
+    }
+    /**
      * add the current selector (the rendered tokens in {@link partBuilder}) to the selectors of the rule when it is not
      * already present. a universal selector is removed before a compound selector
      * @param count number of rendered tokens
@@ -39035,16 +41220,22 @@
      * @returns the number of selectors
      */
     function addSelectorCodes(count, selectors) {
-        // `*` followed by a token: removed unless the token is a combinator. the index of the combinator is
-        // relative to the start of the selector, like addSelector()
-        for (let i = 0; i < count; i++) {
-            if (i + 1 < count && isPartCode(i, count, 0x2a)) {
-                const index = isPartCode(i + 1, count, 0x20) ? 2 : 1;
-                if (!isPartCode(index, count, 0x3e) && !isPartCode(index, count, 0x7e) && !isPartCode(index, count, 0x2b)) {
-                    partOffsets.copyWithin(i * 2, (i + index) * 2, count * 2);
-                    count -= index;
-                }
+        // `*` is removed when it is followed by another simple selector of the same compound selector:
+        // `*.a` -> `.a`, `*:hover` -> `:hover`, `*[a]` -> `[a]`, `*::before` -> `::before`.
+        // it is kept when it is the only simple selector of the compound selector: it is followed by a combinator
+        // (`.a * .b`, `.a *+.b`) or it ends the selector. it is kept in a namespace selector: `*|*`, `ns|*.a`
+        for (let i = 0; i + 1 < count; i++) {
+            if (isPartCode(i, count, 0x2a) && !isPartCode(i - 1, count, 0x7c) && isSubclassPart(i + 1, count)) {
+                partOffsets.copyWithin(i * 2, (i + 1) * 2, count * 2);
+                count--;
             }
+        }
+        // a leading `* ` is removed before a type selector: `* span` -> `span`. every element but the root element has a
+        // parent element, the root element is `html`. it is kept before the other selectors: `* .dark` does not match
+        // `html.dark`
+        if (count > 2 && isPartCode(0, count, 0x2a) && isPartCode(1, count, 0x20) && isTypePart(2, count)) {
+            partOffsets.copyWithin(0, 4, count * 2);
+            count -= 2;
         }
         // the selector: the rendered tokens, at the end of the selector builder
         const start = selectorBuilder.length + (selectors > 0 ? 1 : 0);
@@ -39309,7 +41500,10 @@
             }
         }
         // inlined: arena.typeOf(name)
-        if (tokens.length === 0 && arena.dataTypes[name] !== exports.EnumToken.DashedIdenTokenType) {
+        if (tokens.length === 0 &&
+            arena.dataTypes[name] !== exports.EnumToken.DashedIdenTokenType &&
+            // the result of a custom function may be empty: `result: <declaration-value>?`
+            !(parentNam === "function" && equalsIgnoreCase(arena.resolveString(arena.stringValue[name]), "result"))) {
             errors.push({
                 action: "drop",
                 message: "declaration value missing",
@@ -39795,7 +41989,7 @@
                                                 for (let l = 0; l < val.length; l++) {
                                                     if (arena.dataTypes[val[l]] === exports.EnumToken.MathFunctionTokenType &&
                                                         arena.resolveString(arena.stringValue[val[l]]) === "calc") {
-                                                        const value = evaluate(arena, [val[l]]);
+                                                        const value = evaluate$1(arena, [val[l]]);
                                                         if (value.length === 1) {
                                                             arena.copyLocation(value[0], val[l]);
                                                             val[l] = value[0];
@@ -39865,7 +42059,7 @@
                                         for (let l = 0; l < val.length; l++) {
                                             if (arena.dataTypes[val[l]] === exports.EnumToken.MathFunctionTokenType &&
                                                 arena.resolveString(arena.stringValue[val[l]]) === "calc") {
-                                                const value = evaluate(arena, [val[l]]);
+                                                const value = evaluate$1(arena, [val[l]]);
                                                 if (value.length === 1) {
                                                     arena.copyLocation(value[0], val[l]);
                                                     val[l] = value[0];
@@ -41798,6 +43992,8 @@
             computeShorthand: true,
             computeCalcExpression: true,
             inlineCssVariables: false,
+            evaluateMixins: false,
+            keepMixins: false,
             setParent: true,
             removePrefix: false,
             validation: false,
@@ -41843,6 +44039,10 @@
         // @ts-ignore ignore error
         let parensMatch = 0;
         let curlyBracketMatch = 0;
+        // '{' opened inside parentheses and not closed yet: `@apply --mixin({a, b})`. their '}' does not end a block
+        let parensBlockMatch = 0;
+        // the current '{' or '}' belongs to a block opened inside parentheses
+        let parensBlock;
         // tokens are located in the tokenizer source (the imported file when parsing an @import)
         arena.setLocation(ast, tokenizer.sourceId, 0, 0);
         const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
@@ -41875,8 +44075,20 @@
             }
             else if (itemType === exports.EnumToken.EndParensTokenType && parensMatch > 0) {
                 parensMatch--;
+                if (parensMatch === 0) {
+                    parensBlockMatch = 0;
+                }
             }
-            if (itemType === exports.EnumToken.BlockStartTokenType) {
+            parensBlock = false;
+            if (parensMatch > 0 && itemType === exports.EnumToken.BlockStartTokenType) {
+                parensBlockMatch++;
+                parensBlock = true;
+            }
+            else if (parensMatch > 0 && parensBlockMatch > 0 && itemType === exports.EnumToken.BlockEndTokenType) {
+                parensBlockMatch--;
+                parensBlock = true;
+            }
+            else if (itemType === exports.EnumToken.BlockStartTokenType) {
                 curlyBracketMatch++;
             }
             else if (itemType === exports.EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
@@ -41931,7 +44143,9 @@
                 errorStart = errors.length;
                 invalidStart = invalidNodes.length;
             }
-            else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
+            else if (!parensBlock &&
+                (parensMatch === 0 || curlyBracketMatch === 0) &&
+                itemType === exports.EnumToken.BlockEndTokenType) {
                 parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
                 // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
                 arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
@@ -41940,6 +44154,9 @@
                 if (options.removeEmpty &&
                     previousNode != null &&
                     arena.firstChild[previousNode] === 0 &&
+                    // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+                    // an empty mixin or custom function is a definition
+                    !isDefinitionBlock(arena, previousNode) &&
                     arena.lastChild[context] === previousNode) {
                     arena.detach(previousNode);
                 }
@@ -41949,6 +44166,7 @@
                 errorStart = errors.length;
                 invalidStart = invalidNodes.length;
                 parensMatch = 0;
+                parensBlockMatch = 0;
                 curlyBracketMatch = 0;
             }
         }
@@ -41962,6 +44180,15 @@
             }
         }
         const endParseTime = performance.now();
+        // the mixins are evaluated before the nesting rules are expanded: the mixin body is nested in the rule it is
+        // applied to. the imported stylesheets are evaluated with the stylesheet that imports them
+        // the mixins are evaluated once
+        const minifyOptions = options.evaluateMixins ? { ...options, evaluateMixins: false } : options;
+        if (options.evaluateMixins) {
+            // the invalid nodes are not evaluated
+            dropInvalidNodes(arena, invalidNodes, options);
+            EvaluateMixinFeature.evaluate(arena, ast, options);
+        }
         if (options.expandNestingRules) {
             ast = arena.expand(ast);
         }
@@ -42113,26 +44340,12 @@
             }
             nodes = null;
         }
-        if (invalidNodes.length > 0) {
-            for (const node of invalidNodes) {
-                if (options.lenient && arena.flags[node] & exports.EnumAstNodeStatus.Unknown) {
-                    continue;
-                }
-                if (arena.flags[node] &
-                    (exports.EnumAstNodeStatus.Invalid |
-                        exports.EnumAstNodeStatus.Unknown |
-                        exports.EnumAstNodeStatus.Unparsed |
-                        exports.EnumAstNodeStatus.Malformed |
-                        exports.EnumAstNodeStatus.Disallowed)) {
-                    arena.detach(node);
-                }
-            }
-        }
+        dropInvalidNodes(arena, invalidNodes, options);
         if (options.minifyAST) {
             if (arena.firstChild[ast] !== 0) {
                 let passes = options.pass ?? 1;
                 while (passes--) {
-                    minify(arena, ast, options, true, errors, false);
+                    minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
         }
@@ -42710,6 +44923,8 @@
             computeShorthand: true,
             computeCalcExpression: true,
             inlineCssVariables: false,
+            evaluateMixins: false,
+            keepMixins: false,
             setParent: true,
             removePrefix: false,
             validation: false,
@@ -42760,6 +44975,10 @@
         // @ts-ignore ignore error
         let parensMatch = 0;
         let curlyBracketMatch = 0;
+        // '{' opened inside parentheses and not closed yet: `@apply --mixin({a, b})`. their '}' does not end a block
+        let parensBlockMatch = 0;
+        // the current '{' or '}' belongs to a block opened inside parentheses
+        let parensBlock;
         // tokens are located in the tokenizer source (the imported file when parsing an @import)
         arena.setLocation(ast, tokenizer.sourceId, 0, 0);
         const sourceIndex = arena.sourceIndex(tokenizer.sourceId);
@@ -42792,8 +45011,20 @@
             }
             else if (itemType === exports.EnumToken.EndParensTokenType && parensMatch > 0) {
                 parensMatch--;
+                if (parensMatch === 0) {
+                    parensBlockMatch = 0;
+                }
             }
-            if (itemType === exports.EnumToken.BlockStartTokenType) {
+            parensBlock = false;
+            if (parensMatch > 0 && itemType === exports.EnumToken.BlockStartTokenType) {
+                parensBlockMatch++;
+                parensBlock = true;
+            }
+            else if (parensMatch > 0 && parensBlockMatch > 0 && itemType === exports.EnumToken.BlockEndTokenType) {
+                parensBlockMatch--;
+                parensBlock = true;
+            }
+            else if (itemType === exports.EnumToken.BlockStartTokenType) {
                 curlyBracketMatch++;
             }
             else if (itemType === exports.EnumToken.BlockEndTokenType && curlyBracketMatch > 0) {
@@ -42852,7 +45083,9 @@
                 errorStart = errors.length;
                 invalidStart = invalidNodes.length;
             }
-            else if ((parensMatch === 0 || curlyBracketMatch === 0) && itemType === exports.EnumToken.BlockEndTokenType) {
+            else if (!parensBlock &&
+                (parensMatch === 0 || curlyBracketMatch === 0) &&
+                itemType === exports.EnumToken.BlockEndTokenType) {
                 parseNode(arena, tokens, context, options, errors, stats, invalidNodes, parensMatch);
                 // inlined: arena.setSpanEnd(context, arena.getSpanEnd(item))
                 arena.setSpan(context, arena.getSourceId(context), arena.getSpanStart(context), arena.getSpanEnd(item));
@@ -42861,6 +45094,9 @@
                 if (options.removeEmpty &&
                     previousNode != null &&
                     arena.firstChild[previousNode] === 0 &&
+                    // an empty contents block is kept: `@apply --mixin {}` does not use the default contents of the mixin.
+                    // an empty mixin or custom function is a definition
+                    !isDefinitionBlock(arena, previousNode) &&
                     arena.lastChild[context] === previousNode) {
                     arena.detach(previousNode);
                 }
@@ -42870,6 +45106,7 @@
                 errorStart = errors.length;
                 invalidStart = invalidNodes.length;
                 parensMatch = 0;
+                parensBlockMatch = 0;
                 curlyBracketMatch = 0;
             }
         }
@@ -42910,6 +45147,8 @@
                         : new Tokenizer(parseInfo), Object.assign({}, options, {
                         minify: false,
                         setParent: false,
+                        // the mixins are evaluated once the imported stylesheet is merged
+                        evaluateMixins: false,
                         src: options.resolve(url, options.src || options.cwd).relative,
                     }));
                     stats.importedBytesIn += root.stats.bytesIn;
@@ -42934,6 +45173,15 @@
             }));
         }
         const endParseTime = performance.now();
+        // the mixins are evaluated before the nesting rules are expanded: the mixin body is nested in the rule it is
+        // applied to. the imported stylesheets are evaluated with the stylesheet that imports them
+        // the mixins are evaluated once
+        const minifyOptions = options.evaluateMixins ? { ...options, evaluateMixins: false } : options;
+        if (options.evaluateMixins) {
+            // the invalid nodes are not evaluated
+            dropInvalidNodes(arena, invalidNodes, options);
+            EvaluateMixinFeature.evaluate(arena, ast, options);
+        }
         if (options.expandNestingRules) {
             ast = arena.expand(ast);
         }
@@ -43088,26 +45336,12 @@
             }
             nodes = null;
         }
-        if (invalidNodes.length > 0) {
-            for (const node of invalidNodes) {
-                if (options.lenient && arena.flags[node] & exports.EnumAstNodeStatus.Unknown) {
-                    continue;
-                }
-                if (arena.flags[node] &
-                    (exports.EnumAstNodeStatus.Invalid |
-                        exports.EnumAstNodeStatus.Unknown |
-                        exports.EnumAstNodeStatus.Unparsed |
-                        exports.EnumAstNodeStatus.Malformed |
-                        exports.EnumAstNodeStatus.Disallowed)) {
-                    arena.detach(node);
-                }
-            }
-        }
+        dropInvalidNodes(arena, invalidNodes, options);
         if (options.minifyAST) {
             if (arena.firstChild[ast] !== 0) {
                 let passes = options.pass ?? 1;
                 while (passes--) {
-                    minify(arena, ast, options, true, errors, false);
+                    minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
         }
@@ -43216,6 +45450,7 @@
                         source,
                         minify: false,
                         setParent: false,
+                        evaluateMixins: false,
                         src: src.relative,
                     }));
                     // options.parseInfo!.time += parseInfo.time;
@@ -43367,6 +45602,7 @@
                                     : new Tokenizer(createParseInfo(stream, new SourceFile("", [], src.relative))), Object.assign({}, options, {
                                     minify: false,
                                     setParent: false,
+                                    evaluateMixins: false,
                                     src: src.relative,
                                 }));
                                 let srcIndex = options.resolve(src.absolute, resolvedSrc.absolute).relative;
@@ -43927,6 +46163,56 @@
             }
         }
         return null;
+    }
+    /**
+     * detach the invalid nodes: the nodes that are not valid, not parsed, malformed or not allowed. the unknown nodes are
+     * kept in lenient mode
+     * @param arena
+     * @param invalidNodes
+     * @param options
+     */
+    function dropInvalidNodes(arena, invalidNodes, options) {
+        for (const node of invalidNodes) {
+            if (options.lenient && arena.flags[node] & exports.EnumAstNodeStatus.Unknown) {
+                continue;
+            }
+            if (arena.flags[node] &
+                (exports.EnumAstNodeStatus.Invalid |
+                    exports.EnumAstNodeStatus.Unknown |
+                    exports.EnumAstNodeStatus.Unparsed |
+                    exports.EnumAstNodeStatus.Malformed |
+                    exports.EnumAstNodeStatus.Disallowed)) {
+                arena.detach(node);
+            }
+        }
+    }
+    /**
+     * true if the node is an at-rule whose block is kept when it is empty: `@apply --mixin {}`, `@mixin --name {}`,
+     * `@function --name() {}`
+     * @param arena
+     * @param node
+     */
+    function isDefinitionBlock(arena, node) {
+        return (arena.dataTypes[node] === exports.EnumToken.AtRuleNodeType &&
+            (arena.stringEquals(arena.name[node], "apply") ||
+                arena.stringEquals(arena.name[node], "mixin") ||
+                arena.stringEquals(arena.name[node], "function")));
+    }
+    /**
+     * true if a mixin can be defined in the node: the stylesheet, or a conditional group rule (`@media`, `@supports`,
+     * `@container`, `@when`, `@else`) or a cascade layer (`@layer`) that is not nested in a style rule
+     * @param arena
+     * @param node
+     */
+    function isMixinScope(arena, node) {
+        while (node !== 0 && arena.dataTypes[node] !== exports.EnumToken.StyleSheetNodeType) {
+            if (arena.dataTypes[node] !== exports.EnumToken.AtRuleNodeType ||
+                !["media", "supports", "container", "layer", "when", "else"].includes(arena.resolveString(arena.name[node]))) {
+                return false;
+            }
+            node = arena.parents[node];
+        }
+        return true;
     }
     /**
      * @param arena
@@ -44644,7 +46930,9 @@
                 atRuleErrors = result.errors;
                 switch (nam) {
                     case "mixin":
-                        if (contextType !== exports.EnumToken.StyleSheetNodeType) {
+                        // a mixin is defined at the top level of the stylesheet, or in a conditional group rule or a
+                        // cascade layer that is not nested in a style rule
+                        if (!isMixinScope(arena, context)) {
                             atRuleState |= exports.EnumAstNodeStatus.Disallowed;
                             atRuleErrors.push({
                                 action: "drop",
@@ -44658,6 +46946,7 @@
                         }
                         break;
                     case "contents":
+                    case "result":
                         let parent = context;
                         let valid = false;
                         while (parent !== 0) {
@@ -44672,7 +46961,7 @@
                             atRuleState |= exports.EnumAstNodeStatus.Disallowed;
                             atRuleErrors.push({
                                 action: "drop",
-                                message: "contents rule cannot be used outside mixin rule",
+                                message: `${nam} rule cannot be used outside mixin rule`,
                                 // inlined: options.source!.getSourceLocation(arena.getSpanStart(atRule))
                                 location: [
                                     options.source.file,
@@ -44743,6 +47032,42 @@
             node = next;
         }
         return { arena: result.arena, nodes };
+    }
+    /**
+     * Parse a string as the content of a style rule: declarations, nested rules and at-rules. the nested rules are
+     * relative to the style rule (`&`). the nodes are allocated in the arena and detached, the comments are dropped
+     * @param content
+     * @param arena
+     * @param options parser options: `parseColor`
+     *
+     * @internal
+     */
+    function parseRuleContent(content, arena, options = {}) {
+        const source = new SourceFile("", [], "");
+        const result = doParseSync(new Tokenizer(createParseInfo(`.x{${content}}`, source)), {
+            setParent: false,
+            minify: false,
+            validation: false,
+            lenient: true,
+            nestingRules: true,
+            expandNestingRules: false,
+            evaluateMixins: false,
+            parseColor: options.parseColor ?? true,
+            arena,
+            source,
+            sourcesMap: new Map([[source.id, source]]),
+        });
+        const rule = arena.firstChild[result.ast];
+        const nodes = [];
+        for (let node = rule === 0 ? 0 : arena.firstChild[rule]; node !== 0;) {
+            const next = arena.nextSibling[node];
+            if (arena.dataTypes[node] !== exports.EnumToken.CommentNodeType) {
+                arena.detach(node);
+                nodes.push(node);
+            }
+            node = next;
+        }
+        return nodes;
     }
     /**
      * Parse css string and return an array of tokens
@@ -45139,7 +47464,7 @@
             t = new URL(url, currentDirectory);
         }
         else {
-            const path = resolve(url, currentDirectory).absolute;
+            const path = resolve$1(url, currentDirectory).absolute;
             t = new URL(path, self.origin);
         }
         return fetch(t, t.origin !== self.origin ? { mode: "cors" } : {}).then(async (response) => {
@@ -45190,7 +47515,7 @@
         // the options of the caller are not modified
         {
             ...options,
-            resolve,
+            resolve: resolve$1,
             dirname,
             cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
                 ? self.location.pathname
@@ -45240,13 +47565,13 @@
         options.src ??= "";
         options.sourcesMap ??= new Map();
         Object.assign(options, {
-            resolve,
+            resolve: resolve$1,
             dirname,
             cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
                 ? self.location.pathname
                 : dirname(self.location.pathname),
         });
-        options.src = resolve(options.src, options.cwd).relative;
+        options.src = resolve$1(options.src, options.cwd).relative;
         if (options.source == null) {
             const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
             options.sourcesMap.set(source.id, source);
@@ -45375,13 +47700,13 @@
         Object.assign(options, {
             // a custom loader is used to load the imported files
             load: options.load ?? load,
-            resolve,
+            resolve: resolve$1,
             dirname,
             cwd: (options.cwd ?? self.location.pathname.endsWith("/"))
                 ? self.location.pathname
                 : dirname(self.location.pathname),
         });
-        options.src = resolve(options.src, options.cwd).relative;
+        options.src = resolve$1(options.src, options.cwd).relative;
         if (options.source == null) {
             const source = new SourceFile(typeof stream === "string" ? stream : "", [], options.src);
             options.sourcesMap.set(source.id, source);
@@ -45485,7 +47810,7 @@
     exports.parseSyntax = parseSyntax;
     exports.render = render;
     exports.renderValue = renderValue;
-    exports.resolve = resolve;
+    exports.resolve = resolve$1;
     exports.transform = transform;
     exports.transformSync = transformSync;
     exports.version = version;
