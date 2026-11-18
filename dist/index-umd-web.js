@@ -22623,6 +22623,12 @@
             this.functions = functions;
             this.dynamic = dynamic;
         }
+        /**
+         * the arguments see the variables of the call site
+         */
+        get arguments() {
+            return this.dynamic;
+        }
         lookup(name) {
             return this.properties.get(name) ?? null;
         }
@@ -23140,6 +23146,26 @@
             : splitArguments(arena, children).map((arg) => unwrap(arena, arg));
     }
     /**
+     * the definitions visible from a reference (`@apply`, custom function call): a definition is visible in its parent
+     * (the stylesheet, a rule or an at-rule) and in the descendants of its parent. the definitions of the innermost scope
+     * that defines the name are returned: they hide the definitions of the outer scopes
+     * @param arena
+     * @param definitions the definitions of the name
+     * @param site the reference
+     */
+    function resolveDefinitions(arena, definitions, site) {
+        if (definitions == null || definitions.length === 0) {
+            return [];
+        }
+        for (let scope = arena.parents[site]; scope !== 0; scope = arena.parents[scope]) {
+            const result = definitions.filter((definition) => arena.parents[definition.node] === scope);
+            if (result.length > 0) {
+                return result;
+            }
+        }
+        return [];
+    }
+    /**
      * name of a mixin or a custom function definition: `@mixin --name(...)`, `@function --name(...)`
      * @param arena
      * @param node
@@ -23154,15 +23180,14 @@
      * @param node
      * @param name at-rule name: `mixin`, `function`
      * @param parse parse a definition. null when the definition is not valid
-     * @param conditional the node is a conditional group rule or is located in a conditional group rule
      * @param definitions valid definitions by name, in document order
      * @param invalid the definitions that are not valid: they are ignored
      */
-    function collectDefinitions(arena, node, name, parse, conditional, definitions, invalid) {
+    function collectDefinitions(arena, node, name, parse, definitions, invalid) {
         for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
             if (isAtRule(arena, child, name)) {
                 const key = definitionName(arena, child);
-                const definition = key == null ? null : parse(arena, child, conditional);
+                const definition = key == null ? null : parse(arena, child);
                 if (definition == null) {
                     invalid.push(child);
                     continue;
@@ -23173,7 +23198,7 @@
                 definitions.get(key).push(definition);
             }
             else if (isScopeRule(arena, child)) {
-                collectDefinitions(arena, child, name, parse, conditional || !arena.stringEquals(arena.name[child], "layer"), definitions, invalid);
+                collectDefinitions(arena, child, name, parse, definitions, invalid);
             }
         }
         return definitions;
@@ -23204,8 +23229,7 @@
      * @param arena
      * @param ast
      * @param name at-rule name: `mixin`, `function`
-     * @param kept names of the definitions that are kept: they are not evaluated, or they are referenced by a definition
-     * that is kept
+     * @param kept the definitions that are kept
      * @param keep keep the evaluated definitions
      * @param invalid the definitions that are not valid
      */
@@ -23217,7 +23241,7 @@
             if (key == null || invalid.includes(node)) {
                 continue;
             }
-            if (!kept.has(key)) {
+            if (!kept.has(node)) {
                 if (!keep) {
                     // the comments of the prelude are removed: the comments are not nested
                     const comment = arena.createComment(exports.EnumToken.CommentTokenType, `/* @${name} ${arena
@@ -23280,9 +23304,8 @@
      * ```
      * @param arena
      * @param node
-     * @param conditional the function is defined in a conditional group rule
      */
-    function parseFunction(arena, node, conditional) {
+    function parseFunction(arena, node) {
         const tokens = arena.tokens(node);
         const reference = firstToken(arena, tokens);
         if (reference == null || arena.dataTypes[reference] !== exports.EnumToken.CustomFunctionTokenType) {
@@ -23304,7 +23327,6 @@
             name: arena.resolveString(arena.stringValue[reference]),
             parameters,
             returns,
-            conditional,
             conditionalBody: false,
             locals: new Map(),
             result: null,
@@ -23360,11 +23382,11 @@
         definitions;
         options;
         /**
-         * names of the functions that have been evaluated
+         * the function definitions that have been evaluated
          */
         evaluated = new Set();
         /**
-         * names of the functions whose calls have not been evaluated
+         * the function definitions referenced by the calls that have not been evaluated: they are kept
          */
         pending = new Set();
         /**
@@ -23372,9 +23394,19 @@
          */
         count = 0;
         /**
+         * number of calls that are not evaluated: the calls of the functions that are defined but cannot be evaluated.
+         * the `@apply` rules, the functions and the declarations that contain them are not evaluated
+         */
+        failed = 0;
+        /**
          * the calls are located in a custom property declaration
          */
         customProperty = false;
+        /**
+         * location of the calls: the declaration or the `@apply` rule that contains them. the functions visible from it
+         * are evaluated, see {@link resolveDefinitions}
+         */
+        site = 0;
         /**
          * functions being evaluated
          */
@@ -23393,30 +23425,41 @@
         }
         call(arena, token, caller, descendant) {
             const name = arena.resolveString(arena.stringValue[token]);
-            const definitions = this.definitions.get(name);
+            const all = this.definitions.get(name);
             // the function is not defined in the stylesheet
-            if (definitions == null) {
+            if (all == null) {
                 return undefined;
             }
-            // the function is defined only once
+            // the functions visible from the call: a function defined in a rule or an at-rule is not visible outside of it.
+            // the function is defined only once in the innermost scope that defines it
+            const definitions = resolveDefinitions(arena, all, this.site);
             const definition = definitions.length === 1 ? definitions[0] : null;
             if (definition == null ||
-                definition.conditional ||
                 definition.conditionalBody ||
                 this.stack.length >= MAX_DEPTH$1 ||
                 this.isRecursive(arena, name) ||
                 (this.customProperty &&
                     (definition.returns != null ||
                         definition.parameters.some((parameter) => parameter.syntax != null)))) {
-                this.pending.add(name);
+                // the visible definitions are kept
+                for (const visible of definitions) {
+                    this.pending.add(visible.node);
+                }
+                this.failed++;
                 return undefined;
             }
-            const result = this.evaluate(arena, definition, token, caller, descendant);
+            const failed = this.failed;
+            let result = this.evaluate(arena, definition, token, caller, descendant);
+            // a call of the function body is not evaluated: the function is not evaluated
+            if (result !== undefined && this.failed !== failed) {
+                result = undefined;
+            }
             if (result === undefined) {
-                this.pending.add(name);
+                this.pending.add(definition.node);
+                this.failed++;
             }
             else {
-                this.evaluated.add(name);
+                this.evaluated.add(definition.node);
                 this.count++;
             }
             return result;
@@ -23439,12 +23482,13 @@
             const locals = new Map();
             // the variables of the call site: the custom properties of the rule, or the variables of the calling function
             const context = caller.dynamic ?? caller;
+            const argumentScope = caller.arguments ?? caller;
             const scope = new FunctionScope(locals, values, context, this);
             for (let index = 0; index < definition.parameters.length; index++) {
                 const parameter = definition.parameters[index];
                 if (index < args.length) {
                     // the arguments are evaluated in the scope of the call
-                    const text = substitute(arena, args[index], context, descendant);
+                    const text = substitute(arena, args[index], argumentScope, descendant);
                     if (text === null) {
                         return undefined;
                     }
@@ -23590,10 +23634,12 @@
         // the rule: the call site
         const scope = new RuleScope(new Map(), registry, new RuleScope(ruleProperties(arena, declaration) ?? new Map(), registry));
         const count = registry.count;
+        const failed = registry.failed;
         registry.customProperty = isCustomProperty(arena, declaration);
+        registry.site = declaration;
         const value = substitute(arena, tokens, scope, false);
-        // no call has been evaluated, or the value is not valid: the declaration is left as is
-        if (registry.count === count || value === null) {
+        // no call has been evaluated, a call is not evaluated or the value is not valid: the declaration is left as is
+        if (registry.count === count || registry.failed !== failed || value === null) {
             return;
         }
         const nodes = parseDeclarations(arena.resolveString(arena.name[declaration]) + ":" + value, arena).nodes.filter((node) => arena.dataTypes[node] === exports.EnumToken.DeclarationNodeType);
@@ -23627,6 +23673,7 @@
         properties;
         contents;
         names;
+        registry;
         /**
          * mixin arguments and default values
          */
@@ -23644,16 +23691,24 @@
          */
         failed = false;
         /**
+         * the variables visible from the bodies of the custom functions called by the mixin body: the custom properties
+         * of the rule. the private variables are not visible
+         */
+        dynamic;
+        /**
          * @param name mixin name
          * @param properties custom properties declared in the rule the mixin is applied to
          * @param contents serialized contents block of the `@apply` rule. null when the `@apply` rule has no contents block
          * @param names names of the custom properties of the stylesheet
+         * @param registry the custom function calls of the mixin body are evaluated. null when they are not evaluated
          */
-        constructor(name, properties, contents, names) {
+        constructor(name, properties, contents, names, registry = null) {
             this.name = name;
             this.properties = properties;
             this.contents = contents;
             this.names = names;
+            this.registry = registry;
+            this.dynamic = new RuleScope(properties, registry);
         }
         /**
          * variable that references the registered custom property of a typed argument. null when the argument cannot be
@@ -23695,9 +23750,17 @@
         application;
         masked;
         /**
-         * the custom function calls of the mixin body are evaluated once the mixin is applied
+         * the custom function calls of the mixin body are evaluated with the mixin
          */
-        functions = null;
+        get functions() {
+            return this.application.registry;
+        }
+        /**
+         * the custom functions see the custom properties of the rule, not the private variables
+         */
+        get dynamic() {
+            return this.application.dynamic;
+        }
         /**
          * @param levels variables declared by the mixin body and the rules that contain the current node, outer first
          * @param application the mixin application
@@ -23944,6 +24007,9 @@
      */
     function serializeDeclaration(arena, declaration, scope) {
         const name = arena.resolveString(arena.name[declaration]);
+        if (scope.application.registry != null) {
+            scope.application.registry.customProperty = arena.startsWith(declaration, "nam", "--");
+        }
         // a custom property is inherited by the descendants: a typed argument is the value computed on the element
         const value = substitute(arena, arena.tokens(declaration), scope, scope.descendant || arena.startsWith(declaration, "nam", "--"));
         // an invalid value is left as is
@@ -24107,9 +24173,8 @@
      * parse a mixin definition. null if the prelude is not valid
      * @param arena
      * @param node
-     * @param conditional the mixin is defined in a conditional group rule
      */
-    function parseMixin(arena, node, conditional) {
+    function parseMixin(arena, node) {
         const reference = firstToken(arena, arena.tokens(node));
         if (reference == null) {
             return null;
@@ -24128,7 +24193,6 @@
             node,
             name: arena.resolveString(arena.stringValue[reference]),
             parameters,
-            conditional,
         };
     }
     /**
@@ -24260,53 +24324,60 @@
         if (reference == null) {
             return null;
         }
-        const definitions = state.definitions.get(reference.name) ?? [];
-        // the mixin is defined only once
+        // the mixins visible from the `@apply` rule: a mixin defined in a rule or an at-rule is not visible outside of it.
+        // the mixin is defined only once in the innermost scope that defines it
+        const definitions = resolveDefinitions(arena, state.definitions.get(reference.name), node);
         const definition = definitions.length === 1 ? definitions[0] : null;
         const properties = ruleProperties(arena, node);
         const chain = state.chains.get(node) ?? [];
         if (definition == null ||
-            definition.conditional ||
             properties == null ||
             // a mixin that applies itself
             isRecursive(arena, reference.name, state) ||
             chain.includes(reference.name) ||
             chain.length >= MAX_DEPTH) {
-            state.pending.add(reference.name);
+            // the visible definitions are kept
+            for (const visible of definitions) {
+                state.pending.add(visible.node);
+            }
             return null;
         }
         // the contents block is a declaration list. its variables are not private variables: they are not substituted
         const contents = arena.flags[node] & exports.EnumAstNodeStatus.HasChildren
             ? serializeDeclarations(arena, node, new MixinScope([{ privates: new Map(), relation: SELF }], new MixinApplication(reference.name, new Map(), null, null), new Set()))
             : null;
-        const application = new MixinApplication(reference.name, properties, contents, state.names);
+        const application = new MixinApplication(reference.name, properties, contents, state.names, state.registry);
         // the arguments are evaluated in the context of the `@apply` rule
         const caller = new MixinScope([{ privates: new Map(), relation: SELF }], new MixinApplication(reference.name, properties, null, null), new Set());
         const scope = new MixinScope([{ privates: new Map(), relation: SELF }], application, collectMasked(arena, definition.node));
         if (!bindParameters(arena, definition, reference.args, caller, scope, state.options)) {
-            state.pending.add(reference.name);
+            state.pending.add(definition.node);
             return null;
         }
+        // the custom functions called by the mixin body are evaluated in the context of the `@apply` rule
+        state.registry.site = node;
+        const failed = state.registry.failed;
         let css = serializeBlock(arena, definition.node, scope);
-        // a typed argument cannot be registered
-        if (application.failed) {
-            state.pending.add(reference.name);
+        // a typed argument cannot be registered, or a custom function call is not evaluated
+        if (application.failed || state.registry.failed !== failed) {
+            state.pending.add(definition.node);
             return null;
         }
-        state.evaluated.add(reference.name);
         if (application.registered.length > 0) {
             // the top level node that contains the `@apply` rule
             let top = node;
             while (arena.parents[top] !== state.ast && arena.parents[top] !== 0) {
                 top = arena.parents[top];
             }
+            let declarations = "";
             for (const property of application.registered) {
                 const registered = registerProperty(arena, property);
                 locate(arena, registered, node);
                 arena.insertBefore(top, registered);
                 // the value is computed on the element the mixin is applied to
-                css = property.name + ":" + property.value + ";" + css;
+                declarations += property.name + ":" + property.value + ";";
             }
+            css = declarations + css;
         }
         // the body is parsed as the content of the rule the mixin is applied to: '&' is that rule
         const nodes = parseRuleContent(css, arena, state.options);
@@ -24325,81 +24396,54 @@
         return nodes;
     }
     /**
-     * names of the mixins applied by the `@apply` rules of a node and its descendants
+     * the definitions that are kept:
+     * - the mixins and the custom functions referenced by an `@apply` rule or a call that is not evaluated
+     * - the custom functions that are not called
+     * - the definitions referenced by the definitions that are kept or not valid: a mixin that is kept may apply a mixin or
+     *   call a function that is evaluated. the references are resolved from their location, see {@link resolveDefinitions}
+     *
+     * the mixins that are not referenced are dropped
      * @param arena
-     * @param node
-     * @param result
-     */
-    function appliedMixins(arena, node, result) {
-        for (const id of arena.walk(node)) {
-            if (id !== node && isAtRule(arena, id, "apply")) {
-                const reference = parseApply(arena, id);
-                if (reference != null) {
-                    result.add(reference.name);
-                }
-            }
-        }
-    }
-    /**
-     * names of the custom functions called by the values of a node and its descendants
-     * @param arena
-     * @param node
-     * @param result
-     */
-    function calledFunctions(arena, node, result) {
-        for (const id of arena.walk(node)) {
-            for (const call of findCalls(arena, arena.tokens(id))) {
-                result.add(arena.resolveString(arena.stringValue[call]));
-            }
-        }
-    }
-    /**
-     * names of the definitions that are kept: the mixins referenced by an `@apply` rule that is not evaluated, the
-     * custom functions that are not evaluated, and the definitions referenced by the definitions that are kept or not
-     * valid (a mixin that is kept may apply a mixin or call a function that is evaluated). the mixins that are not
-     * referenced are dropped
-     * @param arena
-     * @param mixins
-     * @param functions
      * @param state
      * @param registry
      */
-    function keptDefinitions(arena, mixins, functions, state, registry) {
-        const keptMixins = new Set();
-        const keptFunctions = new Set();
-        // the mixins that are not valid are left as is: the definitions they reference are kept
-        for (const node of state.invalid) {
-            appliedMixins(arena, node, keptMixins);
-            calledFunctions(arena, node, keptFunctions);
-        }
-        // the mixins that are not referenced are dropped: a mixin is kept when an `@apply` rule that references it is not
-        // evaluated
-        for (const name of mixins.keys()) {
-            if (state.pending.has(name)) {
-                keptMixins.add(name);
-            }
-        }
-        for (const name of functions.keys()) {
-            if (!registry.evaluated.has(name) || registry.pending.has(name)) {
-                keptFunctions.add(name);
-            }
-        }
-        let size;
-        do {
-            size = keptMixins.size + keptFunctions.size;
-            for (const name of [...keptMixins]) {
-                for (const definition of mixins.get(name) ?? []) {
-                    appliedMixins(arena, definition.node, keptMixins);
-                    calledFunctions(arena, definition.node, keptFunctions);
+    function keptDefinitions(arena, state, registry) {
+        const kept = new Set([...state.pending, ...registry.pending]);
+        for (const definitions of registry.definitions.values()) {
+            for (const definition of definitions) {
+                if (!registry.evaluated.has(definition.node)) {
+                    kept.add(definition.node);
                 }
             }
-            for (const name of [...keptFunctions]) {
-                for (const definition of functions.get(name) ?? []) {
-                    calledFunctions(arena, definition.node, keptFunctions);
+        }
+        const queue = [...kept, ...state.invalid];
+        while (queue.length > 0) {
+            const node = queue.pop();
+            const referenced = [];
+            for (const id of arena.walk(node)) {
+                if (id !== node && isAtRule(arena, id, "apply")) {
+                    const reference = parseApply(arena, id);
+                    if (reference != null) {
+                        for (const definition of resolveDefinitions(arena, state.definitions.get(reference.name), id)) {
+                            referenced.push(definition.node);
+                        }
+                    }
+                }
+                for (const call of findCalls(arena, arena.tokens(id))) {
+                    const name = arena.resolveString(arena.stringValue[call]);
+                    for (const definition of resolveDefinitions(arena, registry.definitions.get(name), id)) {
+                        referenced.push(definition.node);
+                    }
                 }
             }
-        } while (keptMixins.size + keptFunctions.size !== size);
-        return { mixins: keptMixins, functions: keptFunctions };
+            for (const definition of referenced) {
+                if (!kept.has(definition)) {
+                    kept.add(definition);
+                    queue.push(definition);
+                }
+            }
+        }
+        return kept;
     }
     /**
      * evaluate the mixins and the custom functions of a stylesheet
@@ -24410,18 +24454,18 @@
     function evaluate(arena, ast, options) {
         const invalidMixins = [];
         const invalidFunctions = [];
+        const registry = new FunctionRegistry(collectDefinitions(arena, ast, "function", parseFunction, new Map(), invalidFunctions), options);
         const state = {
-            definitions: collectDefinitions(arena, ast, "mixin", parseMixin, false, new Map(), invalidMixins),
+            definitions: collectDefinitions(arena, ast, "mixin", parseMixin, new Map(), invalidMixins),
             invalid: invalidMixins,
-            evaluated: new Set(),
             pending: new Set(),
             chains: new Map(),
             recursive: new Map(),
             ast,
+            registry,
             names: new Set(),
             options,
         };
-        const registry = new FunctionRegistry(collectDefinitions(arena, ast, "function", parseFunction, false, new Map(), invalidFunctions), options);
         // the custom functions that are not valid are dropped
         for (const node of invalidFunctions) {
             arena.detach(node);
@@ -24472,9 +24516,9 @@
         if (registry.definitions.size > 0) {
             evaluateFunctions(arena, ast, registry);
         }
-        const kept = keptDefinitions(arena, state.definitions, registry.definitions, state, registry);
-        finalizeDefinitions(arena, ast, "mixin", kept.mixins, !!options.keepMixins, invalidMixins);
-        finalizeDefinitions(arena, ast, "function", kept.functions, !!options.keepMixins, []);
+        const kept = keptDefinitions(arena, state, registry);
+        finalizeDefinitions(arena, ast, "mixin", kept, !!options.keepMixins, invalidMixins);
+        finalizeDefinitions(arena, ast, "function", kept, !!options.keepMixins, []);
     }
     /**
      * Evaluate the css mixins and the custom functions: the `@apply` rules are replaced by the body of the mixin they

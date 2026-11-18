@@ -3,7 +3,7 @@ import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
 import type { AstArena } from "../arena.ts";
-import { moveResult } from "./utils.ts";
+import { moveResult } from "../mixins/utils.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";

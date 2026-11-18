@@ -19,7 +19,7 @@ import type { AstArena } from "./arena.ts";
 import { StringBuilder, StringFlag, StringSource } from "./strings.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
 import { FeatureWalkMode } from "./features/type.ts";
-import { moveResult } from "./features/utils.ts";
+import { moveResult } from "./mixins/utils.ts";
 import { trimArray } from "../validation/match.ts";
 import { combinators } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";

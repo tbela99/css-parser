@@ -54,18 +54,47 @@ button {
 Evaluate [CSS mixins](https://drafts.csswg.org/css-mixins-1/#mixin-rule): the `@apply` rules are replaced by the body of the mixin they reference.
 This feature is disabled by default. It is enabled using `{evaluateMixins: true}`.
 
+The custom properties visible to the mixin body are private variables, they are substituted with a copy of their value. By order of precedence:
+- the custom properties declared with `@private` inside the mixin body
+- the mixin arguments and the default values of the mixin parameters
+- the custom properties declared in the rule that contains the `@apply` rule
+
+`&` represents the rule that contains the `@apply` rule. The private variables of the mixin are only visible to that rule and its descendants (`& *`, `& > *`, ...).
+They are undefined for its siblings (`& + *`, `& ~ *`): the fallback of `var()` is used.
+In the nested rules, the private variables of the parent rule (`@private`) are also private variables of its nested rules. Each nested rule has its own context: its private variables are not visible from the other nested rules.
+
 A value that is not valid (a variable that is not defined and has no fallback, a dependency cycle) is left as is.
 A mixin that is not valid (its parameters are not unique, ...) is ignored: it is left as is, the `@apply` rules that reference it are not evaluated, the mixins it references are kept.
 
 An `@apply` rule is evaluated when:
-- the mixin is defined only once. A mixin can be defined at the top level of the stylesheet, in a cascade layer (`@layer`), or in a conditional group rule (`@media`, `@supports`, `@container`, `@when`, `@else`). A mixin defined in a conditional group rule is not evaluated
+- the mixin is visible from the `@apply` rule and it is defined only once in its scope. A mixin can be defined at the top level of the stylesheet, in a cascade layer (`@layer`), or in a conditional rule (`@media`, `@supports`, `@container`, `@when`, `@else`). A mixin defined in a rule or an at-rule is only visible inside of it, it hides the mixins with the same name of the outer scopes. The mixins that contain conditional rules are evaluated
 - the arguments match the mixin parameters: there are no extra arguments, every parameter without a default value has an argument, and the arguments and the default values match the parameter type (`--color <color>`, `--size type(<length> | auto)`). An argument that references a variable (`var()`, `env()`, ...) is not checked
 - the mixin does not apply itself, directly or through other mixins
+- the custom functions called by the mixin body are evaluated
 
-Otherwise, the `@apply` rule is left as is. 
+Otherwise, the `@apply` rule is left as is. The comments and the whitespace in the arguments are ignored: `@apply --mixin(/* comment */)` applies the mixin without arguments.
 
 The evaluated mixins and the mixins that are not referenced are dropped and replaced with a comment. They are kept using `{keepMixins: true}`.
 The mixins referenced by an `@apply` rule that is not evaluated are kept, they are reduced to their last definition in the same scope.
+
+Example
+```css
+@media (min-width: 100px) {
+  @mixin --only-descs(--arg) {
+    color: var(--arg);
+  }
+  .foo {
+    /* evaluated */
+    @apply --only-descs(green);
+  }
+}
+.s {
+  /* not evaluated: --only-descs is only visible in @media (min-width: 100px) {} */
+  @apply --only-descs(brown);
+}
+```
+
+Typescript code
 
 ```ts
 import {transform} from '@tbela99/css-parser';
@@ -215,19 +244,26 @@ result:
 
 The width of `.parent > .child` is `100px`: `--same-size-size-1` is computed on `.parent`.
 
-## CSS custom functions (experimental)
+## CSS custom functions
 
 Evaluate [CSS custom functions](https://drafts.csswg.org/css-mixins-1/#defining-custom-functions): a custom function call is replaced by the result of the function, like `var()` is replaced by the value of a custom property.
 This feature is enabled using `{evaluateMixins: true}`.
 
+The `var()` functions of the function body reference, by order of precedence:
+- the local variables: the custom properties declared in the function body. A local variable declared with `initial` has the value of the parameter with the same name (the argument or the default value), a local variable declared with `inherit` (or `unset`) has the value of the variable with the same name in the calling context
+- the arguments and the default values of the parameters
+- the local variables and the arguments of the calling functions
+- the custom properties of the call site: the custom properties declared by the rule that calls the function
+- otherwise the `var()` function is kept, the browser evaluates it on the element that uses the function
+
 A call is evaluated when:
-- the function is defined only once, outside conditional group rules
-- the function body does not contain conditional rules (`@media`, `@supports`, ...)
+- the function is visible from the call and it is defined only once in its scope. A function defined in a rule or an at-rule (`@media`, `@supports`, `@layer`, ...) is only visible inside of it, it hides the functions with the same name of the outer scopes
+- the function body does not contain conditional rules (`@media`, `@supports`, `@container`, `@when`, `@else`)
 - the arguments match the parameters: there are no extra arguments, every parameter without a default value has an argument, the arguments, the default values and the result match their types
 - the function does not call itself, directly or through other functions
 - the call is not located in a custom property declaration, or the function is not typed: the value of a typed argument or result is computed on the element that declares the custom property
 
-Otherwise, the call is left as is, as well as a call that returns an invalid value or no value.
+Otherwise, the call is left as is, as well as a call that returns an invalid value or no value. A call that is not evaluated makes the declaration, the function and the mixin that contain it fail: they are not evaluated.
 A function whose parameters contain the same name more than once is not valid: it is dropped. The custom functions are not modified when the feature is disabled.
 
 ```css

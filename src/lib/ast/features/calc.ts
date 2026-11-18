@@ -6,7 +6,7 @@ import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs, isFunctionType } from "../../syntax/constants.ts";
 import { ValueWalker } from "../walk.ts";
-import { isInTemplate } from "./utils.ts";
+import { isInTemplate } from "../mixins/utils.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);

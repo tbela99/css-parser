@@ -12,19 +12,19 @@
 - [x] minifier: the conditional rules of a `@function` were removed when they were placed before the last `result`: they are never removed
 - [x] minifier: the `result` descriptors of a `@function` were only deduplicated with `{validation: true}`: `@function --mypi() { result: 3; result: 3.14; }` -> `@function --mypi(){result:3.14}`
 - [x] an empty `@function` or `@mixin` was removed with `removeEmpty`, and a `@function` with an empty result (`result: ;`) was dropped: they are valid definitions
-- [x] the nested rules of a `@mixin` body were dropped: `@mixin --m { & + * { color: red } }`
-- [x] a `{}` block inside parentheses ended the current block: `@apply --mixin({a, b})`, `@mixin --m(--a: {a, b})`
-- [x] the nesting rules expansion dropped the at-rules without a block: `.a { @apply --mixin; }`. the `@mixin` body is not expanded
 - [x] a declaration that is not `!important` no longer overrides a previous `!important` declaration of the same property: `.a{color:red !important;color:blue}` -> `.a{color:red!important}`
 - [x] minifier: the merge of two rules is kept only when the output is smaller (or has the same size and removes a rule). the merge of a rule into a rule that keeps some declarations repeated the selector of that rule: `html{margin:0}body,div,...{margin:0;font:inherit}` became `html,body,div,...{margin:0}body,div,...{font:inherit}`. the minified output
 - [x] minifier: `text-emphasis` declarations threw `Cannot read properties of undefined (reading 'includes')` (`text-emphasis-color` has no keyword)
 - [x] `parse()`, `parseSync()`, `transform()`, `transformSync()` and `render()` no longer modify the options object of the caller: a reused options object kept the source and the code units of the first input, and its validation (sync api) traversed them at every call. the sync api options check only traverses the plain objects and the arrays of `blueprint.css` was larger than the output of the fast mode (`minify: false`)
 
 ## Feature
-- [x] evaluate css mixins with `{evaluateMixins: true}`: the `@apply` rules are replaced by the mixin body, the private variables (`@private`, mixin arguments, custom properties of the rule) are substituted https://drafts.csswg.org/css-mixins-1/#mixin-rule
-- [x] minification: `@apply --mixin()` is minified to `@apply --mixin`, the comments of the arguments are ignored
+- [x] experimental: evaluate css mixins with `{evaluateMixins: true}`: the `@apply` rules are replaced by the mixin body, the private variables (`@private`, mixin arguments, custom properties of the rule) are substituted https://drafts.csswg.org/css-mixins-1/#mixin-rule
+- [x] minification: `@apply --mixin()` is minified to `@apply --mixin`
 - [x] the evaluated mixins and the mixins that are not referenced are replaced with a comment, they are kept with `{keepMixins: true}`
 - [x] a mixin can be defined in a cascade layer or a conditional group rule that is not nested in a style rule
+- [x] custom functions: a call that is not evaluated makes the declaration, the custom function and the mixin that contain it fail, they are not evaluated
+- [x] custom functions that contain conditional rules (`@media`, `@supports`, `@container`, `@when`, `@else`) are not evaluated
+- [x] mixins and custom functions: a definition located in a rule or an at-rule is only visible inside of it, it hides the definitions with the same name of the outer scopes. a reference that does not see a definition is not evaluated
 - [x] mixins: `@contents` is replaced with a copy of the contents block of the `@apply` rule, or with its default contents. `@result` is supported
 - [x] mixins: the value of a typed argument is computed on the element the mixin is applied to, using a registered custom property (`@property`) when a descendant references it
 - [x] evaluate the custom functions with `{evaluateMixins: true}`: the custom function calls (`--fn(1px)`) are replaced by the result of the function

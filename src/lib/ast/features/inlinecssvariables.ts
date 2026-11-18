@@ -15,7 +15,7 @@ import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
 import { type AstArena, TokenField } from "../arena.ts";
 import { ValueWalker } from "../walk.ts";
-import { isInTemplate } from "./utils.ts";
+import { isInTemplate } from "../mixins/utils.ts";
 
 /**
  * inline a binary expression into a parens token: (l op r)
