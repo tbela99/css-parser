@@ -84,7 +84,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
     const colors: Token[] = [];
 
     if (arena.dataTypes[args[i]] === EnumToken.IdenTokenType) {
-        if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "in")) {
+        if (!equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i++]]), "in")) {
             return null;
         }
 
@@ -93,9 +93,9 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         }
 
         if (isRectangularOrthogonalColorspace(arena, args[i])) {
-            colorSpace = arena.strings[arena.stringValue[args[i++]]];
+            colorSpace = arena.resolveString(arena.stringValue[args[i++]]);
         } else if (isPolarColorspace(arena, args[i])) {
-            colorSpace = arena.strings[arena.stringValue[args[i++]]];
+            colorSpace = arena.resolveString(arena.stringValue[args[i++]]);
 
             if (
                 arena.dataTypes[args[i]] !== EnumToken.IdenTokenType &&
@@ -106,13 +106,13 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
 
             if (
                 arena.dataTypes[args[i]] === EnumToken.IdenTokenType &&
-                !equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "hue")
+                !equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i]]), "hue")
             ) {
                 if (arena.dataTypes[args[i]] !== EnumToken.IdenTokenType) {
                     return null;
                 }
 
-                hueInterpolationMethod = arena.strings[arena.stringValue[args[i++]]];
+                hueInterpolationMethod = arena.resolveString(arena.stringValue[args[i++]]);
 
                 switch (hueInterpolationMethod) {
                     case "increasing":
@@ -124,7 +124,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
                         return null;
                 }
 
-                if (!equalsIgnoreCase(arena.strings[arena.stringValue[args[i++]]], "hue")) {
+                if (!equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i++]]), "hue")) {
                     return null;
                 }
             }
@@ -138,7 +138,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
             ColorType.DPSYS === arena.colorType[args[i]] ||
             ColorType.NON_STD === arena.colorType[args[i]] ||
             ColorType.CUSTOM_COLOR === arena.colorType[args[i]] ||
-            equalsIgnoreCase(arena.strings[arena.stringValue[args[i]]], "currentcolor")
+            equalsIgnoreCase(arena.resolveString(arena.stringValue[args[i]]), "currentcolor")
         ) {
             return null;
         }
@@ -311,7 +311,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
     if (
         colorComponents[0][offset1 + 3] != null &&
         arena.dataTypes[colorComponents[0][offset1 + 3]] === EnumToken.IdenTokenType &&
-        arena.strings[arena.stringValue[colorComponents[0][offset1 + 3]]] === "none" &&
+        arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 3]]) === "none" &&
         colorComponents[1].length === offset1 + 4
     ) {
         // fix powerless alpha for last color if previous color has alpha
@@ -327,7 +327,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (stack[stack.length - 1].color[0] === 0 &&
                 arena.dataTypes[colorComponents[0][offset1]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[0][offset1]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[0][offset1]]) === "none") ||
             arena.flags[colorComponents[0][0]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             stack[stack.length - 1].color[0] = stack[stack.length - 2].color[0]!;
@@ -335,7 +335,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (stack[stack.length - 1].color[1] === 0 &&
                 arena.dataTypes[colorComponents[0][offset1 + 1]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[0][offset1 + 1]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 1]]) === "none") ||
             arena.flags[colorComponents[0][1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             stack[stack.length - 1].color[1] = stack[stack.length - 2].color[1]!;
@@ -343,7 +343,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (stack[stack.length - 1].color[2] === 0 &&
                 arena.dataTypes[colorComponents[0][offset1 + 2]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[0][offset1 + 2]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[0][offset1 + 2]]) === "none") ||
             arena.flags[colorComponents[0][2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (stack[stack.length - 1].color[1] === 0 ||
@@ -356,7 +356,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         // }
     }
 
-    // console.error([arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType, arena.strings[arena.stringValue[colorComponents[0][offset1]]] == "none"]);
+    // console.error([arena.dataTypes[colorComponents[0][offset1]] == EnumToken.IdenTokenType, arena.resolveString(arena.stringValue[colorComponents[0][offset1]]) == "none"]);
     // console.error(isLCHOrOKLCH, colorComponents, stack);
 
     while (stack.length > 1) {
@@ -369,7 +369,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             colorComponents[currentIndex][offset1 + 3] != null &&
             arena.dataTypes[colorComponents[currentIndex][offset1 + 3]] === EnumToken.IdenTokenType &&
-            arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 3]]] === "none"
+            arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 3]]) === "none"
         ) {
             // fix powerless alpha for last color if previous color has alpha
             r2.color[3] = r1.color[3];
@@ -379,7 +379,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (r2.color[0] === 0 &&
                 arena.dataTypes[colorComponents[currentIndex][offset1]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             r2.color[0] = r1.color[0];
@@ -387,7 +387,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (r2.color[1] === 0 &&
                 arena.dataTypes[colorComponents[currentIndex][offset1 + 1]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 1]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 1]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1 + 1]] & EnumAstNodeStatus.PowerlessColorComponent
         ) {
             r2.color[1] = r1.color[1];
@@ -395,7 +395,7 @@ export function colorMix(arena: AstArena, ...args: Token[]): Token | null {
         if (
             (r2.color[2] === 0 &&
                 arena.dataTypes[colorComponents[currentIndex][offset1 + 2]] === EnumToken.IdenTokenType &&
-                arena.strings[arena.stringValue[colorComponents[currentIndex][offset1 + 2]]] === "none") ||
+                arena.resolveString(arena.stringValue[colorComponents[currentIndex][offset1 + 2]]) === "none") ||
             arena.flags[colorComponents[currentIndex][offset1 + 2]] & EnumAstNodeStatus.PowerlessColorComponent ||
             (isLCHOrOKLCH &&
                 (r2.color[1] === 0 ||

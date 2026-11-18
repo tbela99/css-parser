@@ -8,7 +8,7 @@ import { ColorType } from "../../../ast/types.ts";
  * @param color
  */
 export function getColorType(arena: AstArena, color: Token): ColorType | null {
-    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.strings[arena.unit[color]] === "rel") {
+    if (arena.colorType[color] === ColorType.COLOR_MIX || arena.resolveString(arena.unit[color]) === "rel") {
         const token: Token | null = arena.getTokenAt(color, 2);
 
         if (token == null) {
@@ -17,7 +17,7 @@ export function getColorType(arena: AstArena, color: Token): ColorType | null {
 
         return arena.colorType[color] === ColorType.COLOR_MIX
             ? (ColorType[
-                  arena.strings[arena.stringValue[token]]
+                  arena.resolveString(arena.stringValue[token])
                       ?.toUpperCase?.()
                       ?.replace?.("-", "_") as keyof typeof ColorType
               ] as ColorType)

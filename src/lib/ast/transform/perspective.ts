@@ -1,10 +1,18 @@
-import { identity, multiply } from "./utils.ts";
+import { multiplyInto, setIdentity } from "./utils.ts";
 import type { Matrix } from "./type.d.ts";
 
-export function perspective(x: number | "none", from: Matrix): Matrix {
-    const matrix: Matrix = identity();
+/**
+ * the perspective matrix. the function multiplies the matrix it receives in place: `from = from × perspective`
+ */
+const matrix: Matrix = new Float64Array(16);
 
-    matrix[2 * 4 + 3] = x == "none" ? 0 : x === 0 ? Number.NEGATIVE_INFINITY : -1 / x;
+/**
+ * @param x distance, `null` for `none`
+ * @param from
+ */
+export function perspective(x: number | null, from: Matrix): Matrix {
+    setIdentity(matrix);
+    matrix[2 * 4 + 3] = x === null ? 0 : x === 0 ? Number.NEGATIVE_INFINITY : -1 / x;
 
-    return multiply(from, matrix);
+    return multiplyInto(from, matrix, from);
 }

@@ -11,7 +11,7 @@ export function parseAtRuleFontFeatureValues(
     context: Token,
     options: ParserOptions = {},
 ) {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[context]));
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
 
     trimArray(arena, stream);

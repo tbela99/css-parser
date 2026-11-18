@@ -134,16 +134,29 @@ export class PropertyList {
     protected memo: DeclarationMemo;
 
     /**
+     * syntaxes of the descriptors of the at-rule that contains the declarations: `result` in `@function`. the
+     * declarations that are not validated are validated with them
+     */
+    protected descriptors: Record<string, ValidationToken[]> | null;
+
+    /**
      *
      * @param arena
      * @param options
      * @param memo keys shared by the lists that use the same arena
+     * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
      */
-    constructor(arena: AstArena, options: PropertyListOptions = {}, memo: DeclarationMemo | null = null) {
+    constructor(
+        arena: AstArena,
+        options: PropertyListOptions = {},
+        memo: DeclarationMemo | null = null,
+        descriptors: Record<string, ValidationToken[]> | null = null,
+    ) {
         this.arena = arena;
         this.options = options;
         this.declarations = new Map<string, AstNode | PropertySet | PropertyMap>();
         this.memo = memo ?? new DeclarationMemo();
+        this.descriptors = descriptors;
     }
 
     /**
@@ -158,7 +171,7 @@ export class PropertyList {
         name =
             arena.dataTypes[declaration] !== EnumToken.DeclarationNodeType
                 ? null
-                : arena.strings[arena.name[declaration]];
+                : arena.resolveString(arena.name[declaration]);
 
         // do not compute shorthand for invalid declarations
         if (name == null) {
@@ -197,7 +210,9 @@ export class PropertyList {
         }
 
         if (arena.flags[declaration] & EnumAstNodeStatus.Unvalidated) {
-            syntaxRules = getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
+            syntaxRules =
+                this.descriptors?.[lowercase(name)] ??
+                getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, lowercase(name));
 
             if (syntaxRules != null) {
                 arena.flags[declaration] |=
@@ -330,6 +345,18 @@ export class PropertyList {
                 this.mapValues(declaration as AstDeclaration, shorthand as SinglePropertyTypeMapping);
             }
 
+            const existing: AstNode | PropertySet | PropertyMap | undefined = this.declarations.get(propertyName);
+
+            // a previous declaration with the same name takes precedence when it is !important and the new one is not
+            if (
+                existing != null &&
+                typeof existing === "number" &&
+                arena.flags[existing] & EnumAstNodeStatus.ImportantDeclaration &&
+                (arena.flags[declaration] & EnumAstNodeStatus.ImportantDeclaration) == 0
+            ) {
+                return this;
+            }
+
             this.declarations.set(propertyName, declaration);
         }
 
@@ -375,7 +402,7 @@ export class PropertyList {
                         default: {
                             for (const v of set) {
                                 if (arena.dataTypes[v] === EnumToken.IdenTokenType) {
-                                    const value: string = arena.strings[arena.stringValue[v]].toLowerCase();
+                                    const value: string = arena.resolveString(arena.stringValue[v]).toLowerCase();
 
                                     if (value === pattern || new RegExp(`(^|\|)${pattern}(\||$)`).test(value)) {
                                         val.push(v);
@@ -405,7 +432,7 @@ export class PropertyList {
 
         for (const val of declarationValues) {
             if (arena.dataTypes[val] === EnumToken.IdenTokenType) {
-                name = arena.strings[arena.stringValue[val]].toLowerCase();
+                name = arena.resolveString(arena.stringValue[val]).toLowerCase();
 
                 if (mapping.mapping[name] != null) {
                     const typ: EnumToken = EnumToken[mapping.mapping[name].typ as keyof typeof EnumToken] as EnumToken;

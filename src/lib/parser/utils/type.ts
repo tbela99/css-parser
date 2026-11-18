@@ -1,6 +1,6 @@
 import { EnumToken } from "../../ast/types.ts";
 import type { PropertyMapType, Token } from "../../../@types/index.d.ts";
-import { tokensfuncSet } from "../../syntax/constants.ts";
+import { isFunctionType } from "../../syntax/constants.ts";
 import { isColor } from "../../syntax/syntax.ts";
 import type { AstArena } from "../../ast/arena.ts";
 
@@ -32,8 +32,10 @@ export function matchType(arena: AstArena, val: Token, properties: PropertyMapTy
     const typ: EnumToken = arena.dataTypes[val];
 
     if (
-        (typ === EnumToken.IdenTokenType && properties.keywords.includes(arena.strings[arena.stringValue[val]])) ||
-        properties.types.some(
+        (typ === EnumToken.IdenTokenType &&
+            // a property may have no keyword (`text-emphasis-color`)
+            properties.keywords?.includes(arena.resolveString(arena.stringValue[val]))) ||
+        properties.types?.some(
             // @ts-expect-error
             (t: keyof EnumToken) =>
                 // @ts-expect-error
@@ -47,14 +49,14 @@ export function matchType(arena: AstArena, val: Token, properties: PropertyMapTy
 
     if (typ === EnumToken.NumberTokenType && arena.numericValue[val] === 0) {
         // @ts-ignore
-        return properties.types.some((type: keyof EnumToken) => {
+        return (properties.types ?? []).some((type: keyof EnumToken) => {
             // @ts-ignore
             const typ = EnumToken[type] as EnumToken;
             return typ === EnumToken.LengthTokenType || typ === EnumToken.AngleTokenType;
         });
     }
 
-    if (tokensfuncSet.has(typ) && typ === EnumToken.MathFunctionTokenType) {
+    if (isFunctionType(typ) && typ === EnumToken.MathFunctionTokenType) {
         for (let t = arena.firstToken[val]; t !== 0; t = arena.nextSibling[t]) {
             if (!mathTokenTypes.includes(arena.dataTypes[t]) && !matchType(arena, t, properties)) {
                 return false;

@@ -9,7 +9,7 @@ A zero-allocation, high-performance CSS processing engine for Node.js and the br
 Every stylesheet is fully parsed into a structured AST, with token values represented as typed data. This provides a reliable semantic foundation for custom transformations, plugin development, and advanced stylesheet analysis without relying on raw string manipulation.
  
 > [!NOTE]
-> Version 2.0 has been rewritten to use arena memory for AST nodes and tokens, improving memory usage and performance. On the Tailwind CSS parsing and validation workload, runtime is 42% faster than v1.8.2 while using 60% less memory.<br>
+> Version 2.2.0 has been rewritten to use arena memory for AST nodes and tokens, improving memory usage and performance. On the Tailwind CSS parsing and validation workload, runtime is **59% faster than v1.8.2** while using less memory.<br>
 This major release also introduces breaking changes and removes deprecated features. See the [migration guide](https://tbela99.github.io/css-parser/docs/documents/Guide.Migration.html) for details.
 
 ## Installation
@@ -30,7 +30,7 @@ $ deno add @tbela99/css-parser
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
 * **All-in-one CSS parsing solution** covering parsing, validation, transformation, minification, and AST manipulation.
-* **Standards-based CSS validation** powered by MDN data.
+* **Standards-based CSS validation** powered by the W3C specification definitions ([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)).
 * **Full CSS Modules support** for modern component-based workflows.
 * **Fault-tolerant parsing** that follows the CSS Syntax Module Level 3 specification and always produces a complete, structured parse result.
 * **Typed tokens and AST** — parsed CSS is exposed as strongly typed tokens and nodes so plugins and transforms can operate on semantic structures.
@@ -45,7 +45,9 @@ $ deno add @tbela99/css-parser
 * **CSS variable inlining** where values can be safely resolved.
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
+* **Vendor prefix cleanup** to modernize generated CSS.
 * **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **Experimental**: evaluate @mixin and @function
 * **51.5kb** once minified and gzipped.
 
 ## Vendor prefix removal
@@ -55,6 +57,7 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
+* **CSS mixins and custom functions evaluation** the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result.
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark
@@ -67,9 +70,9 @@ A sample result:
 
 | File                           | ligthningcss  | CSS Parser    |
 | ------------------------------ | ------------- | ------------- |
-| tailwind.css - 2380419 bytes   | 1864728 bytes | 1633188 bytes |
-| bootstrap-4.css - 200078 bytes | 153616 bytes  | 144571 bytes  |
-| bootstrap-5.css - 205481 bytes | 159987 bytes  | 150852 bytes  |
+| tailwind.css - 2380419 bytes   | 1864728 bytes | 1624148 bytes |
+| bootstrap-4.css - 200078 bytes | 153616 bytes  | 144391 bytes  |
+| bootstrap-5.css - 205481 bytes | 159987 bytes  | 150764 bytes  |
 
 On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,158,698 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
@@ -114,8 +117,8 @@ Performance vs execution speed comparison
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
 | Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 116.61 ms          | 224.18 ms                 |
-| Size reduction        | -20.6%             | -31.4%                    |
+| Time                  | 109.07 ms          | 191.85 ms                 |
+| Size reduction        | -20.7%             | -31.8%                    |
 
 ## Playground
 
@@ -321,11 +324,15 @@ See [Ast Manipulation](https://tbela99.github.io/css-parser/docs/documents/Guide
 - [x] inset
 - [x] list-style
 - [x] margin
+- [x] margin-block
+- [x] margin-inline
 - [ ] mask
 - [ ] offset
 - [x] outline
 - [x] overflow
 - [x] padding
+- [x] padding-block
+- [x] padding-inline
 - [ ] place-content
 - [ ] place-items
 - [ ] place-self

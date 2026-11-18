@@ -8,7 +8,7 @@ import type { AstArena } from "../../ast/arena.ts";
  * @returns
  */
 export function toDegrees(arena: AstArena, angle: Token): Token {
-    switch (arena.strings[arena.unit[angle]]) {
+    switch (arena.resolveString(arena.unit[angle])) {
         // case "deg":
         //     return angle;
 

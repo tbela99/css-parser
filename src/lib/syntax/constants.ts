@@ -41,6 +41,33 @@ export const tokensfuncDefMap = new Map([
 ]) as Map<EnumToken, EnumToken>;
 
 export const tokensfuncSet: Set<EnumToken> = new Set(tokensfuncDefMap.values());
+
+/**
+ * function definition token types (the keys of {@link tokensfuncDefMap}) and function token types (the values), by
+ * token type: a typed array lookup is faster than a Map lookup
+ */
+const functionTypes: Uint8Array = new Uint8Array(256);
+
+for (const [def, type] of tokensfuncDefMap) {
+    functionTypes[def] |= 1;
+    functionTypes[type] |= 2;
+}
+
+/**
+ * true if the token type is a function definition (`name(`), like `tokensfuncDefMap.has(type)`
+ * @param type
+ */
+export function isFunctionDefType(type: EnumToken | null | undefined): boolean {
+    return (functionTypes[type as number] & 1) === 1;
+}
+
+/**
+ * true if the token type is a function, like `tokensfuncSet.has(type)`
+ * @param type
+ */
+export function isFunctionType(type: EnumToken | null | undefined): boolean {
+    return (functionTypes[type as number] & 2) === 2;
+}
 /**
  * Epsilon
  */

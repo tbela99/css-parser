@@ -63,7 +63,7 @@ export class PropertySet {
 
     add(declaration: AstDeclaration): this {
         const arena: AstArena = this.arena;
-        const nam: string = arena.strings[arena.name[declaration]];
+        const nam: string = arena.resolveString(arena.name[declaration]);
 
         if (nam === this.config.shorthand) {
             this.declarations = new Map<string, AstDeclaration>();
@@ -98,7 +98,7 @@ export class PropertySet {
                     if (typ !== EnumToken.WhitespaceTokenType && typ !== EnumToken.CommentTokenType) {
                         if (
                             typ === EnumToken.IdenTokenType &&
-                            this.config.keywords.includes(arena.strings[arena.stringValue[token]])
+                            this.config.keywords.includes(arena.resolveString(arena.stringValue[token]))
                         ) {
                             if (tokens.length === 0) {
                                 tokens.push([]);
@@ -110,7 +110,7 @@ export class PropertySet {
 
                         if (
                             typ === EnumToken.LiteralTokenType &&
-                            arena.strings[arena.stringValue[token]] === this.config.separator?.val
+                            arena.resolveString(arena.stringValue[token]) === this.config.separator?.val
                         ) {
                             tokens.push([]);
                             current++;

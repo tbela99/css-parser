@@ -167,7 +167,7 @@ export function rgb2hexvalues(arena: AstArena, token: Token): string | null {
         t = components[i];
 
         value += (
-            arena.dataTypes[t] === EnumToken.Iden && arena.strings[arena.stringValue[t]] === "none"
+            arena.dataTypes[t] === EnumToken.Iden && arena.resolveString(arena.stringValue[t]) === "none"
                 ? "0"
                 : Math.round(getNumber(arena, t) * (arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1))
         )

@@ -30,7 +30,7 @@ export function parseResult(result: ParseResult, options: ParserOptions): ParseR
                 arena.dataTypes[token] === EnumToken.CommentTokenType &&
                 arena.startsWith(token, "val", "/*# sourceMappingURL=")
             ) {
-                let data: string = arena.strings[arena.stringValue[token]].slice(21, -2).trim();
+                let data: string = arena.resolveString(arena.stringValue[token]).slice(21, -2).trim();
 
                 if (data.endsWith(".map")) {
                     if (options.load == null) {
@@ -86,7 +86,15 @@ export function validateSyncArguments(options: ParserSyncOptions, prefix: string
                     `[${prefix + key}]: Async functions are not supported in sync mode. Use parse() or transform() instead.`,
                 );
             }
-        } else if (value != null && typeof value === "object" && !(value instanceof AstArena)) {
+        } else if (
+            value != null &&
+            typeof value === "object" &&
+            // the plain objects (visitors, ...) and the arrays: the class instances (arenas, source files, maps, typed
+            // arrays, ...) are not traversed
+            (Array.isArray(value) ||
+                Object.getPrototypeOf(value) === Object.prototype ||
+                Object.getPrototypeOf(value) === null)
+        ) {
             validateSyncArguments(value, prefix + key + ".");
         }
     }

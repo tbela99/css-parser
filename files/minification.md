@@ -89,10 +89,16 @@ Output:
 }
 ```
 
+### Mixins
+
+A mixin applied without arguments is referenced by its name: `@apply --mixin()` is minified to `@apply --mixin`.
+The mixins are evaluated using `{evaluateMixins: true}`, see [syntax lowering](./syntax-lowering.md).
+
 ### Math functions
 
 This feature is enabled by default. It is disabled using `{computeCalcExpression: false}`.
 Math functions such as `calc()` are evaluated when enabled using `{computeCalcExpression: true}`.
+The math functions of a mixin body are not evaluated: they are evaluated when the mixin is applied, see `{evaluateMixins: true}`.
 
 ```ts
 
@@ -732,11 +738,15 @@ Below is the list of computed shorthands properties. Minification is fully suppo
 - [x] inset
 - [x] list-style
 - [x] margin
+- [x] margin-block
+- [x] margin-inline
 - [ ] mask
 - [ ] offset
 - [x] outline
 - [x] overflow
 - [x] padding
+- [x] padding-block
+- [x] padding-inline
 - [ ] place-content
 - [ ] place-items
 - [ ] place-self

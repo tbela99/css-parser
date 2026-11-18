@@ -35,6 +35,7 @@ export * as walk from './walk.js';
 export * as object from './object.js';
 export * as validation from './validation.js';
 export * as atRules from './at-rules.js';
+export * as mixin from './mixin.js';
 export * as lenient from './lenient.js';
 export * as minify from './minify.js';
 export * as transform from './transform.js';
@@ -45,3 +46,6 @@ export * as arena from './arena.js';
 export * as memo from './memo.js';
 
 export * as input from './input.js';
+export * as renderResult from './render-result.js';
+export * as strings from './strings.js';
+export * as first from './first.js';

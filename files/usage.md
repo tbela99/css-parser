@@ -171,6 +171,36 @@ console.debug(render(arena, declaration, {withParents: true}));
 
 ```
 
+### Render result
+
+`render()`, `transform()` and `transformSync()` return a [`RenderResult`](../classes/node.RenderResult.html) (a
+[`TransformResult`](../classes/node.TransformResult.html) for the transform functions). The generated CSS is stored as
+UTF-8 bytes in `result.write` (a `Uint8Array`). `result.code` decodes the bytes the first time it is read, the string
+is kept for the next reads.
+
+When the result is written to a file or sent over the network, use the bytes directly: no string is created.
+
+```javascript
+import {transform} from '@tbela99/css-parser';
+import {writeFile} from 'node:fs/promises';
+
+const result = await transform(css);
+
+// bytes, no string conversion
+await writeFile('styles.min.css', result.write);
+
+// string, decoded once
+console.debug(result.code);
+```
+
+`result.stats.bytesOut` is the length of the generated CSS (`result.code.length`), it is computed without decoding
+the bytes.
+
+The render buffer is allocated once, before rendering, from the length of the parsed CSS (`arena.inputLengths[ast]`,
+imported files included) plus a small padding: the minified or beautified output is usually not larger than the input.
+The buffer grows when the output is larger (beautifying minified CSS for instance). `result.write` contains only the
+generated CSS.
+
 ### Pretty printing
 By default, CSS output is minified. That behavior can be changed by passing the option `{beautify:true}`.
 
@@ -447,9 +477,9 @@ Performance vs execution speed comparison
 
 | File:  tailwind.css   | Speed optimization | Minification optimization |
 | --------------------- | ------------------ | ------------------------- |
-| Size: 2,380,419 bytes | 1,890,728 bytes    | 1,633,188 bytes           |
-| Time                  | 116.61 ms          | 224.18 ms                 |
-| Size reduction        | -20.6%             | -31.4%                    |
+| Size: 2,380,419 bytes | 1,888,460 bytes    | 1,624,148 bytes           |
+| Time                  | 109.07 ms          | 193.85 ms                 |
+| Size reduction        | -20.7%             | -31.8%                    |
 
 
 ------

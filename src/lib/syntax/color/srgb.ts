@@ -60,7 +60,7 @@ export function rgb2srgb(arena: AstArena, token: Token): number[] | null {
     return (
         getColorComponents(arena, token)?.map?.((t: Token, index: number): number =>
             index === 3
-                ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none"
+                ? arena.dataTypes[t] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[t]) === "none"
                     ? 1
                     : getNumber(arena, t)
                 : ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) *
@@ -93,8 +93,8 @@ export function rgb2srgbvalues(arena: AstArena, token: Token): number[] | null {
 export function hex2srgbvalues(arena: AstArena, token: Token): number[] {
     const value: string = expandHexValue(
         arena.colorType[token] === ColorType.LIT
-            ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
-            : arena.strings[arena.stringValue[token]],
+            ? COLORS_NAMES[arena.resolveString(arena.stringValue[token]).toLowerCase()]
+            : arena.resolveString(arena.stringValue[token]),
     );
     const rgb: number[] = [];
 

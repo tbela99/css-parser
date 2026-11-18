@@ -15,6 +15,7 @@ import { FeatureWalkMode } from "./type.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
 import { type AstArena, TokenField } from "../arena.ts";
 import { ValueWalker } from "../walk.ts";
+import { isInTemplate } from "../mixins/utils.ts";
 
 /**
  * inline a binary expression into a parens token: (l op r)
@@ -64,7 +65,7 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
 
         if (
             typ === EnumToken.MathFunctionTokenType ||
-            (typ === EnumToken.WildCardFunctionTokenType && arena.strings[arena.stringValue[value]] === "var")
+            (typ === EnumToken.WildCardFunctionTokenType && arena.resolveString(arena.stringValue[value]) === "var")
         ) {
             const first: Token = arena.firstToken[value];
 
@@ -74,7 +75,7 @@ function replace(arena: AstArena, node: AstDeclaration, variableScope: Map<strin
                 arena.dataTypes[first] === EnumToken.DashedIdenTokenType
             ) {
                 const info: VariableScopeInfo = <VariableScopeInfo>(
-                    variableScope.get(arena.strings[arena.stringValue[first]])
+                    variableScope.get(arena.resolveString(arena.stringValue[first]))
                 );
 
                 // the variable declaration may have been released
@@ -124,7 +125,8 @@ export class InlineCssVariablesFeature {
             [key: string]: any;
         },
     ): AstNode | null {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the variables of a mixin or a custom function body are private variables
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
 
@@ -136,7 +138,7 @@ export class InlineCssVariablesFeature {
         const isRoot: boolean =
             arena.dataTypes[parent] === EnumToken.StyleSheetNodeType &&
             arena.dataTypes[ast] === EnumToken.RuleNodeType &&
-            (arena.raw[ast] ?? splitRule(arena.strings[arena.name[ast]])).some((segment) =>
+            (arena.raw.get(ast) ?? splitRule(arena.resolveString(arena.name[ast]))).some((segment) =>
                 segment.some((s) => s === ":root" || s === "html"),
             );
         const variableScope = context.variableScope;
@@ -146,7 +148,7 @@ export class InlineCssVariablesFeature {
                 continue;
             }
 
-            const name: string = arena.strings[arena.name[node]];
+            const name: string = arena.resolveString(arena.name[node]);
 
             // css variable
             if (name.startsWith("--")) {
@@ -172,8 +174,8 @@ export class InlineCssVariablesFeature {
                     if (
                         arena.dataTypes[value] === EnumToken.MathFunctionTokenDefType ||
                         (arena.dataTypes[value] === EnumToken.WildCardFunctionTokenType &&
-                            (mathFuncs.includes(arena.strings[arena.stringValue[value]]) ||
-                                arena.strings[arena.stringValue[value]] === "var"))
+                            (mathFuncs.includes(arena.resolveString(arena.stringValue[value])) ||
+                                arena.resolveString(arena.stringValue[value]) === "var"))
                     ) {
                         recursive = true;
                         break;
@@ -212,7 +214,7 @@ export class InlineCssVariablesFeature {
                     if (arena.parents[info.node] === parent) {
                         const comment: AstNode = arena.createComment(
                             EnumToken.CommentTokenType,
-                            `/* ${arena.strings[arena.name[info.node]]}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderValue(arena, curr, { convertColor: false }), "")} */`,
+                            `/* ${arena.resolveString(arena.name[info.node])}: ${info.values.reduce((acc: string, curr: Token): string => acc + renderValue(arena, curr, { convertColor: false }), "")} */`,
                         );
 
                         arena.replaceChild(info.node, comment);

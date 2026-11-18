@@ -119,8 +119,8 @@ function rgb2RgbToken(arena: AstArena, values: number[]): Token | null {
 export function hex2rgbvalues(arena: AstArena, token: Token): number[] {
     const value: string = expandHexValue(
         arena.colorType[token] === ColorType.LIT
-            ? COLORS_NAMES[arena.strings[arena.stringValue[token]].toLowerCase()]
-            : arena.strings[arena.stringValue[token]],
+            ? COLORS_NAMES[arena.resolveString(arena.stringValue[token]).toLowerCase()]
+            : arena.resolveString(arena.stringValue[token]),
     );
     const rgb: number[] = [];
 
