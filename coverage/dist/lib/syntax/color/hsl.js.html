@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.01% </span>
+                <span class="strong">82.93% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>176/212</span>
+                <span class='fraction'>175/211</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.01% </span>
+                <span class="strong">82.93% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>176/212</span>
+                <span class='fraction'>175/211</span>
             </div>
         
             
@@ -274,8 +274,14 @@
 <a name='L209'></a><a href='#L209'>209</a>
 <a name='L210'></a><a href='#L210'>210</a>
 <a name='L211'></a><a href='#L211'>211</a>
-<a name='L212'></a><a href='#L212'>212</a>
-<a name='L213'></a><a href='#L213'>213</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L212'></a><a href='#L212'>212</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -361,14 +367,6 @@
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -487,136 +485,135 @@
 <span class="cline-any cline-yes">38x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { color2srgbvalues, getNumber } from './color.js';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
+	CSS parser, minifier and validator for node and the browser
+&nbsp;
+	Author(s): Thierry Bela
+	Version: 2.2.0
+	License: MIT
+ */
+import { color2srgbvalues, getNumber } from './color.js';
 import { lch2rgbvalues, lab2rgbvalues, cmyk2rgbvalues } from './rgb.js';
 import { getColorComponents } from './utils/components.js';
 import { hex2srgbvalues, oklch2srgbvalues, oklab2srgbvalues } from './srgb.js';
 import { EnumToken, ColorType } from '../../ast/types.js';
 import { hwbvalues } from './hwb.js';
 &nbsp;
-function hex2HslToken(token) {
-    let values = hex2srgbvalues(token);
+function hex2HslToken(arena, token) {
+    let values = hex2srgbvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
+    return hslToken(arena, srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
-function rgb2HslToken(token) {
-    const values = rgb2hslvalues(token);
+function rgb2HslToken(arena, token) {
+    const values = rgb2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function hwb2HslToken(token) {
-    const values = hwb2hslvalues(token);
+function hwb2HslToken(arena, token) {
+    const values = hwb2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function cmyk2HslToken(token) {
-    const values = cmyk2hslvalues(token);
+function cmyk2HslToken(arena, token) {
+    const values = cmyk2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function oklab2HslToken(token) {
-    const values = oklab2hslvalues(token);
+function oklab2HslToken(arena, token) {
+    const values = oklab2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function oklch2HslToken(token) {
-    const values = oklch2hslvalues(token);
+function oklch2HslToken(arena, token) {
+    const values = oklch2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function lab2HslToken(token) {
-    const values = lab2hslvalues(token);
+function lab2HslToken(arena, token) {
+    const values = lab2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function lch2HslToken(token) {
-    const values = lch2hslvalues(token);
+function lch2HslToken(arena, token) {
+    const values = lch2hslvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(values);
+    return hslToken(arena, values);
 }
-function color2HslToken(token) {
-    const values = color2srgbvalues(token);
+function color2HslToken(arena, token) {
+    const values = color2srgbvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    return hslToken(srgb2hslvalues(values[0], values[1], values[2], values[3]));
+    return hslToken(arena, srgb2hslvalues(values[0], values[1], values[2], values[3]));
 }
-function hslToken(values) {
-    if (values[1] == 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+function hslToken(arena, values) {
+    if (values[1] === 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        values[0] = 0;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
-    if (values[2] == 1 || values[2] == 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+    if (values[2] === 1 || values[2] === 0) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        values[0] = 0;</span>
 <span class="cstat-no" title="statement not covered" >        values[1] = 0;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     const chi = [
-        { typ: EnumToken.NumberTokenType, val: values[0] },
-        { typ: EnumToken.PercentageTokenType, val: values[1] },
-        { typ: EnumToken.PercentageTokenType, val: values[2] },
+        arena.createToken(EnumToken.NumberTokenType, values[0]),
+        arena.createToken(EnumToken.PercentageTokenType, values[1]),
+        arena.createToken(EnumToken.PercentageTokenType, values[2]),
     ];
-    if (values.length == 4 &amp;&amp; values[3] != 1) {
-        chi.push({ typ: EnumToken.LiteralTokenType, val: "/" }, {
-            typ: EnumToken.PercentageTokenType,
-            val: values[3] * 100,
-        });
+    if (values.length === 4 &amp;&amp; values[3] !== 1) {
+        chi.push(arena.createToken(EnumToken.LiteralTokenType, "/"), arena.createToken(EnumToken.PercentageTokenType, values[3] * 100));
     }
-    return {
-        typ: EnumToken.ColorTokenType,
-        val: "hsl",
-        chi,
-        kin: ColorType.HSL,
-    };
+    return arena.createColor("hsl", ColorType.HSL, chi);
 }
-function rgb2hslvalues(token) {
-    const chi = getColorComponents(token);
+function rgb2hslvalues(arena, token) {
+    const chi = getColorComponents(arena, token);
     if (chi == null || chi.length &lt; 3) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     // @ts-ignore
     let t = chi[0];
     // @ts-ignore
-    let r = getNumber(t);
+    let r = getNumber(arena, t);
     // @ts-ignore
     t = chi[1];
     // @ts-ignore
-    let g = getNumber(t);
+    let g = getNumber(arena, t);
     // @ts-ignore
     t = chi[2];
     // @ts-ignore
-    let b = getNumber(t);
+    let b = getNumber(arena, t);
     // @ts-ignore
     let a = null;
-    if (chi.length == 4) {
-        a = getNumber(chi[3]);
+    if (chi.length === 4) {
+        a = getNumber(arena, chi[3]);
     }
     const values = [r, g, b];
-    if (a != null &amp;&amp; a != 1) {
+    if (a != null &amp;&amp; a !== 1) {
         values.push(a);
     }
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function cmyk2hslvalues(token) {
-    const values = cmyk2rgbvalues(token);
+function cmyk2hslvalues(arena, token) {
+    const values = cmyk2rgbvalues(arena, token);
     return values == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function hwb2hslvalues(token) {
-    const { h, w, b, a } = hwbvalues(token) <span class="branch-0 cbranch-no" title="branch not covered" >?? {};</span>
+function hwb2hslvalues(arena, token) {
+    const { h, w, b, a } = hwbvalues(arena, token) <span class="branch-0 cbranch-no" title="branch not covered" >?? {};</span>
     if (h == null || w == null || b == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
@@ -634,33 +631,33 @@ function hwb2hslvalues(token) {
         saturation = chroma / (1 - Math.abs(2 * lightness - 1));
     }
     const hsl = [hue, saturation * 100, lightness * 100];
-    if (a != null &amp;&amp; a != 1) {
+    if (a != null &amp;&amp; a !== 1) {
         hsl.push(a);
     }
     return hsl;
 }
-function lab2hslvalues(token) {
-    const values = lab2rgbvalues(token);
+function lab2hslvalues(arena, token) {
+    const values = lab2rgbvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function lch2hslvalues(token) {
-    const values = lch2rgbvalues(token);
+function lch2hslvalues(arena, token) {
+    const values = lch2rgbvalues(arena, token);
     if (values == null) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        return null;</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     // @ts-ignore
     return rgbvalues2hslvalues(values[0], values[1], values[2], values[3]);
 }
-function oklab2hslvalues(token) {
-    const t = oklab2srgbvalues(token);
+function oklab2hslvalues(arena, token) {
+    const t = oklab2srgbvalues(arena, token);
     // @ts-ignore
     return t == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }
-function oklch2hslvalues(token) {
-    const t = oklch2srgbvalues(token);
+function oklch2hslvalues(arena, token) {
+    const t = oklch2srgbvalues(arena, token);
     // @ts-ignore
     return t == null <span class="branch-0 cbranch-no" title="branch not covered" >? null </span>: srgb2hslvalues(t[0], t[1], t[2], t[3]);
 }
@@ -706,7 +703,7 @@ export { cmyk2HslToken, cmyk2hslvalues, color2HslToken, hex2HslToken, hwb2HslTok
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-12T21:28:34.654Z
+                at 2026-11-18T05:28:24.223Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

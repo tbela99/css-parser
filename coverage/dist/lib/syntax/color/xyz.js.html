@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.98% </span>
+                <span class="strong">93.22% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>53/57</span>
+                <span class='fraction'>55/59</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.98% </span>
+                <span class="strong">93.22% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>53/57</span>
+                <span class='fraction'>55/59</span>
             </div>
         
             
@@ -120,7 +120,9 @@
 <a name='L55'></a><a href='#L55'>55</a>
 <a name='L56'></a><a href='#L56'>56</a>
 <a name='L57'></a><a href='#L57'>57</a>
-<a name='L58'></a><a href='#L58'>58</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -129,18 +131,20 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
-<span class="cline-any cline-yes">358x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
+<span class="cline-any cline-yes">362x</span>
 <span class="cline-any cline-yes">144x</span>
 <span class="cline-any cline-yes">144x</span>
 <span class="cline-any cline-yes">144x</span>
@@ -177,15 +181,17 @@
 <span class="cline-any cline-yes">82x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { multiplyMatrices } from './utils/matrix.js';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
+	CSS parser, minifier and validator for node and the browser
+&nbsp;
+	Author(s): Thierry Bela
+	Version: 2.2.0
+	License: MIT
+ */
+import { multiplyMatrices } from './utils/matrix.js';
 import { srgb2lsrgbvalues } from './srgb.js';
 import { XYZ_D65_to_D50 } from './xyzd50.js';
 &nbsp;
-// export function lab2xyz(l: number, a: number, b: number, alpha?: number): number[] {
-//     const [x, y, z] = Lab_to_XYZ(l, a, b);
-//
-//     return alpha == null || alpha == 1 ? [x, y, z] : [x, y, z, alpha];
-// }
 function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     // convert XYZ to linear-light sRGB
     const M = [
@@ -196,7 +202,7 @@ function XYZ_to_lin_sRGB(x, y, z, alpha = null) {
     const XYZ = [x, y, z]; // convert to XYZ
     return multiplyMatrices(M, XYZ)
         .map((v) =&gt; v)
-        .concat(alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >|| alpha == 1 </span>? [] <span class="branch-0 cbranch-no" title="branch not covered" >: [alpha])</span>;
+        .concat(alpha == null <span class="branch-0 cbranch-no" title="branch not covered" >|| alpha === 1 </span>? [] <span class="branch-0 cbranch-no" title="branch not covered" >: [alpha])</span>;
 }
 function XYZ_D50_to_D65(x, y, z) {
     // Bradford chromatic adaptation from D50 to D65
@@ -217,7 +223,7 @@ function srgb2xyz(r, g, b, alpha) {
         0.21263900587151036 * r + 0.7151686787677559 * g + 0.07219231536073371 * b,
         0.01933081871559185 * r + 0.11919477979462599 * g + 0.9505321522496606 * b,
     ];
-    if (alpha != null <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; alpha != 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+    if (alpha != null <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; alpha !== 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        rgb.push(alpha);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     return rgb;
@@ -227,7 +233,7 @@ function srgb2xyz_d65(r, g, b, alpha) {
     // xyx d65
     let values = srgb2xyz(r, g, b);
     let rgb = XYZ_D65_to_D50(values[0], values[1], values[2]);
-    if (alpha != null <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; alpha != 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+    if (alpha != null <span class="branch-0 cbranch-no" title="branch not covered" >&amp;&amp; alpha !== 1)</span> <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
 <span class="cstat-no" title="statement not covered" >        rgb.push(alpha);</span>
 <span class="cstat-no" title="statement not covered" >    }</span>
     return rgb;
@@ -241,7 +247,7 @@ export { XYZ_D50_to_D65, XYZ_to_lin_sRGB, srgb2xyz, srgb2xyz_d65 };
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-10-12T21:28:34.654Z
+                at 2026-11-18T05:28:24.223Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
