@@ -81,13 +81,6 @@ export interface ValidationOptions {
     lenient?: boolean;
 
     /**
-     * Visited tokens
-     *
-     * @private
-     */
-    visited?: Map<Token, Set<ValidationToken>>;
-
-    /**
      * Is optional
      *
      * @private
@@ -193,6 +186,39 @@ export interface MinifyOptions {
      * Inline css variables
      */
     inlineCssVariables?: boolean;
+    /**
+     * Evaluate css mixins and custom functions: the `@apply` rules are replaced by the body of the mixin they reference,
+     * the private variables (`@private`, mixin arguments and the custom properties of the rule) are substituted.
+     * the custom function calls (`--fn(1px)`) are replaced by the result of the function.
+     * see https://drafts.csswg.org/css-mixins-1/
+     *
+     * ```ts
+     *
+     * import {transform} from '@tbela99/css-parser';
+     *
+     * const css = `
+     * @mixin --only-descs(--arg) {
+     *   color: var(--arg);
+     *   & * { color: var(--arg, red); }
+     * }
+     * .foo {
+     *   @apply --only-descs(green);
+     * }
+     * `;
+     *
+     * const result = await transform(css, {evaluateMixins: true, expandNestingRules: true});
+     *
+     * console.log(result.code);
+     * // .foo,.foo *{color:green}
+     * ```
+     */
+    evaluateMixins?: boolean;
+    /**
+     * Keep the mixins and the custom functions once they are evaluated, see {@link evaluateMixins}.
+     * By default, the evaluated mixins and custom functions, and the mixins that are not referenced, are dropped and
+     * replaced with a comment
+     */
+    keepMixins?: boolean;
     /**
      * Remove empty ast nodes
      */
@@ -585,11 +611,11 @@ export declare interface ParserSyncOptions
      */
     setParent?: boolean;
     /**
-     * Cache
+     * Rendered size of the nodes, in bytes
      *
      * @private
      */
-    cache?: Map<AstNode, string>;
+    cache?: Map<AstNode, number>;
 
     /**
      * CSS modules options
@@ -917,78 +943,30 @@ export declare interface ParseResult {
 }
 
 /**
- * Render result object
+ * Render stats
  */
-export declare interface RenderResult {
+export declare interface RenderResultStats {
     /**
-     * Rendered CSS
+     * Render time
      */
-    code: string;
-    /**
-     * Render errors
-     */
-    errors: ErrorDescription[];
-    /**
-     * Render stats
-     */
-    stats: {
-        /**
-         * Render time
-         */
-        total: string;
-    };
-    /**
-     * Source map
-     */
-    map?: SourceMap;
+    total: string;
 }
 
 /**
- * Transform result object
+ * Transform stats
  */
-export declare interface TransformResult extends ParseResult, RenderResult {
+export declare interface TransformResultStats extends ParseResultStats {
     /**
-     * Transform stats
+     * Generated CSS size: the length of {@link TransformResult.code}
      */
-    stats: {
-        /**
-         * Source file
-         */
-        src: string;
-        /**
-         * Bytes read
-         */
-        bytesIn: number;
-        /**
-         * Generated CSS size
-         */
-        bytesOut: number;
-        /**
-         * Bytes read from imported files
-         */
-        importedBytesIn: number;
-        /**
-         * Parse time
-         */
-        parse: string;
-        /**
-         * Minify time
-         */
-        minify: string;
-        /**
-         * Render time
-         */
-        render: string;
-        /**
-         * Total time
-         */
-        total: string;
-        /**
-         * Imported files stats
-         */
-        imports: ParseResultStats[];
-    };
+    bytesOut: number;
+    /**
+     * Render time
+     */
+    render: string;
 }
+
+export { RenderResult, TransformResult } from "../lib/printer/result.ts";
 
 /**
  * Parse token options

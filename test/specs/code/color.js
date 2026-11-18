@@ -1,6 +1,6 @@
-import { okLabDistance } from "../../../dist/src/lib/syntax/color/utils/distance.js";
-import { parseString } from "../../../dist/src/lib/parser/parse.js";
-import { AstArena } from "../../../dist/src/lib/ast/arena.js";
+import { okLabDistance } from "../../../dist/lib/syntax/color/utils/distance.js";
+import { parseString } from "../../../dist/lib/parser/parse.js";
+import { AstArena } from "../../../dist/lib/ast/arena.js";
 
 // arena used by the color distance tests
 const arena = new AstArena();

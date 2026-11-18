@@ -1,5 +1,6 @@
 /**
- *
+ * memoize a function by its arguments (compared with `Map` semantics). the `null` and `undefined` results are cached
+ * too: an unknown name is looked up once
  * @param fn
  * @returns
  */
@@ -9,38 +10,47 @@ export function memoize(fn: Function) {
     return function (...args: any[]) {
         const n = args.length;
         let bucket = buckets.get(n);
+
         if (bucket == null) {
             bucket = new Map();
             buckets.set(n, bucket);
         }
+
         if (n === 1) {
             const key = args[0];
-            const value = bucket.get(key);
-            if (value != null) return bucket.get(key);
-            const result = fn(key);
-            bucket.set(key, result);
-            return result;
+            let value = bucket.get(key);
+
+            if (value === undefined && !bucket.has(key)) {
+                value = fn(key);
+                bucket.set(key, value);
+            }
+
+            return value;
         }
 
+        // the maps of the first arguments, then the results by last argument
         let node = bucket;
-        for (let i = 0; i < n; i++) {
+
+        for (let i = 0; i < n - 1; i++) {
             const key = args[i];
-            const next = node.get(key);
+            let next = node.get(key);
+
             if (next == null) {
-                const newNode = new Map();
-                node.set(key, newNode);
-                node = newNode;
-            } else {
-                node = next;
+                next = new Map();
+                node.set(key, next);
             }
+
+            node = next;
         }
 
         const last = n === 0 ? undefined : args[n - 1];
+        let value = node.get(last);
 
-        const value = node.get(last);
-        if (value != null) return value;
-        const result = fn(...args);
-        node.set(last, result);
-        return result;
+        if (value === undefined && !node.has(last)) {
+            value = fn(...args);
+            node.set(last, value);
+        }
+
+        return value;
     };
 }

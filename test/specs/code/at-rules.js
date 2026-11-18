@@ -1839,10 +1839,10 @@ div {
                 },
             ).then((result) =>
                 expect(result.code).equals(`@function --suitable-font-size() {
- result: 16px;
  @media (width>=1000px) {
   result: 20px
  }
+ result: 16px
 }`),
             );
         });
@@ -1863,6 +1863,9 @@ div {
                 },
             ).then((result) =>
                 expect(result.code).equals(`@function --suitable-font-size() {
+ @media (width>=1000px) {
+  result: 20px
+ }
  result: 16px
 }`),
             );
@@ -2060,7 +2063,7 @@ p {
   --color1: red;
   --color2: red;
   --color3: red;
-  @apply --shadowed-values()
+  @apply --shadowed-values
  }
 }
 @mixin --shadowed-values(--color2:green,--color3:green) {
@@ -2094,6 +2097,115 @@ p {
 }
 a {
  animation-name: k
+}`),
+            );
+        });
+        it("at-rule function result without validation #71", function () {
+            // the result descriptors are deduplicated when the declarations are not validated by the parser
+            return transform(
+                `
+@function --mypi() {
+  result: 3;
+  result: 3.14;
+}
+  `,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --mypi() {
+ result: 3.14
+}`),
+            );
+        });
+
+        it("at-rule function result without validation #72", function () {
+            // there is no early return: the result is moved after the conditional rules
+            return transform(
+                `
+@function --suitable-font-size() {
+  result: 16px;
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+}
+  `,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ @media (width>=1000px) {
+  result: 20px
+ }
+ result: 16px
+}`),
+            );
+        });
+
+        it("at-rule function result without validation #73", function () {
+            return transform(
+                `
+@function --suitable-font-size() {
+  @media (min-width : 1000px) {
+    result: 20px;
+  }
+  result: 16px;
+  result: 18px;
+}
+  `,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ @media (width>=1000px) {
+  result: 20px
+ }
+ result: 18px
+}`),
+            );
+        });
+        it("at-rule function local variables of the conditional rules #74", function () {
+            // the conditional rules are never removed
+            return transform(
+                `
+@function --suitable-font-size() {
+  --size: 16px;
+  @media (width > 1000px) {
+    --size: 20px;
+  }
+  result: var(--size);
+}
+@function --m() {
+  @media (min-width: 1px) {
+    --a: 1px;
+    result: 2px;
+    @supports (display: grid) { result: 3px }
+  }
+  result: var(--a);
+}
+  `,
+                {
+                    beautify: true,
+                },
+            ).then((result) =>
+                expect(result.code).equals(`@function --suitable-font-size() {
+ --size: 16px;
+ @media (width>1000px) {
+  --size: 20px
+ }
+ result: var(--size)
+}
+@function --m() {
+ @media (width>=1px) {
+  --a: 1px;
+  result: 2px;
+  @supports (display:grid) {
+   result: 3px
+  }
+ }
+ result: var(--a)
 }`),
             );
         });

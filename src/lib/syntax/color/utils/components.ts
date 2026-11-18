@@ -7,7 +7,7 @@ import { equalsIgnoreCase } from "../../../parser/utils/text.ts";
 
 export function getColorComponents(arena: AstArena, token: Token): Token[] | null {
     if (arena.colorType[token] === ColorType.HEX || arena.colorType[token] === ColorType.LIT) {
-        const val: string = arena.strings[arena.stringValue[token]];
+        const val: string = arena.resolveString(arena.stringValue[token]);
 
         if (equalsIgnoreCase("currentcolor", val)) {
             return null;
@@ -44,14 +44,14 @@ export function getColorComponents(arena: AstArena, token: Token): Token[] | nul
             typ === EnumToken.WildCardFunctionTokenType ||
             typ === EnumToken.MathFunctionTokenType
         ) {
-            if ("var" === arena.strings[arena.stringValue[child]].toLowerCase()) {
+            if ("var" === arena.resolveString(arena.stringValue[child]).toLowerCase()) {
                 return null;
             }
         }
 
         if (
             typ === EnumToken.ColorTokenType &&
-            equalsIgnoreCase("currentcolor", arena.strings[arena.stringValue[child]])
+            equalsIgnoreCase("currentcolor", arena.resolveString(arena.stringValue[child]))
         ) {
             return null;
         }

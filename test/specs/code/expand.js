@@ -370,7 +370,7 @@ html {
             }).then(result => expect(result.code).equals(`.foo,.foo:active,.foo:before {
  color: red
 }
-:hover:is(.foo,.foo:active) {
+:hover.foo:is(*,:active) {
  color: blue
 }`))
         });

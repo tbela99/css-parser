@@ -1,6 +1,6 @@
-import {ColorType, EnumToken} from "../../../dist/src/lib/ast/types.js";
-import { isOkLabClose as okLabClose } from "../../../dist/src/lib/syntax/color/utils/distance.js";
-import { AstArena } from "../../../dist/src/lib/ast/arena.js";
+import {ColorType, EnumToken} from "../../../dist/lib/ast/types.js";
+import { isOkLabClose as okLabClose } from "../../../dist/lib/syntax/color/utils/distance.js";
+import { AstArena } from "../../../dist/lib/ast/arena.js";
 
 /**
  * compare a color token id with another token id or a plain color object
@@ -8,7 +8,7 @@ import { AstArena } from "../../../dist/src/lib/ast/arena.js";
 function isOkLabClose(arena, color1, color2, threshold) {
     return okLabClose(arena, color1, typeof color2 == "number" ? color2 : arena.fromObject(color2), threshold);
 }
-import { parseString } from "../../../dist/src/lib/parser/parse.js";
+import { parseString } from "../../../dist/lib/parser/parse.js";
 
 export function run(describe, expect, transform, parse, render, dirname,  readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
 

@@ -4,8 +4,9 @@ import type { AstAtRule, AstNode, AstRule, ParserOptions, Token } from "../../..
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";
-import { mathFuncs, tokensfuncSet } from "../../syntax/constants.ts";
+import { mathFuncs, isFunctionType } from "../../syntax/constants.ts";
 import { ValueWalker } from "../walk.ts";
+import { isInTemplate } from "../mixins/utils.ts";
 
 export class ComputeCalcExpressionFeature {
     public accept: Set<EnumToken> = new Set([EnumToken.RuleNodeType, EnumToken.AtRuleNodeType]);
@@ -31,7 +32,8 @@ export class ComputeCalcExpressionFeature {
      * @param ast
      */
     run(arena: AstArena, ast: AstRule | AstAtRule): AstNode | null {
-        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren)) {
+        // the mixin and custom function bodies are templates: the expressions are computed once they are used
+        if (!(arena.flags[ast] & EnumAstNodeStatus.HasChildren) || isInTemplate(arena, ast)) {
             return null;
         }
 
@@ -69,14 +71,14 @@ export class ComputeCalcExpressionFeature {
                     continue;
                 }
 
-                if (tokensfuncSet.has(typ)) {
+                if (isFunctionType(typ)) {
                     set ??= new Set();
 
                     if (!set!.has(value)) {
                         set!.add(value);
 
                         if (parent != null) {
-                            const name: string = arena.strings[arena.stringValue[value]];
+                            const name: string = arena.resolveString(arena.stringValue[value]);
                             const shouldEvaluate: boolean =
                                 typ === EnumToken.MathFunctionTokenType ||
                                 (typ === EnumToken.FunctionTokenType && mathFuncs.includes(name));
@@ -118,7 +120,7 @@ export class ComputeCalcExpressionFeature {
                                         !(
                                             parentType === EnumToken.MathFunctionTokenType ||
                                             (parentType === EnumToken.FunctionTokenType &&
-                                                arena.strings[arena.stringValue[parent]] === "calc")
+                                                arena.resolveString(arena.stringValue[parent]) === "calc")
                                         ) &&
                                         // inlined: arena.isNumeric(values[0])
                                         (!numericTokenTypes.has(arena.dataTypes[values[0]]) ||
@@ -126,7 +128,7 @@ export class ComputeCalcExpressionFeature {
                                         !(
                                             arena.dataTypes[values[0]] === EnumToken.MathFunctionTokenType ||
                                             (arena.dataTypes[values[0]] === EnumToken.FunctionTokenType &&
-                                                mathFuncs.includes(arena.strings[arena.stringValue[values[0]]]))
+                                                mathFuncs.includes(arena.resolveString(arena.stringValue[values[0]])))
                                         );
 
                                     arena.replaceToken(value, wrap ? createCalc(arena, value, values) : values[0]);
@@ -167,7 +169,7 @@ function hasExpression(arena: AstArena, node: AstNode): boolean {
     for (let token: Token = arena.firstToken[node]; token !== 0; token = arena.nextSibling[token]) {
         if (
             arena.dataTypes[token] === EnumToken.BinaryExpressionTokenType ||
-            tokensfuncSet.has(arena.dataTypes[token]) ||
+            isFunctionType(arena.dataTypes[token]) ||
             arena.firstToken[token] !== 0 ||
             arena.firstChild[token] !== 0
         ) {

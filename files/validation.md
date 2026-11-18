@@ -6,7 +6,7 @@ category: Guides
 
 ## Validation
 
-Validation is powered by [mdn-data](https://github.com/mdn/data) and can be enabled using the [`validation`](../docs/interfaces/node.ParserOptions.html#validation) parser option.
+Validation is powered by the CSS definitions of the W3C specifications ([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)) and can be enabled using the [`validation`](../docs/interfaces/node.ParserOptions.html#validation) parser option.
 
 The `validation` option accepts a **boolean** value:
 
@@ -217,6 +217,20 @@ const css = `
 const result = transformSync(css, options);
 console.debug(result.code);
 ```
+
+## Syntax definitions
+
+The syntaxes are generated from the consolidated CSS definitions of the W3C specifications
+([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)) by `npm run syntax-update` (`scripts/webref.ts`).
+The fixes of the specification syntaxes are maintained in `scripts/local-patch.json`.
+
+## Performance
+
+- a declaration value is validated once per distinct value: the result is cached by syntax and by value (the content of
+  the strings is not part of the key)
+- the alternatives of a syntax (`<length> | auto | <color>`) are indexed by the tokens they may start with: only the
+  alternatives that may match the first token of the value are matched. the first tokens of a syntax are computed once,
+  the references to the other syntaxes are resolved when they are computed
 
 ------
 [← Architecture](./architecture.md) | [CSS Module →](./css-module.md)

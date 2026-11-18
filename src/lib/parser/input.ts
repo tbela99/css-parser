@@ -1,3 +1,5 @@
+import { type NativeBufferClass, nativeBufferClass } from "../printer/writer.ts";
+
 /**
  * css input: the utf-8 encoded css in an ArrayBuffer or in a view of an ArrayBuffer (Uint8Array, Buffer), the preferred
  * input, or a string
@@ -19,6 +21,10 @@ export interface CssCodeUnits {
 }
 
 const encoder: TextEncoder = new TextEncoder();
+/**
+ * the code units of a Uint16Array are stored in the platform byte order
+ */
+const littleEndian: boolean = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
 const decoder: TextDecoder = new TextDecoder();
 const nonAscii: RegExp = /[^\x00-\x7f]/;
 const empty: Uint8Array = new Uint8Array(0);
@@ -56,6 +62,16 @@ function bytesOf(input: ArrayBuffer | ArrayBufferView): Uint8Array {
  * @param text
  */
 function codeUnitsOf(text: string): Uint16Array {
+    const native: NativeBufferClass | null = nativeBufferClass();
+
+    // node.js: the code units are written by the native encoder (little endian platforms)
+    if (native !== null && littleEndian) {
+        const buffer = native.allocUnsafeSlow(text.length * 2);
+
+        buffer.write(text, 0, text.length * 2, "utf16le");
+        return new Uint16Array(buffer.buffer, buffer.byteOffset, text.length);
+    }
+
     const codes: Uint16Array = new Uint16Array(text.length);
 
     for (let i: number = 0; i < text.length; i++) {
@@ -77,7 +93,10 @@ export function toCodeUnits(input: CssInput | null | undefined): CssCodeUnits {
     }
 
     if (typeof input === "string") {
-        return { codes: nonAscii.test(input) ? codeUnitsOf(input) : encoder.encode(input), text: input };
+        // an ascii string has a byte for each code unit: the encoded string is the code units
+        const bytes: Uint8Array = encoder.encode(input);
+
+        return { codes: bytes.length === input.length ? bytes : codeUnitsOf(input), text: input };
     }
 
     const bytes: Uint8Array = bytesOf(input);

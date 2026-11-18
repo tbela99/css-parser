@@ -1,107 +1,137 @@
+/**
+ * Matrix operations of the transform functions. The matrices are `Float64Array(16)` in column-major order.
+ *
+ * The operations write into matrices provided by the caller (no allocation): the computation of a transform list uses
+ * a few module level scratch matrices. The arithmetic is performed in the same order as the textbook formulas, the
+ * results do not depend on the buffers used.
+ *
+ * @module
+ * @internal
+ */
 import { epsilon } from "../../syntax/constants.ts";
-import type { DecomposedMatrix3D, Matrix, Point } from "./type.d.ts";
+import type { DecomposedMatrix3D, Matrix } from "./type.d.ts";
 
-const identityMatrix = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+/**
+ * the identity matrix. must not be modified
+ */
+export const identityMatrix: Matrix = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
+/**
+ * a new identity matrix
+ */
 export function identity(): Matrix {
     return identityMatrix.slice() as Matrix;
 }
-function normalize(point: Point): Point {
-    const [x, y, z] = point;
-    const norm: number = Math.sqrt(point[0] * point[0] + point[1] * point[1] + point[2] * point[2]);
-    return norm === 0 ? [0, 0, 0] : [x / norm, y / norm, z / norm];
+
+/**
+ * reset a matrix to the identity matrix
+ * @param matrix
+ */
+export function setIdentity(matrix: Matrix): Matrix {
+    matrix.set(identityMatrix);
+    return matrix;
 }
 
-function dot(point1: Point, point2: Point): number;
-function dot(point1: [number, number, number, number], point2: [number, number, number, number]): number;
-
-function dot(
-    point1: Point | [number, number, number, number],
-    point2: Point | [number, number, number, number],
-): number {
-    if (point1.length === 4 && point2.length === 4) {
-        return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2] + point1[3] * point2[3];
-    }
-
-    return point1[0] * point2[0] + point1[1] * point2[1] + point1[2] * point2[2];
+/**
+ * true if the values of the matrix are equal (`===`) to the values of the identity matrix
+ * @param matrix
+ */
+export function isIdentity(matrix: Matrix): boolean {
+    return (
+        matrix[0] === 1 &&
+        matrix[1] === 0 &&
+        matrix[2] === 0 &&
+        matrix[3] === 0 &&
+        matrix[4] === 0 &&
+        matrix[5] === 1 &&
+        matrix[6] === 0 &&
+        matrix[7] === 0 &&
+        matrix[8] === 0 &&
+        matrix[9] === 0 &&
+        matrix[10] === 1 &&
+        matrix[11] === 0 &&
+        matrix[12] === 0 &&
+        matrix[13] === 0 &&
+        matrix[14] === 0 &&
+        matrix[15] === 1
+    );
 }
 
+/**
+ * multiply two matrices into a new matrix
+ * @param matrixA
+ * @param matrixB
+ */
 export function multiply(matrixA: Matrix, matrixB: Matrix): Matrix {
-    const result = new Float64Array(16) as Matrix;
+    return multiplyInto(matrixA, matrixB, new Float64Array(16));
+}
 
-    result[0] = matrixA[0] * matrixB[0] + matrixA[4] * matrixB[1] + matrixA[8] * matrixB[2] + matrixA[12] * matrixB[3];
-    result[1] = matrixA[1] * matrixB[0] + matrixA[5] * matrixB[1] + matrixA[9] * matrixB[2] + matrixA[13] * matrixB[3];
-    result[2] = matrixA[2] * matrixB[0] + matrixA[6] * matrixB[1] + matrixA[10] * matrixB[2] + matrixA[14] * matrixB[3];
-    result[3] = matrixA[3] * matrixB[0] + matrixA[7] * matrixB[1] + matrixA[11] * matrixB[2] + matrixA[15] * matrixB[3];
-    result[4] = matrixA[0] * matrixB[4] + matrixA[4] * matrixB[5] + matrixA[8] * matrixB[6] + matrixA[12] * matrixB[7];
-    result[5] = matrixA[1] * matrixB[4] + matrixA[5] * matrixB[5] + matrixA[9] * matrixB[6] + matrixA[13] * matrixB[7];
-    result[6] = matrixA[2] * matrixB[4] + matrixA[6] * matrixB[5] + matrixA[10] * matrixB[6] + matrixA[14] * matrixB[7];
-    result[7] = matrixA[3] * matrixB[4] + matrixA[7] * matrixB[5] + matrixA[11] * matrixB[6] + matrixA[15] * matrixB[7];
-    result[8] =
-        matrixA[0] * matrixB[8] + matrixA[4] * matrixB[9] + matrixA[8] * matrixB[10] + matrixA[12] * matrixB[11];
-    result[9] =
-        matrixA[1] * matrixB[8] + matrixA[5] * matrixB[9] + matrixA[9] * matrixB[10] + matrixA[13] * matrixB[11];
-    result[10] =
-        matrixA[2] * matrixB[8] + matrixA[6] * matrixB[9] + matrixA[10] * matrixB[10] + matrixA[14] * matrixB[11];
-    result[11] =
-        matrixA[3] * matrixB[8] + matrixA[7] * matrixB[9] + matrixA[11] * matrixB[10] + matrixA[15] * matrixB[11];
-    result[12] =
-        matrixA[0] * matrixB[12] + matrixA[4] * matrixB[13] + matrixA[8] * matrixB[14] + matrixA[12] * matrixB[15];
-    result[13] =
-        matrixA[1] * matrixB[12] + matrixA[5] * matrixB[13] + matrixA[9] * matrixB[14] + matrixA[13] * matrixB[15];
-    result[14] =
-        matrixA[2] * matrixB[12] + matrixA[6] * matrixB[13] + matrixA[10] * matrixB[14] + matrixA[14] * matrixB[15];
-    result[15] =
-        matrixA[3] * matrixB[12] + matrixA[7] * matrixB[13] + matrixA[11] * matrixB[14] + matrixA[15] * matrixB[15];
+/**
+ * multiply two matrices: `result = matrixA × matrixB`. `result` can be one of the operands
+ * @param matrixA
+ * @param matrixB
+ * @param result
+ */
+export function multiplyInto(matrixA: Matrix, matrixB: Matrix, result: Matrix): Matrix {
+    const a0: number = matrixA[0];
+    const a1: number = matrixA[1];
+    const a2: number = matrixA[2];
+    const a3: number = matrixA[3];
+    const a4: number = matrixA[4];
+    const a5: number = matrixA[5];
+    const a6: number = matrixA[6];
+    const a7: number = matrixA[7];
+    const a8: number = matrixA[8];
+    const a9: number = matrixA[9];
+    const a10: number = matrixA[10];
+    const a11: number = matrixA[11];
+    const a12: number = matrixA[12];
+    const a13: number = matrixA[13];
+    const a14: number = matrixA[14];
+    const a15: number = matrixA[15];
+
+    for (let column = 0; column < 16; column += 4) {
+        const b0: number = matrixB[column];
+        const b1: number = matrixB[column + 1];
+        const b2: number = matrixB[column + 2];
+        const b3: number = matrixB[column + 3];
+
+        result[column] = a0 * b0 + a4 * b1 + a8 * b2 + a12 * b3;
+        result[column + 1] = a1 * b0 + a5 * b1 + a9 * b2 + a13 * b3;
+        result[column + 2] = a2 * b0 + a6 * b1 + a10 * b2 + a14 * b3;
+        result[column + 3] = a3 * b0 + a7 * b1 + a11 * b2 + a15 * b3;
+    }
 
     return result;
 }
 
-function inverse(matrix: Matrix): Matrix | null {
+/**
+ * augmented matrix of {@link inverse}
+ */
+const augmented: Float64Array = new Float64Array(32);
+
+/**
+ * inverse of a matrix, used to extract the perspective. the result is a shared buffer (its first 16 values), valid
+ * until the next call
+ * @param matrix
+ */
+function inverse(matrix: Matrix): Float64Array | null {
     // Create augmented matrix [matrix | identity]
-    let augmented: number[] = [
-        matrix[0],
-        matrix[1],
-        matrix[2],
-        matrix[3],
-        1,
-        0,
-        0,
-        0,
-        matrix[4],
-        matrix[5],
-        matrix[6],
-        matrix[7],
-        0,
-        1,
-        0,
-        0,
-        matrix[8],
-        matrix[9],
-        matrix[10],
-        matrix[11],
-        0,
-        0,
-        1,
-        0,
-        matrix[12],
-        matrix[13],
-        matrix[14],
-        matrix[15],
-        0,
-        0,
-        0,
-        1,
-    ];
+    for (let row = 0; row < 4; row++) {
+        for (let j = 0; j < 4; j++) {
+            augmented[row * 8 + j] = matrix[row * 4 + j];
+            augmented[row * 8 + 4 + j] = row === j ? 1 : 0;
+        }
+    }
 
     // Gaussian elimination with partial pivoting
     for (let col = 0; col < 4; col++) {
         // Find pivot row with maximum absolute value
-        let maxRow = col;
-        let maxVal = Math.abs(augmented[col * 4 + col]);
+        let maxRow: number = col;
+        let maxVal: number = Math.abs(augmented[col * 4 + col]);
 
         for (let row = col + 1; row < 4; row++) {
-            let val = Math.abs(augmented[row * 4 + col]);
+            const val: number = Math.abs(augmented[row * 4 + col]);
 
             if (val > maxVal) {
                 maxVal = val;
@@ -116,11 +146,14 @@ function inverse(matrix: Matrix): Matrix | null {
 
         // Swap rows if necessary
         if (maxRow !== col) {
-            [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+            const swap: number = augmented[col];
+
+            augmented[col] = augmented[maxRow];
+            augmented[maxRow] = swap;
         }
 
         // Scale pivot row to make pivot element 1
-        let pivot: number = augmented[col * 4 + col];
+        const pivot: number = augmented[col * 4 + col];
 
         for (let j = 0; j < 8; j++) {
             augmented[col * 4 + j] /= pivot;
@@ -129,7 +162,7 @@ function inverse(matrix: Matrix): Matrix | null {
         // Eliminate column in other rows
         for (let row = 0; row < 4; row++) {
             if (row !== col) {
-                let factor = augmented[row * 4 + col];
+                const factor: number = augmented[row * 4 + col];
 
                 for (let j = 0; j < 8; j++) {
                     augmented[row * 4 + j] -= factor * augmented[col * 4 + j];
@@ -138,63 +171,110 @@ function inverse(matrix: Matrix): Matrix | null {
         }
     }
 
-    // Extract the inverse from the right side of the augmented matrix
-    return augmented.slice(0, 16) as Matrix;
+    // the inverse is read from the first 16 values
+    return augmented;
 }
 
+/**
+ * the powers of 10 that are exactly represented by a double
+ */
+const powersOf10: Float64Array = new Float64Array(23).map((_: number, i: number): number => Number("1e" + i));
+
+/**
+ * same value as `+value.toPrecision(6)`, computed without creating a string when the result does not depend on the
+ * rounding errors of the computation.
+ *
+ * `toPrecision(6)` rounds the exact value to the integer `n` (`10^5 <= n < 10^6`) times a power of 10 (`10^-k`),
+ * the decimal string is then parsed to the nearest double. `value × 10^k` is computed with an error below `1.2e-10`
+ * (`10^k` is exact, the product is correctly rounded): the rounding to `n` is exact unless the product is close to a
+ * tie. `n` and `10^k` are exact doubles: `n / 10^k` is the double nearest to the exact quotient, the value of the
+ * parsed string. the other cases (ties, very small or very large values, `NaN`, infinite values) use `toPrecision()`
+ * @param value
+ */
+export function toPrecision6(value: number): number {
+    const abs: number = value < 0 ? -value : value;
+
+    if (abs >= 1e-15 && abs < 1e21) {
+        const k: number = 5 - Math.floor(Math.log10(abs));
+        const scaled: number = k >= 0 ? abs * powersOf10[k] : abs / powersOf10[-k];
+
+        // the exponent computed from the logarithm is exact
+        if (scaled >= 1e5 && scaled < 999999.5) {
+            let n: number = Math.floor(scaled);
+            const fraction: number = scaled - n;
+
+            // not close to a tie
+            if (fraction < 0.499999 || fraction > 0.500001) {
+                if (fraction > 0.5) {
+                    n++;
+                }
+
+                const result: number = k >= 0 ? n / powersOf10[k] : n * powersOf10[-k];
+
+                return value < 0 ? -result : result;
+            }
+        }
+    }
+
+    return +value.toPrecision(6);
+}
+
+/**
+ * round a number to 6 significant digits, or to the nearest integer when it is closer than `epsilon`
+ * @param number
+ */
 export function round(number: number): number {
     const rounded: number = Math.round(number);
-    return Math.abs(rounded - number) <= epsilon ? rounded : +number.toPrecision(6);
+    return Math.abs(rounded - number) <= epsilon ? rounded : toPrecision6(number);
 }
 
-// translate3d(25.9808px, 0, 15px) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)
-// translate → rotate → skew → scale
-export function decompose(original: Matrix): DecomposedMatrix3D | null {
-    const matrix: Matrix = original.slice() as Matrix;
+/**
+ * working copy of the matrix being decomposed
+ */
+const decomposeBuffer: Matrix = new Float64Array(16);
+
+/**
+ * decompose a matrix: translate → rotate → skew → scale. the matrix is not modified
+ *
+ * `translate3d(25.9808px, 0, 15px) rotateY(60deg) skewX(49.9999deg) scale(1, 1.2)`
+ * @param original
+ * @param result receives the decomposition
+ * @returns false if the matrix cannot be decomposed
+ */
+export function decompose(original: Matrix, result: DecomposedMatrix3D): boolean {
+    const matrix: Matrix = decomposeBuffer;
 
     // Normalize last row
-    if (matrix[15] === 0) {
-        return null;
+    if (original[15] === 0) {
+        return false;
     }
+
+    matrix.set(original);
 
     for (let i = 0; i < 16; i++) matrix[i] /= matrix[15];
 
     // Perspective extraction
-    const perspective: [number, number, number, number] = [0, 0, 0, 1];
+    result.perspectiveX = 0;
+    result.perspectiveY = 0;
+    result.perspectiveZ = 0;
+    result.perspectiveW = 1;
 
     if (matrix[3] !== 0 || matrix[7] !== 0 || matrix[11] !== 0) {
-        const rightHandSide = [matrix[3], matrix[7], matrix[11], matrix[15]];
-
-        const perspectiveMatrix = matrix.slice();
-        perspectiveMatrix[3] = 0;
-        perspectiveMatrix[7] = 0;
-        perspectiveMatrix[11] = 0;
-        perspectiveMatrix[15] = 1;
-
-        // @ts-ignore
-        const inverted = inverse(original.slice());
+        const r0: number = matrix[3];
+        const r1: number = matrix[7];
+        const r2: number = matrix[11];
+        const r3: number = matrix[15];
+        const inverted: Float64Array | null = inverse(original);
 
         if (inverted === null) {
-            return null;
+            return false;
         }
 
-        const transposedInverse = transposeMatrix4(inverted);
-        perspective[0] = dot(
-            rightHandSide as [number, number, number, number],
-            transposedInverse.slice(0, 4) as [number, number, number, number],
-        );
-        perspective[1] = dot(
-            rightHandSide as [number, number, number, number],
-            transposedInverse.slice(4, 8) as [number, number, number, number],
-        );
-        perspective[2] = dot(
-            rightHandSide as [number, number, number, number],
-            transposedInverse.slice(8, 12) as [number, number, number, number],
-        );
-        perspective[3] = dot(
-            rightHandSide as [number, number, number, number],
-            transposedInverse.slice(12, 16) as [number, number, number, number],
-        );
+        // dot product of the right hand side and of the rows of the transposed inverse
+        result.perspectiveX = r0 * inverted[0] + r1 * inverted[4] + r2 * inverted[8] + r3 * inverted[12];
+        result.perspectiveY = r0 * inverted[1] + r1 * inverted[5] + r2 * inverted[9] + r3 * inverted[13];
+        result.perspectiveZ = r0 * inverted[2] + r1 * inverted[6] + r2 * inverted[10] + r3 * inverted[14];
+        result.perspectiveW = r0 * inverted[3] + r1 * inverted[7] + r2 * inverted[11] + r3 * inverted[15];
 
         // Clear perspective from matrix
         matrix[3] = 0;
@@ -204,94 +284,127 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
     }
 
     // Translation
-    const translate: [number, number, number] = [matrix[12], matrix[13], matrix[14]];
+    result.translateX = matrix[12];
+    result.translateY = matrix[13];
+    result.translateZ = matrix[14];
 
-    matrix[12] = matrix[13] = matrix[14] = 0;
+    // the 3x3 matrix
+    const row00: number = matrix[0];
+    const row01: number = matrix[1];
+    const row02: number = matrix[2];
+    const row10: number = matrix[4];
+    const row11: number = matrix[5];
+    const row12: number = matrix[6];
+    const row20: number = matrix[8];
+    const row21: number = matrix[9];
+    const row22: number = matrix[10];
 
-    // Build the 3x3 matrix
-    const row0: [number, number, number] = [matrix[0], matrix[1], matrix[2]];
-    const row1: [number, number, number] = [matrix[4], matrix[5], matrix[6]];
-    const row2: [number, number, number] = [matrix[8], matrix[9], matrix[10]];
-
-    const cross = [
-        row1[1] * row2[2] - row1[2] * row2[1],
-        row1[2] * row2[0] - row1[0] * row2[2],
-        row1[0] * row2[1] - row1[1] * row2[0],
-    ];
+    const cross0: number = row11 * row22 - row12 * row21;
+    const cross1: number = row12 * row20 - row10 * row22;
+    const cross2: number = row10 * row21 - row11 * row20;
 
     // Compute scale
-    const scaleX = Math.hypot(row0[0], row0[1], row0[2]);
-    const row0Norm = normalize(row0);
+    const scaleX: number = Math.hypot(row00, row01, row02);
 
-    const skewXY = dot(row0Norm, row1);
-    const row1Proj = [row1[0] - skewXY * row0Norm[0], row1[1] - skewXY * row0Norm[1], row1[2] - skewXY * row0Norm[2]];
+    // normalized row 0
+    let norm: number = Math.sqrt(row00 * row00 + row01 * row01 + row02 * row02);
+    const row0Norm0: number = norm === 0 ? 0 : row00 / norm;
+    const row0Norm1: number = norm === 0 ? 0 : row01 / norm;
+    const row0Norm2: number = norm === 0 ? 0 : row02 / norm;
 
-    const scaleY = Math.hypot(row1Proj[0], row1Proj[1], row1Proj[2]);
-    const row1Norm = normalize(row1Proj as Point);
+    const skewXY: number = row0Norm0 * row10 + row0Norm1 * row11 + row0Norm2 * row12;
+    const row1Proj0: number = row10 - skewXY * row0Norm0;
+    const row1Proj1: number = row11 - skewXY * row0Norm1;
+    const row1Proj2: number = row12 - skewXY * row0Norm2;
 
-    const skewXZ = dot(row0Norm, row2);
-    const skewYZ = dot(row1Norm, row2);
+    const scaleY: number = Math.hypot(row1Proj0, row1Proj1, row1Proj2);
 
-    const row2Proj = [
-        row2[0] - skewXZ * row0Norm[0] - skewYZ * row1Norm[0],
-        row2[1] - skewXZ * row0Norm[1] - skewYZ * row1Norm[1],
-        row2[2] - skewXZ * row0Norm[2] - skewYZ * row1Norm[2],
-    ];
+    // normalized projection of row 1
+    norm = Math.sqrt(row1Proj0 * row1Proj0 + row1Proj1 * row1Proj1 + row1Proj2 * row1Proj2);
+    const row1Norm0: number = norm === 0 ? 0 : row1Proj0 / norm;
+    const row1Norm1: number = norm === 0 ? 0 : row1Proj1 / norm;
+    const row1Norm2: number = norm === 0 ? 0 : row1Proj2 / norm;
 
-    const row2Norm = normalize(row2Proj as Point);
-    const determinant: number = row0[0] * cross[0] + row0[1] * cross[1] + row0[2] * cross[2];
-    const scaleZ = Math.hypot(row2Proj[0], row2Proj[1], row2Proj[2]) * (determinant < 0 ? -1 : 1);
+    const skewXZ: number = row0Norm0 * row20 + row0Norm1 * row21 + row0Norm2 * row22;
+    const skewYZ: number = row1Norm0 * row20 + row1Norm1 * row21 + row1Norm2 * row22;
+
+    const row2Proj0: number = row20 - skewXZ * row0Norm0 - skewYZ * row1Norm0;
+    const row2Proj1: number = row21 - skewXZ * row0Norm1 - skewYZ * row1Norm1;
+    const row2Proj2: number = row22 - skewXZ * row0Norm2 - skewYZ * row1Norm2;
+
+    // normalized projection of row 2
+    norm = Math.sqrt(row2Proj0 * row2Proj0 + row2Proj1 * row2Proj1 + row2Proj2 * row2Proj2);
+    const row2Norm0: number = norm === 0 ? 0 : row2Proj0 / norm;
+    const row2Norm1: number = norm === 0 ? 0 : row2Proj1 / norm;
+    const row2Norm2: number = norm === 0 ? 0 : row2Proj2 / norm;
+
+    const determinant: number = row00 * cross0 + row01 * cross1 + row02 * cross2;
+    const scaleZ: number = Math.hypot(row2Proj0, row2Proj1, row2Proj2) * (determinant < 0 ? -1 : 1);
 
     // Build rotation matrix from orthonormalized vectors
-    const r00 = row0Norm[0],
-        r01 = row1Norm[0],
-        r02 = row2Norm[0];
-    const r10 = row0Norm[1],
-        r11 = row1Norm[1],
-        r12 = row2Norm[1];
-    const r20 = row0Norm[2],
-        r21 = row1Norm[2],
-        r22 = row2Norm[2];
+    const r00: number = row0Norm0,
+        r01: number = row1Norm0,
+        r02: number = row2Norm0;
+    const r10: number = row0Norm1,
+        r11: number = row1Norm1,
+        r12: number = row2Norm1;
+    const r20: number = row0Norm2,
+        r21: number = row1Norm2,
+        r22: number = row2Norm2;
 
     // Convert to quaternion
-    const trace = r00 + r11 + r22;
+    const trace: number = r00 + r11 + r22;
     let qw: number, qx: number, qy: number, qz: number;
 
     if (trace > 0) {
-        const s = 0.5 / Math.sqrt(trace + 1.0);
+        const s: number = 0.5 / Math.sqrt(trace + 1.0);
         qw = 0.25 / s;
         qx = (r21 - r12) * s;
         qy = (r02 - r20) * s;
         qz = (r10 - r01) * s;
     } else if (r00 > r11 && r00 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
+        const s: number = 2.0 * Math.sqrt(1.0 + r00 - r11 - r22);
         qw = (r21 - r12) / s;
         qx = 0.25 * s;
         qy = (r01 + r10) / s;
         qz = (r02 + r20) / s;
     } else if (r11 > r22) {
-        const s = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
+        const s: number = 2.0 * Math.sqrt(1.0 + r11 - r00 - r22);
         qw = (r02 - r20) / s;
         qx = (r01 + r10) / s;
         qy = 0.25 * s;
         qz = (r12 + r21) / s;
     } else {
-        const s = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
+        const s: number = 2.0 * Math.sqrt(1.0 + r22 - r00 - r11);
         qw = (r10 - r01) / s;
         qx = (r02 + r20) / s;
         qy = (r12 + r21) / s;
         qz = 0.25 * s;
     }
 
-    [qx, qy, qz] = toZero([qx, qy, qz]);
+    qx = toZeroValue(qx);
+    qy = toZeroValue(qy);
+    qz = toZeroValue(qz);
 
-    let q = [Math.abs(qx), Math.abs(qy), Math.abs(qz)].reduce((acc, curr) => {
-        if (acc === 0 || (curr > 0 && curr < acc)) {
-            acc = curr;
-        }
+    // smallest non zero absolute value of the axis components
+    let q: number = 0;
+    let abs: number = Math.abs(qx);
 
-        return acc;
-    }, 0);
+    if (q === 0 || (abs > 0 && abs < q)) {
+        q = abs;
+    }
+
+    abs = Math.abs(qy);
+
+    if (q === 0 || (abs > 0 && abs < q)) {
+        q = abs;
+    }
+
+    abs = Math.abs(qz);
+
+    if (q === 0 || (abs > 0 && abs < q)) {
+        q = abs;
+    }
 
     if (q > 0) {
         qx /= q;
@@ -299,40 +412,47 @@ export function decompose(original: Matrix): DecomposedMatrix3D | null {
         qz /= q;
     }
 
-    const rotate: [number, number, number, number] = [
-        qx,
-        qy,
-        qz,
-        Object.is(qw, +0) ? 0 : (2 * Math.acos(qw) * 180) / Math.PI,
-    ];
-    const scale: [number, number, number] = [scaleX, scaleY, scaleZ];
-    const skew: [number, number, number] = [skewXY, skewXZ, skewYZ];
+    result.rotateX = qx;
+    result.rotateY = qy;
+    result.rotateZ = qz;
+    result.rotateAngle = Object.is(qw, +0) ? 0 : (2 * Math.acos(qw) * 180) / Math.PI;
+    result.scaleX = scaleX;
+    result.scaleY = scaleY;
+    result.scaleZ = scaleZ;
+    result.skewXY = skewXY;
+    result.skewXZ = skewXZ;
+    result.skewYZ = skewYZ;
 
-    return {
-        translate,
-        scale,
-        rotate,
-        skew,
-        perspective,
-    };
+    return true;
 }
 
-function transposeMatrix4(m: Matrix): Matrix {
-    return [m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7], m[11], m[15]];
-}
-
-export function toZero(v: number[]): number[];
-export function toZero(v: Matrix): Matrix;
-export function toZero(v: number[] | Matrix): number[] | Matrix {
-    for (let i = 0; i < v.length; i++) {
-        if (Math.abs(v[i]) <= epsilon) {
-            v[i] = 0;
-        } else {
-            v[i] = +v[i].toPrecision(6);
-        }
+/**
+ * a value close to 0 (`epsilon`) is set to 0, the other values are rounded to 6 significant digits
+ * @param value
+ */
+export function toZeroValue(value: number): number {
+    if (Math.abs(value) <= epsilon) {
+        return 0;
     }
 
-    return v;
+    // the integers that have at most 6 digits are not changed by the rounding: no string is created
+    if (Number.isInteger(value) && value < 1e6 && value > -1e6) {
+        return value;
+    }
+
+    return toPrecision6(value);
+}
+
+/**
+ * apply {@link toZeroValue} to the values of a matrix
+ * @param matrix
+ */
+export function toZero(matrix: Matrix): Matrix {
+    for (let i = 0; i < 16; i++) {
+        matrix[i] = toZeroValue(matrix[i]);
+    }
+
+    return matrix;
 }
 
 // https://drafts.csswg.org/css-transforms-1/#2d-matrix

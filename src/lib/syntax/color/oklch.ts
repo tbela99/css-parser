@@ -231,7 +231,7 @@ export function getOKLCHComponents(arena: AstArena, token: Token): number[] | nu
     t = components[3];
 
     const alpha: number =
-        t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.strings[arena.stringValue[t]] === "none")
+        t == null || (arena.dataTypes[t] === EnumToken.IdenTokenType && arena.resolveString(arena.stringValue[t]) === "none")
             ? 1
             : getNumber(arena, t);
 

@@ -11,6 +11,7 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform } from "lightningcss";
+import { minify} from '@stacksjs/ts-css';
 import {  transform  as yukuTransform} from "yuku-css";
 import { transformSync } from "@tbela99/css-parser";
 
@@ -66,6 +67,7 @@ const versions = {
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
     'yuku-css': pkgVersion("yuku-css", "yuku-css/package.json"),
+    'stacksjs-ts-css': pkgVersion("stacksjs-ts-css", "@stacksjs/ts-css/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
 };
 
@@ -78,25 +80,25 @@ const cssnanoProcessor = postcss([cssnano]);
  * official table's "name - version" formatting.
  */
 export const minifiers = [
-    {
-        id: "clean-css",
-        url: versions["clean-css"].url,
-        label: `clean-css - ${versions["clean-css"].version}`,
-        minify: (css) => cleanCssInstance.minify(css).styles,
-    },
-    {
-        id: "cssnano",
-        url: versions.cssnano.url,
-        label: `cssnano - ${versions.cssnano.version}`,
-        minify: async (css) => (await cssnanoProcessor.process(css, { from: undefined })).css,
-    },
-    {
-        id: "csso",
-        url: versions.csso.url,
-        label: `csso - ${versions.csso.version}`,
-        minify: (css) => csso.minify(css).css,
-    },
     // infinite loop bug
+    {
+        id: "yuku-css",
+        url: versions["yuku-css"].url,
+        label: `yuku-css - ${versions["yuku-css"].version}`,
+        minify: (css) => yukuTransform(css).code,
+    },
+    {
+        id: "lightningcss",
+        url: versions.lightningcss.url,
+        label: `lightningcss - ${versions.lightningcss.version}`,
+        minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
+    },
+    {
+        id: "esbuild",
+        url: versions.esbuild.url,
+        label: `esbuild - ${versions.esbuild.version}`,
+        minify: async (css) => (await esbuild.transform(css, { loader: "css", minify: true })).code,
+    },
     {
         id: "css-tree",
         url: versions["css-tree"].url,
@@ -107,31 +109,10 @@ export const minifiers = [
         minify: (css) => csstree.generate(csstree.parse(css)),
     },
     {
-        id: "esbuild",
-        url: versions.esbuild.url,
-        label: `esbuild - ${versions.esbuild.version}`,
-        minify: async (css) => (await esbuild.transform(css, { loader: "css", minify: true })).code,
-    },
-    {
-        id: "lightningcss",
-        url: versions.lightningcss.url,
-        label: `lightningcss - ${versions.lightningcss.version}`,
-        minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
-    },
-    {
-        id: "yuku-css",
-        url: versions["yuku-css"].url,
-        label: `yuku-css - ${versions["yuku-css"].version}`,
-        minify: (css) => yukuTransform(css).code,
-    },
-    {
-        id: "css-parser2",
-        url: versions["css-parser"].url,
-        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
-        minify: async (css) =>
-            transformSync({
-                input: Buffer.from(css),
-            }).code,
+        id: "stacksjs-ts-css",
+        url: versions["stacksjs-ts-css"].url,
+        label: `@stacksjs/ts-css - ${versions["stacksjs-ts-css"].version}`,
+        minify: (css) => minify(css).css,
     },
     {
         id: "css-parser-speed",
@@ -146,6 +127,32 @@ export const minifiers = [
                 removeEmpty: true,
                 removeComments: true,
                 convertColor: true,
+                validate: false,
+                // minifyValues: true,
             }).code,
+    },
+    {
+        id: "css-parser",
+        url: versions["css-parser"].url,
+        label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
+        minify: async (css) => transformSync({ input: Buffer.from(css) }).code,
+    },
+    {
+        id: "csso",
+        url: versions.csso.url,
+        label: `csso - ${versions.csso.version}`,
+        minify: (css) => csso.minify(css).css,
+    },
+    {
+        id: "clean-css",
+        url: versions["clean-css"].url,
+        label: `clean-css - ${versions["clean-css"].version}`,
+        minify: (css) => cleanCssInstance.minify(css).styles,
+    },
+    {
+        id: "cssnano",
+        url: versions.cssnano.url,
+        label: `cssnano - ${versions.cssnano.version}`,
+        minify: async (css) => (await cssnanoProcessor.process(css, { from: undefined })).css,
     },
 ];

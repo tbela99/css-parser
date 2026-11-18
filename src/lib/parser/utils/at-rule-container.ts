@@ -1,7 +1,7 @@
 import type { Token, ErrorDescription, ParserOptions } from "../../../@types/index.d.ts";
 import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
-import { mFGT, mFLT, tokensfuncDefMap } from "../../syntax/constants.ts";
+import { mFGT, mFLT, tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
@@ -22,7 +22,7 @@ export function parseAtRuleContainerQueryList(
     let matchCount: number = 0;
     let hasErrors: boolean = false;
     const errors: ErrorDescription[] = [];
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[context]]);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[context]));
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
     const parts: Token[][] = [[]];
 
@@ -36,7 +36,7 @@ export function parseAtRuleContainerQueryList(
 
         parts[parts.length - 1].push(token);
 
-        if (type === EnumToken.StartParensTokenType || tokensfuncDefMap.has(type)) {
+        if (type === EnumToken.StartParensTokenType || isFunctionDefType(type)) {
             matchCount++;
         } else if (type === EnumToken.EndParensTokenType && matchCount > 0) {
             matchCount--;
@@ -128,7 +128,7 @@ export function parseAtRuleContainerQueryList(
                     let valid: boolean = true;
 
                     // if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
-                    //     const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                    //     const val: string = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     //     valid = val === "and" || val === "or";
                     // } else {
                     valid = arena.dataTypes[stream[i]] !== EnumToken.CommaTokenType;
@@ -152,7 +152,7 @@ export function parseAtRuleContainerQueryList(
 
                 if (
                     arena.dataTypes[stream[i]] === EnumToken.StartParensTokenType ||
-                    tokensfuncDefMap.has(arena.dataTypes[stream[i]])
+                    isFunctionDefType(arena.dataTypes[stream[i]])
                 ) {
                     scopes.push((currentScope = new Set()));
                     stack.push(stream[i]);
@@ -171,7 +171,7 @@ export function parseAtRuleContainerQueryList(
 
                     case EnumToken.IdenTokenType:
                         {
-                            const val: string = arena.strings[arena.stringValue[stream[i]]].toLowerCase();
+                            const val: string = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
 
                             if (val === "not") {
                                 arena.dataTypes[stream[i]] = EnumToken.NotTokenType;
@@ -239,7 +239,7 @@ export function parseAtRuleContainerQueryList(
                                 );
 
                                 if (name != null) {
-                                    const val: string = arena.strings[arena.stringValue[name]];
+                                    const val: string = arena.resolveString(arena.stringValue[name]);
 
                                     if (val.startsWith("min-")) {
                                         // inlined: arena.setStr(name, val.substring(4))
@@ -256,7 +256,7 @@ export function parseAtRuleContainerQueryList(
                             // check <style()> or <scroll-state()>
                         }
 
-                        if (stack.length > 0 && tokensfuncDefMap.has(arena.dataTypes[stack[stack.length - 1]])) {
+                        if (stack.length > 0 && isFunctionDefType(arena.dataTypes[stack[stack.length - 1]])) {
                             const index: number = tokens.indexOf(stack[stack.length - 1]);
 
                             arena.dataTypes[tokens[index]] = tokensfuncDefMap.get(
@@ -286,7 +286,7 @@ export function parseAtRuleContainerQueryList(
                                         options.source!.file,
                                         ...options.source!.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
                                     ],
-                                    message: `expecting '<${arena.strings[arena.stringValue[tokens[index]]]}-query>'`,
+                                    message: `expecting '<${arena.resolveString(arena.stringValue[tokens[index]])}-query>'`,
                                 });
                                 break;
                             }
@@ -439,8 +439,8 @@ export function parseAtRuleContainerQueryList(
                                                 name != null &&
                                                 name2 != null &&
                                                 equalsIgnoreCase(
-                                                    arena.strings[arena.stringValue[name]],
-                                                    arena.strings[arena.stringValue[name2]],
+                                                    arena.resolveString(arena.stringValue[name]),
+                                                    arena.resolveString(arena.stringValue[name2]),
                                                 )
                                             ) {
                                                 switch (arena.dataTypes[leftOp]) {

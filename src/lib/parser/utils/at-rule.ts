@@ -14,7 +14,7 @@ export function matchAtRuleSyntax(
     success: boolean;
     errors: ErrorDescription[];
 } {
-    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.strings[arena.name[atRule]]);
+    const syntaxRules = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[atRule]));
     const syntax: ValidationToken[] = syntaxRules?.getPreludeRules()?.slice?.(1) as ValidationToken[];
 
     trimArray(arena, stream);

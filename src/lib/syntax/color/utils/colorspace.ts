@@ -17,20 +17,20 @@ export function getColorSpace(arena: AstArena, color: Token) {
         return null;
     }
 
-    if (equalsIgnoreCase("color", arena.strings[arena.stringValue[color]])) {
-        if (equalsIgnoreCase("from", arena.strings[arena.stringValue[components[0]]])) {
-            name = arena.strings[arena.stringValue[components[2]]];
+    if (equalsIgnoreCase("color", arena.resolveString(arena.stringValue[color]))) {
+        if (equalsIgnoreCase("from", arena.resolveString(arena.stringValue[components[0]]))) {
+            name = arena.resolveString(arena.stringValue[components[2]]);
         } else {
-            name = arena.strings[arena.stringValue[components[0]]];
+            name = arena.resolveString(arena.stringValue[components[0]]);
         }
-    } else if (equalsIgnoreCase("color-mix", arena.strings[arena.stringValue[color]])) {
-        if (equalsIgnoreCase("in", arena.strings[arena.stringValue[components[0]]])) {
-            name = arena.strings[arena.stringValue[components[1]]];
+    } else if (equalsIgnoreCase("color-mix", arena.resolveString(arena.stringValue[color]))) {
+        if (equalsIgnoreCase("in", arena.resolveString(arena.stringValue[components[0]]))) {
+            name = arena.resolveString(arena.stringValue[components[1]]);
         } else {
             return "oklab";
         }
     } else {
-        name = arena.strings[arena.stringValue[color]];
+        name = arena.resolveString(arena.stringValue[color]);
     }
 
     return name! === "device-cmyk"

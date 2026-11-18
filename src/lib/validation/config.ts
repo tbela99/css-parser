@@ -14,7 +14,11 @@ export interface ValidationSyntaxRule {
     getPropertyDescriptors: () => Record<string, ValidationToken[]> | null;
 }
 
-const parsedSyntaxes = new Map<string, ValidationToken[]>();
+/**
+ * parsed syntaxes, by syntax node: the names that share a definition (`-webkit-transform` and `transform`, the aliases)
+ * share the parsed syntax, and the validations cached by syntax (see `matchDeclarationSyntax()`)
+ */
+const parsedSyntaxes = new WeakMap<object, ValidationToken[]>();
 
 Object.freeze(config);
 
@@ -66,8 +70,20 @@ function lookupNode(group: ValidationSyntaxGroupEnum, key: string): ValidationSy
  * @param key the type name without the angle brackets, or the function name followed by `()`
  */
 export function hasSyntax(key: string): boolean {
-    return lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+    let defined: boolean | undefined = definedSyntaxes.get(key);
+
+    if (defined === undefined) {
+        defined = lookupNode(ValidationSyntaxGroupEnum.Syntaxes, key) != null;
+        definedSyntaxes.set(key, defined);
+    }
+
+    return defined;
 }
+
+/**
+ * the types and the functions that are defined, by name, see {@link hasSyntax}
+ */
+const definedSyntaxes: Map<string, boolean> = new Map();
 
 /**
  * return the raw syntax of a type or a function
@@ -110,16 +126,16 @@ export const getParsedSyntax = memoize((group: ValidationSyntaxGroupEnum, key: s
         return null;
     }
 
-    const index: string = group + "." + key;
+    let syntax: ValidationToken[] | undefined = parsedSyntaxes.get(obj);
 
-    if (!parsedSyntaxes.has(index)) {
-        const syntax: ValidationToken[] = Object.freeze(
+    if (syntax === undefined) {
+        syntax = Object.freeze(
             trimSyntaxArray(parseSyntax((obj as ValidationSyntaxNode).syntax as string)),
         ) as ValidationToken[];
-        parsedSyntaxes.set(index, syntax);
+        parsedSyntaxes.set(obj, syntax);
     }
 
-    return parsedSyntaxes.get(index) as ValidationToken[];
+    return syntax;
 }) as (group: ValidationSyntaxGroupEnum, key: string) => null | ValidationToken[];
 
 export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: string): ValidationSyntaxRule | null => {

@@ -1,4 +1,4 @@
-import { ColorType } from "../../../dist/src/lib/ast/types.js";
+import { ColorType } from "../../../dist/lib/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const options = {
@@ -633,6 +633,84 @@ grid-template-areas:
         ).then((result) =>
             expect(result.code).equals(`.footer {
  grid-area: 4/1/auto/2
+}`),
+        );
+    });
+    it("padding-inline/padding-block/margin-inline/margin-block #36", function () {
+        return transform(
+            `
+.a {
+padding-inline-start: 1px;
+padding-inline-end: 1px;
+padding-block-start: 0px;
+padding-block-end: 10%;
+margin-inline-start: auto;
+margin-inline-end: auto;
+margin-block-start: 0;
+margin-block-end: 0px;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.a {
+ padding-inline: 1px;
+ padding-block: 0 10%;
+ margin-inline: auto;
+ margin-block: 0
+}`),
+        );
+    });
+    it("padding-inline/padding-block/margin-inline/margin-block #37", function () {
+        return transform(
+            `
+.a {
+margin-inline: 10px 5px;
+margin-inline-start: 2px;
+margin-block-end: 5px;
+margin-block: 3px;
+padding-block: 1em;
+padding-block-end: 2em;
+padding-inline: 4px 6px;
+padding-inline-end: 4px;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.a {
+ margin-inline: 2px 5px;
+ margin-block: 3px;
+ padding-block: 1em 2em;
+ padding-inline: 4px
+}`),
+        );
+    });
+    it("padding-inline/padding-block/margin-inline/margin-block #38", function () {
+        return transform(
+            `
+.a {
+margin-inline-start: 1px !important;
+margin-inline-end: 1px !important;
+margin-block: var(--gap);
+margin-block-start: 1px;
+padding-inline-start: 1px;
+padding-block-end: 1px;
+}
+`,
+            {
+                beautify: true,
+            },
+        ).then((result) =>
+            expect(result.code).equals(`.a {
+ margin-inline-start: 1px!important;
+ margin-inline-end: 1px!important;
+ margin-block: var(--gap);
+ margin-block-start: 1px;
+ padding-inline-start: 1px;
+ padding-block-end: 1px
 }`),
         );
     });
