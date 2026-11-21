@@ -321,6 +321,19 @@
                                         Expand if() function
                                     </label>
                                 </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        id="parseoptionsevaluateMixins"
+                                        name="parseoptions[evaluateMixins]"
+                                        type="checkbox"
+                                        value=""
+                                    />
+                                    <label class="form-check-label" for="parseoptionsevaluateMixins">
+                                        Evaluate mixins
+                                    </label>
+                                </div>
                                 <div class="form-check">
                                     <input
                                         class="form-check-input"
@@ -477,6 +490,7 @@
                                                 <option value="">None</option>
                                                 <option selected value="calc">Calc()</option>
                                                 <option value="if">If()</option>
+                                                <option value="mixins">Mixins</option>
                                                 <option value="validation">Validation</option>
                                                 <option value="prefix">Remove Prefixes</option>
                                                 <option value="bootstrap">Import Bootstrap</option>
@@ -964,6 +978,38 @@
             	);
             }
             `;
+                } else if (event.target.value === "mixins") {
+                    css.value = `@mixin --only-descs(--arg) {
+  color: var(--arg);
+  & + * { color: var(--arg, red); }
+}
+.foo {
+  @apply --only-descs(green);
+}
+
+@mixin --one-column() {
+  @media (width <= 800px) {
+    @contents;
+  }
+}
+@mixin --two-column() {
+  @media (width > 800px) {
+    @contents;
+  }
+}
+body {
+  @apply --one-column {
+    display: flex;
+    flex-flow: column;
+  }
+  @apply --two-column {
+    display: grid;
+    grid-template-columns: 60px 60px;
+  }
+}
+
+            `;
+            parseoptionsevaluateMixins.checked = true;
                 } else if (event.target.value === "validation") {
                     parseoptionsValidation.checked = true;
                     css.value = `
