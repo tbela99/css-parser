@@ -344,6 +344,21 @@
                                     />
                                     <label class="form-check-label" for="parseoptionsresolveUrls"> Rewrite URLs </label>
                                 </div>
+                                <div class="form-check">
+                                    
+                                    <label class="form-check-label" for="parseoptionspass">
+                                        Compiler passes
+                                    </label>
+                                    <select
+                                        class="form-select form-select-sm"
+                                        id="parseoptionspass"
+                                        name="parseoptions[pass]"
+                                    >
+                                        <option value="1">1</option>
+                                        <option selected value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </div>
                                 <!--
                                 <div class="form-check">
                                     <input
@@ -750,7 +765,7 @@
                         } else if (option.name.startsWith("parseoptions[")) {
                             name = option.name.slice("parseoptions[".length, -1);
                             parseOptions[name] =
-                                name === "validation" ? (+option.value === 0 ? false : +option.value) : +value > 0;
+                                name === "validation" || name == 'pass' ? (+option.value === 0 ? false : +option.value) : +value > 0;
                         }
                     }
 
@@ -908,6 +923,12 @@
                         let i = 0;
 
                         for (; i < stack.length; i++) {
+
+                            if (stack[i].classList == null) {
+
+                                continue;
+                            }
+                            
                             stack[i].classList.toggle("tree-collapsed", collapse);
 
                             if (maxDepth > 0 && stack[i].dataset.parsed === "no") {
