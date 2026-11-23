@@ -7,7 +7,7 @@ import localPatch from "./local-patch.json" with { type: "json" };
 // changes: the version is updated manually
 const webrefUrl = "https://cdn.jsdelivr.net/npm/@webref/css@8.7.8/css.json";
 // the renamed properties are renamed by the parser (renamedStandardProperties), they are updated manually
-const renamedPropertiesFile = import.meta.dirname! + "/../src/lib/syntax/syntax.ts";
+const renamedPropertiesFile = import.meta.dirname! + "/../src/syntax/syntax.ts";
 // the csstree patch, written for mdn-data. the version is pinned: the generated syntax file must not change when a new
 // version is published, it is updated manually
 const patchUrl = "https://cdn.jsdelivr.net/npm/css-tree@3.2.1/data/patch.json";
@@ -150,7 +150,7 @@ for (const atRule of webref.atrules ?? []) {
 for (const property of webref.properties ?? []) {
     if (property.legacyAliasOf != null) {
         // the vendor prefixed legacy name aliases use the syntax of the standard property, they are not renamed:
-        // `-webkit-align-content: { alias: "align-content" }`, see lookupNode() in src/lib/validation/config.ts
+        // `-webkit-align-content: { alias: "align-content" }`, see lookupNode() in src/validation/config.ts
         if (/^-[a-z]+-/.test(property.name)) {
             define("declarations", property.name, webrefUrl, () => {
                 json.declarations[property.name] = { alias: property.legacyAliasOf };
@@ -186,7 +186,7 @@ for (const selector of webref.selectors ?? []) {
 }
 
 // the functions (`abs()`) are stored in json.syntaxes, the types (`color` for `<color>`) in json.types, without their
-// angle brackets. see lookupNode() in src/lib/validation/config.ts
+// angle brackets. see lookupNode() in src/validation/config.ts
 for (const [definitions, isType] of [
     [webref.functions, false],
     [webref.types, true],
@@ -334,7 +334,7 @@ function define(group: OriginGroup, name: string, url: string, add: () => void) 
 }
 
 /**
- * the parser renames the properties listed in renamedStandardProperties (src/lib/syntax/syntax.ts), which is updated
+ * the parser renames the properties listed in renamedStandardProperties (src/syntax/syntax.ts), which is updated
  * manually. report the renamed properties it does not rename or renames to another property, and the vendor prefixed
  * properties it renames: the vendor prefixed aliases are not renamed
  */

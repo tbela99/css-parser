@@ -1,5 +1,22 @@
 # Changelog
 
+# v2.2.1
+
+## Bugs
+
+- [x] validation: a custom function call (`--fn()`) is validated like `var()`: it may be substituted by any value, the declaration that contains it is no longer reported as not valid. `width: --max-plus-x({ 1px, 7px, 2px }, 3px)` -> no error
+- [x] web: `parse()` and `transform()` called with `{file}` lost the source of the file: the css module names lost the file parts (`[name]`, `[folder]`, `[ext]`, `[path]`), the source maps and the relative urls the file path
+- [x] css modules: the case transform options are flags: they are tested with bitwise operators (`(naming & ModuleCaseTransformEnum.IgnoreCase) == 0`, `getKeyName()`)
+
+## Performance
+
+- [x] minifier: the size of the rules compared when they are merged is computed from the memoized sizes of their declarations instead of rendering them
+- [x] render memo: the keys are hashed while they are serialized (one pass)
+
+## Feature
+
+- [x] visitors: the events are flags, a handler registered with `{type: WalkerEvent.Enter | WalkerEvent.Leave}` is called when the node is entered and when it is left
+
 # v2.2.0
 
 ## Bugs

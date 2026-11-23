@@ -65,7 +65,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.0/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.1/web';
 
     const css = `
 
@@ -92,7 +92,7 @@ It can be imported as an umd module.
 }
     `;
 
-    console.debug(await transform(css, {beautify: true, convertColor:.ColorType.OKLCH}).then(r => r.code));
+    console.debug( transformSync(css, {beautify: true, convertColor:.ColorType.OKLCH}).then(r => r.code));
     })();
 </script>
 ```
@@ -103,7 +103,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.2.0/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.2.1/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {
@@ -179,7 +179,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.0/web';
+    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.1/web';
 
 const css = `
 
@@ -206,7 +206,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.2.0/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.2.1/dist/index-umd-web.js"></script>
 <script>
 
     (async () => {

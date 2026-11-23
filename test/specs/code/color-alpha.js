@@ -1,6 +1,6 @@
-import { ColorType, EnumToken } from "../../../dist/lib/ast/types.js";
-import { isOkLabClose as okLabClose } from "../../../dist/lib/syntax/color/utils/distance.js";
-import { AstArena } from "../../../dist/lib/ast/arena.js";
+import { ColorType, EnumToken } from "../../../dist/ast/types.js";
+import { isOkLabClose as okLabClose } from "../../../dist/syntax/color/utils/distance.js";
+import { AstArena } from "../../../dist/ast/arena.js";
 
 /**
  * compare a color token id with another token id or a plain color object

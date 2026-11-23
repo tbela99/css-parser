@@ -4,9 +4,9 @@ import type {
     ParserSyncOptions,
     SourceMapObject
 } from "../@types/index.d.ts";
-import { EnumToken } from "../lib/ast/types.ts";
-import { AstArena } from "../lib/ast/arena.ts";
-import { dirname } from "../lib/fs/resolve.ts";
+import { EnumToken } from "../ast/types.ts";
+import { AstArena } from "../ast/arena.ts";
+import { dirname } from "../fs/resolve.ts";
 import { ResponseType } from "../types.ts";
 
 /**

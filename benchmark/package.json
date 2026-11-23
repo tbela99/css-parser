@@ -7,12 +7,13 @@
     "sizes": "node src/compute-sizes.js",
     "bench": "vitest bench --run --reporter=json --outputFile=results/bench-results.json",
     "report": "node src/generate-report.js",
-    "all": "npm run sizes && npm run bench; npm run report"
+    "all": "npm run sizes && npm run bench; npm run report",
+    "dev:update": "cd .. && npm run build && npm pack --pack-destination benchmark/.packages && cd benchmark && mv .packages/tbela99-css-parser-*.tgz .packages/css-parser.tgz && bun add @tbela99/css-parser2@file:.packages/css-parser.tgz"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.26",
-    "@tbela99/css-parser": "github:tbela99/css-parser#v2.0.1",
-    "@tbela99/css-parser2": "github:tbela99/css-parser#d237344",
+    "@stacksjs/ts-css": "^0.3.29",
+    "@tbela99/css-parser": "github:tbela99/css-parser#v2.2.0",
+    "@tbela99/css-parser2": "../../css",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^9.9.0",
@@ -20,7 +21,8 @@
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.33",
-    "vitest": "^5.1.0",
+    "rust-css-parser": "../../rust-css-parser",
+    "vitest": "^5.1.1",
     "yuku-css": "^0.2.0"
   }
 }

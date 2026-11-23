@@ -44,11 +44,11 @@ The ast nodes are allocated in an arena (`result.arena`) and referenced by their
 or
 
 ```ts
-import {transform} from '@tbela99/css-parser';
+import {transformSync} from '@tbela99/css-parser';
 
 const css = `...`;
 
-const result = await transform(css); // or transform({input: css});
+const result =  transformSync(css); // or transformSync({input: css});
 console.debug(result.ast); // the id of the stylesheet node in result.arena
 console.debug(result.code);
 console.debug(result.stats);

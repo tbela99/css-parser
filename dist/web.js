@@ -1,32 +1,32 @@
 /* 
-	CSS parser, minifier and validator for node and the browser
+	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.2.0
+	Version: 2.2.1
 	License: MIT
  */
-import { doParse, doParseSync } from './lib/parser/parse.js';
-export { parseDeclarations, parseString } from './lib/parser/parse.js';
-import { doRender } from './lib/printer/render.js';
-export { renderValue } from './lib/printer/render.js';
-import { TransformResult, RenderResult } from './lib/printer/result.js';
-import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
-import { createParseInfo, Tokenizer } from './lib/parser/tokenize.js';
-import { isCssInput } from './lib/parser/input.js';
-import { matchUrl, resolve, dirname } from './lib/fs/resolve.js';
+import { doParse, doParseSync } from './parser/parse.js';
+export { parseDeclarations, parseString } from './parser/parse.js';
+import { doRender } from './printer/render.js';
+export { renderValue } from './printer/render.js';
+import { TransformResult, RenderResult } from './printer/result.js';
+import { ModuleScopeEnumOptions } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+import { createParseInfo, Tokenizer } from './parser/tokenize.js';
+import { isCssInput } from './parser/input.js';
+import { matchUrl, resolve, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
-import { SourceFile } from './lib/parser/source.js';
+import { SourceFile } from './parser/source.js';
 import { validateSyncArguments, parseResult } from './utils/sync.js';
-export { minify } from './lib/ast/minify.js';
-export { convertColor } from './lib/syntax/color/color.js';
-export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
-export { Arena, AstArena, TokenField, arenaColumns } from './lib/ast/arena.js';
-export { ARENA, ARENAID, AstArenaNode } from './lib/ast/arena-node.js';
-export { PropertyList } from './lib/parser/declaration/list.js';
-export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
-export { FeatureWalkMode } from './lib/ast/features/type.js';
-export { parseSyntax } from './lib/validation/parser/parse.js';
+export { minify } from './ast/minify.js';
+export { convertColor } from './syntax/color/color.js';
+export { isOkLabClose, okLabDistance } from './syntax/color/utils/distance.js';
+export { Arena, AstArena, TokenField, arenaColumns } from './ast/arena.js';
+export { ARENA, ARENAID, AstArenaNode } from './ast/arena-node.js';
+export { PropertyList } from './parser/declaration/list.js';
+export { SourceMap } from './printer/sourcemap.js';
+export { FeatureWalkMode } from './ast/features/type.js';
+export { parseSyntax } from './validation/parser/parse.js';
 export { version } from './version.js';
 
 /**
@@ -272,7 +272,7 @@ async function parse(...args) {
             return Promise.resolve((options.load != null
                 ? options.load(file, "", options.asStream ?? false)
                 : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
-                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => parse(stream, { src: options.file, ...options }));
+                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => parse(stream, { src: file, ...options }));
         }
         else {
             stream = input;
@@ -347,7 +347,7 @@ async function transform(...args) {
             return Promise.resolve((options.load != null
                 ? options.load(file, "", options.asStream ?? false)
                 : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
-                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => transform(stream, { src: options.file, ...options }));
+                    load(file, "", options.asStream ? ResponseType.ReadableStream : ResponseType.ArrayBuffer))).then((stream) => transform(stream, { src: file, ...options }));
         }
         else {
             stream = input;

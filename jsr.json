@@ -1,6 +1,6 @@
 {
   "name": "@tbela99/css-parser",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "publish": {
     "include": [
       "src",
@@ -22,6 +22,7 @@
       "build.sh",
       "docs",
       "llms.txt",
+      "web-test-runner.config.js",
       "package-lock.json",
       "CONTRIBUTING.md",
       "ROADMAP.md",

@@ -1,38 +1,38 @@
 /* 
-	CSS parser, minifier and validator for node and the browser
+	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.2.0
+	Version: 2.2.1
 	License: MIT
  */
 import { Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
-import { doParse, doParseSync } from './lib/parser/parse.js';
-export { parseDeclarations, parseString } from './lib/parser/parse.js';
-import { doRender } from './lib/printer/render.js';
-export { renderValue } from './lib/printer/render.js';
-import { TransformResult, RenderResult } from './lib/printer/result.js';
-import { useNativeBuffer } from './lib/printer/writer.js';
+import { doParse, doParseSync } from './parser/parse.js';
+export { parseDeclarations, parseString } from './parser/parse.js';
+import { doRender } from './printer/render.js';
+export { renderValue } from './printer/render.js';
+import { TransformResult, RenderResult } from './printer/result.js';
+import { useNativeBuffer } from './printer/writer.js';
 import { Buffer } from 'node:buffer';
-import { ModuleScopeEnumOptions } from './lib/ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './lib/ast/types.js';
-import { createParseInfo, Tokenizer } from './lib/parser/tokenize.js';
-import { isCssInput } from './lib/parser/input.js';
-import { resolve, matchUrl, dirname } from './lib/fs/resolve.js';
+import { ModuleScopeEnumOptions } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+import { createParseInfo, Tokenizer } from './parser/tokenize.js';
+import { isCssInput } from './parser/input.js';
+import { resolve, matchUrl, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
-import { SourceFile } from './lib/parser/source.js';
+import { SourceFile } from './parser/source.js';
 import { cwd } from 'node:process';
 import { validateSyncArguments, parseResult } from './utils/sync.js';
-export { minify } from './lib/ast/minify.js';
-export { convertColor } from './lib/syntax/color/color.js';
-export { isOkLabClose, okLabDistance } from './lib/syntax/color/utils/distance.js';
-export { Arena, AstArena, TokenField, arenaColumns } from './lib/ast/arena.js';
-export { ARENA, ARENAID, AstArenaNode } from './lib/ast/arena-node.js';
-export { SourceMap } from './lib/printer/sourcemap/sourcemap.js';
-export { FeatureWalkMode } from './lib/ast/features/type.js';
-export { parseSyntax } from './lib/validation/parser/parse.js';
+export { minify } from './ast/minify.js';
+export { convertColor } from './syntax/color/color.js';
+export { isOkLabClose, okLabDistance } from './syntax/color/utils/distance.js';
+export { Arena, AstArena, TokenField, arenaColumns } from './ast/arena.js';
+export { ARENA, ARENAID, AstArenaNode } from './ast/arena-node.js';
+export { SourceMap } from './printer/sourcemap.js';
+export { FeatureWalkMode } from './ast/features/type.js';
+export { parseSyntax } from './validation/parser/parse.js';
 export { version } from './version.js';
 
 // the rendered css is encoded with the node.js Buffer: faster than TextEncoder.encodeInto()

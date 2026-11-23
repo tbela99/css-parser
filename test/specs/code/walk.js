@@ -1,4 +1,4 @@
-import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../../../dist/lib/ast/types.js";
+import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../../../dist/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("node walker", function () {

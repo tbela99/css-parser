@@ -1,7 +1,7 @@
 import type { AstNode } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
-import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../lib/ast/types.ts";
-import type { AstArena } from "../lib/ast/arena.ts";
+import { EnumToken, WalkerEvent, WalkerOptionEnum } from "../ast/types.ts";
+import type { AstArena } from "../ast/arena.ts";
 
 /**
  * node walker options of {@link AstArena.walk}

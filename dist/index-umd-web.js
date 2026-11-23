@@ -1,8 +1,8 @@
 /* 
-	CSS parser, minifier and validator for node and the browser
+	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.2.0
+	Version: 2.2.1
 	License: MIT
  */
 (function (global, factory) {
@@ -14377,8 +14377,8 @@
      */
     const cssWideKeywords = getSyntaxConfig().declarations.all.syntax.split(/[\s|]+/g);
     /**
-     * the token may match a syntax that does not accept its type (`var()`, `env()`, `attr()`, the math functions, the css
-     * wide keywords, ...): the first token sets do not apply
+     * the token may match a syntax that does not accept its type (`var()`, `env()`, `attr()`, the custom function calls,
+     * the math functions, the css wide keywords, ...): the first token sets do not apply
      * @param arena
      * @param token
      * @param typ
@@ -14389,6 +14389,9 @@
             case exports.EnumToken.WildCardFunctionTokenDefType:
             case exports.EnumToken.MathFunctionTokenType:
             case exports.EnumToken.MathFunctionTokenDefType:
+            // a custom function call is substituted by its result, like var()
+            case exports.EnumToken.CustomFunctionTokenType:
+            case exports.EnumToken.CustomFunctionTokenDefType:
                 return true;
             case exports.EnumToken.IdenTokenType: {
                 const value = arena.resolveString(arena.stringValue[token]);
@@ -16029,7 +16032,7 @@
      */
     const wildCardProbes = new Map();
     /**
-     * var(), env() and if() may be substituted by any number of values. the function is matched:
+     * var(), env(), if() and the custom function calls may be substituted by any number of values. the function is matched:
      * - as a part of the syntax at index: `var(--color) 65%` is matched by `<linear-color-stop>` (`<color>` is the function)
      * - as the syntax at index, or as all the remaining syntaxes when it is the last token
      *
@@ -16188,6 +16191,21 @@
                     }
                     return wildCardResult;
                 }
+            }
+            // a custom function call (`--fn()`) is substituted by the result of the function: like var(), it may be
+            // substituted by any number of values
+            if ((arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenType ||
+                arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenDefType) &&
+                wildCardProbes.get(token) !== syntaxes[i]) {
+                const wildCardResult = matchWildCardFunction(arena, syntaxes, i, context, token, 
+                // the arguments of the call are not validated: they are the arguments of the custom function
+                arena.dataTypes[token] === exports.EnumToken.CustomFunctionTokenDefType
+                    ? trimArray(arena, context.peekRange()).at(-1)
+                    : token, options, out);
+                if (wildCardResult == null) {
+                    continue;
+                }
+                return wildCardResult;
             }
             if (
             // @ts-ignore
@@ -19163,6 +19181,8 @@
          * end of the key being looked up in the pool
          */
         used = 0;
+        // hash of the key being serialized, see serialize() and lookup()
+        hash = 0x811c9dc5;
         /**
          * @param numericEquality compare the numeric values with `==` semantics (`0` and `-0` are equal) and consider
          * all the `NaN` values equal. the raw bits are compared otherwise
@@ -19188,6 +19208,7 @@
                 this.growPool(used + 1);
             }
             this.pool[used++] = prefix;
+            this.hash = Math.imul(0x811c9dc5 ^ prefix, 0x01000193);
             for (let token = first; token !== 0; token = arena.nextSibling[token]) {
                 used = this.serialize(arena, token, used);
             }
@@ -19200,6 +19221,7 @@
          * @param token
          */
         token(arena, token) {
+            this.hash = 0x811c9dc5;
             this.used = this.serialize(arena, token, this.poolSize);
             return this.lookup();
         }
@@ -19246,50 +19268,63 @@
             const firstToken = arena.firstToken[token];
             const firstChild = arena.firstChild[token];
             let value = arena.numericValue[token];
-            // type and color type are 8 bits values
+            // type and color type are 8 bits values. the header is computed before its fields are written: the key is
+            // hashed while it is written, in order (see lookup())
             let header = arena.dataTypes[token] | (arena.colorType[token] << 8);
-            const index = used++;
+            let hash = this.hash;
             if (name !== 0) {
                 header |= 65536 /* Field.Name */;
-                buffer[used++] = name;
             }
             if (str !== 0) {
                 header |= 131072 /* Field.String */;
-                buffer[used++] = str;
             }
             if (unit !== 0) {
                 header |= 262144 /* Field.Unit */;
-                buffer[used++] = unit;
             }
             if (this.numericEquality) {
                 value = normalize(value);
             }
             // 0 is not serialized. -0 is not an integer: its raw bits are serialized
-            if (value !== 0 || 1 / value < 0) {
-                if ((value | 0) === value && value !== 0) {
-                    header |= 524288 /* Field.Integer */;
-                    buffer[used++] = value;
-                }
-                else {
-                    header |= 1048576 /* Field.Number */;
-                    f64[0] = value;
-                    buffer[used++] = bits[0];
-                    buffer[used++] = bits[1];
-                }
-            }
+            const numeric = value !== 0 || 1 / value < 0 ? ((value | 0) === value && value !== 0 ? 524288 /* Field.Integer */ : 1048576 /* Field.Number */) : 0;
+            header |= numeric;
             if (firstToken !== 0) {
                 header |= 2097152 /* Field.Tokens */;
             }
             if (firstChild !== 0) {
                 header |= 4194304 /* Field.Children */;
             }
-            buffer[index] = header;
+            buffer[used++] = header;
+            hash = Math.imul(hash ^ header, 0x01000193);
+            if (name !== 0) {
+                buffer[used++] = name;
+                hash = Math.imul(hash ^ name, 0x01000193);
+            }
+            if (str !== 0) {
+                buffer[used++] = str;
+                hash = Math.imul(hash ^ str, 0x01000193);
+            }
+            if (unit !== 0) {
+                buffer[used++] = unit;
+                hash = Math.imul(hash ^ unit, 0x01000193);
+            }
+            if (numeric === 524288 /* Field.Integer */) {
+                buffer[used++] = value;
+                hash = Math.imul(hash ^ value, 0x01000193);
+            }
+            else if (numeric === 1048576 /* Field.Number */) {
+                f64[0] = value;
+                buffer[used++] = bits[0];
+                buffer[used++] = bits[1];
+                hash = Math.imul(Math.imul(hash ^ bits[0], 0x01000193) ^ bits[1], 0x01000193);
+            }
+            this.hash = hash;
             if (firstToken !== 0) {
                 for (let child = firstToken; child !== 0; child = arena.nextSibling[child]) {
                     used = this.serialize(arena, child, used);
                 }
                 buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
                 buffer[used++] = End;
+                this.hash = Math.imul(this.hash ^ End, 0x01000193);
             }
             if (firstChild !== 0) {
                 for (let child = firstChild; child !== 0; child = arena.nextSibling[child]) {
@@ -19297,6 +19332,7 @@
                 }
                 buffer = used + 1 > this.poolLength ? this.growPool(used + 1) : this.pool;
                 buffer[used++] = End;
+                this.hash = Math.imul(this.hash ^ End, 0x01000193);
             }
             return used;
         }
@@ -19316,10 +19352,8 @@
             const pool = this.pool;
             const base = this.poolSize;
             const length = this.used - base;
-            let hash = 0x811c9dc5 ^ length;
-            for (let i = base; i < this.used; i++) {
-                hash = Math.imul(hash ^ pool[i], 0x01000193);
-            }
+            // the key was hashed while it was serialized: the length is mixed in
+            let hash = Math.imul(this.hash ^ length, 0x01000193);
             // the multiplications only propagate the bits upwards: the low bits, used as the table index, are mixed with
             // the high bits (murmur3 finalizer)
             hash ^= hash >>> 16;
@@ -19971,6 +20005,10 @@
      *
      * @internal
      */
+    /**
+     * `CSS_PARSER_CHECK_SIZE`: the computed sizes are checked against the rendered sizes (tests)
+     */
+    const checkSize = globalThis.process?.env?.CSS_PARSER_CHECK_SIZE != null;
     class NodeRenderer {
         /**
          * An instance is kept alive: the hidden class of the instances would otherwise be collected by a full garbage
@@ -20046,11 +20084,17 @@
             if (!this.direct) {
                 return RenderResult.codeLength(doRender(arena, node, this.options, null, this.cache.memo));
             }
-            // the output is not kept: the buffer is reused
-            const writer = this.writer;
-            writer.reset();
-            renderAstNode(arena, node, this.resolved, null, this.location, null, this.errors, this.reducer, this.cache, writer, 0, this.indents);
-            return writer.codeLength;
+            // the size is computed from the sizes of the parts: the node is not rendered
+            const size = nodeSize(arena, node, this.resolved, this.reducer, this.cache, 0) >> 1;
+            if (checkSize) {
+                const writer = this.writer;
+                writer.reset();
+                renderAstNode(arena, node, this.resolved, null, this.location, null, this.errors, this.reducer, this.cache, writer, 0, this.indents);
+                if (size !== writer.codeLength) {
+                    throw new Error(`computed size of node ${node} (${size}) differs from its rendered size (${writer.codeLength})`);
+                }
+            }
+            return size;
         }
     }
     /**
@@ -20686,15 +20730,38 @@
         return rendered;
     }
     /**
-     * write a declaration of a block: `name:value`, without the semicolon. identical declarations (same name, same value
-     * tokens) are rendered and encoded once per render: the bytes written first are copied
+     * the rendered value of a declaration (without the name): rendered once per structure, see {@link RenderMemo}
      * @param arena
      * @param node declaration
      * @param options
      * @param cache
      * @param reducer
-     * @param writer
+     * @param slot the memo slot of the declaration when it has been looked up, -1 otherwise
      */
+    function declarationValue$1(arena, node, options, cache, reducer, slot = -1) {
+        const memo = getRenderMemo(cache, options);
+        if (memo !== null) {
+            if (slot === -1) {
+                // the name is part of the key
+                slot = memo.declarations.list(arena, arena.firstToken[node], arena.name[node]);
+            }
+            const value = memo.values[slot];
+            if (value !== undefined) {
+                return value;
+            }
+        }
+        if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
+            // override options to avoid minifying values for custom properties
+            options = { ...options, minifyValues: false };
+            // override the reducer
+            reducer = createReducer(arena, options, cache);
+        }
+        const value = renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd();
+        if (memo !== null) {
+            memo.values[slot] = value;
+        }
+        return value;
+    }
     function writeDeclaration(arena, node, options, cache, reducer, writer) {
         const memo = getRenderMemo(cache, options);
         let slot = -1;
@@ -20711,19 +20778,7 @@
         const start = writer.length;
         const extra = writer.extra;
         // the rendered value of an identical declaration, rendered to another buffer (see NodeRenderer)
-        let value = memo === null ? undefined : memo.values[slot];
-        if (value === undefined) {
-            if (options.minifyValues && isUnminifiedDeclaration(arena, node)) {
-                // override options to avoid minifying values for custom properties
-                options = { ...options, minifyValues: false };
-                // override the reducer
-                reducer = createReducer(arena, options, cache);
-            }
-            value = renderDeclarationValue(arena, node, options.minifyValues, reducer).trimEnd();
-            if (memo !== null) {
-                memo.values[slot] = value;
-            }
-        }
+        const value = declarationValue$1(arena, node, options, cache, reducer, slot);
         // the parts are written directly: `name`, `:`, `indent`, `value`. the name is copied from the string table
         writeString(arena, arena.name[node], writer);
         writer.writeByte(0x3a);
@@ -20734,6 +20789,146 @@
         if (memo !== null) {
             memo.locate(slot, writer, start, extra);
         }
+    }
+    /**
+     * the size of a rendered node, computed without rendering it: the declarations are measured from their rendered values
+     * (rendered once per structure, see {@link declarationValue}), the layout follows {@link renderAstNode} (no source
+     * map). the result is `size * 2 + 1` when the output ends with a semicolon, `size * 2` otherwise (0 when the node
+     * renders nothing): no object is allocated
+     * @param arena
+     * @param data
+     * @param options
+     * @param reducer
+     * @param cache
+     * @param level
+     */
+    function nodeSize(arena, data, options, reducer, cache, level) {
+        const optIndent = options.indent;
+        const newLine = options.newLine;
+        const indentLength = optIndent.length * level;
+        const typ = arena.dataTypes[data];
+        switch (typ) {
+            case exports.EnumToken.DeclarationNodeType: {
+                const value = declarationValue$1(arena, data, options, cache, reducer);
+                return ((arena.stringLength(arena.name[data]) + 1 + optIndent.length + value.length) * 2 +
+                    (value.endsWith(";") ? 1 : 0));
+            }
+            case exports.EnumToken.CommentNodeType:
+            case exports.EnumToken.CDOCOMMNodeType: {
+                const id = arena.stringValue[data];
+                if (arena.stringStartsWith(id, "/*# sourceMappingURL=")) {
+                    return 0;
+                }
+                if (!options.removeComments || (options.preserveLicense && arena.stringStartsWith(id, "/*!"))) {
+                    const length = arena.stringLength(id);
+                    return length * 2 + (length > 0 && arena.stringCodeAt(id, length - 1) === 0x3b ? 1 : 0);
+                }
+                return 0;
+            }
+            case exports.EnumToken.StyleSheetNodeType: {
+                let size = 0;
+                let empty = true;
+                let last = 0;
+                for (let node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
+                    const child = nodeSize(arena, node, options, reducer, cache, level);
+                    if (child >= 2) {
+                        if (!empty) {
+                            size += newLine.length;
+                        }
+                        size += child >> 1;
+                        empty = false;
+                        last = child & 1;
+                    }
+                }
+                return size * 2 + last;
+            }
+            case exports.EnumToken.AtRuleNodeType:
+            case exports.EnumToken.RuleNodeType:
+            case exports.EnumToken.KeyframesRuleNodeType:
+            case exports.EnumToken.KeyframesAtRuleNodeType: {
+                const isAtRule = typ === exports.EnumToken.AtRuleNodeType || typ === exports.EnumToken.KeyframesAtRuleNodeType;
+                const nameId = arena.name[data];
+                const valueId = arena.stringValue[data];
+                let size = 0;
+                if (indentLength > 0 && newLine !== "") {
+                    size += newLine.length;
+                }
+                size += indentLength;
+                if (isAtRule) {
+                    size += 1 + arena.stringLength(nameId);
+                    if (arena.stringLength(valueId) > 0) {
+                        size += (optIndent || " ").length + arena.stringLength(valueId);
+                    }
+                    if (!(arena.flags[data] & exports.EnumAstNodeStatus.HasChildren)) {
+                        return (size + 1) * 2 + 1;
+                    }
+                }
+                else {
+                    size += arena.stringLength(nameId);
+                }
+                size += optIndent.length + 1;
+                const indentSubLength = optIndent.length * (level + 1);
+                let body = 0;
+                let semicolon = false;
+                for (let node = arena.firstChild[data]; node !== 0; node = arena.nextSibling[node]) {
+                    const nodeType = arena.dataTypes[node];
+                    if (nodeType === exports.EnumToken.DeclarationNodeType) {
+                        body +=
+                            (semicolon ? 1 : 0) +
+                                newLine.length +
+                                indentSubLength +
+                                (nodeSize(arena, node, options, reducer, cache, level + 1) >> 1);
+                        semicolon = true;
+                    }
+                    else if (nodeType === exports.EnumToken.CommentNodeType) {
+                        const commentId = arena.stringValue[node];
+                        if (options.removeComments && (!options.preserveLicense || !arena.stringStartsWith(commentId, "/*!"))) {
+                            continue;
+                        }
+                        const length = arena.stringLength(commentId);
+                        if (length > 0) {
+                            body += (semicolon ? 1 : 0) + newLine.length + indentSubLength + length;
+                            // a trailing semicolon is removed: it is written before the next node
+                            semicolon = arena.stringCodeAt(commentId, length - 1) === 0x3b;
+                            if (semicolon) {
+                                body--;
+                            }
+                        }
+                    }
+                    else {
+                        const child = nodeSize(arena, node, options, reducer, cache, level + 1);
+                        if (child >= 2) {
+                            body += (semicolon ? 1 : 0) + (child >> 1);
+                            switch (nodeType) {
+                                case exports.EnumToken.AtRuleNodeType:
+                                case exports.EnumToken.KeyframesAtRuleNodeType:
+                                    semicolon = !(arena.flags[node] & exports.EnumAstNodeStatus.HasChildren);
+                                    break;
+                                case exports.EnumToken.RuleNodeType:
+                                case exports.EnumToken.KeyframesRuleNodeType:
+                                    semicolon = false;
+                                    break;
+                                default:
+                                    semicolon = (child & 1) === 1;
+                            }
+                            if (semicolon) {
+                                body--;
+                            }
+                        }
+                    }
+                }
+                if (options.removeEmpty &&
+                    body === 0 &&
+                    !(typ === exports.EnumToken.AtRuleNodeType &&
+                        (arena.stringEquals(nameId, "apply") ||
+                            arena.stringEquals(nameId, "mixin") ||
+                            arena.stringEquals(nameId, "function")))) {
+                    return 0;
+                }
+                return (size + body + newLine.length + indentLength + 1) * 2;
+            }
+        }
+        return 0;
     }
     /**
      * render the value tokens of a declaration with the reducer. with minifyValues, the whitespace that is not needed is
@@ -43627,13 +43822,12 @@
      * @private
      */
     const getKeyName = memoize((key, how) => {
-        switch (how) {
-            case exports.ModuleCaseTransformEnum.CamelCase:
-            case exports.ModuleCaseTransformEnum.CamelCaseOnly:
-                return camelize(key);
-            case exports.ModuleCaseTransformEnum.DashCase:
-            case exports.ModuleCaseTransformEnum.DashCaseOnly:
-                return dasherize(key);
+        // the case transforms are flags
+        if (how & (exports.ModuleCaseTransformEnum.CamelCase | exports.ModuleCaseTransformEnum.CamelCaseOnly)) {
+            return camelize(key);
+        }
+        if (how & (exports.ModuleCaseTransformEnum.DashCase | exports.ModuleCaseTransformEnum.DashCaseOnly)) {
+            return dasherize(key);
         }
         return key;
     });
@@ -43881,8 +44075,8 @@
                     valuesHandlers.get(exports.EnumToken[key]).push(value);
                 }
                 else if (typeof value === "object") {
-                    if ("type" in value && "handler" in value && value.type in exports.WalkerEvent) {
-                        if (value.type == exports.WalkerEvent.Enter) {
+                    if ("type" in value && "handler" in value && typeof value.type == "number" && (value.type & (exports.WalkerEvent.Enter | exports.WalkerEvent.Leave)) != 0) {
+                        if (value.type & exports.WalkerEvent.Enter) {
                             if (!preValuesHandlers.has(exports.EnumToken[key])) {
                                 preValuesHandlers.set(exports.EnumToken[key], []);
                             }
@@ -43890,7 +44084,7 @@
                                 .get(exports.EnumToken[key])
                                 .push(value.handler);
                         }
-                        else if (value.type == exports.WalkerEvent.Leave) {
+                        if (value.type & exports.WalkerEvent.Leave) {
                             if (!postValuesHandlers.has(exports.EnumToken[key])) {
                                 postValuesHandlers.set(exports.EnumToken[key], []);
                             }
@@ -43919,8 +44113,8 @@
                         .push(value);
                 }
                 else if (typeof value === "object") {
-                    if ("type" in value && "handler" in value && value.type in exports.WalkerEvent) {
-                        if (value.type == exports.WalkerEvent.Enter) {
+                    if ("type" in value && "handler" in value && typeof value.type == "number" && (value.type & (exports.WalkerEvent.Enter | exports.WalkerEvent.Leave)) != 0) {
+                        if (value.type & exports.WalkerEvent.Enter) {
                             if (!preVisitorsHandlersMap.has(key)) {
                                 preVisitorsHandlersMap.set(key, []);
                             }
@@ -43928,7 +44122,7 @@
                                 .get(key)
                                 .push(value.handler);
                         }
-                        else if (value.type == exports.WalkerEvent.Leave) {
+                        if (value.type & exports.WalkerEvent.Leave) {
                             if (!postVisitorsHandlersMap.has(key)) {
                                 postVisitorsHandlersMap.set(key, []);
                             }
@@ -43955,11 +44149,11 @@
                     allVisitorsHandlers.add(value);
                 }
                 else if (typeof value === "object") {
-                    if ("type" in value && "handler" in value && value.type in exports.WalkerEvent) {
-                        if (value.type == exports.WalkerEvent.Enter) {
+                    if ("type" in value && "handler" in value && typeof value.type == "number" && (value.type & (exports.WalkerEvent.Enter | exports.WalkerEvent.Leave)) != 0) {
+                        if (value.type & exports.WalkerEvent.Enter) {
                             preAllVisitorsHandlers.add(value.handler);
                         }
-                        else if (value.type == exports.WalkerEvent.Leave) {
+                        if (value.type & exports.WalkerEvent.Leave) {
                             postAllVisitorsHandlers.add(value.handler);
                         }
                     }
@@ -44914,7 +45108,7 @@
                     }
                 }
             }
-            if (moduleSettings.naming !== exports.ModuleCaseTransformEnum.IgnoreCase) {
+            if ((moduleSettings.naming & exports.ModuleCaseTransformEnum.IgnoreCase) == 0) {
                 revMapping = {};
                 mapping = {};
                 let keyName;
@@ -46000,7 +46194,7 @@
                     }
                 }
             }
-            if (moduleSettings.naming !== exports.ModuleCaseTransformEnum.IgnoreCase) {
+            if ((moduleSettings.naming & exports.ModuleCaseTransformEnum.IgnoreCase) == 0) {
                 revMapping = {};
                 mapping = Object.entries(mapping).reduce((acc, [key, value]) => {
                     const keyName = getKeyName(key, moduleSettings.naming);
@@ -47479,7 +47673,7 @@
     /**
      * Version number
      */
-    const version = "2.2.0";
+    const version = "2.2.1";
 
     /**
      * Load file or url
@@ -47724,7 +47918,7 @@
                 return Promise.resolve((options.load != null
                     ? options.load(file, "", options.asStream ?? false)
                     : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
-                        load(file, "", options.asStream ? exports.ResponseType.ReadableStream : exports.ResponseType.ArrayBuffer))).then((stream) => parse(stream, { src: options.file, ...options }));
+                        load(file, "", options.asStream ? exports.ResponseType.ReadableStream : exports.ResponseType.ArrayBuffer))).then((stream) => parse(stream, { src: file, ...options }));
             }
             else {
                 stream = input;
@@ -47799,7 +47993,7 @@
                 return Promise.resolve((options.load != null
                     ? options.load(file, "", options.asStream ?? false)
                     : // the default loader loads the file as an ArrayBuffer: the preferred input of the tokenizer
-                        load(file, "", options.asStream ? exports.ResponseType.ReadableStream : exports.ResponseType.ArrayBuffer))).then((stream) => transform(stream, { src: options.file, ...options }));
+                        load(file, "", options.asStream ? exports.ResponseType.ReadableStream : exports.ResponseType.ArrayBuffer))).then((stream) => transform(stream, { src: file, ...options }));
             }
             else {
                 stream = input;

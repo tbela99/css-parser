@@ -10,6 +10,7 @@
 /CONTRIBUTING.md
 /rollup.config.js
 /tsconfig.json
+/web-test-runner.config.js
 /src
 /.idea
 /llms.txt
@@ -38,3 +39,4 @@
 /deno.lock
 /scripts
 /typedoc.config.js
+/web-test-runner.config.mjs

@@ -5,17 +5,17 @@ import type {
     VisitorSyncNodeMap,
 } from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
-import { SourceMap } from "../lib/printer/sourcemap/sourcemap.ts";
+import { SourceMap } from "../printer/sourcemap.ts";
 import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../lib/ast/types.ts";
+import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
 import type { Token } from "./token.d.ts";
-import type { AstArenaNode } from "../lib/ast/arena-node.ts";
-import { FeatureWalkMode } from "../lib/ast/features/type.ts";
-import { ValidationToken } from "../lib/validation/parser/types";
-import { SourceFile } from "../lib/parser/source.ts";
-import type { CssInput } from "../lib/parser/input.ts";
+import type { AstArenaNode } from "../ast/arena-node.ts";
+import { FeatureWalkMode } from "../ast/features/type.ts";
+import { ValidationToken } from "../validation/parser/types";
+import { SourceFile } from "../parser/source.ts";
+import type { CssInput } from "../parser/input.ts";
 import { ResponseType } from "../types.ts";
-import type { AstArena } from "../lib/ast/arena.ts";
+import type { AstArena } from "../ast/arena.ts";
 
 export * from "./ast.d.ts";
 export * from "./token.d.ts";
@@ -966,7 +966,7 @@ export declare interface TransformResultStats extends ParseResultStats {
     render: string;
 }
 
-export { RenderResult, TransformResult } from "../lib/printer/result.ts";
+export { RenderResult, TransformResult } from "../printer/result.ts";
 
 /**
  * Parse token options

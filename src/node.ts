@@ -14,19 +14,19 @@ import type {
 import { Readable } from "node:stream";
 import { createReadStream } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
-import { doParse, doParseSync } from "./lib/parser/parse.ts";
-import { doRender } from "./lib/printer/render.ts";
-import { RenderResult, TransformResult } from "./lib/printer/result.ts";
-import { useNativeBuffer } from "./lib/printer/writer.ts";
+import { doParse, doParseSync } from "./parser/parse.ts";
+import { doRender } from "./printer/render.ts";
+import { RenderResult, TransformResult } from "./printer/result.ts";
+import { useNativeBuffer } from "./printer/writer.ts";
 import { Buffer } from "node:buffer";
-import type { AstArena } from "./lib/ast/arena.ts";
-import { ModuleScopeEnumOptions } from "./lib/ast/types.ts";
-import { createParseInfo, Tokenizer } from "./lib/parser/tokenize.ts";
-import { type CssInput, isCssInput } from "./lib/parser/input.ts";
-import { dirname, matchUrl, resolve } from "./lib/fs/resolve.ts";
+import type { AstArena } from "./ast/arena.ts";
+import { ModuleScopeEnumOptions } from "./ast/types.ts";
+import { createParseInfo, Tokenizer } from "./parser/tokenize.ts";
+import { type CssInput, isCssInput } from "./parser/input.ts";
+import { dirname, matchUrl, resolve } from "./fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { resolve as resolvePath } from "node:path";
-import { SourceFile } from "./lib/parser/source.ts";
+import { SourceFile } from "./parser/source.ts";
 import { cwd } from "node:process";
 import { parseResult, validateSyncArguments } from "./utils/sync.ts";
 
@@ -46,18 +46,18 @@ export type {
     RenderOptions,
     TransformOptions,
 } from "./@types/index.d.ts";
-export { RenderResult, TransformResult } from "./lib/printer/result.ts";
+export { RenderResult, TransformResult } from "./printer/result.ts";
 
-export { minify } from "./lib/ast/minify.ts";
-export { parseString } from "./lib/parser/parse.ts";
-export { renderValue } from "./lib/printer/render.ts";
-export { convertColor } from "./lib/syntax/color/color.ts";
-export { isOkLabClose, okLabDistance } from "./lib/syntax/color/utils/distance.ts";
-export { parseDeclarations } from "./lib/parser/parse.ts";
-export { Arena, AstArena, TokenField, arenaColumns } from "./lib/ast/arena.ts";
-export type { ArenaProperties, ArenaTransferables } from "./lib/ast/arena.ts";
-export { AstArenaNode, ARENAID, ARENA } from "./lib/ast/arena-node.ts";
-export type { AstArenaNodeInput } from "./lib/ast/arena-node.ts";
+export { minify } from "./ast/minify.ts";
+export { parseString } from "./parser/parse.ts";
+export { renderValue } from "./printer/render.ts";
+export { convertColor } from "./syntax/color/color.ts";
+export { isOkLabClose, okLabDistance } from "./syntax/color/utils/distance.ts";
+export { parseDeclarations } from "./parser/parse.ts";
+export { Arena, AstArena, TokenField, arenaColumns } from "./ast/arena.ts";
+export type { ArenaProperties, ArenaTransferables } from "./ast/arena.ts";
+export { AstArenaNode, ARENAID, ARENA } from "./ast/arena-node.ts";
+export type { AstArenaNodeInput } from "./ast/arena-node.ts";
 export {
     EnumToken,
     ColorType,
@@ -66,14 +66,14 @@ export {
     ModuleCaseTransformEnum,
     WalkerEvent,
     WalkerOptionEnum,
-} from "./lib/ast/types.ts";
-export { SourceMap } from "./lib/printer/sourcemap/sourcemap.ts";
-export type { ValidationToken } from "./lib/validation/parser/types.d.ts";
-export type { CssInput } from "./lib/parser/input.ts";
+} from "./ast/types.ts";
+export { SourceMap } from "./printer/sourcemap.ts";
+export type { ValidationToken } from "./validation/parser/types.d.ts";
+export type { CssInput } from "./parser/input.ts";
 
-export { FeatureWalkMode } from "./lib/ast/features/type.ts";
+export { FeatureWalkMode } from "./ast/features/type.ts";
 export { dirname, resolve, ResponseType };
-export { parseSyntax } from "./lib/validation/parser/parse.ts";
+export { parseSyntax } from "./validation/parser/parse.ts";
 
 /**
  * Version number

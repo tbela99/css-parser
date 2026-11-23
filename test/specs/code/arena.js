@@ -1,8 +1,8 @@
-import { EnumToken, EnumAstNodeStatus, ColorType } from "../../../dist/lib/ast/types.js";
-import { Arena, AstArena, TokenField, arenaColumns } from "../../../dist/lib/ast/arena.js";
-import { ARENA, ARENAID, AstArenaNode } from "../../../dist/lib/ast/arena-node.js";
-import { parseDeclarations, parseString } from "../../../dist/lib/parser/parse.js";
-import { renderValue as renderToken } from "../../../dist/lib/printer/render.js";
+import { EnumToken, EnumAstNodeStatus, ColorType } from "../../../dist/ast/types.js";
+import { Arena, AstArena, TokenField, arenaColumns } from "../../../dist/ast/arena.js";
+import { ARENA, ARENAID, AstArenaNode } from "../../../dist/ast/arena-node.js";
+import { parseDeclarations, parseString } from "../../../dist/parser/parse.js";
+import { renderValue as renderToken } from "../../../dist/printer/render.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     describe("ast arena", function () {
