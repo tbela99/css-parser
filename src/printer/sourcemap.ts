@@ -1,4 +1,4 @@
-import type { SourceMapObject } from "../@types/index.js";
+import type { SourceMapObject } from "../@types/index.d.ts";
 import { toBase64 } from "../parser/utils/base64.ts";
 import { decode, encode } from "./lib/codec.ts";
 
@@ -129,6 +129,7 @@ export class SourceMap {
             this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
             const decodedMappings = sourcemaps.mappings
                 .split(";")
+                // @ts-ignore
                 .map((mapping) => mapping.split(",").map((mapping) => decode(mapping))) as number[][][];
 
             this.line = decodedMappings.length - 1;

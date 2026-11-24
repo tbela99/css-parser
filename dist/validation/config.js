@@ -17,7 +17,7 @@ import { memoize } from '../parser/utils/cache.js';
 const parsedSyntaxes = new WeakMap();
 Object.freeze(config);
 function getSyntaxConfig() {
-    // @ts-expect-error
+    // @ts-ignore
     return config;
 }
 /**
@@ -90,7 +90,7 @@ function findNode(group, key) {
     return obj;
 }
 const getParsedSyntax = memoize((group, key) => {
-    // @ts-expect-error
+    // @ts-ignore
     const obj = findNode(group, key);
     if (obj == null) {
         return null;
@@ -167,10 +167,10 @@ const getSyntaxRule = memoize((group, key) => {
     let block = blockStart === -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
     let prelude = trimSyntaxArray(blockStart === -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
     let propertyDescriptors = null;
-    // @ts-expect-error
+    // @ts-ignore
     if (node.descriptors != null) {
         propertyDescriptors = {};
-        // @ts-expect-error
+        // @ts-ignore
         for (const [key, value] of Object.entries(node.descriptors)) {
             // @ts-expect-error
             propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);

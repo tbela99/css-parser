@@ -1,4 +1,4 @@
-import type { AstAtRule, AstDeclaration, AstNode, AstRule, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { AstAtRule, AstDeclaration, AstNode, AstRule, ParserOptions, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { compute, type ComputedTransform, TransformKind, transformKind } from "../transform/compute.ts";
 import { filterValues, renderValue } from "../../printer/render.ts";

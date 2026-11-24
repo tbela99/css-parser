@@ -1,4 +1,4 @@
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { color2srgbvalues, minmax } from "./color.ts";
 import { expandHexValue } from "./hex.ts";

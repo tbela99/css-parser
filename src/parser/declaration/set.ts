@@ -1,5 +1,5 @@
 import { numericTokenTypes } from "../../ast/arena.ts";
-import type { AstDeclaration, ShorthandPropertyType, Token } from "../../../@types/index.d.ts";
+import type { AstDeclaration, ShorthandPropertyType, Token } from "../../@types/index.d.ts";
 import { eqToken } from "../utils/eq.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { isLength } from "../../syntax/syntax.ts";

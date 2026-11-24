@@ -13845,7 +13845,7 @@
     const parsedSyntaxes = new WeakMap();
     Object.freeze(config$4);
     function getSyntaxConfig() {
-        // @ts-expect-error
+        // @ts-ignore
         return config$4;
     }
     /**
@@ -13918,7 +13918,7 @@
         return obj;
     }
     const getParsedSyntax = memoize((group, key) => {
-        // @ts-expect-error
+        // @ts-ignore
         const obj = findNode(group, key);
         if (obj == null) {
             return null;
@@ -13995,10 +13995,10 @@
         let block = blockStart === -1 ? null : trimSyntaxArray(syntaxRules.slice(blockStart + 1, blockEnd));
         let prelude = trimSyntaxArray(blockStart === -1 ? syntaxRules.slice() : syntaxRules.slice(0, blockStart));
         let propertyDescriptors = null;
-        // @ts-expect-error
+        // @ts-ignore
         if (node.descriptors != null) {
             propertyDescriptors = {};
-            // @ts-expect-error
+            // @ts-ignore
             for (const [key, value] of Object.entries(node.descriptors)) {
                 // @ts-expect-error
                 propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);
@@ -20986,6 +20986,7 @@
                 this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
                 const decodedMappings = sourcemaps.mappings
                     .split(";")
+                    // @ts-ignore
                     .map((mapping) => mapping.split(",").map((mapping) => decode(mapping)));
                 this.line = decodedMappings.length - 1;
                 for (let index = 0; index < decodedMappings.length; index++) {

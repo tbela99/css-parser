@@ -1,4 +1,4 @@
-import type { Token, ParserOptions } from "../../../@types/index.d.ts";
+import type { Token, ParserOptions } from "../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { getSyntaxRule } from "../../validation/config.ts";
 import { createValidationContext, matchAllSyntaxes, trimArray } from "../../validation/match.ts";

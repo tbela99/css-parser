@@ -1,5 +1,5 @@
 import { EnumToken } from "../../ast/types.ts";
-import type { PropertyMapType, Token } from "../../../@types/index.d.ts";
+import type { PropertyMapType, Token } from "../../@types/index.d.ts";
 import { isFunctionType } from "../../syntax/constants.ts";
 import { isColor } from "../../syntax/syntax.ts";
 import type { AstArena } from "../../ast/arena.ts";

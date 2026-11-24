@@ -1,4 +1,4 @@
-import type { ErrorDescription, Token } from "../../@types/index.d.ts";
+import type { ErrorDescription, Token } from "../@types/index.d.ts";
 import { type AstArena, TokenField } from "../ast/arena.ts";
 import { StringFlag } from "../ast/strings.ts";
 import { isOkLabClose } from "./color/utils/distance.ts";

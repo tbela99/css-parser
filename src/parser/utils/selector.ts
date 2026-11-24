@@ -5,7 +5,7 @@ import type {
     Token,
     ErrorDescription,
     ParserOptions,
-} from "../../../@types/index.d.ts";
+} from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { StringBuilder, StringDerived } from "../../ast/strings.ts";

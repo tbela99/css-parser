@@ -5,7 +5,7 @@ import type {
     ParserOptions,
     RenderOptions,
     Token,
-} from "../../../@types/index.d.ts";
+} from "../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
 import { renderValue } from "../../printer/render.ts";
 import { FeatureWalkMode } from "./type.ts";

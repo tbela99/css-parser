@@ -5,7 +5,7 @@ import type {
     ShorthandMapType,
     ShorthandPropertyType,
     Token,
-} from "../../../@types/index.d.ts";
+} from "../../@types/index.d.ts";
 import { eqToken } from "../utils/eq.ts";
 import { getConfig } from "../utils/config.ts";
 import { matchType } from "../utils/type.ts";

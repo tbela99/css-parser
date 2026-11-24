@@ -1,6 +1,6 @@
 import type { AstArena } from "../arena.ts";
 import { numericTokenTypes, TokenField } from "../arena.ts";
-import type { AstAtRule, AstNode, AstRule, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { AstAtRule, AstNode, AstRule, ParserOptions, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { evaluate } from "../math/expression.ts";
 import { FeatureWalkMode } from "./type.ts";

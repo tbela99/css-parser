@@ -1,5 +1,5 @@
 import { config } from "./json.ts";
-import type { ValidationConfiguration, ValidationSyntaxNode } from "../../@types/validation.d.ts";
+import type { ValidationConfiguration, ValidationSyntaxNode } from "../@types/validation.d.ts";
 import type { ValidationBracketToken, ValidationToken } from "./parser/types.d.ts";
 import { parseSyntax, trimSyntaxArray } from "./parser/parse.ts";
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "./parser/typedef.ts";
@@ -23,7 +23,8 @@ const parsedSyntaxes = new WeakMap<object, ValidationToken[]>();
 Object.freeze(config);
 
 export function getSyntaxConfig(): ValidationConfiguration {
-    // @ts-expect-error
+
+    // @ts-ignore
     return config as ValidationConfiguration;
 }
 
@@ -119,7 +120,8 @@ function findNode(
 }
 
 export const getParsedSyntax = memoize((group: ValidationSyntaxGroupEnum, key: string): null | ValidationToken[] => {
-    // @ts-expect-error
+
+    // @ts-ignore
     const obj: Record<ValidationSyntaxGroupEnum, ValidationSyntaxNode> | ValidationSyntaxNode = findNode(group, key);
 
     if (obj == null) {
@@ -223,11 +225,11 @@ export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: str
 
     let propertyDescriptors: Record<string, ValidationToken[]> | null = null;
 
-    // @ts-expect-error
+    // @ts-ignore
     if (node.descriptors != null) {
         propertyDescriptors = {};
 
-        // @ts-expect-error
+        // @ts-ignore
         for (const [key, value] of Object.entries(node.descriptors)) {
             // @ts-expect-error
             propertyDescriptors[key] = parseSyntax(typeof value === "string" ? value : value.syntax);

@@ -1,4 +1,4 @@
-import type { Token } from "../../../@types/token.d.ts";
+import type { Token } from "../../@types/token.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 
 /**

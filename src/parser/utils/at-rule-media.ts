@@ -1,4 +1,4 @@
-import type { ErrorDescription, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { ErrorDescription, ParserOptions, Token } from "../../@types/index.d.ts";
 import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { evaluate } from "../../ast/math/expression.ts";

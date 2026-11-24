@@ -4,7 +4,7 @@
  * @module
  * @internal
  */
-import type { AstNode } from "../../../@types/index.js";
+import type { AstNode } from "../../@types/index.d.ts";
 import { EnumToken } from "../types.ts";
 import type { AstArena } from "../arena.ts";
 

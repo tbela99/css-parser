@@ -116,6 +116,7 @@ class SourceMap {
             this.sourcesContent = sourcemaps.sourcesContent?.slice() ?? [];
             const decodedMappings = sourcemaps.mappings
                 .split(";")
+                // @ts-ignore
                 .map((mapping) => mapping.split(",").map((mapping) => decode(mapping)));
             this.line = decodedMappings.length - 1;
             for (let index = 0; index < decodedMappings.length; index++) {

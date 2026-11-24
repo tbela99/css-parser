@@ -1,4 +1,4 @@
-import type { Token, ParserOptions, ValidationOptions, ErrorDescription } from "../../../@types/index.d.ts";
+import type { Token, ParserOptions, ValidationOptions, ErrorDescription } from "../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { ValidationSyntaxGroupEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationToken } from "../../validation/parser/types.d.ts";

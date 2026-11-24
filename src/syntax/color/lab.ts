@@ -2,7 +2,7 @@ import { D50, e, k } from "../constants.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { srgb2xyz_d65, XYZ_D50_to_D65 } from "./xyz.ts";
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import {
     cmyk2srgbvalues,
     hex2srgbvalues,

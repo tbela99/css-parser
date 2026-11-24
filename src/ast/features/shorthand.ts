@@ -1,6 +1,6 @@
 import { DeclarationMemo, PropertyList } from "../../parser/declaration/list.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../../@types/index.d.ts";
+import type { AstAtRule, AstNode, AstRule, ParserOptions, PropertyListOptions } from "../../@types/index.d.ts";
 import { FeatureWalkMode } from "./type.ts";
 import type { AstArena } from "../arena.ts";
 import { moveResult } from "../mixins/utils.ts";

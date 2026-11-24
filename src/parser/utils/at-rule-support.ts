@@ -1,4 +1,4 @@
-import type { Token, ErrorDescription, ParserOptions } from "../../../@types/index.d.ts";
+import type { Token, ErrorDescription, ParserOptions } from "../../@types/index.d.ts";
 import { EnumToken } from "../../ast/types.ts";
 import { pseudoElements, tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 import { getParsedSyntax, getSyntaxConfig } from "../../validation/config.ts";

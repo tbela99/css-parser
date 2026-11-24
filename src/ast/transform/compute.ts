@@ -8,7 +8,7 @@
  * @module
  * @internal
  */
-import type { Token } from "../../../@types/token.d.ts";
+import type { Token } from "../../@types/token.d.ts";
 import type { AstArena } from "../arena.ts";
 import { multiplyInto, setIdentity, toZero } from "./utils.ts";
 import { EnumToken } from "../types.ts";

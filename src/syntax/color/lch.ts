@@ -1,4 +1,4 @@
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { getColorComponents } from "./utils/components.ts";
 import { color2srgbvalues, getAngle, getNumber } from "./color.ts";

@@ -1,5 +1,5 @@
 import { numericTokenTypes } from "../arena.ts";
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import { equalsIgnoreCase } from "../../parser/utils/text.ts";
 import { mathFuncs } from "../../syntax/constants.ts";
 import { EnumToken } from "../types.ts";

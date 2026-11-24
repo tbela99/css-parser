@@ -7,7 +7,7 @@ import type {
     ParserOptions,
     Token,
     VariableScopeInfo,
-} from "../../../@types/index.d.ts";
+} from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { renderValue } from "../../printer/render.ts";
 import { splitRule } from "../minify.ts";

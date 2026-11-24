@@ -1,7 +1,7 @@
 import { is2DMatrix, isIdentity } from "./utils.ts";
 import type { AstArena } from "../arena.ts";
 import { EnumToken } from "../types.ts";
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import type { Matrix } from "./type.d.ts";
 
 /**

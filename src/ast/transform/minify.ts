@@ -2,7 +2,7 @@ import { decompose, identityMatrix, multiplyInto, round, setIdentity, toZeroValu
 import type { AstArena } from "../arena.ts";
 import { epsilon } from "../../syntax/constants.ts";
 import { EnumToken } from "../types.ts";
-import type { Token } from "../../../@types/index.d.ts";
+import type { Token } from "../../@types/index.d.ts";
 import { computeTransform, TransformKind, transformKind } from "./compute.ts";
 import type { DecomposedMatrix3D, Matrix } from "./type.d.ts";
 

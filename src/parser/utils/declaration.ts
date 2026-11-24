@@ -1,4 +1,4 @@
-import type { AstDeclaration, AstNode, ErrorDescription, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { AstDeclaration, AstNode, ErrorDescription, ParserOptions, Token } from "../../@types/index.d.ts";
 import { ColorType, EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import { type AstArena, TokenField } from "../../ast/arena.ts";
 import { COLORS_NAMES, deprecatedSystemColors, nonStandardColors, systemColors, tokensfuncDefMap, tokensMap, trimTokenSpace, isFunctionDefType } from "../../syntax/constants.ts";

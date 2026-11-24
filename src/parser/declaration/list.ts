@@ -7,7 +7,7 @@ import type {
     ShorthandPropertyType,
     SinglePropertyTypeMapping,
     Token,
-} from "../../../@types/index.d.ts";
+} from "../../@types/index.d.ts";
 import { PropertySet } from "./set.ts";
 import { getConfig } from "../utils/config.ts";
 import { PropertyMap } from "./map.ts";

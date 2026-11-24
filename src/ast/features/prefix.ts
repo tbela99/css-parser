@@ -1,8 +1,8 @@
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
-import type { AstNode, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { AstNode, ParserOptions, Token } from "../../@types/index.d.ts";
 import { pseudoAliasMap } from "../../syntax/syntax.ts";
 import { splitRule } from "../minify.ts";
-import type { ValidationConfiguration } from "../../../@types/validation.d.ts";
+import type { ValidationConfiguration } from "../../@types/validation.d.ts";
 import { renderValue } from "../../printer/render.ts";
 import { funcLike, regMatchLinearGradient, regMatchRadialGradient } from "../../syntax/constants.ts";
 import { type AstArena, TokenField } from "../arena.ts";

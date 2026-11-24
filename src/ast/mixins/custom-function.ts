@@ -47,7 +47,7 @@
  * @module
  * @internal
  */
-import type { AstNode, ParserOptions, Token } from "../../../@types/index.js";
+import type { AstNode, ParserOptions, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { AstArena } from "../arena.ts";
 import { parseDeclarations } from "../../parser/parse.ts";

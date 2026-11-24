@@ -62,7 +62,7 @@
  * @module
  * @internal
  */
-import type { AstNode, AstStyleSheet, ParserOptions, Token } from "../../../@types/index.d.ts";
+import type { AstNode, AstStyleSheet, ParserOptions, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import { FeatureWalkMode } from "./type.ts";
 import type { AstArena } from "../arena.ts";

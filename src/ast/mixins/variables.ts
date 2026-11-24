@@ -7,14 +7,14 @@
  * @module
  * @internal
  */
-import type { AstNode, ParserOptions, Token } from "../../../@types/index.js";
+import type { AstNode, ParserOptions, Token } from "../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../types.ts";
 import type { AstArena } from "../arena.ts";
 import { renderValue } from "../../printer/render.ts";
 import { parseDeclarations } from "../../parser/parse.ts";
 import { parseSyntax } from "../../validation/parser/parse.ts";
 import { createValidationContext, matchAllSyntaxes } from "../../validation/match.ts";
-import type { ValidationToken } from "../../validation/parser/types.js";
+import type { ValidationToken } from "../../validation/parser/types.d.ts";
 import { SourceFile } from "../../parser/source.ts";
 
 /**

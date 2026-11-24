@@ -1,4 +1,4 @@
-import type { Token } from "../../../@types/token.d.ts";
+import type { Token } from "../../@types/token.d.ts";
 import type { AstArena } from "../../ast/arena.ts";
 import { ColorType, EnumToken } from "../../ast/types.ts";
 import { color2srgbvalues } from "./color.ts";

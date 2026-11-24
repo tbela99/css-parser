@@ -13,7 +13,7 @@ import type {
     WalkerOptions,
     WalkerValueFilter,
     WalkerValueOptions,
-} from "../../@types/index.d.ts";
+} from "../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken, WalkerEvent, WalkerOptionEnum } from "./types.ts";
 import type { AstArena } from "./arena.ts";
 
