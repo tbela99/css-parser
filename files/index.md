@@ -4,6 +4,9 @@ group: Documents
 category: Guides
 children:
     - ./getting-started.md
+    - ./native.md
+    - ./wasm.md
+    - ./performance.md
     - ./usage.md
     - ./architecture.md
     - ./validation.md
@@ -23,6 +26,9 @@ children:
 ## Contents
 
 - [Getting started](./getting-started.md)
+- [Native build (N-API)](./native.md)
+- [WebAssembly build](./wasm.md)
+- [Performance](./performance.md)
 - [Usage](./usage.md)
 - [Architecture](./architecture.md)
 - [Validation](./validation.md)

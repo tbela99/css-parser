@@ -1,5 +1,10 @@
 # Changelog
 
+# v2.3.1
+
+- [x] fix deno install
+- [x] document native and wasm builds
+
 # v2.3.0
 
 ## Performance
