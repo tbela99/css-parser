@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.2.1
+	Version: 2.3.0
 	License: MIT
  */
 (function (global, factory) {
@@ -50107,7 +50107,7 @@
     /**
      * Version number
      */
-    const version = "2.2.1";
+    const version = "2.3.0";
 
     /**
      * Load file or url

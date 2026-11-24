@@ -14,6 +14,8 @@
     "@stacksjs/ts-css": "^0.3.29",
     "@tbela99/css-parser": "github:tbela99/css-parser#v2.2.0",
     "@tbela99/css-parser2": "../../css",
+    "@tbela99/rust-css-parser-napi": "github:tbela99/rust-css-parser#path:extensions/css-parser-napi",
+    "@tbela99/rust-css-parser-wasm": "github:tbela99/rust-css-parser#path:extensions/css-parser-wasm",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^9.9.0",
