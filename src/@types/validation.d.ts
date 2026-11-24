@@ -1,7 +1,7 @@
 import type { AstNode } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
 import type { ValidationOptions } from "./index.d.ts";
-import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../lib/validation/parser/typedef.ts";
+import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
 
 /**
  * Validation syntax

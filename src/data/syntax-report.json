@@ -1,0 +1,45 @@
+{
+ "unresolved": {
+  "anchored-feature": [
+   "types/anchored-in-parens",
+   "types/anchored-query"
+  ],
+  "at-keyword-token": [
+   "syntaxes/at-rule()",
+   "types/supports-at-rule-fn"
+  ],
+  "boolean-expr-group": [
+   "types/boolean-expr"
+  ],
+  "dimension-token": [
+   "types/n-dimension",
+   "types/ndash-dimension",
+   "types/ndashdigit-dimension"
+  ],
+  "hex-color": [
+   "types/color-base"
+  ],
+  "number-token": [
+   "types/integer",
+   "types/signed-integer",
+   "types/signless-integer"
+  ],
+  "string-token": [
+   "types/attribute-selector"
+  ],
+  "style-feature-value": [
+   "types/style-feature-plain",
+   "types/style-range-value"
+  ],
+  "url-token": [
+   "syntaxes/url()"
+  ]
+ },
+ "unsupported": {
+  "syntaxes/hsla()": "LessThan",
+  "syntaxes/if()": "SemiColon",
+  "types/if-args": "SemiColon",
+  "types/keyframe-block": "CloseCurlyBrace",
+  "types/location-rule": "AtRule"
+ }
+}

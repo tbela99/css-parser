@@ -1,6 +1,6 @@
-import { matchingAlternatives, mayStartWith } from "../../../dist/lib/validation/first.js";
-import { getParsedSyntax } from "../../../dist/lib/validation/config.js";
-import { ValidationTokenEnum } from "../../../dist/lib/validation/parser/typedef.js";
+import { matchingAlternatives, mayStartWith } from "../../../dist/validation/first.js";
+import { getParsedSyntax } from "../../../dist/validation/config.js";
+import { ValidationTokenEnum } from "../../../dist/validation/parser/typedef.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
     /**

@@ -1,7 +1,7 @@
-import { EnumAstNodeStatus, EnumToken } from "../lib/ast/types.ts";
+import { EnumAstNodeStatus, EnumToken } from "../ast/types.ts";
 import type { PlainToken, Token } from "./token.d.ts";
 import type { ErrorDescription } from "./index.d.ts";
-import type { AstArena } from "../lib/ast/arena.ts";
+import type { AstArena } from "../ast/arena.ts";
 
 /**
  * token or node location

@@ -1,5 +1,5 @@
 import { parse, render, resolve, transform, transformSync, parseSync } from "../../dist/node.js";
-import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../dist/lib/ast/types.js";
+import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../dist/ast/types.js";
 import * as tests from "./code/index.js";
 import { expect, use } from "chai";
 import { readFile } from "node:fs/promises";

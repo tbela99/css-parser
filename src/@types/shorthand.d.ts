@@ -1,4 +1,4 @@
-import { EnumToken } from "../lib/ast/types.ts";
+import { EnumToken } from "../ast/types.ts";
 
 /**
  * shorthand property type

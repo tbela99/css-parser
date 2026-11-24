@@ -1697,5 +1697,31 @@ div {
 }`),
             );
         });
+
+        it("the custom function calls are validated like var() #20", function () {
+            const css = `@function --max-plus-x(--list, --x) {
+  result: calc(max(var(--list)) + var(--x));
+}
+div {
+  width: --max-plus-x({ 1px, 7px, 2px }, 3px);
+  margin: --max-plus-x({ 1px }, 2px) 3px;
+}
+p {
+  width: --max-plus-x(1px) red;
+}`;
+
+            // the call may be substituted by any value: it is not reported, a value that is not valid still is
+            const parsed = transformSync(css, { validation: true });
+
+            expect(parsed.errors.map((error) => error.message)).deep.equals(["unexpected token"]);
+
+            const evaluated = transformSync(css, { validation: true, evaluateMixins: true });
+
+            // the call of the declaration that is not valid is not evaluated: the function is kept
+            expect(evaluated.code).equals(
+                "@function --max-plus-x(--list,--x){result:calc(max(var(--list)) + var(--x))}div{width:10px;margin:3px 3px}p{width:--max-plus-x(1px)red}",
+            );
+            expect(evaluated.errors.map((error) => error.message)).deep.equals(["unexpected token"]);
+        });
     });
 }
