@@ -16,7 +16,7 @@ import { TransformResult, RenderResult } from './printer/result.js';
 import { useNativeBuffer } from './printer/writer.js';
 import { Buffer } from 'node:buffer';
 import { ModuleScopeEnumOptions } from './ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
 import { isCssInput } from './parser/input.js';
 import { resolve, matchUrl, dirname } from './fs/resolve.js';
@@ -217,7 +217,8 @@ function transformSync(...args) {
     }
     // the options of the caller are not modified: they may be reused
     options = { ...options };
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
     if (options.removeEmpty == null) {
@@ -410,7 +411,8 @@ async function transform(...args) {
     }
     // the options of the caller are not modified: they may be reused
     options = { ...options };
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
     if (options.removeEmpty == null) {

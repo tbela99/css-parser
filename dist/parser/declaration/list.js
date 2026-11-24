@@ -294,6 +294,8 @@ class PropertyList {
         return this;
     }
     /**
+     * Normalize the values of a declaration with the mapping of its property: the values are reordered by the patterns
+     * of the mapping, the keywords are replaced by their mapped value
      *
      * @param declaration
      * @param mapping

@@ -57,7 +57,7 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
-* **CSS mixins and custom functions evaluation** (experimental, enabled with `{evaluateMixins: true}`) the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result, see [syntax lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html).
+* **CSS mixins and custom functions evaluation** (experimental, enabled with `{evaluateMixins: true}`) the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result.
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark
@@ -89,7 +89,7 @@ The parser provides settings that let you choose the balance between minificatio
 
 However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
 
-The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
+The example below demonstrates a balanced configuration that improves execution speed by disabling the expensive minification features and keeping the inexpensive ones.
 
 ```ts
 
@@ -97,41 +97,39 @@ import {transformSync} from "@tbela99/css-parser";
 
 const css = `...`;
 
-const result = transformSync({
-                  input: css,
-                  minify: false,
-                  beautify: false,
-                  removeEmpty: true,
-                  removeComments: true,
-                  convertColor: true,
-                  minifyValues: true,
-                });
+// the ast is not minified, the adjacent rules that have the same declarations are merged
+const result = transformSync(css, {fastMode: true});
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
 
+`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.Identical`: the ast is not minified, the adjacent
+rules that have the same declarations are merged. An option given explicitly takes precedence: `{fastMode: true,
+minify: true}` minifies the ast.
+
 Compared with lightningcss and esbuild: the 12 files of the [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-(3.1 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "Fast settings" are the settings of
-the example above, "default settings" are the defaults (full minification). The
+(3.1 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "fastMode" is the setting of
+the example above, "default settings" are the defaults (the safe minifications). The
 [native](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) and the
 [WebAssembly](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) builds produce the
 same output as the TypeScript library, faster.
 
 | Library | Time | Output | Output vs lightningcss |
 |---------|-----:|-------:|-----------------------:|
-| lightningcss | 59.6 ms | 2370 KB | |
-| esbuild | 113.1 ms | 2487 KB | +4.9% |
-| N-API, default settings | 136.7 ms | 2098 KB | **-11.5%** |
-| WebAssembly, default settings | 166.3 ms | 2098 KB | **-11.5%** |
-| TypeScript, default settings | 292.8 ms | 2098 KB | **-11.5%** |
-| N-API, fast settings | 65.9 ms | 2404 KB | +1.4% |
-| WebAssembly, fast settings | 94.1 ms | 2404 KB | +1.4% |
-| TypeScript, fast settings | 176.7 ms | 2404 KB | +1.4% |
+| lightningcss | 57.1 ms | 2370 KB | |
+| N-API, fastMode | 67.9 ms | 2317 KB | **-2.3%** |
+| WebAssembly, fastMode | 93.2 ms | 2317 KB | **-2.3%** |
+| esbuild | 113.0 ms | 2487 KB | +4.9% |
+| N-API, default settings | 131.2 ms | 2098 KB | **-11.5%** |
+| WebAssembly, default settings | 162.0 ms | 2098 KB | **-11.5%** |
+| TypeScript, fastMode | 175.3 ms | 2317 KB | **-2.3%** |
+| TypeScript, default settings | 285.6 ms | 2098 KB | **-11.5%** |
 
 - With the default settings, the output is 11.5% smaller than lightningcss. Lightningcss is about 2.3 times faster
   than the N-API build.
-- With the fast settings, the N-API build is about as fast as lightningcss, with an output 1.4% larger.
+- With `fastMode`, the output is still 2.3% smaller than lightningcss, and lightningcss is about 1.2 times faster
+  than the N-API build.
 
 See [Performance](https://tbela99.github.io/css-parser/docs/documents/Guide.Performance.html) for the details.
 

@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Getting started
 
 CSS-Parser is a high-performance, fault-tolerant, and dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 

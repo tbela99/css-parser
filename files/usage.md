@@ -598,7 +598,7 @@ The parser provides settings that let you choose the balance between minificatio
 
 However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
 
-The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
+The example below demonstrates a balanced configuration that improves execution speed by disabling the expensive minification features and keeping the inexpensive ones.
 
 ```ts
 
@@ -606,23 +606,20 @@ import {transformSync} from "@tbela99/css-parser";
 
 const css = `...`;
 
-const result = transformSync({
-                  input: css,
-                  minify: false,
-                  beautify: false,
-                  removeEmpty: true,
-                  removeComments: true,
-                  convertColor: true,
-                  minifyValues: true,
-                });
+// the ast is not minified, the adjacent rules that have the same declarations are merged
+const result = transformSync(css, {fastMode: true});
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
 
+`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.Identical`: the ast is not minified, the adjacent
+rules that have the same declarations are merged. An option given explicitly takes precedence: `{fastMode: true,
+minify: true}` minifies the ast.
+
 The measures of both settings, and a comparison with lightningcss and esbuild, are on the
 [Performance](./performance.md) page.
 
 ------
-[← Performance](./performance.md) | [Architecture →](./Guide.Architecture.html) 
+[← Performance](./Guide.Performance.html) | [Architecture →](./Guide.Architecture.html) 
 

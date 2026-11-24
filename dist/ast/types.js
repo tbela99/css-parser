@@ -1008,5 +1008,25 @@ var WalkerEvent;
      */
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
+/**
+ * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+ * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+ */
+var MergeRulesEnum;
+(function (MergeRulesEnum) {
+    /**
+     * the rules are not merged
+     */
+    MergeRulesEnum[MergeRulesEnum["None"] = 0] = "None";
+    /**
+     * only the rules that have the same declarations are merged, the size of the output is not computed:
+     * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     */
+    MergeRulesEnum[MergeRulesEnum["Identical"] = 1] = "Identical";
+    /**
+     * the rules that share declarations are merged when the output is smaller
+     */
+    MergeRulesEnum[MergeRulesEnum["All"] = 2] = "All";
+})(MergeRulesEnum || (MergeRulesEnum = {}));
 
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };

@@ -7,6 +7,9 @@ import { ColorType, EnumToken, EnumAstNodeStatus } from "../ast/types.ts";
  */
 export declare interface UniCodeRangeToken extends BaseToken {
     typ: EnumToken.UniCodeRange;
+    /**
+     * the range: `U+0025-00FF`, `U+4??`
+     */
     val: string;
 }
 

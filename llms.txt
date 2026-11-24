@@ -24,7 +24,7 @@
 - The WebAssembly module is loaded with a top-level await when the package is imported: from a CDN, from dist/ served with the application/wasm content type, or from jsr.io in Deno (`deno run --allow-net=jsr.io`; Deno requires version 2.3.1 or later).
 - In a web worker that uses the WebAssembly build, set self.onmessage before the package is loaded (import it dynamically and await it inside the handler): with a static import, a message received while the module downloads is lost.
 - Do not mix builds: an AST (arena) parsed by one build must be rendered and transformed by the same build; another build throws or renders an empty string.
-- Compared with lightningcss on the benchmark files: with the default settings the output is 11.5% smaller and lightningcss is about 2.3x faster than the napi build; with the fast settings (minify: false, removeEmpty, removeComments, convertColor) the napi build is about as fast as lightningcss with a 1.4% larger output.
+- Compared with lightningcss on the benchmark files: with the default settings the output is 11.5% smaller and lightningcss is about 2.3x faster than the napi build; with fastMode: true (sets minify: false and mergeRules: MergeRulesEnum.Identical unless they are given explicitly: the ast is not minified, the adjacent rules are merged) the output is still 2.3% smaller and lightningcss is about 1.2x faster than the napi build.
 
 ## Core APIs
 - parse(css, options): async API; returns {arena, ast, errors, stats}. ast is a stylesheet node ID.
@@ -65,7 +65,7 @@ const workerArena = AstArena.fromTransferableArenaObjects(properties, transferab
 - Parse CSS into an AST and inspect or modify it.
 - Validate declarations against CSS syntax definitions.
 - Support CSS Modules with scoped class generation.
-- Minify CSS safely with options such as inlineCssVariables, computeCalcExpression, removeDuplicateDeclarations, and beautify.
+- Minify CSS safely with options such as inlineCssVariables, computeCalcExpression, removeDuplicateDeclarations, mergeRules (MergeRulesEnum.All, Identical or None; true and false are shortcuts; with minify: false it merges the rules without minifying the ast), optimizeSelectors, and beautify.
 - Transform ASTs through arena methods, visitors, and custom traversal logic.
 - Support plugin-style extensions through visitors; handlers receive (arena, id) and inspect or mutate nodes through the arena or an object view.
 - Lower modern CSS syntax such as nested CSS and if() to broadly compatible output.

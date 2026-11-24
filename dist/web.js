@@ -11,7 +11,7 @@ import { doRender } from './printer/render.js';
 export { renderValue } from './printer/render.js';
 import { TransformResult, RenderResult } from './printer/result.js';
 import { ModuleScopeEnumOptions } from './ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
 import { isCssInput } from './parser/input.js';
 import { matchUrl, resolve, dirname } from './fs/resolve.js';
@@ -206,7 +206,8 @@ function transformSync(...args) {
         validateSyncArguments(options);
     }
     // the options of the caller are not modified: they may be reused
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     const parseResult = parseSyncInput(stream, options);
     let mapping = null;
@@ -353,7 +354,8 @@ async function transform(...args) {
             stream = input;
         }
     }
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     return parseInput(stream, options).then((parseResult) => {
         let mapping = null;

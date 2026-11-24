@@ -1,11 +1,20 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node, deno, bun and the browser",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "exports": {
-    ".": "./dist/node.js",
-    "./node": "./dist/node.js",
-    "./web": "./dist/web.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./node": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./web": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/web.js"
+    }
   },
   "type": "module",
   "typings": "dist/index.d.ts",

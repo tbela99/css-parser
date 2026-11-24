@@ -1014,6 +1014,26 @@
          */
         WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
     })(exports.WalkerEvent || (exports.WalkerEvent = {}));
+    /**
+     * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+     * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+     */
+    exports.MergeRulesEnum = void 0;
+    (function (MergeRulesEnum) {
+        /**
+         * the rules are not merged
+         */
+        MergeRulesEnum[MergeRulesEnum["None"] = 0] = "None";
+        /**
+         * only the rules that have the same declarations are merged, the size of the output is not computed:
+         * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+         */
+        MergeRulesEnum[MergeRulesEnum["Identical"] = 1] = "Identical";
+        /**
+         * the rules that share declarations are merged when the output is smaller
+         */
+        MergeRulesEnum[MergeRulesEnum["All"] = 2] = "All";
+    })(exports.MergeRulesEnum || (exports.MergeRulesEnum = {}));
 
     /**
      * push the direct value tokens of a token onto a stack, from the linked lists: the token list, then the fields (the
@@ -1432,6 +1452,9 @@
         get typ() {
             return this[ARENA].dataTypes[this[ARENAID]];
         }
+        /**
+         * Set the node or token type
+         */
         set typ(typ) {
             this[ARENA].dataTypes[this[ARENAID]] = typ;
         }
@@ -1450,6 +1473,7 @@
             return arena.name[id] === 0 ? undefined : arena.resolveString(arena.name[id]);
         }
         /**
+         * Set the at-rule / declaration name, token name. undefined for the other nodes
          *
          * @param nam
          */
@@ -1468,6 +1492,7 @@
                 : undefined;
         }
         /**
+         * Set the rule selector. undefined for the other nodes
          *
          * @param sel
          */
@@ -1516,6 +1541,7 @@
                 : undefined;
         }
         /**
+         * Set the value, see the getter: a string, a number, a token or a list of tokens depending on the type of the node
          *
          * @param val
          */
@@ -1570,6 +1596,8 @@
             return listViews(arena, arena.firstToken[id]);
         }
         /**
+         * Set the children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function
+         * token (arguments), a parentheses token, ... undefined when the node has no children
          *
          * @param chi
          */
@@ -1607,6 +1635,7 @@
                 : listViews(arena, arena.firstToken[id]);
         }
         /**
+         * Set the prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
          *
          * @param tokens
          */
@@ -1625,6 +1654,7 @@
                 : arena.resolveString(arena.unit[id]);
         }
         /**
+         * Set the unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
          *
          * @param unit
          */
@@ -1641,6 +1671,9 @@
                 ? undefined
                 : arena.resolveString(arena.unit[id]);
         }
+        /**
+         * Set the color space of a color
+         */
         set cal(cal) {
             this[ARENA].setUnitString(this[ARENAID], cal ?? null);
         }
@@ -1654,6 +1687,9 @@
                 ? undefined
                 : arena.resolveString(arena.unit[id]);
         }
+        /**
+         * Set the attribute of a match expression
+         */
         set attr(attr) {
             this[ARENA].setUnitString(this[ARENAID], attr ?? null);
         }
@@ -1667,6 +1703,9 @@
                 ? undefined
                 : arena.colorType[id];
         }
+        /**
+         * Set the color type of a color token
+         */
         set kin(kin) {
             this[ARENA].colorType[this[ARENAID]] = kin ?? exports.ColorType.NONE;
         }
@@ -1679,6 +1718,7 @@
             return arena.dataTypes[id] === exports.EnumToken.UnaryExpressionTokenType ? arena.numericValue[id] : undefined;
         }
         /**
+         * Set the sign of a unary expression
          *
          * @param sign
          */
@@ -1696,6 +1736,7 @@
                 : this.getField("op");
         }
         /**
+         * Set the operator: the operator of a binary expression, the operator tokens of a structured token
          *
          * @param op
          */
@@ -1716,6 +1757,7 @@
             return this.getField("op1");
         }
         /**
+         * Set the first operator of a media range query
          *
          * @param op
          */
@@ -1729,6 +1771,7 @@
             return this.getField("op2");
         }
         /**
+         * Set the second operator of a media range query
          *
          * @param op
          */
@@ -1747,6 +1790,7 @@
             return this.getField("l");
         }
         /**
+         * Set the left hand side of a structured token, numerator of a fraction
          *
          * @param l
          */
@@ -1776,6 +1820,7 @@
             return this.getField("r");
         }
         /**
+         * Set the right hand side of a structured token, denominator of a fraction
          *
          * @param r
          */
@@ -1802,6 +1847,7 @@
             return loc == null ? null : Object.freeze(loc);
         }
         /**
+         * Set the source location. null when the node has no location
          *
          * @param loc
          */
@@ -1815,6 +1861,7 @@
             return this[ARENA].flags[this[ARENAID]] & exports.EnumAstNodeStatus.StateMask;
         }
         /**
+         * Set the validation state
          *
          * @param state
          */
@@ -1830,6 +1877,7 @@
             return errors == null ? null : Object.freeze(errors.slice());
         }
         /**
+         * Set the validation errors. null when the node has no errors
          *
          * @param errors
          */
@@ -30612,6 +30660,8 @@
             return this;
         }
         /**
+         * Normalize the values of a declaration with the mapping of its property: the values are reordered by the patterns
+         * of the mapping, the keywords are replaced by their mapped value
          *
          * @param declaration
          * @param mapping
@@ -34145,6 +34195,22 @@
      *
      * @private
      */
+    /**
+     * Merge the adjacent rules without minifying the ast: `minify: false` with {@link ParserOptions.mergeRules}. The style
+     * rules that have the same selector, the keyframes rules that have the same selector, the at-rules that have the same
+     * name and prelude (not `@font-face`) and, depending on `mergeRules`, the rules that share declarations are merged. Of
+     * the `@keyframes` that have the same name, the last one is kept. The other minifications are not applied
+     * @param arena
+     * @param ast
+     * @param options
+     *
+     * @private
+     */
+    function mergeRules(arena, ast, options) {
+        return doMinify(arena, ast, { ...options, nestingRules: false, optimizeSelectors: false }, true, undefined, false, {
+            mergeOnly: true,
+        });
+    }
     function doMinify(arena, ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
         if (!("nodes" in context)) {
             context.nodes = new Set();
@@ -34195,7 +34261,7 @@
                     }
                     // there is no early return: the result that precedes the conditional rules is moved after them.
                     // the conditional rules are never removed
-                    if (equalsIgnoreCase(nam, "function")) {
+                    if (!context.mergeOnly && equalsIgnoreCase(nam, "function")) {
                         moveResult(arena, node);
                     }
                 }
@@ -34222,7 +34288,8 @@
                         cursor = arena.nextSibling[previous];
                         continue;
                     }
-                    let k = arena.firstChild[node];
+                    // merge only (see mergeRules()): the declarations are not removed
+                    let k = context.mergeOnly ? 0 : arena.firstChild[node];
                     while (k !== 0) {
                         const next = arena.nextSibling[k];
                         if (arena.dataTypes[k] === exports.EnumToken.DeclarationNodeType) {
@@ -34255,7 +34322,8 @@
                                 (index + 3 < arr.length || arena.dataTypes[arr[index + 2]] === exports.EnumToken.WhitespaceTokenType))
                             ? ""
                             : renderValue(arena, curr));
-                    if (nam === "apply") {
+                    if (context.mergeOnly) ;
+                    else if (nam === "apply") {
                         // `@apply --mixin()` is equivalent to `@apply --mixin`
                         minifyApplyPrelude(arena, node);
                     }
@@ -34297,9 +34365,11 @@
                             arena.stringValue[node] = arena.internString(trimArray(arena, tokens).reduce(renderPrelude, ""));
                         }
                     }
-                    else if (arena.dataTypes[ast] === nodeType &&
+                    if (arena.dataTypes[ast] === nodeType &&
                         arena.name[ast] === arena.name[node] &&
-                        arena.stringValue[ast] === arena.stringValue[node]) {
+                        arena.stringValue[ast] === arena.stringValue[node] &&
+                        // the at-rules handled above are not replaced when the ast is minified
+                        (context.mergeOnly || (nam !== "apply" && nam !== "media" && !(nam === "import" && tokens != null)))) {
                         // the node is replaced by its children
                         cursor = arena.firstChild[node] || arena.nextSibling[node];
                         arena.moveChildren(node, ast, node);
@@ -34331,8 +34401,9 @@
                 }
                 else if (nodeType === exports.EnumToken.RuleNodeType) {
                     // a single selector that does not end with a combinator is not reduced (see isSimpleSelector()): the
-                    // selector is not read
-                    if (!isSimpleSelector(arena, arena.name[node])) {
+                    // selector is not read. the nesting reads the reduced selectors: optimizeSelectors only applies without it
+                    if ((options.optimizeSelectors !== false || options.nestingRules) &&
+                        !isSimpleSelector(arena, arena.name[node])) {
                         reduceRuleSelector(arena, node);
                     }
                     let wrapper = null;
@@ -34498,7 +34569,9 @@
                                     cursor = arena.nextSibling[node];
                                     continue;
                                 }
-                                else if (nodeType === previousType &&
+                                else if (options.mergeRules !== false &&
+                                    options.mergeRules !== exports.MergeRulesEnum.None &&
+                                    nodeType === previousType &&
                                     [exports.EnumToken.KeyframesRuleNodeType, exports.EnumToken.RuleNodeType].includes(nodeType)) {
                                     const intersect = diff(arena, previous, node, options, context);
                                     if (intersect != null) {
@@ -34541,6 +34614,7 @@
                     }
                 }
                 if (!nestingContent &&
+                    !context.mergeOnly &&
                     previous != null &&
                     arena.dataTypes[previous] === exports.EnumToken.RuleNodeType &&
                     arena.stringIndexOf(arena.name[previous], 0x26) !== -1) {
@@ -34558,6 +34632,7 @@
                 }
             }
             if (!nestingContent &&
+                !context.mergeOnly &&
                 node != null &&
                 arena.dataTypes[node] === exports.EnumToken.RuleNodeType &&
                 arena.stringIndexOf(arena.name[node], 0x26) !== -1) {
@@ -35151,24 +35226,38 @@
      *
      * @private
      */
-    function diff(arena, n1, n2, options, context) {
-        // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
-        // the declarations that follow it override them
-        if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
-            return null;
+    /**
+     * the number of declarations of a rule: its children that are not comments
+     * @param arena
+     * @param node
+     */
+    function declarationCount(arena, node) {
+        let count = 0;
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] !== exports.EnumToken.CommentNodeType) {
+                count++;
+            }
         }
-        if (!("cache" in options)) {
-            options.cache = new Map();
+        return count;
+    }
+    /**
+     * clear the matched flag of the children of a rule
+     * @param arena
+     * @param node
+     */
+    function clearMatched(arena, node) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            arena.flags[child] &= ~exports.EnumAstNodeStatus.Matched;
         }
-        let node1 = n1;
-        let node2 = n2;
-        let exchanged = false;
-        if (arena.childCount(node1) > arena.childCount(node2)) {
-            const t = node1;
-            node1 = node2;
-            node2 = t;
-            exchanged = true;
-        }
+    }
+    /**
+     * the selectors of both rules have the same vendor prefixes: the rules that do not are not merged (a browser drops a
+     * selector list that contains a pseudo class with an unknown prefix)
+     * @param arena
+     * @param node1
+     * @param node2
+     */
+    function samePrefixes(arena, node1, node2) {
         const raw1 = arena.raw.get(node1);
         const raw2 = arena.raw.get(node2);
         if (raw1 == null || raw2 == null) {
@@ -35177,11 +35266,11 @@
             const prefixes1 = raw1 == null ? selectorPrefixes(arena, arena.name[node1]) : rawSelectorPrefixes(raw1);
             const prefixes2 = raw2 == null ? selectorPrefixes(arena, arena.name[node2]) : rawSelectorPrefixes(raw2);
             if (prefixes1.size !== prefixes2.size) {
-                return null;
+                return false;
             }
             for (const prefix of prefixes1) {
                 if (!prefixes2.has(prefix)) {
-                    return null;
+                    return false;
                 }
             }
         }
@@ -35223,13 +35312,38 @@
                 }
             }
             if (prefixes1.size !== prefixes2.size) {
-                return null;
+                return false;
             }
             for (const prefix of prefixes1) {
                 if (!prefixes2.has(prefix)) {
-                    return null;
+                    return false;
                 }
             }
+        }
+        return true;
+    }
+    function diff(arena, n1, n2, options, context) {
+        // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
+        // the declarations that follow it override them
+        if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
+            return null;
+        }
+        // only the rules that have the same declarations are merged: the rules that have a different number of
+        // declarations are not compared
+        if (options.mergeRules === exports.MergeRulesEnum.Identical && declarationCount(arena, n1) !== declarationCount(arena, n2)) {
+            return null;
+        }
+        if (!("cache" in options)) {
+            options.cache = new Map();
+        }
+        let node1 = n1;
+        let node2 = n2;
+        let exchanged = false;
+        if (arena.childCount(node1) > arena.childCount(node2)) {
+            const t = node1;
+            node1 = node2;
+            node2 = t;
+            exchanged = true;
         }
         // match the declarations of both rules, from the last to the first
         let matches = 0;
@@ -35249,8 +35363,29 @@
                     break;
                 }
             }
+            // a declaration without a match: the rules are not identical
+            if (options.mergeRules === exports.MergeRulesEnum.Identical && !(arena.flags[child1] & exports.EnumAstNodeStatus.Matched)) {
+                clearMatched(arena, node1);
+                clearMatched(arena, node2);
+                return null;
+            }
         }
         if (matches === 0 && (arena.firstChild[node1] !== 0 || arena.firstChild[node2] !== 0)) {
+            return null;
+        }
+        // every declaration of both rules is matched: the merged rule replaces both rules, it is always smaller, the sizes
+        // are not computed
+        const identical = matches === declarationCount(arena, node1) && matches === declarationCount(arena, node2);
+        if (!identical && options.mergeRules === exports.MergeRulesEnum.Identical) {
+            // the rules are not merged: the matched declarations are released
+            clearMatched(arena, node1);
+            clearMatched(arena, node2);
+            return null;
+        }
+        // the vendor prefixes are compared once the rules share declarations
+        if (!samePrefixes(arena, node1, node2)) {
+            clearMatched(arena, node1);
+            clearMatched(arena, node2);
             return null;
         }
         // the rules are rendered with the same options during the minification: the options are resolved once and
@@ -35267,7 +35402,7 @@
             return arena.firstChild[node] === 0 ? 0 : size;
         };
         // size of the original nodes
-        const size = renderedSize(n1, true) + renderedSize(n2, true);
+        const size = identical ? 0 : renderedSize(n1, true) + renderedSize(n2, true);
         // the shared declarations are moved into the result node
         const result = arena.cloneNode(node1);
         // the distinct selectors of both rules: built from the code units of the selectors when they are normalized
@@ -35309,7 +35444,9 @@
         // the merge is kept when the output is smaller, or when it has the same size and removes a rule (an emptied rule is
         // removed, its size is 0). the other rule keeps its selector, which is repeated in the merged selector: the merge of
         // `html{margin:0}` and `body,div,...{margin:0;font:inherit}` is larger than the rules
-        const mergedSize = renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
+        const mergedSize = identical
+            ? 0
+            : renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
         if (size < mergedSize ||
             (size === mergedSize && arena.firstChild[node1] !== 0 && arena.firstChild[node2] !== 0)) {
             // restore the nodes: undo the moves in reverse order
@@ -35333,7 +35470,7 @@
         if (arena.optimized.get(result) != null) {
             arena.optimized.set(result, null);
         }
-        const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
+        const optimized = options.optimizeSelectors === false ? null : optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
         if (optimized?.match) {
             const sel = factorSelector(optimized);
             if (sel != null && sel.length < arena.resolveString(arena.name[result]).length) {
@@ -36276,6 +36413,9 @@
             arena.importProperties(properties, transferables);
             return arena;
         }
+        /**
+         * Allocate a node or a token: a released id is reused, the columns grow when the arena is full. Returns the new id
+         */
         allocate() {
             let id = this.freeList;
             if (id !== 0) {
@@ -36487,6 +36627,7 @@
             return this.stringTable.epoch;
         }
         /**
+         * Type of a node or a token, see {@link EnumToken}
          *
          * @param id
          */
@@ -36501,6 +36642,7 @@
             return id == null ? null : this.dataTypes[id];
         }
         /**
+         * Set the type of a node or a token, see {@link EnumToken}
          *
          * @param id
          * @param type
@@ -36509,6 +36651,7 @@
             this.dataTypes[id] = type;
         }
         /**
+         * Set the name of a node or a token: `nameId` is a string table id, see {@link AstArena.internString}
          *
          * @param id
          * @param nameId
@@ -36517,6 +36660,7 @@
             this.name[id] = nameId;
         }
         /**
+         * Name of a node or a token: the name of an at-rule, a declaration, a function, ...
          *
          * @param id
          */
@@ -36524,6 +36668,7 @@
             return this.resolveString(this.name[id]) ?? null;
         }
         /**
+         * Set the value of a node or a token: `valueId` is a string table id, see {@link AstArena.internString}
          *
          * @param id
          * @param valueId
@@ -36532,6 +36677,7 @@
             this.stringValue[id] = valueId;
         }
         /**
+         * Value of a node or a token: the value of an identifier, a string, a hash, ...
          *
          * @param id
          */
@@ -36539,6 +36685,7 @@
             return this.resolveString(this.stringValue[id]) ?? null;
         }
         /**
+         * Set the numeric value of a token
          *
          * @param id
          * @param numericValue
@@ -36547,6 +36694,7 @@
             this.numericValue[id] = numericValue;
         }
         /**
+         * Set the unit of a dimension token: `unit` is a string table id
          *
          * @param id
          * @param unit
@@ -36555,6 +36703,7 @@
             this.unit[id] = unit;
         }
         /**
+         * Unit of a dimension token
          *
          * @param id
          */
@@ -36562,6 +36711,7 @@
             return this.resolveString(this.unit[id]) ?? null;
         }
         /**
+         * Numeric value of a token: number, dimension, percentage, ...
          *
          * @param id
          */
@@ -36569,6 +36719,8 @@
             return this.numericValue[id];
         }
         /**
+         * Set the parent id of a node. The node is not moved: use {@link AstArena.appendChild} or {@link
+         * AstArena.insertBefore} to move it
          *
          * @param id
          * @param parentId
@@ -36651,6 +36803,7 @@
             }
         }
         /**
+         * Last child of a node. 0 when the node has no children
          *
          * @param id
          */
@@ -36733,6 +36886,7 @@
             }
         }
         /**
+         * Set the color type of a color token, see {@link ColorType}
          *
          * @param id
          * @param colorType
@@ -36741,6 +36895,7 @@
             this.colorType[id] = colorType;
         }
         /**
+         * Color type of a color token, see {@link ColorType}
          *
          * @param id
          */
@@ -36748,6 +36903,7 @@
             return this.colorType[id];
         }
         /**
+         * Replace the flags of a node, see {@link EnumAstNodeStatus}
          *
          * @param id
          * @param flags
@@ -36756,6 +36912,7 @@
             this.flags[id] = flags;
         }
         /**
+         * Flags of a node, see {@link EnumAstNodeStatus}
          *
          * @param id
          */
@@ -36763,6 +36920,7 @@
             return this.flags[id];
         }
         /**
+         * `true` when a node has all the given flags, see {@link EnumAstNodeStatus}
          *
          * @param id
          * @param flag
@@ -36771,6 +36929,7 @@
             return (this.flags[id] & flag) === flag;
         }
         /**
+         * The child of a node at a position (0 based). null when the position is out of range
          *
          * @param id
          * @param index
@@ -36892,6 +37051,7 @@
             this.appendTokenList(this.fieldList(id, field), tokens);
         }
         /**
+         * Replace the tokens of the left hand side of a structured token
          *
          * @param id
          * @param children
@@ -36901,6 +37061,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.L), children);
         }
         /**
+         * Tokens of the left hand side of a structured token (numerator of a fraction, ...). null when it is not set
          *
          * @param id
          */
@@ -36917,6 +37078,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.R), rightId == null || rightId[0] == null ? [] : rightId);
         }
         /**
+         * Tokens of the right hand side of a structured token (denominator of a fraction, ...). null when it is not set
          *
          * @param id
          */
@@ -36924,6 +37086,7 @@
             return this.getChildAt(id, exports.TokenField.R) == null ? null : this.fieldTokens(id, exports.TokenField.R);
         }
         /**
+         * Set the operator token of a structured token
          *
          * @param id
          * @param opId
@@ -36933,6 +37096,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.Op), [opId]);
         }
         /**
+         * Operator token of a structured token: the operator of a binary expression, ...
          *
          * @param id
          */
@@ -36940,6 +37104,7 @@
             return this.field(id, exports.TokenField.Op);
         }
         /**
+         * Set the second operator token of a structured token: the second operator of a media range query
          *
          * @param id
          * @param op2Id
@@ -36949,6 +37114,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.Op2), [op2Id]);
         }
         /**
+         * Second operator token of a structured token: the second operator of a media range query
          *
          * @param id
          */
@@ -36956,6 +37122,7 @@
             return this.field(id, exports.TokenField.Op2);
         }
         /**
+         * Set the location of a node or a token: the id of its source file and its start and end offsets
          *
          * @param id
          * @param sourceId
@@ -36984,6 +37151,7 @@
             this.spans32[t + 1] = this.spans32[s + 1];
         }
         /**
+         * Id of the source file of a node or a token, see {@link getSpanStart} and {@link getSpanEnd}
          *
          * @param id
          */
@@ -36994,6 +37162,7 @@
             return Number((this.spans[id] >> 56n) & 0xffn);
         }
         /**
+         * Start offset of a node or a token in its source file
          *
          * @param id
          */
@@ -37006,6 +37175,7 @@
         }
         // ---- spans ---------------------------------------------------------------------
         /**
+         * Set the start offset of a node or a token in its source file
          *
          * @param id
          * @param start
@@ -37014,6 +37184,7 @@
             this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
         }
         /**
+         * End offset of a node or a token in its source file
          *
          * @param id
          */
@@ -37024,6 +37195,7 @@
             return Number(this.spans[id] & 0xfffffffn);
         }
         /**
+         * Set the end offset of a node or a token in its source file
          *
          * @param id
          * @param end
@@ -37032,6 +37204,7 @@
             this.setSpan(id, this.getSourceId(id), this.getSpanStart(id), end);
         }
         /**
+         * Parent of a node. 0 when the node has no parent
          *
          * @param id
          */
@@ -37039,6 +37212,7 @@
             return this.parents[id];
         }
         /**
+         * The string of a string table id. The string is created the first time it is read
          *
          * @param id
          */
@@ -37381,6 +37555,7 @@
             return result;
         }
         /**
+         * The first child of a node for which the predicate returns `true`. null when there is none
          *
          * @param id
          * @param predicate
@@ -37476,6 +37651,7 @@
             return count;
         }
         /**
+         * Replace the children of a node
          *
          * @param id
          * @param children
@@ -37502,6 +37678,7 @@
             this.appendChildList(id, children);
         }
         /**
+         * Replace the tokens of a node or a token
          *
          * @param id
          * @param children
@@ -37551,6 +37728,7 @@
             }
         }
         /**
+         * Append children to a node
          *
          * @param id
          * @param children
@@ -37589,6 +37767,7 @@
             }
         }
         /**
+         * Append tokens to a node or a token
          *
          * @param id
          * @param children
@@ -37693,6 +37872,8 @@
             }
         }
         /**
+         * Compare the name (`"nam"`) or the value (`"val"`) of a node with a string, ignoring the case. The string of the
+         * node is not created
          *
          * @param node
          * @param key
@@ -37703,6 +37884,8 @@
             return this.stringTable.equalsIgnoreCase(key === "nam" ? this.name[node] : this.stringValue[node], string);
         }
         /**
+         * `true` when the name (`"nam"`) or the value (`"val"`) of a node starts with a string. The string of the node is
+         * not created
          *
          * @param node
          * @param key
@@ -37713,6 +37896,7 @@
             return this.stringTable.startsWith(key === "nam" ? this.name[node] : this.stringValue[node], string);
         }
         /**
+         * Grow the columns of the arena so they hold `newSize` ids. The columns are never shrunk
          *
          * @param newSize
          */
@@ -37980,6 +38164,7 @@
             return this.compact(errors);
         }
         /**
+         * Set the validation errors of a node. null or an empty list removes them
          *
          * @param id
          * @param errors
@@ -37994,6 +38179,7 @@
             }
         }
         /**
+         * Validation errors of a node. null when the node has no errors
          *
          * @param id
          */
@@ -39491,6 +39677,7 @@
             }
         }
         /**
+         * Replace the nesting selectors (`&`) of a compound selector with a selector
          *
          * @param selector
          * @param replace
@@ -46651,6 +46838,14 @@
         return result;
     }
     /**
+     * the settings of the fast mode (see {@link ParserOptions.fastMode}): the default values of these options when
+     * `fastMode` is `true`
+     */
+    const fastModeOptions = Object.freeze({
+        minify: false,
+        mergeRules: exports.MergeRulesEnum.Identical,
+    });
+    /**
      * Parse css string
      * @param tokenizer
      * @param options
@@ -46684,6 +46879,7 @@
             removePrefix: false,
             validation: false,
             lenient: true,
+            ...(options.fastMode ? fastModeOptions : null),
             ...options,
         };
         options.validation = !!options.validation;
@@ -47034,6 +47230,13 @@
                     minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
+        }
+        else if (options.mergeRules != null &&
+            options.mergeRules !== false &&
+            options.mergeRules !== exports.MergeRulesEnum.None &&
+            arena.firstChild[ast] !== 0) {
+            // the ast is not minified: the adjacent rules are merged
+            mergeRules(arena, ast, minifyOptions);
         }
         stats.bytesIn += stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
@@ -47615,6 +47818,7 @@
             removePrefix: false,
             validation: false,
             lenient: true,
+            ...(options.fastMode ? fastModeOptions : null),
             ...options,
         };
         options.minifyAST ??= options.minify;
@@ -48030,6 +48234,13 @@
                     minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
+        }
+        else if (options.mergeRules != null &&
+            options.mergeRules !== false &&
+            options.mergeRules !== exports.MergeRulesEnum.None &&
+            arena.firstChild[ast] !== 0) {
+            // the ast is not minified: the adjacent rules are merged
+            mergeRules(arena, ast, minifyOptions);
         }
         stats.bytesIn += stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
@@ -50300,7 +50511,8 @@
             validateSyncArguments(options);
         }
         // the options of the caller are not modified: they may be reused
-        options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+        // the fast mode sets the default value of minify (see fastModeOptions)
+        options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
         const startTime = performance.now();
         const parseResult = parseSyncInput(stream, options);
         let mapping = null;
@@ -50447,7 +50659,8 @@
                 stream = input;
             }
         }
-        options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+        // the fast mode sets the default value of minify (see fastModeOptions)
+        options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
         const startTime = performance.now();
         return parseInput(stream, options).then((parseResult) => {
             let mapping = null;

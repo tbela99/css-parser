@@ -56,6 +56,7 @@ export {
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
+    MergeRulesEnum,
     WalkerEvent,
     WalkerOptionEnum,
 } from "./ast/types.ts";
@@ -392,7 +393,8 @@ export function transformSync(
     }
 
     // the options of the caller are not modified: they may be reused
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
 
     const startTime: number = performance.now();
     const parseResult: ParseResult = parseSyncInput(stream, options);
@@ -774,7 +776,8 @@ export async function transform(
         }
     }
 
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
     const startTime: number = performance.now();
 
     return parseInput(stream, options).then((parseResult: ParseResult) => {

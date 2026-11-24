@@ -64,6 +64,7 @@ export {
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
+    MergeRulesEnum,
     WalkerEvent,
     WalkerOptionEnum,
 } from "./ast/types.ts";
@@ -387,7 +388,8 @@ export function transformSync(
     // the options of the caller are not modified: they may be reused
     options = { ...options };
 
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
 
@@ -874,7 +876,8 @@ export async function transform(
     // the options of the caller are not modified: they may be reused
     options = { ...options };
 
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
 

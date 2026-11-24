@@ -8,8 +8,8 @@
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
 import { renderValue } from '../printer/render.js';
-import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent } from '../ast/types.js';
-import { minify } from '../ast/minify.js';
+import { EnumToken, EnumAstNodeStatus, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent } from '../ast/types.js';
+import { minify, mergeRules } from '../ast/minify.js';
 import { Tokenizer, createParseInfo } from './tokenize.js';
 import { ResponseType } from '../types.js';
 import { AstArena, TokenField } from '../ast/arena.js';
@@ -623,6 +623,14 @@ function parseVisitors(visitorsDef, errors) {
     return result;
 }
 /**
+ * the settings of the fast mode (see {@link ParserOptions.fastMode}): the default values of these options when
+ * `fastMode` is `true`
+ */
+const fastModeOptions = Object.freeze({
+    minify: false,
+    mergeRules: MergeRulesEnum.Identical,
+});
+/**
  * Parse css string
  * @param tokenizer
  * @param options
@@ -656,6 +664,7 @@ function doParseSync(tokenizer, options = {}) {
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
     options.validation = !!options.validation;
@@ -1006,6 +1015,13 @@ function doParseSync(tokenizer, options = {}) {
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    }
+    else if (options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
     stats.bytesIn += stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
@@ -1587,6 +1603,7 @@ async function doParse(iter, options = {}) {
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
     options.minifyAST ??= options.minify;
@@ -2002,6 +2019,13 @@ async function doParse(iter, options = {}) {
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    }
+    else if (options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
     stats.bytesIn += stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
@@ -4014,4 +4038,4 @@ function parseTokens(arena, tokens, options, errors) {
     return tokens;
 }
 
-export { doParse, doParseSync, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, isDefinitionBlock, parseAtRule, parseDeclarations, parseRuleContent, parseString, parseTokens, trimWhiteSpace };
+export { doParse, doParseSync, fastModeOptions, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, isDefinitionBlock, parseAtRule, parseDeclarations, parseRuleContent, parseString, parseTokens, trimWhiteSpace };

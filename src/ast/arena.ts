@@ -457,6 +457,9 @@ export class Arena {
         return arena;
     }
 
+    /**
+     * Allocate a node or a token: a released id is reused, the columns grow when the arena is full. Returns the new id
+     */
     public allocate(): number {
         let id: number = this.freeList;
 
@@ -696,6 +699,7 @@ export class Arena {
     }
 
     /**
+     * Type of a node or a token, see {@link EnumToken}
      *
      * @param id
      */
@@ -712,6 +716,7 @@ export class Arena {
     }
 
     /**
+     * Set the type of a node or a token, see {@link EnumToken}
      *
      * @param id
      * @param type
@@ -721,6 +726,7 @@ export class Arena {
     }
 
     /**
+     * Set the name of a node or a token: `nameId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param nameId
@@ -730,6 +736,7 @@ export class Arena {
     }
 
     /**
+     * Name of a node or a token: the name of an at-rule, a declaration, a function, ...
      *
      * @param id
      */
@@ -738,6 +745,7 @@ export class Arena {
     }
 
     /**
+     * Set the value of a node or a token: `valueId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param valueId
@@ -747,6 +755,7 @@ export class Arena {
     }
 
     /**
+     * Value of a node or a token: the value of an identifier, a string, a hash, ...
      *
      * @param id
      */
@@ -755,6 +764,7 @@ export class Arena {
     }
 
     /**
+     * Set the numeric value of a token
      *
      * @param id
      * @param numericValue
@@ -764,6 +774,7 @@ export class Arena {
     }
 
     /**
+     * Set the unit of a dimension token: `unit` is a string table id
      *
      * @param id
      * @param unit
@@ -773,6 +784,7 @@ export class Arena {
     }
 
     /**
+     * Unit of a dimension token
      *
      * @param id
      */
@@ -781,6 +793,7 @@ export class Arena {
     }
 
     /**
+     * Numeric value of a token: number, dimension, percentage, ...
      *
      * @param id
      */
@@ -789,6 +802,8 @@ export class Arena {
     }
 
     /**
+     * Set the parent id of a node. The node is not moved: use {@link AstArena.appendChild} or {@link
+     * AstArena.insertBefore} to move it
      *
      * @param id
      * @param parentId
@@ -883,6 +898,7 @@ export class Arena {
     }
 
     /**
+     * Last child of a node. 0 when the node has no children
      *
      * @param id
      */
@@ -979,6 +995,7 @@ export class Arena {
     }
 
     /**
+     * Set the color type of a color token, see {@link ColorType}
      *
      * @param id
      * @param colorType
@@ -988,6 +1005,7 @@ export class Arena {
     }
 
     /**
+     * Color type of a color token, see {@link ColorType}
      *
      * @param id
      */
@@ -996,6 +1014,7 @@ export class Arena {
     }
 
     /**
+     * Replace the flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flags
@@ -1005,6 +1024,7 @@ export class Arena {
     }
 
     /**
+     * Flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      */
@@ -1013,6 +1033,7 @@ export class Arena {
     }
 
     /**
+     * `true` when a node has all the given flags, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flag
@@ -1022,6 +1043,7 @@ export class Arena {
     }
 
     /**
+     * The child of a node at a position (0 based). null when the position is out of range
      *
      * @param id
      * @param index
@@ -1170,6 +1192,7 @@ export class Arena {
     }
 
     /**
+     * Replace the tokens of the left hand side of a structured token
      *
      * @param id
      * @param children
@@ -1180,6 +1203,7 @@ export class Arena {
     }
 
     /**
+     * Tokens of the left hand side of a structured token (numerator of a fraction, ...). null when it is not set
      *
      * @param id
      */
@@ -1215,6 +1239,7 @@ export class Arena {
     }
 
     /**
+     * Tokens of the right hand side of a structured token (denominator of a fraction, ...). null when it is not set
      *
      * @param id
      */
@@ -1223,6 +1248,7 @@ export class Arena {
     }
 
     /**
+     * Set the operator token of a structured token
      *
      * @param id
      * @param opId
@@ -1233,6 +1259,7 @@ export class Arena {
     }
 
     /**
+     * Operator token of a structured token: the operator of a binary expression, ...
      *
      * @param id
      */
@@ -1241,6 +1268,7 @@ export class Arena {
     }
 
     /**
+     * Set the second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      * @param op2Id
@@ -1251,6 +1279,7 @@ export class Arena {
     }
 
     /**
+     * Second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      */
@@ -1259,6 +1288,7 @@ export class Arena {
     }
 
     /**
+     * Set the location of a node or a token: the id of its source file and its start and end offsets
      *
      * @param id
      * @param sourceId
@@ -1292,6 +1322,7 @@ export class Arena {
     }
 
     /**
+     * Id of the source file of a node or a token, see {@link getSpanStart} and {@link getSpanEnd}
      *
      * @param id
      */
@@ -1304,6 +1335,7 @@ export class Arena {
     }
 
     /**
+     * Start offset of a node or a token in its source file
      *
      * @param id
      */
@@ -1320,6 +1352,7 @@ export class Arena {
     // ---- spans ---------------------------------------------------------------------
 
     /**
+     * Set the start offset of a node or a token in its source file
      *
      * @param id
      * @param start
@@ -1329,6 +1362,7 @@ export class Arena {
     }
 
     /**
+     * End offset of a node or a token in its source file
      *
      * @param id
      */
@@ -1341,6 +1375,7 @@ export class Arena {
     }
 
     /**
+     * Set the end offset of a node or a token in its source file
      *
      * @param id
      * @param end
@@ -1350,6 +1385,7 @@ export class Arena {
     }
 
     /**
+     * Parent of a node. 0 when the node has no parent
      *
      * @param id
      */
@@ -1358,6 +1394,7 @@ export class Arena {
     }
 
     /**
+     * The string of a string table id. The string is created the first time it is read
      *
      * @param id
      */
@@ -1657,7 +1694,19 @@ export class Arena {
      * @param node node id
      * @param matcher called with the arena and the token id
      */
-    findByValue(node: number, matcher: AstValueMatcher): { node: number; value: number } | null {
+    findByValue(
+        node: number,
+        matcher: AstValueMatcher,
+    ): {
+        /**
+         * the node that contains the matched token
+         */
+        node: number;
+        /**
+         * the matched token
+         */
+        value: number;
+    } | null {
         const walker: NodeWalker = new NodeWalker(this as unknown as AstArena, node);
 
         for (let r = walker.next(); !r.done; r = walker.next()) {
@@ -1753,6 +1802,7 @@ export class Arena {
     }
 
     /**
+     * The first child of a node for which the predicate returns `true`. null when there is none
      *
      * @param id
      * @param predicate
@@ -1858,6 +1908,7 @@ export class Arena {
     }
 
     /**
+     * Replace the children of a node
      *
      * @param id
      * @param children
@@ -1890,6 +1941,7 @@ export class Arena {
     }
 
     /**
+     * Replace the tokens of a node or a token
      *
      * @param id
      * @param children
@@ -1950,6 +2002,7 @@ export class Arena {
     }
 
     /**
+     * Append children to a node
      *
      * @param id
      * @param children
@@ -1995,6 +2048,7 @@ export class Arena {
     }
 
     /**
+     * Append tokens to a node or a token
      *
      * @param id
      * @param children
@@ -2118,6 +2172,8 @@ export class Arena {
     }
 
     /**
+     * Compare the name (`"nam"`) or the value (`"val"`) of a node with a string, ignoring the case. The string of the
+     * node is not created
      *
      * @param node
      * @param key
@@ -2129,6 +2185,8 @@ export class Arena {
     }
 
     /**
+     * `true` when the name (`"nam"`) or the value (`"val"`) of a node starts with a string. The string of the node is
+     * not created
      *
      * @param node
      * @param key
@@ -2140,6 +2198,7 @@ export class Arena {
     }
 
     /**
+     * Grow the columns of the arena so they hold `newSize` ids. The columns are never shrunk
      *
      * @param newSize
      */
@@ -2461,6 +2520,7 @@ export class Arena {
     }
 
     /**
+     * Set the validation errors of a node. null or an empty list removes them
      *
      * @param id
      * @param errors
@@ -2475,6 +2535,7 @@ export class Arena {
     }
 
     /**
+     * Validation errors of a node. null when the node has no errors
      *
      * @param id
      */
@@ -4338,6 +4399,7 @@ export class AstArena extends Arena {
     }
 
     /**
+     * Replace the nesting selectors (`&`) of a compound selector with a selector
      *
      * @param selector
      * @param replace

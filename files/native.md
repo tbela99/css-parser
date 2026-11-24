@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Native build
 
 `@tbela99/rust-css-parser-napi` is the native build of CSS-Parser: the library ported to Rust, loaded by Node.js as an
 [N-API](https://nodejs.org/api/n-api.html) addon. It has the same API as `@tbela99/css-parser` and produces the

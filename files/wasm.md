@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Web assembly build
 
 `@tbela99/rust-css-parser-wasm` is the WebAssembly build of CSS-Parser: the library ported to Rust and compiled to
 WebAssembly. It has the same API as `@tbela99/css-parser`, produces the same output, and runs in Node.js and in the

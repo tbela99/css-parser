@@ -4,11 +4,12 @@ import { renderValue } from "../printer/render.ts";
 import {
     EnumAstNodeStatus,
     EnumToken,
+    MergeRulesEnum,
     ModuleCaseTransformEnum,
     ModuleScopeEnumOptions,
     WalkerEvent,
 } from "../ast/types.ts";
-import { minify } from "../ast/minify.ts";
+import { mergeRules, minify } from "../ast/minify.ts";
 import { createParseInfo, Tokenizer, TokenValueField } from "./tokenize.ts";
 import type { CssInput } from "./input.ts";
 import { ResponseType } from "../types.ts";
@@ -846,6 +847,15 @@ function parseVisitors(
 }
 
 /**
+ * the settings of the fast mode (see {@link ParserOptions.fastMode}): the default values of these options when
+ * `fastMode` is `true`
+ */
+export const fastModeOptions: Readonly<ParserSyncOptions> = Object.freeze({
+    minify: false,
+    mergeRules: MergeRulesEnum.Identical,
+});
+
+/**
  * Parse css string
  * @param tokenizer
  * @param options
@@ -880,6 +890,7 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
 
@@ -1312,6 +1323,14 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    } else if (
+        options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0
+    ) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
 
     stats.bytesIn += stats.importedBytesIn;
@@ -2074,6 +2093,7 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
 
@@ -2594,6 +2614,14 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    } else if (
+        options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0
+    ) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
 
     stats.bytesIn += stats.importedBytesIn;
@@ -4990,7 +5018,16 @@ export function parseAtRule(
 export function parseDeclarations(
     declaration: string,
     arena?: AstArena,
-): { arena: AstArena; nodes: Array<AstDeclaration | AstComment> } {
+): {
+    /**
+     * the arena the nodes are allocated in
+     */
+    arena: AstArena;
+    /**
+     * the declaration and comment nodes
+     */
+    nodes: Array<AstDeclaration | AstComment>;
+} {
     const stream: string = `.x{${declaration}}`;
     const source: SourceFile = new SourceFile("", [], "");
     const result = doParseSync(new Tokenizer(createParseInfo(stream as CssInput, source)), {

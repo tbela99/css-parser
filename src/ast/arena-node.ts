@@ -175,6 +175,9 @@ export class AstArenaNode {
         return this[ARENA].dataTypes[this[ARENAID]];
     }
 
+    /**
+     * Set the node or token type
+     */
     set typ(typ: EnumToken) {
         this[ARENA].dataTypes[this[ARENAID]] = typ;
     }
@@ -197,6 +200,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the at-rule / declaration name, token name. undefined for the other nodes
      *
      * @param nam
      */
@@ -218,6 +222,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the rule selector. undefined for the other nodes
      *
      * @param sel
      */
@@ -277,6 +282,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the value, see the getter: a string, a number, a token or a list of tokens depending on the type of the node
      *
      * @param val
      */
@@ -340,6 +346,8 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function
+     * token (arguments), a parentheses token, ... undefined when the node has no children
      *
      * @param chi
      */
@@ -387,6 +395,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
      *
      * @param tokens
      */
@@ -408,6 +417,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
      *
      * @param unit
      */
@@ -427,6 +437,9 @@ export class AstArenaNode {
             : arena.resolveString(arena.unit[id]);
     }
 
+    /**
+     * Set the color space of a color
+     */
     set cal(cal: string | null | undefined) {
         this[ARENA].setUnitString(this[ARENAID], cal ?? null);
     }
@@ -443,6 +456,9 @@ export class AstArenaNode {
             : arena.resolveString(arena.unit[id]);
     }
 
+    /**
+     * Set the attribute of a match expression
+     */
     set attr(attr: string | null | undefined) {
         this[ARENA].setUnitString(this[ARENAID], attr ?? null);
     }
@@ -459,6 +475,9 @@ export class AstArenaNode {
             : arena.colorType[id];
     }
 
+    /**
+     * Set the color type of a color token
+     */
     set kin(kin: ColorType | null | undefined) {
         this[ARENA].colorType[this[ARENAID]] = kin ?? ColorType.NONE;
     }
@@ -474,6 +493,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the sign of a unary expression
      *
      * @param sign
      */
@@ -494,6 +514,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the operator: the operator of a binary expression, the operator tokens of a structured token
      *
      * @param op
      */
@@ -516,6 +537,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the first operator of a media range query
      *
      * @param op
      */
@@ -531,6 +553,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the second operator of a media range query
      *
      * @param op
      */
@@ -553,6 +576,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the left hand side of a structured token, numerator of a fraction
      *
      * @param l
      */
@@ -590,6 +614,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the right hand side of a structured token, denominator of a fraction
      *
      * @param r
      */
@@ -623,6 +648,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the source location. null when the node has no location
      *
      * @param loc
      */
@@ -638,6 +664,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the validation state
      *
      * @param state
      */
@@ -656,6 +683,7 @@ export class AstArenaNode {
     }
 
     /**
+     * Set the validation errors. null when the node has no errors
      *
      * @param errors
      */

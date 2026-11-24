@@ -989,6 +989,25 @@ declare enum WalkerEvent {
      */
     Leave = 2
 }
+/**
+ * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+ * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+ */
+declare enum MergeRulesEnum {
+    /**
+     * the rules are not merged
+     */
+    None = 0,
+    /**
+     * only the rules that have the same declarations are merged, the size of the output is not computed:
+     * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     */
+    Identical = 1,
+    /**
+     * the rules that share declarations are merged when the output is smaller
+     */
+    All = 2
+}
 
 /**
  * Object view of the arena nodes and tokens: {@link AstArenaNode}
@@ -1062,12 +1081,16 @@ declare class AstArenaNode {
      * node or token type
      */
     get typ(): EnumToken;
+    /**
+     * Set the node or token type
+     */
     set typ(typ: EnumToken);
     /**
      * at-rule / declaration name, token name. undefined for the other nodes
      */
     get nam(): string | undefined;
     /**
+     * Set the at-rule / declaration name, token name. undefined for the other nodes
      *
      * @param nam
      */
@@ -1077,6 +1100,7 @@ declare class AstArenaNode {
      */
     get sel(): string | undefined;
     /**
+     * Set the rule selector. undefined for the other nodes
      *
      * @param sel
      */
@@ -1092,6 +1116,7 @@ declare class AstArenaNode {
      */
     get val(): string | number | AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the value, see the getter: a string, a number, a token or a list of tokens depending on the type of the node
      *
      * @param val
      */
@@ -1102,6 +1127,8 @@ declare class AstArenaNode {
      */
     get chi(): readonly AstArenaNode[] | undefined;
     /**
+     * Set the children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function
+     * token (arguments), a parentheses token, ... undefined when the node has no children
      *
      * @param chi
      */
@@ -1111,6 +1138,7 @@ declare class AstArenaNode {
      */
     get tokens(): readonly AstArenaNode[] | null;
     /**
+     * Set the prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
      *
      * @param tokens
      */
@@ -1120,6 +1148,7 @@ declare class AstArenaNode {
      */
     get unit(): string | undefined;
     /**
+     * Set the unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
      *
      * @param unit
      */
@@ -1128,22 +1157,32 @@ declare class AstArenaNode {
      * color space of a color
      */
     get cal(): string | undefined;
+    /**
+     * Set the color space of a color
+     */
     set cal(cal: string | null | undefined);
     /**
      * attribute of a match expression
      */
     get attr(): string | undefined;
+    /**
+     * Set the attribute of a match expression
+     */
     set attr(attr: string | null | undefined);
     /**
      * color type of a color token
      */
     get kin(): ColorType$1 | undefined;
+    /**
+     * Set the color type of a color token
+     */
     set kin(kin: ColorType$1 | null | undefined);
     /**
      * sign of a unary expression
      */
     get sign(): EnumToken | undefined;
     /**
+     * Set the sign of a unary expression
      *
      * @param sign
      */
@@ -1153,6 +1192,7 @@ declare class AstArenaNode {
      */
     get op(): EnumToken | AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the operator: the operator of a binary expression, the operator tokens of a structured token
      *
      * @param op
      */
@@ -1162,6 +1202,7 @@ declare class AstArenaNode {
      */
     get op1(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the first operator of a media range query
      *
      * @param op
      */
@@ -1171,6 +1212,7 @@ declare class AstArenaNode {
      */
     get op2(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the second operator of a media range query
      *
      * @param op
      */
@@ -1180,6 +1222,7 @@ declare class AstArenaNode {
      */
     get l(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the left hand side of a structured token, numerator of a fraction
      *
      * @param l
      */
@@ -1189,6 +1232,7 @@ declare class AstArenaNode {
      */
     get r(): AstArenaNode | readonly AstArenaNode[] | null | undefined;
     /**
+     * Set the right hand side of a structured token, denominator of a fraction
      *
      * @param r
      */
@@ -1198,6 +1242,7 @@ declare class AstArenaNode {
      */
     get loc(): Readonly<SourceLocation> | null;
     /**
+     * Set the source location. null when the node has no location
      *
      * @param loc
      */
@@ -1207,6 +1252,7 @@ declare class AstArenaNode {
      */
     get state(): EnumAstNodeStatus;
     /**
+     * Set the validation state
      *
      * @param state
      */
@@ -1216,6 +1262,7 @@ declare class AstArenaNode {
      */
     get errors(): readonly ErrorDescription[] | null;
     /**
+     * Set the validation errors. null when the node has no errors
      *
      * @param errors
      */
@@ -1883,6 +1930,9 @@ declare class Arena {
      * @returns an `Arena` or an `AstArena` depending on the class the method is called on
      */
     static fromTransferableArenaObjects<T extends Arena>(this: new (size?: number) => T, properties: ArenaProperties, transferables: ArenaTransferables): T;
+    /**
+     * Allocate a node or a token: a released id is reused, the columns grow when the arena is full. Returns the new id
+     */
     allocate(): number;
     /**
      * recycle a detached leaf node (no parent, no children, no tokens) that is no longer referenced:
@@ -2027,6 +2077,7 @@ declare class Arena {
      */
     get stringEpoch(): object;
     /**
+     * Type of a node or a token, see {@link EnumToken}
      *
      * @param id
      */
@@ -2037,56 +2088,67 @@ declare class Arena {
      */
     typeOf(id: number | null | undefined): EnumToken | null;
     /**
+     * Set the type of a node or a token, see {@link EnumToken}
      *
      * @param id
      * @param type
      */
     setType(id: number, type: EnumToken): void;
     /**
+     * Set the name of a node or a token: `nameId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param nameId
      */
     setName(id: number, nameId: number): void;
     /**
+     * Name of a node or a token: the name of an at-rule, a declaration, a function, ...
      *
      * @param id
      */
     getName(id: number): string;
     /**
+     * Set the value of a node or a token: `valueId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param valueId
      */
     setValue(id: number, valueId: number): void;
     /**
+     * Value of a node or a token: the value of an identifier, a string, a hash, ...
      *
      * @param id
      */
     getValue(id: number): string;
     /**
+     * Set the numeric value of a token
      *
      * @param id
      * @param numericValue
      */
     setNumericValue(id: number, numericValue: number): void;
     /**
+     * Set the unit of a dimension token: `unit` is a string table id
      *
      * @param id
      * @param unit
      */
     setUnit(id: number, unit: number): void;
     /**
+     * Unit of a dimension token
      *
      * @param id
      */
     getUnit(id: number): string;
     /**
+     * Numeric value of a token: number, dimension, percentage, ...
      *
      * @param id
      */
     getNumericValue(id: number): number;
     /**
+     * Set the parent id of a node. The node is not moved: use {@link AstArena.appendChild} or {@link
+     * AstArena.insertBefore} to move it
      *
      * @param id
      * @param parentId
@@ -2137,6 +2199,7 @@ declare class Arena {
      */
     setFirstChild(id: number, firstChildId: number): void;
     /**
+     * Last child of a node. 0 when the node has no children
      *
      * @param id
      */
@@ -2166,34 +2229,40 @@ declare class Arena {
      */
     setFirstToken(id: number, firstTokenId: number): void;
     /**
+     * Set the color type of a color token, see {@link ColorType}
      *
      * @param id
      * @param colorType
      */
     setColorType(id: number, colorType: number): void;
     /**
+     * Color type of a color token, see {@link ColorType}
      *
      * @param id
      */
     getColorType(id: number): number;
     /**
+     * Replace the flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flags
      */
     setFlags(id: number, flags: number): void;
     /**
+     * Flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      */
     getFlags(id: number): number;
     /**
+     * `true` when a node has all the given flags, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flag
      */
     hasFlags(id: number, flag: number): boolean;
     /**
+     * The child of a node at a position (0 based). null when the position is out of range
      *
      * @param id
      * @param index
@@ -2251,12 +2320,14 @@ declare class Arena {
      */
     appendField(id: number, field: TokenField, ...tokens: number[]): void;
     /**
+     * Replace the tokens of the left hand side of a structured token
      *
      * @param id
      * @param children
      */
     setLeft(id: number, ...children: number[]): void;
     /**
+     * Tokens of the left hand side of a structured token (numerator of a fraction, ...). null when it is not set
      *
      * @param id
      */
@@ -2274,33 +2345,39 @@ declare class Arena {
      */
     setRight(id: number, ...rightId: number[]): void;
     /**
+     * Tokens of the right hand side of a structured token (denominator of a fraction, ...). null when it is not set
      *
      * @param id
      */
     getRight(id: number): number[] | null;
     /**
+     * Set the operator token of a structured token
      *
      * @param id
      * @param opId
      */
     setOp(id: number, opId: number): void;
     /**
+     * Operator token of a structured token: the operator of a binary expression, ...
      *
      * @param id
      */
     getOp(id: number): number;
     /**
+     * Set the second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      * @param op2Id
      */
     setOp2(id: number, op2Id: number): void;
     /**
+     * Second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      */
     getOp2(id: number): number;
     /**
+     * Set the location of a node or a token: the id of its source file and its start and end offsets
      *
      * @param id
      * @param sourceId
@@ -2315,38 +2392,45 @@ declare class Arena {
      */
     copySpan(target: number, source: number): void;
     /**
+     * Id of the source file of a node or a token, see {@link getSpanStart} and {@link getSpanEnd}
      *
      * @param id
      */
     getSourceId(id: number): number;
     /**
+     * Start offset of a node or a token in its source file
      *
      * @param id
      */
     getSpanStart(id: number): number;
     /**
+     * Set the start offset of a node or a token in its source file
      *
      * @param id
      * @param start
      */
     setSpandStart(id: number, start: number): void;
     /**
+     * End offset of a node or a token in its source file
      *
      * @param id
      */
     getSpanEnd(id: number): number;
     /**
+     * Set the end offset of a node or a token in its source file
      *
      * @param id
      * @param end
      */
     setSpanEnd(id: number, end: number): void;
     /**
+     * Parent of a node. 0 when the node has no parent
      *
      * @param id
      */
     getParent(id: number): number;
     /**
+     * The string of a string table id. The string is created the first time it is read
      *
      * @param id
      */
@@ -2493,7 +2577,13 @@ declare class Arena {
      * @param matcher called with the arena and the token id
      */
     findByValue(node: number, matcher: AstValueMatcher): {
+        /**
+         * the node that contains the matched token
+         */
         node: number;
+        /**
+         * the matched token
+         */
         value: number;
     } | null;
     /**
@@ -2512,6 +2602,7 @@ declare class Arena {
      */
     subTokens(id: number): number[];
     /**
+     * The first child of a node for which the predicate returns `true`. null when there is none
      *
      * @param id
      * @param predicate
@@ -2547,6 +2638,7 @@ declare class Arena {
      */
     tokenCount(id: number): number;
     /**
+     * Replace the children of a node
      *
      * @param id
      * @param children
@@ -2559,6 +2651,7 @@ declare class Arena {
      */
     setChildList(id: number, children: number[]): void;
     /**
+     * Replace the tokens of a node or a token
      *
      * @param id
      * @param children
@@ -2578,6 +2671,7 @@ declare class Arena {
      */
     moveChildren(from: number, to: number, before?: number): void;
     /**
+     * Append children to a node
      *
      * @param id
      * @param children
@@ -2590,6 +2684,7 @@ declare class Arena {
      */
     appendChildList(id: number, children: number[]): void;
     /**
+     * Append tokens to a node or a token
      *
      * @param id
      * @param children
@@ -2620,6 +2715,8 @@ declare class Arena {
      */
     prependTokens(id: number, ...tokens: number[]): void;
     /**
+     * Compare the name (`"nam"`) or the value (`"val"`) of a node with a string, ignoring the case. The string of the
+     * node is not created
      *
      * @param node
      * @param key
@@ -2627,6 +2724,8 @@ declare class Arena {
      */
     equalsIgnoreCase(node: number, key: "nam" | "val", string: string): boolean;
     /**
+     * `true` when the name (`"nam"`) or the value (`"val"`) of a node starts with a string. The string of the node is
+     * not created
      *
      * @param node
      * @param key
@@ -2634,6 +2733,7 @@ declare class Arena {
      */
     startsWith(node: number, key: "nam" | "val", string: string): boolean;
     /**
+     * Grow the columns of the arena so they hold `newSize` ids. The columns are never shrunk
      *
      * @param newSize
      */
@@ -2676,12 +2776,14 @@ declare class Arena {
      */
     trim(errors?: ErrorDescription[] | null): Uint32Array;
     /**
+     * Set the validation errors of a node. null or an empty list removes them
      *
      * @param id
      * @param errors
      */
     setErrors(id: number, errors: ErrorDescription[] | null): void;
     /**
+     * Validation errors of a node. null when the node has no errors
      *
      * @param id
      */
@@ -3128,6 +3230,7 @@ declare class AstArena extends Arena {
      */
     protected expandRule(node: AstRule, parent: AstNode, before: AstNode): void;
     /**
+     * Replace the nesting selectors (`&`) of a compound selector with a selector
      *
      * @param selector
      * @param replace
@@ -3337,6 +3440,9 @@ type AstNodeMatcher = (arena: AstArena, node: AstNode) => boolean;
  */
 export declare interface UniCodeRangeToken extends BaseToken {
     typ: EnumToken.UniCodeRange;
+    /**
+     * the range: `U+0025-00FF`, `U+4??`
+     */
     val: string;
 }
 
@@ -5070,8 +5176,28 @@ export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
     | Function<T>
-    | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
-    | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
+    | {
+          /**
+           * when the handler is called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handler
+           */
+          handler: GenericVisitorSyncHandler<T>;
+      }
+    | {
+          /**
+           * when the handlers are called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handlers, by name
+           */
+          handler: Record<string, GenericVisitorSyncHandler<T>>;
+      };
 
 /**
  * Generic visitor handler
@@ -5352,8 +5478,28 @@ export declare type GenericVisitorHandler<T> = (
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
-    | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
+    | {
+          /**
+           * when the handler is called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handler
+           */
+          handler: GenericVisitorHandler<T>;
+      }
+    | {
+          /**
+           * when the handlers are called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handlers, by name
+           */
+          handler: Record<string, GenericVisitorHandler<T>>;
+      };
 
 /**
  * Generic visitor handler
@@ -7234,6 +7380,53 @@ interface MinifyOptions {
      */
     nestingRules?: boolean;
     /**
+     * Merge the adjacent rules ({@link MergeRulesEnum}, `true` is a shortcut for {@link MergeRulesEnum.All}, `false`
+     * for {@link MergeRulesEnum.None}).
+     *
+     * - {@link MergeRulesEnum.All}: the rules that share declarations are merged when the output is smaller
+     * - {@link MergeRulesEnum.Identical}: only the rules that have the same declarations are merged, the size of the
+     *   output is not computed: `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     * - {@link MergeRulesEnum.None}: the rules that have different selectors are not merged
+     *
+     * The default is {@link MergeRulesEnum.All} when the ast is minified, {@link MergeRulesEnum.None} otherwise. With
+     * `minify: false`, {@link MergeRulesEnum.Identical} and {@link MergeRulesEnum.All} merge the rules without
+     * minifying the ast: the adjacent rules and keyframes rules that have the same selector and the adjacent at-rules
+     * that have the same prelude are merged (`@font-face` is not merged), the last `@keyframes` of a name is kept, the
+     * rules that have different selectors are merged as above. The other minifications are not applied.
+     *
+     * ```ts
+     * import {transformSync, MergeRulesEnum} from '@tbela99/css-parser';
+     *
+     * // the adjacent rules that have the same declarations are merged, the ast is not minified
+     * const result = transformSync(css, {minify: false, mergeRules: MergeRulesEnum.Identical});
+     * ```
+     */
+    mergeRules?: boolean | MergeRulesEnum;
+    /**
+     * Fast mode: the ast is not minified, only the adjacent rules that have the same declarations are merged. The
+     * output is larger and the minification is faster. It sets the default value of these options, an option given
+     * explicitly takes precedence:
+     *
+     * ```ts
+     * {
+     *     minify: false,
+     *     mergeRules: MergeRulesEnum.Identical,
+     * }
+     * ```
+     *
+     * ```ts
+     * import {transformSync} from '@tbela99/css-parser';
+     *
+     * const result = transformSync(css, {fastMode: true});
+     * ```
+     */
+    fastMode?: boolean;
+    /**
+     * Optimize the selectors (default `true`): remove the redundant selectors, factor the selectors with `:is()`.
+     * `false` only applies when {@link nestingRules} is `false`: the nesting of the rules reads the optimized selectors.
+     */
+    optimizeSelectors?: boolean;
+    /**
      * Remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
      *
@@ -8327,7 +8520,13 @@ declare function minify(arena: AstArena, ast: AstNode, options: ParserOptions | 
  * ```
  */
 declare function parseDeclarations(declaration: string, arena?: AstArena): {
+    /**
+     * the arena the nodes are allocated in
+     */
     arena: AstArena;
+    /**
+     * the declaration and comment nodes
+     */
     nodes: Array<AstDeclaration | AstComment>;
 };
 /**
@@ -8759,5 +8958,5 @@ declare function transform(options: ParseInputStreamOptions & TransformOptions):
  */
 declare function transform(options: ParseInputFileOptions & TransformOptions): Promise<TransformResult>;
 
-export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, ModuleCaseTransformEnum, ModuleScopeEnumOptions, RenderResult, ResponseType, SourceMap, TokenField, TransformResult, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue, resolve, transform, transformSync, version };
+export { ARENA, ARENAID, Arena, AstArena, AstArenaNode, ColorType$1 as ColorType, EnumAstNodeStatus, EnumToken, FeatureWalkMode, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions, RenderResult, ResponseType, SourceMap, TokenField, TransformResult, WalkerEvent, WalkerOptionEnum, arenaColumns, convertColor, dirname, isOkLabClose, load, minify, okLabDistance, parse, parseDeclarations, parseString, parseSync, parseSyntax, render, renderValue, resolve, transform, transformSync, version };
 export type { AddToken, AndToken, AngleToken, ArenaProperties, ArenaTransferables, AstArenaNodeInput, AstAtRule, AstComment, AstDeclaration, AstKeyframesAtRule, AstKeyframesRule, AstNode, AstNodeMatcher, AstRule, AstRuleList, AstStyleSheet, AstValueMatcher, AtRuleToken, AtRuleVisitorHandler, AttrEndToken, AttrStartToken, AttrToken, Background, BackgroundAttachmentMapping, BackgroundPosition, BackgroundPositionClass, BackgroundPositionConstraints, BackgroundPositionMapping, BackgroundProperties, BackgroundRepeat, BackgroundRepeatMapping, BackgroundSize, BackgroundSizeMapping, BadCDOCommentToken, BadCommentToken, BadStringToken, BadUrlToken, BaseToken, BinaryExpressionNode, BinaryExpressionToken, BlockEndToken, BlockStartToken, Border, BorderColor, BorderColorClass, BorderProperties, BorderRadius, CDOCommentToken, ChildCombinatorToken, ClassSelectorToken, ColonToken, ColorToken, ColumnCombinatorToken, CommaToken, CommentToken, ComposesSelectorToken, ConstraintsMapping, ContainMatchToken, ContainerStyleRangeToken, CssInput, CssTypeTokenType, CssVariableImportTokenType, CssVariableMapTokenType, CssVariableToken, DashMatchToken, DashedIdentToken, DeclarationToken, DeclarationVisitorHandler, DelimToken, DescendantCombinatorToken, DimensionToken, DivToken, DoubleColonToken, EOFToken, EndMatchToken, EqualMatchToken, ErrorDescription, FlexToken, Font, FontFamily, FontProperties, FontWeight, FontWeightConstraints, FontWeightMapping, FractionToken, FrequencyToken, FunctionDefToken, FunctionImageToken, FunctionToken, FunctionURLToken, GenericVisitorAstNodeHandlerMap, GenericVisitorAstNodeSyncHandlerMap, GenericVisitorAsyncResult, GenericVisitorHandler, GenericVisitorResult, GenericVisitorSyncHandler, GenericVisitorSyncResult, GreaterThanOrEqualToken, GreaterThanToken, GridTemplateFuncToken, HashToken, IdentListToken, IdentToken, IfConditionToken, IfElseConditionToken, ImportantToken, IncludeMatchToken, InfinityToken, LengthToken, LessThanOrEqualToken, LessThanToken, LineHeight, ListToken, LiteralToken, LoadResult, Map$1 as Map, MatchExpressionToken, MatchedSelector, MediaFeatureOnlyToken, MediaFeatureToken, MediaQueryConditionToken, MediaQueryUnaryFeatureToken, MediaRangeQueryToken, MinifyFeature, MinifyFeatureOptions, MinifyOptions, ModuleAsyncOptions, ModuleSyncOptions, MulToken, NaNToken, NameSpaceAttributeToken, NegativeInfinityToken, NestingSelectorToken, NextSiblingCombinatorToken, NotToken, NumberToken, OptimizedSelector, OptimizedSelectorToken, OrToken, Outline, OutlineProperties, ParensEndToken, ParensStartToken, ParensToken, ParseInfo$1 as ParseInfo, ParseInputFileOptions, ParseInputOptions, ParseInputStreamOptions, ParseResult, ParseResultStats, ParseSourceOptions, ParseTokenOptions, ParsedVisitorHandlers, ParserOptions, ParserSourceMapOptions, ParserSyncOptions, PercentageToken, PlainAstNode, PlainToken, Prefix, PropertiesConfig, PropertiesConfigProperties, PropertyListOptions, PropertyMapType, PropertySetType, PropertyType, PseudoClassFunctionToken, PseudoClassToken, PseudoElementToken, PseudoPageToken, PurpleBackgroundAttachment, RawNodeToken, RawSelectorTokens, RenderOptions, RenderResultStats, ResolutionToken, ResolvedPath, RuleVisitorHandler, SemiColonToken, Separator, ShorthandDef, ShorthandMapType, ShorthandProperties, ShorthandPropertyType, ShorthandType, SinglePropertyType, SinglePropertyTypeMapping, SourceLocation, SourceMapObject, StartMatchToken, StringToken, SubToken, SubsequentCombinatorToken, SupportsQueryConditionToken, SupportsQueryUnaryConditionToken, TimeToken, TimelineFunctionToken, TimingFunctionToken, Token, TokenizeResult, TransformOptions, TransformResultStats, TransformSyncOptions, UnaryExpression, UnaryExpressionNode, UnclosedStringToken, UniCodeRangeToken, UniversalSelectorToken, UrlToken, ValidationConfiguration, ValidationMediaFeature, ValidationOptions, ValidationResult, ValidationSelectorOptions, ValidationSyntaxNode, ValidationSyntaxResult, ValidationToken$1 as ValidationToken, Value, ValueVisitorHandler, ValueVisitorSyncHandler, VariableScopeInfo, VisitorNodeMap, VisitorSyncNodeMap, WalkerFilter, WalkerOption, WalkerOptions, WalkerValueFilter, WalkerValueOptions, WhenElseQueryConditionToken, WhenElseUnaryConditionToken, WhitespaceToken, WrappedValuesToken };

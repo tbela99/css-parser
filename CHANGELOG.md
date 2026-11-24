@@ -1,5 +1,18 @@
 # Changelog
 
+# v2.3.2
+
+## Feature
+
+- [x] minifier: `mergeRules` option (`MergeRulesEnum`: `All`, `Identical`, `None`; `true` and `false` are shortcuts for `All` and `None`): `MergeRulesEnum.Identical` merges only the adjacent rules that have the same declarations, without computing the size of the output. with `minify: false`, `mergeRules` merges the adjacent rules and at-rules without minifying the ast
+- [x] minifier: `optimizeSelectors` option (`true` by default): `false` does not reduce the selectors or factor them with `:is()` (with `nestingRules: false`)
+- [x] `fastMode` option: `{fastMode: true}` sets `{minify: false, mergeRules: MergeRulesEnum.Identical}`, an option given explicitly takes precedence.
+
+## Performance
+
+- [x] minifier: two rules that have the same declarations are merged without computing the size of the output
+- [x] minifier: the vendor prefixes of the selectors are compared only when the rules share declarations
+
 # v2.3.1
 
 - [x] fix deno install

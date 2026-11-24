@@ -49,8 +49,28 @@ export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
     | Function<T>
-    | { type: WalkerEvent; handler: GenericVisitorSyncHandler<T> }
-    | { type: WalkerEvent; handler: Record<string, GenericVisitorSyncHandler<T>> };
+    | {
+          /**
+           * when the handler is called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handler
+           */
+          handler: GenericVisitorSyncHandler<T>;
+      }
+    | {
+          /**
+           * when the handlers are called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handlers, by name
+           */
+          handler: Record<string, GenericVisitorSyncHandler<T>>;
+      };
 
 /**
  * Generic visitor handler
@@ -345,8 +365,28 @@ export declare type GenericVisitorHandler<T> = (
 export declare type GenericVisitorAstNodeHandlerMap<T> =
     | Record<string, GenericVisitorHandler<T>>
     | GenericVisitorHandler<T>
-    | { type: WalkerEvent; handler: GenericVisitorHandler<T> }
-    | { type: WalkerEvent; handler: Record<string, GenericVisitorHandler<T>> };
+    | {
+          /**
+           * when the handler is called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handler
+           */
+          handler: GenericVisitorHandler<T>;
+      }
+    | {
+          /**
+           * when the handlers are called: {@link WalkerEvent.Enter} (before the children of the node) or
+           * {@link WalkerEvent.Leave} (after them)
+           */
+          type: WalkerEvent;
+          /**
+           * the handlers, by name
+           */
+          handler: Record<string, GenericVisitorHandler<T>>;
+      };
 
 /**
  * Generic visitor handler

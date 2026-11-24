@@ -1,3 +1,5 @@
+import { MergeRulesEnum } from "../../../dist/ast/types.js";
+
 export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
     const css = `
 :root {
@@ -968,6 +970,124 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
         it("the declarations are not moved across @apply with a contents block #2", function () {
             expect(transformSync(".q{top:0;@apply --y{color:blue}left:0}.r{@apply --z{}}").code).equals(
                 ".q{top:0;@apply --y{color:blue}left:0}.r{@apply --z{}}",
+            );
+        });
+    });
+
+    describe("mergeRules and optimizeSelectors", function () {
+        const options = { nestingRules: false, computeShorthand: false, computeTransform: false, computeCalcExpression: false };
+
+        it("mergeRules: MergeRulesEnum.Identical merges the rules that have the same declarations #1", function () {
+            expect(
+                transformSync(".a{color:red;width:1px}.b{width:1px;color:red}", { ...options, mergeRules: MergeRulesEnum.Identical }).code,
+            ).equals(".a,.b{color:red;width:1px}");
+        });
+
+        it("mergeRules: MergeRulesEnum.Identical merges the rules that have the same declarations #2", function () {
+            expect(
+                transformSync(".a{color:red}.b{color:red}.c{color:red}", { ...options, mergeRules: MergeRulesEnum.Identical }).code,
+            ).equals(".a,.b,.c{color:red}");
+        });
+
+        it("mergeRules: MergeRulesEnum.Identical does not merge the rules that share some declarations", function () {
+            expect(
+                transformSync(".a{color:red;width:1px}.b{color:red}", { ...options, mergeRules: MergeRulesEnum.Identical }).code,
+            ).equals(".a{color:red;width:1px}.b{color:red}");
+        });
+
+        it("mergeRules: true merges the rules that share some declarations", function () {
+            expect(transformSync(".a{color:red;width:1px}.b{color:red}", options).code).equals(
+                ".b,.a{color:red}.a{width:1px}",
+            );
+        });
+
+        it("mergeRules: true is the default", function () {
+            const css = ".a{color:red;width:1px}.b{color:red}";
+
+            expect(transformSync(css, { ...options, mergeRules: true }).code).equals(transformSync(css, options).code);
+        });
+
+        it("mergeRules: false does not merge the rules", function () {
+            expect(transformSync(".a{color:red}.b{color:red}", { ...options, mergeRules: false }).code).equals(
+                ".a{color:red}.b{color:red}",
+            );
+        });
+
+        it("mergeRules: MergeRulesEnum.Identical does not merge the selectors that have different vendor prefixes", function () {
+            expect(
+                transformSync("::-webkit-input-placeholder{color:red}::-moz-placeholder{color:red}", {
+                    ...options,
+                    mergeRules: MergeRulesEnum.Identical,
+                }).code,
+            ).equals("::-webkit-input-placeholder{color:red}::-moz-placeholder{color:red}");
+        });
+
+        it("optimizeSelectors: false does not factor the selectors", function () {
+            const css = ".foo .very-long-a,.foo .very-long-b,.foo .very-long-c{color:blue}";
+
+            expect(transformSync(css, { nestingRules: false }).code).equals(
+                ".foo :is(.very-long-a,.very-long-b,.very-long-c){color:blue}",
+            );
+            expect(transformSync(css, { nestingRules: false, optimizeSelectors: false }).code).equals(css);
+        });
+
+        it("optimizeSelectors: false only applies without nesting", function () {
+            const css = ".foo .very-long-a,.foo .very-long-b,.foo .very-long-c{color:blue}.foo .x{color:red}";
+
+            expect(transformSync(css, { optimizeSelectors: false }).code).equals(transformSync(css).code);
+        });
+    });
+
+    describe("fastMode", function () {
+        const css =
+            ".a{color:red;width:1px}.b{width:1px;color:red}.c{margin:0px 0px 0px 0px;color:blue}.c .d{color:green}.e{color:red;width:1px;height:2px}";
+
+        it("fastMode does not minify the ast and merges the rules that have the same declarations", function () {
+            expect(transformSync(css, { fastMode: true }).code).equals(
+                transformSync(css, { minify: false, beautify: false, mergeRules: MergeRulesEnum.Identical }).code,
+            );
+            expect(transformSync(css, { fastMode: true }).code).equals(
+                ".a,.b{color:red;width:1px}.c{margin:0 0 0 0;color:blue}.c .d{color:green}.e{color:red;width:1px;height:2px}",
+            );
+        });
+
+        it("an option given explicitly takes precedence over fastMode", function () {
+            expect(transformSync(css, { fastMode: true, minify: true }).code).equals(
+                ".a,.b{color:red;width:1px}.c{margin:0 0 0 0;color:blue;.d{color:green}}.e{color:red;width:1px;height:2px}",
+            );
+        });
+
+        it("fastMode: false does not change the default settings", function () {
+            expect(transformSync(css, { fastMode: false }).code).equals(transformSync(css).code);
+        });
+    });
+
+    describe("mergeRules without minify", function () {
+        const options = { minify: false, beautify: false };
+
+        it("the rules are not merged without mergeRules", function () {
+            expect(transformSync(".a{color:red;width:1px}.b{color:red}.a{margin:0}", options).code).equals(
+                ".a{color:red;width:1px}.b{color:red}.a{margin:0}",
+            );
+        });
+
+        it("MergeRulesEnum.All merges the rules that share declarations", function () {
+            expect(
+                transformSync(".a{color:red;width:1px}.b{color:red}.a{margin:0}", {
+                    ...options,
+                    mergeRules: MergeRulesEnum.All,
+                }).code,
+            ).equals(".b,.a{color:red}.a{width:1px;margin:0}");
+        });
+
+        it("the at-rules are merged, the last @keyframes is kept, @font-face is not merged", function () {
+            expect(
+                transformSync(
+                    "@keyframes spin{from{color:red}to{color:blue}}@keyframes spin{from{opacity:0}to{opacity:1}}@font-face{font-family:a;src:url(a.woff)}@font-face{font-family:a;src:url(b.woff)}@media print{.x{color:red}}@media print{.y{color:red}}@keyframes k{50%{color:red}50%{opacity:1}}",
+                    { ...options, mergeRules: MergeRulesEnum.Identical },
+                ).code,
+            ).equals(
+                "@keyframes spin{from{opacity:0}to{opacity:1}}@font-face{font-family:a;src:url(a.woff)}@font-face{font-family:a;src:url(b.woff)}@media print{.x,.y{color:red}}@keyframes k{50%{color:red;opacity:1}}",
             );
         });
     });
