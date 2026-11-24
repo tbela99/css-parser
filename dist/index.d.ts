@@ -8619,7 +8619,7 @@ declare function parseSyntax(syntax: string): ValidationToken$1[];
 /**
  * Version number
  */
-declare const version = "2.3.1";
+declare const version = "2.3.2";
 
 /**
  * Load file or url
