@@ -12,10 +12,9 @@
   },
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.29",
-    "@tbela99/css-parser": "github:tbela99/css-parser#v2.2.0",
-    "@tbela99/css-parser2": "../../css",
-    "@tbela99/rust-css-parser-napi": "github:tbela99/rust-css-parser#path:extensions/css-parser-napi",
-    "@tbela99/rust-css-parser-wasm": "github:tbela99/rust-css-parser#path:extensions/css-parser-wasm",
+    "@tbela99/css-parser": "github:tbela99/css-parser#097b2d0",
+    "@tbela99/rust-css-parser-napi": "^2.3.0",
+    "@tbela99/rust-css-parser-wasm": "^2.3.0",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^9.9.0",
@@ -23,7 +22,6 @@
     "esbuild": "^0.28.2",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.33",
-    "rust-css-parser": "../../rust-css-parser",
     "vitest": "^5.1.1",
     "yuku-css": "^0.2.0"
   }
