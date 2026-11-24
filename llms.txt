@@ -5,6 +5,7 @@
 - The library follows the CSS Syntax Module Level 3 specification and uses MDN syntax data for validation.
 - It is designed for fault-tolerant parsing, full AST and typed-token analysis, AST manipulation, CSS Modules, minification, color processing, and syntax lowering.
 - CSS is fully parsed into an arena-backed AST. Nodes and value tokens are integer IDs; their data is accessed through the arena rather than node objects.
+- Three builds share the same API and produce the same output byte for byte: the TypeScript library (@tbela99/css-parser), and two builds of its Rust port (repository tbela99/rust-css-parser): a native N-API addon (@tbela99/rust-css-parser-napi) and a WebAssembly module (@tbela99/rust-css-parser-wasm). The Rust builds are faster.
 
 ## Installation
 - npm: npm install @tbela99/css-parser
@@ -12,6 +13,18 @@
 - Main entry points:
   - @tbela99/css-parser or @tbela99/css-parser/node
   - @tbela99/css-parser/web
+- Native build (Node.js on macOS and Linux): npm install @tbela99/rust-css-parser-napi
+- WebAssembly build (Node.js, Deno, browsers): npm install @tbela99/rust-css-parser-wasm, or deno add jsr:@tbela99/rust-css-parser-wasm
+- Switching builds only changes the package name in the imports.
+
+## Native (N-API) and WebAssembly builds
+- @tbela99/rust-css-parser-napi: the fastest build (up to 2.4x faster than TypeScript). Node.js 22+ on macOS or Linux only. Entry points: @tbela99/rust-css-parser-napi and @tbela99/rust-css-parser-napi/node; no browser entry point, no UMD build.
+- The napi package ships Rust sources, not a binary: its install script builds the addon with cargo, so the Rust toolchain (https://rustup.rs) is required. npm versions that block install scripts need `npm install-scripts approve @tbela99/rust-css-parser-napi` then `npm rebuild @tbela99/rust-css-parser-napi`; pnpm needs the package in allowBuilds (pnpm-workspace.yaml). JSR does not run install scripts: after `npx jsr add @tbela99/rust-css-parser-napi`, run `node node_modules/@tbela99/rust-css-parser-napi/install.js`. On Windows or without Rust, use the WebAssembly build.
+- @tbela99/rust-css-parser-wasm: up to 1.9x faster than TypeScript, no toolchain needed (the package contains css_parser.wasm, 2 MB). Entry points: @tbela99/rust-css-parser-wasm (node entry in Node.js, browser entry elsewhere), /node, /web. ES module only: no UMD build.
+- The WebAssembly module is loaded with a top-level await when the package is imported: from a CDN, from dist/ served with the application/wasm content type, or from jsr.io in Deno (`deno run --allow-net=jsr.io`; Deno requires version 2.3.1 or later).
+- In a web worker that uses the WebAssembly build, set self.onmessage before the package is loaded (import it dynamically and await it inside the handler): with a static import, a message received while the module downloads is lost.
+- Do not mix builds: an AST (arena) parsed by one build must be rendered and transformed by the same build; another build throws or renders an empty string.
+- Compared with lightningcss on the benchmark files: with the default settings the output is 11.5% smaller and lightningcss is about 2.3x faster than the napi build; with the fast settings (minify: false, removeEmpty, removeComments, convertColor) the napi build is about as fast as lightningcss with a 1.4% larger output.
 
 ## Core APIs
 - parse(css, options): async API; returns {arena, ast, errors, stats}. ast is a stylesheet node ID.
@@ -83,6 +96,10 @@ For one-step parsing and output generation, use `transform()` or `transformSync(
 - Comments are removed by default; preserve them with removeComments: false or preserveLicense: true.
 - Validation errors are available through the parse/transform result and through arena.getState(id) and arena.getErrors(id).
 - The library prioritizes compact output while preserving semantics.
+- Render results expose the CSS in two forms: result.write is a Uint8Array of UTF-8 bytes (the render output itself); result.code is a getter that decodes result.write on first read and caches the string. Write result.write to files, streams, responses and blobs to avoid creating a string. The functions also accept CSS input as UTF-8 bytes.
+- result.write is a view of the first bytes of a larger buffer. Transfer it between threads with postMessage(result.write, [result.write.buffer]) (zero copy; the sender's buffer becomes empty, and result.code read for the first time afterwards is ""). Without a transfer list the whole buffer is copied; send result.write.slice() to copy only the CSS. postMessage()/structuredClone() of the whole result drop code (a getter) and turn arena into an unusable plain object.
+- In the napi build, result.write is memory owned by the addon and cannot be transferred (DataCloneError): transfer result.write.slice() instead.
+- Declarations are validated against their syntax only with `validation: true` (default false; rules and at-rules are always validated); the errors are reported, the output is unchanged. The option is named `validation`, not `validate`. Mixins and custom functions are evaluated with `evaluateMixins: true` (experimental).
 
 ## Useful concepts
 - parse(), parseSync() return {arena, ast, errors, stats}; ast is an ID in the returned arena.
@@ -92,6 +109,9 @@ For one-step parsing and output generation, use `transform()` or `transformSync(
 
 ## Documentation files
 - files/getting-started.md
+- files/native.md
+- files/wasm.md
+- files/performance.md
 - files/usage.md
 - files/validation.md
 - files/css-module.md
