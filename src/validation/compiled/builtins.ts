@@ -1,0 +1,88 @@
+/**
+ * the types validated by the code of matchProperty() (src/validation/match.ts), before their definition (if any): the
+ * compiled matchers call matchProperty() for them (see leaf() in ./runtime.ts). the other types are compiled from
+ * their definition. keep in sync with the switch of matchProperty() and with its calc() types
+ */
+export const builtinTypes: Set<string> = new Set([
+    // calc() types (checkCalc)
+    "calc-product",
+    // switch
+    "declaration-value",
+    "calc-sum",
+    "an+b",
+    "quote",
+    "display-box",
+    "display-inside",
+    "display-internal",
+    "display-outside",
+    "display-legacy",
+    "content-position",
+    "mf-name",
+    "dashed-ident",
+    "extension-name",
+    "custom-property-name",
+    "namespace-prefix",
+    "ident",
+    "ident-token",
+    "custom-ident",
+    "counter-name",
+    "counter-style-name",
+    "any-value",
+    "unicode-range-token",
+    "hash-token",
+    "string",
+    "wq-name",
+    "number",
+    "zero",
+    "integer",
+    "dimension",
+    "angle",
+    "angle-percentage",
+    "percentage",
+    "length-percentage",
+    "flex",
+    "length",
+    "resolution",
+    "frequency",
+    "decibel",
+    "semitones",
+    "time",
+    "color",
+    "color-function",
+    "type-selector",
+    "compound-selector",
+    "complex-selector",
+    "subclass-selector",
+    "attribute-selector",
+    "complex-selector-unit",
+    "pseudo-compound-selector",
+    "forgiving-relative-selector-list",
+    "complex-selector-list",
+    "function-token",
+    "language-code",
+    "size-feature",
+    "style-feature",
+    "url",
+    "css-type",
+    "dashed-function",
+    "block-contents",
+]);
+
+/**
+ * the built in types that read the whitespace or the tokens after the value being matched: the compiled matchers
+ * skip the whitespace, the interpreter validates the values of these types
+ */
+export const rawTypes: Set<string> = new Set([
+    "type-selector",
+    "compound-selector",
+    "complex-selector",
+    "subclass-selector",
+    "attribute-selector",
+    "complex-selector-unit",
+    "pseudo-compound-selector",
+    "forgiving-relative-selector-list",
+    "complex-selector-list",
+    "size-feature",
+    "style-feature",
+    "css-type",
+]);

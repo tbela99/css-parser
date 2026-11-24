@@ -1,6 +1,6 @@
 import type { BaseToken } from "./ast.d.ts";
-import type { AstArena } from "../lib/ast/arena.ts";
-import { ColorType, EnumToken, EnumAstNodeStatus } from "../lib/ast/types.ts";
+import type { AstArena } from "../ast/arena.ts";
+import { ColorType, EnumToken, EnumAstNodeStatus } from "../ast/types.ts";
 
 /**
  * Unicode range token: `U+0025-00FF`, `U+4??`

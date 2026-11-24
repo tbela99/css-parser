@@ -1312,7 +1312,11 @@ declare const enum StringDerived {
     /**
      * the kind of a transform function name or of a transform property name (see `transformKind()`)
      */
-    TransformKind = 2
+    TransformKind = 2,
+    /**
+     * true if the rules are allowed in the block of an at-rule (by name, without `@`), see `parseSelector()`
+     */
+    AtRuleAcceptsRules = 3
 }
 /**
  * structured-cloneable copy of a string table, see {@link StringTable.export}
@@ -8403,7 +8407,7 @@ declare function parseSyntax(syntax: string): ValidationToken$1[];
 /**
  * Version number
  */
-declare const version = "2.2.0";
+declare const version = "2.3.0";
 
 /**
  * Load file or url

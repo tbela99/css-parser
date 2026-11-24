@@ -11,9 +11,11 @@ import * as csso from "csso";
 import * as csstree from "css-tree";
 import * as esbuild from "esbuild";
 import { transform } from "lightningcss";
-import { minify} from '@stacksjs/ts-css';
-import {  transform  as yukuTransform} from "yuku-css";
-import { transformSync } from "@tbela99/css-parser";
+import { minify } from "@stacksjs/ts-css";
+import { transform as yukuTransform } from "yuku-css";
+import { transformSync as tbelaDevTransform } from "@tbela99/css-parser";
+import { transformSync as tbelaDevNApiTransform } from "@tbela99/rust-css-parser-napi";
+import { transformSync as tbelaDevWasmTransform } from "@tbela99/rust-css-parser-wasm";
 
 function pkgVersion(name, pathToPkgJson) {
     const { version, repository } = JSON.parse(
@@ -66,9 +68,11 @@ const versions = {
     "css-tree": pkgVersion("css-tree", "css-tree/package.json"),
     esbuild: pkgVersion("esbuild", "esbuild/package.json"),
     lightningcss: pkgVersion("lightningcss", "lightningcss/package.json"),
-    'yuku-css': pkgVersion("yuku-css", "yuku-css/package.json"),
-    'stacksjs-ts-css': pkgVersion("stacksjs-ts-css", "@stacksjs/ts-css/package.json"),
+    "yuku-css": pkgVersion("yuku-css", "yuku-css/package.json"),
+    "stacksjs-ts-css": pkgVersion("stacksjs-ts-css", "@stacksjs/ts-css/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
+    "css-parser-napi": pkgVersion("css-parser-napi", "@tbela99/rust-css-parser-napi/package.json"),
+    "css-parser-wasm": pkgVersion("css-parser-wasm", "@tbela99/rust-css-parser-wasm/package.json"),
 };
 
 const cleanCssInstance = new CleanCSS();
@@ -94,6 +98,38 @@ export const minifiers = [
         minify: (css) => transform({ filename: "style.css", code: Buffer.from(css), minify: true }).code.toString(),
     },
     {
+        id: "css-parser-napi",
+        url: versions["css-parser-napi"].url,
+        label: `@tbela99/css-parser-napi (fast) - ${versions["css-parser-napi"].version}`,
+        minify: (css) =>
+            tbelaDevNApiTransform({
+                input: Buffer.from(css),
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+                validate: false,
+                // minifyValues: true,
+            }).code,
+    },
+    {
+        id: "css-parser-wasm",
+        url: versions["css-parser-wasm"].url,
+        label: `@tbela99/css-parser-wasm (fast) - ${versions["css-parser-wasm"].version}`,
+        minify: (css) =>
+            tbelaDevWasmTransform({
+                input: Buffer.from(css),
+                minify: false,
+                beautify: false,
+                removeEmpty: true,
+                removeComments: true,
+                convertColor: true,
+                validate: false,
+                // minifyValues: true,
+            }).code,
+    },
+    {
         id: "esbuild",
         url: versions.esbuild.url,
         label: `esbuild - ${versions.esbuild.version}`,
@@ -109,6 +145,12 @@ export const minifiers = [
         minify: (css) => csstree.generate(csstree.parse(css)),
     },
     {
+        id: "css-parser-napi2",
+        url: versions["css-parser-napi"].url,
+        label: `@tbela99/css-parser-napi - ${versions["css-parser-napi"].version}`,
+        minify: (css) => tbelaDevNApiTransform({ input: Buffer.from(css) }).code,
+    },
+    {
         id: "stacksjs-ts-css",
         url: versions["stacksjs-ts-css"].url,
         label: `@stacksjs/ts-css - ${versions["stacksjs-ts-css"].version}`,
@@ -119,8 +161,8 @@ export const minifiers = [
         url: versions["css-parser"].url,
         label: `@tbela99/css-parser (fast) - ${versions["css-parser"].version}`,
         title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
-        minify: async (css) =>
-            transformSync({
+        minify: (css) =>
+            tbelaDevTransform({
                 input: Buffer.from(css),
                 minify: false,
                 beautify: false,
@@ -132,10 +174,16 @@ export const minifiers = [
             }).code,
     },
     {
-        id: "css-parser",
+        id: "css-parser-dev",
         url: versions["css-parser"].url,
         label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
-        minify: async (css) => transformSync({ input: Buffer.from(css) }).code,
+        minify: (css) => tbelaDevTransform({ input: Buffer.from(css) }).code,
+    },
+    {
+        id: "css-parser-wasm2",
+        url: versions["css-parser-wasm"].url,
+        label: `@tbela99/css-parser-wasm  - ${versions["css-parser-wasm"].version}`,
+        minify: (css) => tbelaDevWasmTransform({ input: Buffer.from(css) }).code,
     },
     {
         id: "csso",

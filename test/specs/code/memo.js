@@ -1,6 +1,6 @@
-import { doRender, RenderMemo } from "../../../dist/lib/printer/render.js";
-import { getParsedSyntax } from "../../../dist/lib/validation/config.js";
-import { toPrecision6 } from "../../../dist/lib/ast/transform/utils.js";
+import { doRender, RenderMemo } from "../../../dist/printer/render.js";
+import { getParsedSyntax } from "../../../dist/validation/config.js";
+import { toPrecision6 } from "../../../dist/ast/transform/utils.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile, resolve, ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, transformSync, parseSync) {
     describe("render memo", function () {

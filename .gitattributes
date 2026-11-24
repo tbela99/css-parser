@@ -17,6 +17,7 @@
 /.gitattributes export-ignore
 /coverage/ export-ignore linguist-vendored
 /tsconfig.json export-ignore
+/web-test-runner.config.js export-ignore
 /.github/** linguist-vendored
 # exclude all files in test/ from stats
 /rollup.config.js linguist-vendored

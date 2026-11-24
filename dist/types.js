@@ -1,8 +1,8 @@
 /* 
-	CSS parser, minifier and validator for node and the browser
+	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.2.0
+	Version: 2.3.0
 	License: MIT
  */
 /**

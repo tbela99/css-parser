@@ -1,4 +1,4 @@
-import { EnumAstNodeStatus } from "../../../dist/lib/ast/types.js";
+import { EnumAstNodeStatus } from "../../../dist/ast/types.js";
 
 export function run(describe, expect, it, transform, parse, render, dirname, readFile) {
     const root = new URL(dirname(import.meta.url) + "/../../../");

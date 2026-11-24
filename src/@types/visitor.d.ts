@@ -1,6 +1,6 @@
 import type { PlainToken, Token } from "./token.d.ts";
-import type { AstArena } from "../lib/ast/arena.ts";
-import type { AstArenaNode } from "../lib/ast/arena-node.ts";
+import type { AstArena } from "../ast/arena.ts";
+import type { AstArenaNode } from "../ast/arena-node.ts";
 import type {
     AstAtRule,
     AstDeclaration,
@@ -10,8 +10,8 @@ import type {
     AstRule,
     PlainAstNode,
 } from "./ast.d.ts";
-import { WalkerEvent } from "../lib/ast/types.ts";
-import { EnumToken } from "../lib/ast/types.ts";
+import { WalkerEvent } from "../ast/types.ts";
+import { EnumToken } from "../ast/types.ts";
 
 /**
  * Generic visitor result: a node id, an object or an array of node ids and objects. the object views of the arena

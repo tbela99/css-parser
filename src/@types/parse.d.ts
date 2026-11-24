@@ -1,4 +1,4 @@
-import { SourceFile } from "../lib/parser/source.ts";
+import { SourceFile } from "../parser/source.ts";
 
 /**
  * property list options

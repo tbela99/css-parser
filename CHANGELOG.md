@@ -1,5 +1,29 @@
 # Changelog
 
+# v2.3.0
+
+## Performance
+
+- [x] validation: the syntaxes of the declarations, the types and the functions are compiled at build time into matchers (`npm run syntax-compile`, src/validation/compiled). a value accepted by a compiled matcher is valid, the other values are validated by the interpreter, which reports the errors. the values that contain `var()` or a custom function call are validated by the interpreter. `npm run syntax-verify` checks the compiled matchers against the interpreter
+- [x] selectors: the validated tokens are written back in place instead of emptying the selector and pushing them again (the backing store of the array was released and allocated again for each selector)
+- [x] validation: the validation contexts read a range of the tokens instead of a copy (`slice()`)
+- [x] selectors: the syntax of a selector function (`:name()`) and the rules allowed in an at-rule are looked up once per name, the names are not concatenated for each selector. `:name` and `::name` are interned without creating a string
+- [x] minifier: the size of the rules compared when they are merged is computed from the memoized sizes of their declarations instead of rendering them
+- [x] render memo: the keys are hashed while they are serialized (one pass)
+
+## Feature
+
+- [x] update to webref/css syntax v8.7.10
+- [x] syntax: `npm run syntax-update` compiles the syntaxes (`npm run syntax-compile`). a type that is referenced but neither defined nor built in fails the build: a definition renamed or removed upstream is reported (src/data/syntax-report.json)
+- [x] visitors: the events are flags, a handler registered with `{type: WalkerEvent.Enter | WalkerEvent.Leave}` is called when the node is entered and when it is left
+
+## Bugs
+
+- [x] syntax: @webref/css 8.7.10. `<marker-ref>` (removed upstream, still referenced by `marker`, `marker-start`, `marker-mid`, `marker-end`) is defined by the local patch. an at-rule defined with several forms (`@property … { … } | @property … ;`) keeps the form with a block: `@property` rules were dropped
+- [x] validation: a custom function call (`--fn()`) is validated like `var()`: it may be substituted by any value, the declaration that contains it is no longer reported as not valid. `width: --max-plus-x({ 1px, 7px, 2px }, 3px)` -> no error
+- [x] web: `parse()` and `transform()` called with `{file}` lost the source of the file: the css module names lost the file parts (`[name]`, `[folder]`, `[ext]`, `[path]`), the source maps and the relative urls the file path
+- [x] css modules: the case transform options are flags: they are tested with bitwise operators (`(naming & ModuleCaseTransformEnum.IgnoreCase) == 0`, `getKeyName()`)
+
 # v2.2.0
 
 ## Bugs

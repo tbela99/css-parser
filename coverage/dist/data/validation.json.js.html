@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6486/6486</span>
+                <span class='fraction'>6492/6492</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6486/6486</span>
+                <span class='fraction'>6492/6492</span>
             </div>
         
             
@@ -6549,7 +6549,19 @@
 <a name='L6484'></a><a href='#L6484'>6484</a>
 <a name='L6485'></a><a href='#L6485'>6485</a>
 <a name='L6486'></a><a href='#L6486'>6486</a>
-<a name='L6487'></a><a href='#L6487'>6487</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L6487'></a><a href='#L6487'>6487</a>
+<a name='L6488'></a><a href='#L6488'>6488</a>
+<a name='L6489'></a><a href='#L6489'>6489</a>
+<a name='L6490'></a><a href='#L6490'>6490</a>
+<a name='L6491'></a><a href='#L6491'>6491</a>
+<a name='L6492'></a><a href='#L6492'>6492</a>
+<a name='L6493'></a><a href='#L6493'>6493</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -13036,10 +13048,10 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* 
-	CSS parser, minifier and validator for node and the browser
+	CSS parser, minifier and validator for node, deno, bun and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.2.0
+	Version: 2.3.0
 	License: MIT
  */
 var atRules = {
@@ -13079,7 +13091,7 @@ var atRules = {
 		}
 	},
 	"@container": {
-		syntax: "@container &lt;container-condition&gt;# { &lt;rule-list&gt; }",
+		syntax: "@container &lt;container-query-list&gt; { &lt;rule-list&gt; }",
 		descriptors: {
 			"aspect-ratio": "&lt;ratio&gt;",
 			"block-size": "&lt;length&gt;",
@@ -13171,7 +13183,7 @@ var atRules = {
 		}
 	},
 	"@function": {
-		syntax: "@function &lt;function-token&gt; &lt;function-parameter&gt;#? ) [ returns &lt;css-type&gt; ]? { &lt;declaration-rule-list&gt; }",
+		syntax: "@function &lt;function-token&gt; &lt;function-parameter&gt;#? ','? ) [ returns &lt;css-type&gt; ]? { &lt;declaration-rule-list&gt; }",
 		descriptors: {
 			result: "&lt;declaration-value&gt;?"
 		}
@@ -14445,7 +14457,7 @@ var declarations = {
 		syntax: "&lt;'print-color-adjust'&gt;"
 	},
 	"color-interpolation": {
-		syntax: "auto | sRGB | linearRGB"
+		syntax: "auto | sRGB | linearRGB | &lt;color-interpolation-method&gt;"
 	},
 	"color-interpolation-filters": {
 		syntax: "auto | sRGB | linearRGB"
@@ -15078,7 +15090,7 @@ var declarations = {
 		syntax: "auto | loose | normal | strict | anywhere"
 	},
 	"line-clamp": {
-		syntax: "none | [&lt;'max-lines'&gt; || &lt;'block-ellipsis'&gt;] -webkit-legacy?"
+		syntax: "none | [&lt;integer [1,∞]&gt; || auto || &lt;'block-ellipsis'&gt;] -webkit-legacy?"
 	},
 	"line-fit-edge": {
 		syntax: "leading | &lt;text-edge&gt;"
@@ -15240,7 +15252,7 @@ var declarations = {
 		syntax: "none | &lt;box-size&gt; | &lt;anchor-size()&gt;"
 	},
 	"max-lines": {
-		syntax: "auto || &lt;integer [1,∞]&gt;"
+		syntax: "&lt;integer [1,∞]&gt; || auto"
 	},
 	"max-size": {
 		syntax: "&lt;'max-width'&gt; &lt;'max-height'&gt;?"
@@ -15324,7 +15336,7 @@ var declarations = {
 		syntax: "auto | &lt;'border-top-color'&gt;"
 	},
 	"outline-offset": {
-		syntax: "&lt;length&gt;"
+		syntax: "&lt;length&gt; | inset"
 	},
 	"outline-style": {
 		syntax: "auto | &lt;outline-line-style&gt;"
@@ -15522,10 +15534,10 @@ var declarations = {
 		syntax: "economy | exact"
 	},
 	quotes: {
-		syntax: "auto | none | bikeshed-this | [ &lt;string&gt; &lt;string&gt; ]+"
+		syntax: "auto | none | [ &lt;string&gt; &lt;string&gt; ]+"
 	},
 	r: {
-		syntax: "&lt;length-percentage&gt;"
+		syntax: "&lt;length-percentage [0,∞]&gt;"
 	},
 	"reading-flow": {
 		syntax: "normal | source-order | flex-visual | flex-flow | grid-rows | grid-columns | grid-order"
@@ -15651,10 +15663,10 @@ var declarations = {
 		syntax: "&lt;'column-rule-width'&gt;"
 	},
 	rx: {
-		syntax: "&lt;length-percentage&gt; | auto"
+		syntax: "&lt;length-percentage [0,∞]&gt; | auto"
 	},
 	ry: {
-		syntax: "&lt;length-percentage&gt; | auto"
+		syntax: "&lt;length-percentage [0,∞]&gt; | auto"
 	},
 	scale: {
 		syntax: "none | [ &lt;number&gt; | &lt;percentage&gt; ]{1,3}"
@@ -15916,6 +15928,9 @@ var declarations = {
 	},
 	"text-autospace": {
 		syntax: "normal | &lt;autospace&gt; | auto"
+	},
+	"text-autospace-size": {
+		syntax: "&lt;number [0,∞]&gt;"
 	},
 	"text-box": {
 		syntax: "normal | &lt;'text-box-trim'&gt; || &lt;'text-box-edge'&gt;"
@@ -16885,6 +16900,9 @@ var selectors = {
 	"::-ms-value": {
 		syntax: "::-ms-value"
 	},
+	"::-webkit-input-placeholder": {
+		syntax: "::-webkit-input-placeholder"
+	},
 	"::-webkit-progress-bar": {
 		syntax: "::-webkit-progress-bar"
 	},
@@ -17781,6 +17799,9 @@ var syntaxes = {
 	"log()": {
 		syntax: "log( &lt;calc-sum&gt;, &lt;calc-sum&gt;? )"
 	},
+	"marker-ref": {
+		syntax: "&lt;url&gt;"
+	},
 	"matrix()": {
 		syntax: "matrix( &lt;number&gt;#{6} )"
 	},
@@ -17833,7 +17854,7 @@ var syntaxes = {
 		syntax: "palette-mix( &lt;color-interpolation-method&gt;? , [ &lt;'font-palette'&gt; &amp;&amp; &lt;percentage [0,100]&gt;? ]# )"
 	},
 	"param()": {
-		syntax: "param( &lt;param-spec&gt; , &lt;declaration-value&gt;? )"
+		syntax: "param( &lt;param-spec&gt; [ ':' &lt;declaration-value&gt;? ]? )"
 	},
 	"path()": {
 		syntax: "path( &lt;'fill-rule'&gt;? , &lt;string&gt; )"
@@ -18413,6 +18434,9 @@ var types = {
 	"container-query": {
 		syntax: "not &lt;query-in-parens&gt; | &lt;query-in-parens&gt; [ [ and &lt;query-in-parens&gt; ]* | [ or &lt;query-in-parens&gt; ]* ]"
 	},
+	"container-query-list": {
+		syntax: "&lt;container-condition&gt;#"
+	},
 	"content-distribution": {
 		syntax: "space-between | space-around | space-evenly | stretch"
 	},
@@ -18485,14 +18509,11 @@ var types = {
 	"custom-selector": {
 		syntax: "&lt;custom-arg&gt;? : &lt;extension-name&gt; [ ( &lt;custom-arg&gt;+#? ) ]?"
 	},
-	dasharray: {
-		syntax: "[ [ &lt;length-percentage&gt; | &lt;number&gt; ]+ ]#"
-	},
 	"dashndashdigit-ident": {
 		syntax: "&lt;ident-token&gt;"
 	},
 	"default-value": {
-		syntax: "&lt;declaration-value&gt;"
+		syntax: "&lt;declaration-value&gt;?"
 	},
 	"deprecated-color": {
 		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonHighlight | ButtonShadow | CaptionText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
@@ -18826,9 +18847,6 @@ var types = {
 	},
 	"location-rule": {
 		syntax: "@location &lt;dashed-ident&gt; { &lt;declaration-list&gt; }"
-	},
-	"marker-ref": {
-		syntax: "&lt;url&gt;"
 	},
 	"mask-layer": {
 		syntax: "&lt;mask-reference&gt; || &lt;position&gt; [ / &lt;bg-size&gt; ]? || &lt;repeat-style&gt; || &lt;geometry-box&gt; || [ &lt;geometry-box&gt; | no-clip ] || &lt;compositing-operator&gt; || &lt;masking-mode&gt;"
@@ -19272,7 +19290,7 @@ var types = {
 		syntax: "&lt;length&gt; | auto"
 	},
 	"spacing-trim": {
-		syntax: "space-all | normal | space-first | trim-start | trim-both | trim-all"
+		syntax: "[ trim-start | space-start | space-first ] || [ trim-adjacent | space-adjacent ] || [ trim-end | space-end | allow-end ] | trim-both | space-all | trim-all"
 	},
 	"spread-shadow": {
 		syntax: "&lt;'box-shadow-color'&gt;? &amp;&amp; [ [ none | &lt;length&gt;{2} ] [ &lt;'box-shadow-blur'&gt; &lt;'box-shadow-spread'&gt;? ]? ] &amp;&amp; &lt;'box-shadow-position'&gt;?"
@@ -19528,7 +19546,7 @@ export { atRules, declarations, config as default, languages, mediaFeatures, sel
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-18T05:28:24.223Z
+                at 2026-11-24T05:26:25.340Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

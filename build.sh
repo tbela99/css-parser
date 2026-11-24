@@ -9,6 +9,4 @@ do
   shift
 done
 # delete extra .d.ts files in dist/ sub directories
-find dist/lib | grep .d.ts | xargs rm
-rm dist/node.d.ts
-rm dist/web.d.ts
+find dist | grep .d.ts | grep -v "index\.d\.ts" | xargs rm 
