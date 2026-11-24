@@ -5,7 +5,7 @@ import localPatch from "./local-patch.json" with { type: "json" };
 // (https://github.com/w3c/webref/tree/main/packages/css), pulled from the remote url. the definitions of the levels of a
 // spec and their extensions are merged (the latest level is used). a new version of the package may introduce breaking
 // changes: the version is updated manually
-const webrefUrl = "https://cdn.jsdelivr.net/npm/@webref/css@8.7.8/css.json";
+const webrefUrl = "https://cdn.jsdelivr.net/npm/@webref/css@8.7.10/css.json";
 // the renamed properties are renamed by the parser (renamedStandardProperties), they are updated manually
 const renamedPropertiesFile = import.meta.dirname! + "/../src/syntax/syntax.ts";
 // the csstree patch, written for mdn-data. the version is pinned: the generated syntax file must not change when a new
@@ -232,6 +232,8 @@ applyPatches(false, patchUrl, patches);
 applyPatches(true, localPatchUrl, localPatch as PatchSyntax);
 // the vendor prefixed aliases with a legacy syntax (mdn-data, csstree patch, local patch) extend the standard syntax
 applyLegacySyntaxes();
+// the validation expects one form per at-rule
+normalizeAtRuleForms();
 
 for (const [name, declaration] of Object.entries(json.declarations as Record<string, { alias?: string }>)) {
     if (declaration.alias != null && !(declaration.alias in json.declarations)) {
@@ -269,6 +271,76 @@ console.log(summary);
 if (previous != null && summary.includes("\n### ")) {
     await appendFile(changesFile, summary + "\n\n");
     console.error(`>> syntax changes appended to ${changesFile}`);
+}
+
+/**
+ * split a syntax at its top level `|`: the `|` inside `[ ]`, `( )` and `{ }` are not separators
+ * @param syntax
+ */
+function splitTopLevelAlternatives(syntax: string): string[] {
+    const parts: string[] = [];
+    let depth: number = 0;
+    let start: number = 0;
+    let quote: string | null = null;
+
+    for (let i = 0; i < syntax.length; i++) {
+        const char: string = syntax.charAt(i);
+
+        if (quote != null) {
+            if (char === quote) {
+                quote = null;
+            }
+        } else if (char === "'" || char === '"') {
+            quote = char;
+        } else if (char === "[" || char === "(" || char === "{") {
+            depth++;
+        } else if (char === "]" || char === ")" || char === "}") {
+            depth--;
+        } else if (
+            char === "|" &&
+            depth === 0 &&
+            syntax.charAt(i - 1) !== "|" &&
+            syntax.charAt(i + 1) !== "|"
+        ) {
+            parts.push(syntax.slice(start, i).trim());
+            start = i + 1;
+        }
+    }
+
+    parts.push(syntax.slice(start).trim());
+
+    return parts;
+}
+
+/**
+ * an at-rule defined with several forms (`@property <custom-property-name># { <declaration-list> } | @property
+ * <custom-property-name> <css-type>? [: <declaration-value>? ]? ;`, webref 8.7.10): the validation splits the syntax of
+ * an at-rule into a prelude and a block, it expects one form. the form with a block is kept, the other forms are
+ * reported. a form that must be validated is merged by the local patch (see `@layer` in local-patch.json)
+ */
+function normalizeAtRuleForms(): void {
+    for (const [name, atRule] of Object.entries(json.atRules as Record<string, ParsedSyntax>)) {
+        if (typeof atRule.syntax !== "string") {
+            continue;
+        }
+
+        const forms: string[] = splitTopLevelAlternatives(atRule.syntax);
+
+        // the alternatives of the prelude (`@a b | c { }`) are not forms
+        if (forms.length < 2 || forms.some((form: string) => !form.startsWith(name))) {
+            continue;
+        }
+
+        const kept: string = forms.find((form: string) => form.includes("{")) ?? forms[0];
+
+        atRule.syntax = kept;
+
+        for (const form of forms) {
+            if (form !== kept) {
+                console.error(`>> at-rule form not validated >> ${name} >> ${form}`);
+            }
+        }
+    }
 }
 
 /**

@@ -332,6 +332,10 @@
     }
   },
   "types": {
+    "marker-ref": {
+      "comment": "removed by @webref/css 8.7.10, still referenced by marker, marker-start, marker-mid and marker-end (svg2)",
+      "syntax": "<url>"
+    },
     "cursor-predefined": {
       "comment": "extend with the non standard values",
       "syntax": "| hand | -webkit-grab | -webkit-grabbing | -webkit-zoom-in | -webkit-zoom-out | -moz-grab | -moz-grabbing | -moz-zoom-in | -moz-zoom-out"

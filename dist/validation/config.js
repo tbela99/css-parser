@@ -99,9 +99,43 @@ const getParsedSyntax = memoize((group, key) => {
     if (syntax === undefined) {
         syntax = Object.freeze(trimSyntaxArray(parseSyntax(obj.syntax)));
         parsedSyntaxes.set(obj, syntax);
+        syntaxNodes.set(syntax, obj);
     }
     return syntax;
 });
+/**
+ * the definition node of a parsed syntax, see {@link syntaxKey}
+ */
+const syntaxNodes = new WeakMap();
+/**
+ * the key of the definitions that are compiled (`group/name`, see scripts/compile-syntax.ts), by definition node
+ */
+let nodeKeys = null;
+/**
+ * the key of the definition of a parsed syntax (`declarations/width`, `types/color`), see scripts/compile-syntax.ts.
+ * null if the syntax is not the syntax of a declaration, a type or a function (a descriptor, ...)
+ * @param syntaxes a syntax returned by {@link getParsedSyntax}
+ */
+function syntaxKey(syntaxes) {
+    const node = syntaxNodes.get(syntaxes);
+    if (node === undefined) {
+        return null;
+    }
+    if (nodeKeys === null) {
+        nodeKeys = new Map();
+        const groups = config;
+        for (const group of [
+            ValidationSyntaxGroupEnum.Declarations,
+            ValidationSyntaxGroupEnum.Syntaxes,
+            ValidationSyntaxGroupEnum.Types,
+        ]) {
+            for (const [key, value] of Object.entries(groups[group] ?? {})) {
+                nodeKeys.set(value, group + "/" + key);
+            }
+        }
+    }
+    return nodeKeys.get(node) ?? null;
+}
 const getSyntaxRule = memoize((group, key) => {
     const node = findNode(group, key);
     if (node == null) {
@@ -170,4 +204,4 @@ const getSyntaxRule = memoize((group, key) => {
     };
 });
 
-export { getParsedSyntax, getSyntax, getSyntaxConfig, getSyntaxRule, hasSyntax };
+export { getParsedSyntax, getSyntax, getSyntaxConfig, getSyntaxRule, hasSyntax, syntaxKey };

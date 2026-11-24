@@ -3376,7 +3376,7 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                             success = false;
                         }
                         else {
-                            context = createValidationContext(arena, stream.slice(index));
+                            context = createValidationContext(arena, stream, index);
                             // @ts-ignore
                             range = context.peekRange((t) => arena.dataTypes[t] === EnumToken.EndParensTokenType);
                             // inlined: arena.typeOf(range.at(-1))

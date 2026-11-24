@@ -1,5 +1,22 @@
 # Changelog
 
+# v2.3.0
+
+## Bugs
+
+- [x] syntax: @webref/css 8.7.10. `<marker-ref>` (removed upstream, still referenced by `marker`, `marker-start`, `marker-mid`, `marker-end`) is defined by the local patch. an at-rule defined with several forms (`@property … { … } | @property … ;`) keeps the form with a block: `@property` rules were dropped
+
+## Performance
+
+- [x] validation: the syntaxes of the declarations, the types and the functions are compiled at build time into matchers (`npm run syntax-compile`, src/validation/compiled). a value accepted by a compiled matcher is valid, the other values are validated by the interpreter, which reports the errors. the values that contain `var()` or a custom function call are validated by the interpreter. `npm run syntax-verify` checks the compiled matchers against the interpreter
+- [x] selectors: the validated tokens are written back in place instead of emptying the selector and pushing them again (the backing store of the array was released and allocated again for each selector)
+- [x] validation: the validation contexts read a range of the tokens instead of a copy (`slice()`)
+- [x] selectors: the syntax of a selector function (`:name()`) and the rules allowed in an at-rule are looked up once per name, the names are not concatenated for each selector. `:name` and `::name` are interned without creating a string
+
+## Feature
+
+- [x] syntax: `npm run syntax-update` compiles the syntaxes (`npm run syntax-compile`). a type that is referenced but neither defined nor built in fails the build: a definition renamed or removed upstream is reported (src/data/syntax-report.json)
+
 # v2.2.1
 
 ## Bugs

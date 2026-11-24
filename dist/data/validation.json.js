@@ -42,7 +42,7 @@ var atRules = {
 		}
 	},
 	"@container": {
-		syntax: "@container <container-condition># { <rule-list> }",
+		syntax: "@container <container-query-list> { <rule-list> }",
 		descriptors: {
 			"aspect-ratio": "<ratio>",
 			"block-size": "<length>",
@@ -134,7 +134,7 @@ var atRules = {
 		}
 	},
 	"@function": {
-		syntax: "@function <function-token> <function-parameter>#? ) [ returns <css-type> ]? { <declaration-rule-list> }",
+		syntax: "@function <function-token> <function-parameter>#? ','? ) [ returns <css-type> ]? { <declaration-rule-list> }",
 		descriptors: {
 			result: "<declaration-value>?"
 		}
@@ -1408,7 +1408,7 @@ var declarations = {
 		syntax: "<'print-color-adjust'>"
 	},
 	"color-interpolation": {
-		syntax: "auto | sRGB | linearRGB"
+		syntax: "auto | sRGB | linearRGB | <color-interpolation-method>"
 	},
 	"color-interpolation-filters": {
 		syntax: "auto | sRGB | linearRGB"
@@ -2041,7 +2041,7 @@ var declarations = {
 		syntax: "auto | loose | normal | strict | anywhere"
 	},
 	"line-clamp": {
-		syntax: "none | [<'max-lines'> || <'block-ellipsis'>] -webkit-legacy?"
+		syntax: "none | [<integer [1,∞]> || auto || <'block-ellipsis'>] -webkit-legacy?"
 	},
 	"line-fit-edge": {
 		syntax: "leading | <text-edge>"
@@ -2203,7 +2203,7 @@ var declarations = {
 		syntax: "none | <box-size> | <anchor-size()>"
 	},
 	"max-lines": {
-		syntax: "auto || <integer [1,∞]>"
+		syntax: "<integer [1,∞]> || auto"
 	},
 	"max-size": {
 		syntax: "<'max-width'> <'max-height'>?"
@@ -2287,7 +2287,7 @@ var declarations = {
 		syntax: "auto | <'border-top-color'>"
 	},
 	"outline-offset": {
-		syntax: "<length>"
+		syntax: "<length> | inset"
 	},
 	"outline-style": {
 		syntax: "auto | <outline-line-style>"
@@ -2485,10 +2485,10 @@ var declarations = {
 		syntax: "economy | exact"
 	},
 	quotes: {
-		syntax: "auto | none | bikeshed-this | [ <string> <string> ]+"
+		syntax: "auto | none | [ <string> <string> ]+"
 	},
 	r: {
-		syntax: "<length-percentage>"
+		syntax: "<length-percentage [0,∞]>"
 	},
 	"reading-flow": {
 		syntax: "normal | source-order | flex-visual | flex-flow | grid-rows | grid-columns | grid-order"
@@ -2614,10 +2614,10 @@ var declarations = {
 		syntax: "<'column-rule-width'>"
 	},
 	rx: {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage [0,∞]> | auto"
 	},
 	ry: {
-		syntax: "<length-percentage> | auto"
+		syntax: "<length-percentage [0,∞]> | auto"
 	},
 	scale: {
 		syntax: "none | [ <number> | <percentage> ]{1,3}"
@@ -2879,6 +2879,9 @@ var declarations = {
 	},
 	"text-autospace": {
 		syntax: "normal | <autospace> | auto"
+	},
+	"text-autospace-size": {
+		syntax: "<number [0,∞]>"
 	},
 	"text-box": {
 		syntax: "normal | <'text-box-trim'> || <'text-box-edge'>"
@@ -3848,6 +3851,9 @@ var selectors = {
 	"::-ms-value": {
 		syntax: "::-ms-value"
 	},
+	"::-webkit-input-placeholder": {
+		syntax: "::-webkit-input-placeholder"
+	},
 	"::-webkit-progress-bar": {
 		syntax: "::-webkit-progress-bar"
 	},
@@ -4744,6 +4750,9 @@ var syntaxes = {
 	"log()": {
 		syntax: "log( <calc-sum>, <calc-sum>? )"
 	},
+	"marker-ref": {
+		syntax: "<url>"
+	},
 	"matrix()": {
 		syntax: "matrix( <number>#{6} )"
 	},
@@ -4796,7 +4805,7 @@ var syntaxes = {
 		syntax: "palette-mix( <color-interpolation-method>? , [ <'font-palette'> && <percentage [0,100]>? ]# )"
 	},
 	"param()": {
-		syntax: "param( <param-spec> , <declaration-value>? )"
+		syntax: "param( <param-spec> [ ':' <declaration-value>? ]? )"
 	},
 	"path()": {
 		syntax: "path( <'fill-rule'>? , <string> )"
@@ -5376,6 +5385,9 @@ var types = {
 	"container-query": {
 		syntax: "not <query-in-parens> | <query-in-parens> [ [ and <query-in-parens> ]* | [ or <query-in-parens> ]* ]"
 	},
+	"container-query-list": {
+		syntax: "<container-condition>#"
+	},
 	"content-distribution": {
 		syntax: "space-between | space-around | space-evenly | stretch"
 	},
@@ -5448,14 +5460,11 @@ var types = {
 	"custom-selector": {
 		syntax: "<custom-arg>? : <extension-name> [ ( <custom-arg>+#? ) ]?"
 	},
-	dasharray: {
-		syntax: "[ [ <length-percentage> | <number> ]+ ]#"
-	},
 	"dashndashdigit-ident": {
 		syntax: "<ident-token>"
 	},
 	"default-value": {
-		syntax: "<declaration-value>"
+		syntax: "<declaration-value>?"
 	},
 	"deprecated-color": {
 		syntax: "ActiveBorder | ActiveCaption | AppWorkspace | Background | ButtonHighlight | ButtonShadow | CaptionText | InactiveBorder | InactiveCaption | InactiveCaptionText | InfoBackground | InfoText | Menu | MenuText | Scrollbar | ThreeDDarkShadow | ThreeDFace | ThreeDHighlight | ThreeDLightShadow | ThreeDShadow | Window | WindowFrame | WindowText"
@@ -5789,9 +5798,6 @@ var types = {
 	},
 	"location-rule": {
 		syntax: "@location <dashed-ident> { <declaration-list> }"
-	},
-	"marker-ref": {
-		syntax: "<url>"
 	},
 	"mask-layer": {
 		syntax: "<mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || <geometry-box> || [ <geometry-box> | no-clip ] || <compositing-operator> || <masking-mode>"
@@ -6235,7 +6241,7 @@ var types = {
 		syntax: "<length> | auto"
 	},
 	"spacing-trim": {
-		syntax: "space-all | normal | space-first | trim-start | trim-both | trim-all"
+		syntax: "[ trim-start | space-start | space-first ] || [ trim-adjacent | space-adjacent ] || [ trim-end | space-end | allow-end ] | trim-both | space-all | trim-all"
 	},
 	"spread-shadow": {
 		syntax: "<'box-shadow-color'>? && [ [ none | <length>{2} ] [ <'box-shadow-blur'> <'box-shadow-spread'>? ]? ] && <'box-shadow-position'>?"

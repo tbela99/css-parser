@@ -8,12 +8,18 @@ import type {
 } from "../../../@types/index.d.ts";
 import { EnumAstNodeStatus, EnumToken } from "../../ast/types.ts";
 import type { AstArena } from "../../ast/arena.ts";
-import { StringBuilder } from "../../ast/strings.ts";
+import { StringBuilder, StringDerived } from "../../ast/strings.ts";
 import { renderValue } from "../../printer/render.ts";
 import { combinators, pseudoElements, tokensfuncDefMap, isFunctionDefType } from "../../syntax/constants.ts";
 import { isHash, isIdent } from "../../syntax/syntax.ts";
-import { getParsedSyntax, getSyntaxConfig, getSyntaxRule } from "../../validation/config.ts";
-import { createValidationContext, matchAllSyntaxes, matchSelectorSyntax, trimArray } from "../../validation/match.ts";
+import { getParsedSyntax, getSyntaxRule } from "../../validation/config.ts";
+import {
+    createValidationContext,
+    matchAllSyntaxes,
+    matchSelectorSyntax,
+    selectorFunctionSyntax,
+    trimArray,
+} from "../../validation/match.ts";
 
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from "../../validation/parser/typedef.ts";
 import type { ValidationPropertyToken } from "../../validation/parser/types.d.ts";
@@ -336,36 +342,14 @@ export function parseSelector(
     let index: number;
     let parent: AstNode | null = context;
     let nested: boolean = false;
-    let val: string;
 
     if (contextType !== EnumToken.StyleSheetNodeType && contextType !== EnumToken.RuleNodeType) {
         allowed = false;
 
         if (contextType === EnumToken.AtRuleNodeType) {
-            const syntaxRule = getSyntaxRule(
-                ValidationSyntaxGroupEnum.AtRules,
-                "@" + arena.resolveString(arena.name[context as AstNode]),
-            );
-
-            allowed = syntaxRule?.acceptAnyRule ?? false;
-
-            if (!allowed) {
-                const rules = syntaxRule?.getBlockRules?.();
-
-                if (rules != null) {
-                    for (const rule of rules) {
-                        if (ValidationTokenEnum.PropertyType === rule.typ) {
-                            if (
-                                "block-contents" === (rule as ValidationPropertyToken).val ||
-                                "rule-list" === (rule as ValidationPropertyToken).val
-                            ) {
-                                allowed = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            // computed once per at-rule name: the name is not concatenated for each selector
+            atRuleArena = arena;
+            allowed = arena.stringDerived(arena.name[context as AstNode], StringDerived.AtRuleAcceptsRules, atRuleAcceptsRules);
         }
     }
 
@@ -411,14 +395,14 @@ export function parseSelector(
             }
 
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = ":" + arena.resolveString(arena.stringValue[next]);
-
+                // ":" + name, no string is created. `:name()` is a selector function: looked up once per name
+                arena.stringValue[token] = arena.internBuilder(
+                    arena.appendString(pseudoBuilder.reset().appendCode(0x3a), arena.stringValue[next]),
+                );
                 arena.dataTypes[token] =
-                    val + "()" in getSyntaxConfig().selectors
+                    selectorFunctionSyntax(arena, token) != null
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.dataTypes[next];
-                // inlined: arena.setStr(token, val)
-                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -447,13 +431,14 @@ export function parseSelector(
             }
 
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = "::" + arena.resolveString(arena.stringValue[next]);
+                // "::" + name, no string is created
+                arena.stringValue[token] = arena.internBuilder(
+                    arena.appendString(pseudoBuilder.reset().appendCode(0x3a).appendCode(0x3a), arena.stringValue[next]),
+                );
                 arena.dataTypes[token] =
-                    val + "()" in getSyntaxConfig().selectors
+                    selectorFunctionSyntax(arena, token) != null
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : EnumToken.FunctionTokenDefType;
-                // inlined: arena.setStr(token, val)
-                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -604,6 +589,40 @@ const selectorRenderOptions: ParserOptions = { minify: false };
  * builder of the pseudo classes and pseudo elements
  */
 const pseudoBuilder: StringBuilder = new StringBuilder();
+
+/**
+ * the arena of the at-rule names read by {@link atRuleAcceptsRules}: the function passed to the string table is not a
+ * closure
+ */
+let atRuleArena: AstArena | null = null;
+
+/**
+ * true if the rules are allowed in the block of an at-rule, by name (see {@link StringDerived.AtRuleAcceptsRules})
+ * @param id the at-rule name
+ */
+function atRuleAcceptsRules(id: number): boolean {
+    const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + (atRuleArena as AstArena).resolveString(id));
+
+    if (syntaxRule?.acceptAnyRule) {
+        return true;
+    }
+
+    const rules = syntaxRule?.getBlockRules?.();
+
+    if (rules != null) {
+        for (const rule of rules) {
+            if (
+                ValidationTokenEnum.PropertyType === rule.typ &&
+                ("block-contents" === (rule as ValidationPropertyToken).val ||
+                    "rule-list" === (rule as ValidationPropertyToken).val)
+            ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 /**
  * true if ":" + the string is a pseudo element with a single colon syntax (`:before`). the string is not created

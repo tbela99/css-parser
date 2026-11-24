@@ -10,8 +10,8 @@ import { StringBuilder } from '../../ast/strings.js';
 import { renderValue } from '../../printer/render.js';
 import { isFunctionDefType, tokensfuncDefMap, pseudoElements, combinators } from '../../syntax/constants.js';
 import { isHash, isIdent } from '../../syntax/syntax.js';
-import { getParsedSyntax, getSyntaxRule, getSyntaxConfig } from '../../validation/config.js';
-import { matchAllSyntaxes, createValidationContext, trimArray, matchSelectorSyntax } from '../../validation/match.js';
+import { getParsedSyntax, getSyntaxRule } from '../../validation/config.js';
+import { matchAllSyntaxes, createValidationContext, trimArray, selectorFunctionSyntax, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { trimWhiteSpace } from '../parse.js';
@@ -239,26 +239,12 @@ function parseSelector(arena, tokens, context, options, errors) {
     let index;
     let parent = context;
     let nested = false;
-    let val;
     if (contextType !== EnumToken.StyleSheetNodeType && contextType !== EnumToken.RuleNodeType) {
         allowed = false;
         if (contextType === EnumToken.AtRuleNodeType) {
-            const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + arena.resolveString(arena.name[context]));
-            allowed = syntaxRule?.acceptAnyRule ?? false;
-            if (!allowed) {
-                const rules = syntaxRule?.getBlockRules?.();
-                if (rules != null) {
-                    for (const rule of rules) {
-                        if (ValidationTokenEnum.PropertyType === rule.typ) {
-                            if ("block-contents" === rule.val ||
-                                "rule-list" === rule.val) {
-                                allowed = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            // computed once per at-rule name: the name is not concatenated for each selector
+            atRuleArena = arena;
+            allowed = arena.stringDerived(arena.name[context], 3 /* StringDerived.AtRuleAcceptsRules */, atRuleAcceptsRules);
         }
     }
     while (parent != null && parent > 0) {
@@ -293,13 +279,12 @@ function parseSelector(arena, tokens, context, options, errors) {
                 continue;
             }
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = ":" + arena.resolveString(arena.stringValue[next]);
+                // ":" + name, no string is created. `:name()` is a selector function: looked up once per name
+                arena.stringValue[token] = arena.internBuilder(arena.appendString(pseudoBuilder.reset().appendCode(0x3a), arena.stringValue[next]));
                 arena.dataTypes[token] =
-                    val + "()" in getSyntaxConfig().selectors
+                    selectorFunctionSyntax(arena, token) != null
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : arena.dataTypes[next];
-                // inlined: arena.setStr(token, val)
-                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -323,13 +308,12 @@ function parseSelector(arena, tokens, context, options, errors) {
                 continue;
             }
             if (arena.dataTypes[next] === EnumToken.FunctionTokenDefType) {
-                val = "::" + arena.resolveString(arena.stringValue[next]);
+                // "::" + name, no string is created
+                arena.stringValue[token] = arena.internBuilder(arena.appendString(pseudoBuilder.reset().appendCode(0x3a).appendCode(0x3a), arena.stringValue[next]));
                 arena.dataTypes[token] =
-                    val + "()" in getSyntaxConfig().selectors
+                    selectorFunctionSyntax(arena, token) != null
                         ? EnumToken.PseudoClassFunctionTokenDefType
                         : EnumToken.FunctionTokenDefType;
-                // inlined: arena.setStr(token, val)
-                arena.stringValue[token] = arena.internString(val);
                 arena.spanLocation(token, token, next);
                 all[write++] = token;
                 read++;
@@ -431,6 +415,32 @@ const selectorRenderOptions = { minify: false };
  * builder of the pseudo classes and pseudo elements
  */
 const pseudoBuilder = new StringBuilder();
+/**
+ * the arena of the at-rule names read by {@link atRuleAcceptsRules}: the function passed to the string table is not a
+ * closure
+ */
+let atRuleArena = null;
+/**
+ * true if the rules are allowed in the block of an at-rule, by name (see {@link StringDerived.AtRuleAcceptsRules})
+ * @param id the at-rule name
+ */
+function atRuleAcceptsRules(id) {
+    const syntaxRule = getSyntaxRule(ValidationSyntaxGroupEnum.AtRules, "@" + atRuleArena.resolveString(id));
+    if (syntaxRule?.acceptAnyRule) {
+        return true;
+    }
+    const rules = syntaxRule?.getBlockRules?.();
+    if (rules != null) {
+        for (const rule of rules) {
+            if (ValidationTokenEnum.PropertyType === rule.typ &&
+                ("block-contents" === rule.val ||
+                    "rule-list" === rule.val)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 /**
  * true if ":" + the string is a pseudo element with a single colon syntax (`:before`). the string is not created
  * @param arena

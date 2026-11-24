@@ -4561,7 +4561,7 @@ export function parseAtRule(
                             });
                             success = false;
                         } else {
-                            context = createValidationContext(arena, stream.slice(index));
+                            context = createValidationContext(arena, stream, index);
                             // @ts-ignore
                             range = context.peekRange(
                                 (t: Token) => arena.dataTypes[t] === EnumToken.EndParensTokenType,

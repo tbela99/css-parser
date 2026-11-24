@@ -29,6 +29,9 @@ import { isColor } from "../syntax/syntax.ts";
 import { equalsIgnoreCase, lowercase } from "../parser/utils/text.ts";
 import { parseTokens } from "../parser/parse.ts";
 import { isNullable, matchingAlternatives, mayStartWith } from "./first.ts";
+import { compiledMatcher, matchCompiled, type Matcher } from "./compiled/runtime.ts";
+import { syntaxKey } from "./config.ts";
+import { renderValue } from "../printer/render.ts";
 
 const config: ValidationConfiguration = getSyntaxConfig();
 
@@ -39,7 +42,7 @@ const allValues = config.declarations.all!.syntax.split(/[\s|]+/g) as string[];
  * true if the value is a css wide keyword (`inherit`, `initial`, ...), ignoring the case
  * @param value
  */
-function isCssWideKeyword(value: string): boolean {
+export function isCssWideKeyword(value: string): boolean {
     for (let i = 0; i < allValues.length; i++) {
         if (equalsIgnoreCase(allValues[i], value)) {
             return true;
@@ -313,7 +316,7 @@ export function isMFValue(
 /**
  * validation context: a cursor over the tokens being validated. the methods are shared by all the contexts
  */
-class ValidationTokenContext implements ValidationContext {
+export class ValidationTokenContext implements ValidationContext {
     arena: AstArena;
     tokens: Token[];
     index: number;
@@ -513,10 +516,15 @@ class ValidationTokenContext implements ValidationContext {
  * @param tokens
  * @returns
  */
-export function createValidationContext(arena: AstArena, tokens: Token[]): ValidationContext {
+export function createValidationContext(
+    arena: AstArena,
+    tokens: Token[],
+    start: number = 0,
+    end: number = tokens.length,
+): ValidationContext {
     const filtered: Token[] = [];
 
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = Math.max(0, start); i < end; i++) {
         if (arena.dataTypes[tokens[i]] !== EnumToken.CommentTokenType) {
             filtered.push(tokens[i]);
         }
@@ -919,15 +927,12 @@ export function matchSelectorSyntax(
                     const token = stack.at(-1);
 
                     const index: number = tokens.indexOf(token as Token);
+                    // the syntax is looked up once per function name, the tokens are read in place
                     const result = matchAllSyntaxes(
                         arena,
-                        ((
-                            getParsedSyntax(
-                                ValidationSyntaxGroupEnum.Selectors,
-                                arena.resolveString(arena.stringValue[token as Token]) + "()",
-                            ) as ValidationFunctionToken[]
-                        )?.[0]?.chi as ValidationToken[]) ?? [],
-                        createValidationContext(arena, tokens.slice(index + 1, tokens.length - 1)),
+                        ((selectorFunctionSyntax(arena, token as Token) as ValidationFunctionToken[])?.[0]
+                            ?.chi as ValidationToken[]) ?? [],
+                        createValidationContext(arena, tokens, index + 1, tokens.length - 1),
                         options,
                     );
 
@@ -1028,11 +1033,13 @@ export function matchSelectorSyntax(
         };
     }
 
-    stream.length = 0;
-
+    // the tokens are written in place: the stream has at least as many tokens. `stream.length = 0` would release its
+    // backing store, the pushes would allocate it again
     for (let i = 0; i < tokens.length; i++) {
-        stream.push(tokens[i]);
+        stream[i] = tokens[i];
     }
+
+    stream.length = tokens.length;
 
     return { success, errors };
 }
@@ -1181,6 +1188,11 @@ let encodingLength: number = 0;
 let encodingHash: number = 0;
 
 /**
+ * true if the encoded value contains a token the compiled matchers do not handle (var(), a custom function call, ...): the interpreter validates the value, see {@link compiledVerdict}
+ */
+let encodingBail: boolean = false;
+
+/**
  * append a value to the encoding and update its hash
  * @param value
  */
@@ -1205,6 +1217,18 @@ function encode(value: number): void {
  */
 function encodeToken(arena: AstArena, token: Token): void {
     const typ: EnumToken = arena.dataTypes[token];
+
+    if (
+        typ === EnumToken.WildCardFunctionTokenType ||
+        typ === EnumToken.WildCardFunctionTokenDefType ||
+        typ === EnumToken.CustomFunctionTokenType ||
+        typ === EnumToken.CustomFunctionTokenDefType ||
+        typ === EnumToken.BadCdoTokenType ||
+        typ === EnumToken.BadCommentTokenType ||
+        typ === EnumToken.BadStringTokenType
+    ) {
+        encodingBail = true;
+    }
 
     encode(typ);
     encode(arena.name[token]);
@@ -1472,6 +1496,126 @@ function valueTokens(arena: AstArena, tokens: Token[]): Token[] {
 }
 
 /**
+ * the compiled matchers: 0 not used, 1 used (a valid answer is final), 2 verified (the interpreter validates the values
+ * accepted by a compiled matcher, the disagreements are recorded in {@link compiledMismatches})
+ */
+let compiledMode: 0 | 1 | 2 = 1;
+
+/**
+ * the values accepted by a compiled matcher and rejected by the interpreter, see {@link setCompiledValidation}
+ */
+export const compiledMismatches: Array<{ syntax: string; value: string }> = [];
+
+/**
+ * the number of values validated by the compiled matchers (valid) and deferred to the interpreter
+ */
+export const compiledStats = {
+    valid: 0,
+    deferred: 0,
+    // deferred: the value contains var(), a custom function, ...
+    bail: 0,
+    // deferred: the syntax is not compiled
+    uncompiled: 0,
+    // deferred: the compiled matcher rejected the value, the interpreter accepted it (verified mode)
+    rejectedValid: 0,
+    rejectedValidSamples: [] as Array<{ syntax: string; value: string }>,
+};
+
+/**
+ * use the compiled matchers (see src/validation/compiled/runtime.ts): 0 not used, 1 used, 2 verified by the interpreter
+ * @param mode
+ */
+export function setCompiledValidation(mode: 0 | 1 | 2): void {
+    compiledMode = mode;
+}
+
+/**
+ * the compiled matchers of the syntaxes, null when the syntaxes are not compiled
+ */
+const compiledMatchers: WeakMap<ValidationToken[], Matcher | null> = new WeakMap();
+
+/**
+ * true if the value is valid according to the compiled matcher of the syntax. false: the interpreter must validate it
+ * (the value may be valid). the value must be encoded (see {@link encodeToken})
+ * @param arena
+ * @param syntaxes
+ * @param tokens
+ * @param options
+ */
+function compiledVerdict(arena: AstArena, syntaxes: ValidationToken[], tokens: Token[], options: ParserOptions): boolean {
+    if (compiledMode === 0) {
+        return false;
+    }
+
+    if (encodingBail) {
+        compiledStats.deferred++;
+        compiledStats.bail++;
+        return false;
+    }
+
+    let matcher: Matcher | null | undefined = compiledMatchers.get(syntaxes);
+
+    if (matcher === undefined) {
+        const key: string | null = syntaxKey(syntaxes);
+
+        matcher = key === null ? null : compiledMatcher(key);
+        compiledMatchers.set(syntaxes, matcher);
+    }
+
+    if (matcher === null) {
+        compiledStats.deferred++;
+        compiledStats.uncompiled++;
+        return false;
+    }
+
+    if (!matchCompiled(arena, matcher, tokens, options)) {
+        compiledStats.deferred++;
+
+        if (compiledMode === 2) {
+            const length: number = encodingLength;
+            const hash: number = encodingHash;
+            const saved: Float64Array = encoding.slice(0, length);
+
+            if (matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, tokens), options).success) {
+                compiledStats.rejectedValid++;
+                compiledStats.rejectedValidSamples.push({
+                    syntax: syntaxKey(syntaxes) as string,
+                    value: tokens.map((token: Token) => renderValue(arena, token)).join(""),
+                });
+            }
+
+            encoding.set(saved);
+            encodingLength = length;
+            encodingHash = hash;
+        }
+
+        return false;
+    }
+
+    compiledStats.valid++;
+
+    if (compiledMode === 2) {
+        const length: number = encodingLength;
+        const hash: number = encodingHash;
+        const saved: Float64Array = encoding.slice(0, length);
+
+        if (!matchAllSyntaxes(arena, syntaxes, createValidationContext(arena, tokens), options).success) {
+            compiledMismatches.push({
+                syntax: syntaxKey(syntaxes) as string,
+                value: tokens.map((token: Token) => renderValue(arena, token)).join(""),
+            });
+        }
+
+        // the validation may encode other values
+        encoding.set(saved);
+        encodingLength = length;
+        encodingHash = hash;
+    }
+
+    return true;
+}
+
+/**
  * validate the value of a declaration. a value that has already been validated for the same syntax in the same arena
  * (same encoding, see {@link encodeToken}) is not validated again: `width: 10px` is validated once, whatever the number
  * of rules that contain it. the failed validations are cached too: their errors are rebuilt with the tokens of the value
@@ -1488,12 +1632,18 @@ export function matchDeclarationSyntax(
 ): ValidationMatch {
     encodingLength = 0;
     encodingHash = 0x811c9dc5;
+    encodingBail = false;
 
     for (let i = 0; i < tokens.length; i++) {
         encodeToken(arena, tokens[i]);
     }
 
     const cached: CachedValidation | null = findValidation(arena, syntaxes);
+
+    if (cached == null && compiledVerdict(arena, syntaxes, tokens, options)) {
+        cacheValidation(arena, syntaxes, storeEncoding(arena), encodingLength, encodingHash, true, null);
+        return cachedValidMatch;
+    }
 
     if (cached != null) {
         if (cached.valid) {
@@ -1551,6 +1701,7 @@ export function isValidDeclarationValue(
 ): boolean {
     encodingLength = 0;
     encodingHash = 0x811c9dc5;
+    encodingBail = false;
 
     for (let token: Token = arena.firstToken[declaration]; token !== 0; token = arena.nextSibling[token]) {
         encodeToken(arena, token);
@@ -1560,6 +1711,11 @@ export function isValidDeclarationValue(
 
     if (cached != null) {
         return cached.valid;
+    }
+
+    if (compiledVerdict(arena, syntaxes, arena.tokens(declaration), options)) {
+        cacheValidation(arena, syntaxes, storeEncoding(arena), encodingLength, encodingHash, true, null);
+        return true;
     }
 
     // the encoding is stored before the validation, which may encode other values
@@ -2038,7 +2194,7 @@ function computeSelectorFunctionSyntax(id: number): ValidationToken[] | null {
  * @param arena
  * @param token
  */
-function selectorFunctionSyntax(arena: AstArena, token: Token): ValidationToken[] | null {
+export function selectorFunctionSyntax(arena: AstArena, token: Token): ValidationToken[] | null {
     syntaxArena = arena;
 
     return arena.stringDerived(
@@ -2327,7 +2483,7 @@ function matchSyntax(
                     functionSyntax(arena, token as Token) as ValidationFunctionToken[]
                 )?.[0]?.chi as ValidationToken[],
 
-                createValidationContext(arena, range.slice(1, -1)),
+                createValidationContext(arena, range, 1, range.length - 1),
                 options,
                 out,
             );
@@ -2775,7 +2931,7 @@ function matchSyntax(
                         result = matchSyntax(
                             arena,
                             (syntaxes[i] as ValidationFunctionToken).chi as ValidationToken[],
-                            createValidationContext(arena, range.slice(1, -1)),
+                            createValidationContext(arena, range, 1, range.length - 1),
                             options,
                             out,
                         );
@@ -2854,7 +3010,7 @@ function matchSyntax(
                                         ) as ValidationFunctionToken[] as ValidationToken[]
                                     )?.[0] as ValidationFunctionToken
                                 ).chi ?? [],
-                                createValidationContext(arena, children.slice(1, -1)),
+                                createValidationContext(arena, children, 1, children.length - 1),
                                 options,
                                 out,
                             );
@@ -3202,7 +3358,7 @@ function peekFeatureTokens(arena: AstArena, context: ValidationContext): Token[]
  * @param options
  * @returns
  */
-function matchProperty(
+export function matchProperty(
     arena: AstArena,
     property: ValidationPropertyToken,
     context: ValidationContext,
@@ -3265,7 +3421,7 @@ function matchProperty(
             result = matchSyntax(
                 arena,
                 syntax,
-                createValidationContext(arena, range.slice(1, -1)),
+                createValidationContext(arena, range, 1, range.length - 1),
                 options as ValidationOptions,
             );
 

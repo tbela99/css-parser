@@ -83,6 +83,10 @@ var StringDerived;
      * the kind of a transform function name or of a transform property name (see `transformKind()`)
      */
     StringDerived[StringDerived["TransformKind"] = 2] = "TransformKind";
+    /**
+     * true if the rules are allowed in the block of an at-rule (by name, without `@`), see `parseSelector()`
+     */
+    StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
 })(StringDerived || (StringDerived = {}));
 /**
  * string of a range of code units

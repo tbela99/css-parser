@@ -133,10 +133,52 @@ export const getParsedSyntax = memoize((group: ValidationSyntaxGroupEnum, key: s
             trimSyntaxArray(parseSyntax((obj as ValidationSyntaxNode).syntax as string)),
         ) as ValidationToken[];
         parsedSyntaxes.set(obj, syntax);
+        syntaxNodes.set(syntax, obj);
     }
 
     return syntax;
 }) as (group: ValidationSyntaxGroupEnum, key: string) => null | ValidationToken[];
+
+/**
+ * the definition node of a parsed syntax, see {@link syntaxKey}
+ */
+const syntaxNodes = new WeakMap<ValidationToken[], object>();
+
+/**
+ * the key of the definitions that are compiled (`group/name`, see scripts/compile-syntax.ts), by definition node
+ */
+let nodeKeys: Map<object, string> | null = null;
+
+/**
+ * the key of the definition of a parsed syntax (`declarations/width`, `types/color`), see scripts/compile-syntax.ts.
+ * null if the syntax is not the syntax of a declaration, a type or a function (a descriptor, ...)
+ * @param syntaxes a syntax returned by {@link getParsedSyntax}
+ */
+export function syntaxKey(syntaxes: ValidationToken[]): string | null {
+    const node: object | undefined = syntaxNodes.get(syntaxes);
+
+    if (node === undefined) {
+        return null;
+    }
+
+    if (nodeKeys === null) {
+        nodeKeys = new Map();
+
+        const groups = config as unknown as Record<string, Record<string, object> | undefined>;
+
+        for (const group of [
+            ValidationSyntaxGroupEnum.Declarations,
+            ValidationSyntaxGroupEnum.Syntaxes,
+            ValidationSyntaxGroupEnum.Types,
+        ]) {
+            for (const [key, value] of Object.entries(groups[group] ?? {})) {
+                nodeKeys.set(value, group + "/" + key);
+            }
+        }
+    }
+
+    return nodeKeys.get(node) ?? null;
+}
 
 export const getSyntaxRule = memoize((group: ValidationSyntaxGroupEnum, key: string): ValidationSyntaxRule | null => {
     const node = findNode(group, key);
