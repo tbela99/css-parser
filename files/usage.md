@@ -174,24 +174,19 @@ console.debug(render(arena, declaration, {withParents: true}));
 ### Render result
 
 `render()`, `transform()` and `transformSync()` return a [`RenderResult`](../classes/node.RenderResult.html) (a
-[`TransformResult`](../classes/node.TransformResult.html) for the transform functions). The generated CSS is stored as
-UTF-8 bytes in `result.write` (a `Uint8Array`). `result.code` decodes the bytes the first time it is read, the string
-is kept for the next reads.
+[`TransformResult`](../classes/node.TransformResult.html) for the transform functions). The generated CSS is available
+in two forms:
 
-When the result is written to a file or sent over the network, use the bytes directly: no string is created.
+|                                   | `result.write`                                    | `result.code`                                                    |
+|-----------------------------------|---------------------------------------------------|------------------------------------------------------------------|
+| Type                              | `Uint8Array`: the CSS encoded as UTF-8            | `string`                                                         |
+| How it is produced                | the render writes it: it is the output itself     | computed: decoded from `write` the first time it is read, then kept |
+| Cost                              | none                                              | one decoding (UTF-8 to a JavaScript string) and the memory of the string |
+| `postMessage()`, `structuredClone()` | copied, or moved with a transfer (see below)   | not sent: it is a getter, not a property of the object           |
+| `JSON.stringify()`                | not serialized                                    | serialized                                                        |
 
-```javascript
-import {transform} from '@tbela99/css-parser';
-import {writeFile} from 'node:fs/promises';
-
-const result = await transform(css);
-
-// bytes, no string conversion
-await writeFile('styles.min.css', result.write);
-
-// string, decoded once
-console.debug(result.code);
-```
+`code` is dynamic: it does not exist until it is read. Reading it decodes `write`; a program that only writes the CSS
+to a file, to the network or to another thread never creates the string.
 
 `result.stats.bytesOut` is the length of the generated CSS (`result.code.length`), it is computed without decoding
 the bytes.
@@ -199,7 +194,160 @@ the bytes.
 The render buffer is allocated once, before rendering, from the length of the parsed CSS (`arena.inputLengths[ast]`,
 imported files included) plus a small padding: the minified or beautified output is usually not larger than the input.
 The buffer grows when the output is larger (beautifying minified CSS for instance). `result.write` contains only the
-generated CSS.
+generated CSS: it is a view of the first bytes of that buffer (`result.write.buffer`), which is usually larger.
+
+#### Writing the bytes
+
+Files, sockets, HTTP responses and blobs accept bytes: use `result.write`, no string is created.
+
+```javascript
+// an HTTP response
+new Response(result.write, {headers: {'content-type': 'text/css'}});
+
+// string, decoded once, only when it is needed
+console.debug(result.code);
+```
+
+#### Writing to a file
+
+Write `result.write` as it is. The functions also accept the CSS as UTF-8 bytes: read the input file as bytes too, and
+the CSS is never converted to a string, neither when it is read nor when it is written.
+
+From node:
+
+```javascript
+import {transformSync} from '@tbela99/css-parser';
+import {readFile, writeFile} from 'node:fs/promises';
+
+// bytes in
+const result = transformSync(await readFile('styles.css'));
+
+// bytes out
+await writeFile('styles.min.css', result.write);
+```
+
+To a stream (a file, an HTTP response, a socket):
+
+```javascript
+import {createWriteStream} from 'node:fs';
+
+const stream = createWriteStream('styles.min.css');
+
+stream.end(result.write);
+```
+
+From Deno and Bun:
+
+```javascript
+// deno
+const result = transformSync(await Deno.readFile('styles.css'));
+await Deno.writeFile('styles.min.css', result.write);
+
+// bun
+const result = transformSync(await Bun.file('styles.css').bytes());
+await Bun.write('styles.min.css', result.write);
+```
+
+From the web browser: save the file with
+[`showSaveFilePicker()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/showSaveFilePicker) where it is
+available (Chromium based browsers), download it otherwise. Call it from a click handler: both need a user gesture.
+
+```javascript
+async function save(result, name = 'styles.min.css') {
+
+    if ('showSaveFilePicker' in window) {
+
+        const handle = await showSaveFilePicker({
+            suggestedName: name,
+            types: [{description: 'CSS', accept: {'text/css': ['.css']}}]
+        });
+
+        const writable = await handle.createWritable();
+
+        await writable.write(result.write);
+        await writable.close();
+        return;
+    }
+
+    const link = document.createElement('a');
+
+    link.href = URL.createObjectURL(new Blob([result.write], {type: 'text/css'}));
+    link.download = name;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+button.addEventListener('click', () => save(transformSync(css)));
+```
+
+`result.write` is a view of the CSS only: the file contains `result.write.byteLength` bytes, not the whole render
+buffer (`result.write.buffer`). `result.stats.bytesOut` counts the characters of the CSS (`result.code.length`): it is
+smaller than the size of the file when the CSS contains non-ASCII characters.
+
+#### Zero copy between threads
+
+`result.write` is the form to send to another thread (a web worker, a node worker thread). Put its buffer in the
+transfer list of `postMessage()`: the bytes are moved to the other thread, not copied, whatever the size of the CSS.
+The CSS can be sent to the worker the same way: the functions accept the CSS as UTF-8 bytes.
+
+`worker.js`: the minifier runs in the worker. The example uses a bundler (`new URL('./worker.js', import.meta.url)`,
+package names): without one, import the url of the module, e.g.
+`https://unpkg.com/@tbela99/css-parser@2.3.1/dist/web.js` (a worker does not use the import map of the page).
+
+```javascript
+// the handler is set before the library is loaded: a message received while the library loads is not lost
+const library = import('@tbela99/css-parser/web');
+
+self.onmessage = async ({data}) => {
+
+    const {transformSync} = await library;
+
+    // data: the CSS, as UTF-8 bytes
+    const result = transformSync(data);
+
+    // the bytes are moved to the main thread. result.code is never read: no string is created
+    self.postMessage({css: result.write, errors: result.errors, stats: result.stats}, [result.write.buffer]);
+};
+```
+
+`main.js`: the page sends the CSS and applies the result.
+
+```javascript
+const worker = new Worker(new URL('./worker.js', import.meta.url), {type: 'module'});
+
+worker.onmessage = ({data}) => {
+
+    // the bytes are used as they are: a stylesheet url, no decoding
+    const link = document.createElement('link');
+
+    link.rel = 'stylesheet';
+    link.href = URL.createObjectURL(new Blob([data.css], {type: 'text/css'}));
+    document.head.append(link);
+
+    // or a string, when it is needed: new TextDecoder().decode(data.css)
+};
+
+const input = new TextEncoder().encode(css);
+
+// the input is moved to the worker as well
+worker.postMessage(input, [input.buffer]);
+```
+
+What to know:
+
+- A transferred buffer is moved: the sending thread cannot use it any more. In the worker, `result.write` is empty after
+  the transfer, and `result.code`, if it was not read before, is an empty string. Read `code` before the transfer when
+  the worker needs the string too.
+- Without a transfer list, `postMessage()` copies the whole buffer of `result.write`, including the unused bytes at its
+  end. To copy only the CSS, send `result.write.slice()`.
+- Send `result.write`, not the result: a cloned result has no `code` (it is a getter), and its `arena` is a plain
+  object that the library cannot use.
+- Set the message handler before the library is loaded, as above. The library is loaded with a top-level `await` (the
+  [WebAssembly build](./wasm.md) downloads its module): with a static `import`, a message that arrives during the load
+  finds no handler and is lost.
+- The [native build](./native.md) returns `write` as a view of memory owned by the addon: it cannot be transferred
+  (`postMessage()` throws a `DataCloneError`). Send `result.write.slice()` in the transfer list: one copy, of the CSS
+  only. The [WebAssembly build](./wasm.md) and the TypeScript library return a buffer that can be transferred.
 
 ### Pretty printing
 By default, CSS output is minified. That behavior can be changed by passing the option `{beautify:true}`.
@@ -472,16 +620,9 @@ console.debug(result.code);
 console.debug(result.stats);
 ```
 
-Performance vs execution speed comparison
-
-
-| File:  tailwind.css   | Speed optimization | Minification optimization |
-| --------------------- | ------------------ | ------------------------- |
-| Size: 2,380,419 bytes | 1,888,460 bytes    | 1,624,148 bytes           |
-| Time                  | 109.07 ms          | 193.85 ms                 |
-| Size reduction        | -20.7%             | -31.8%                    |
-
+The measures of both settings, and a comparison with lightningcss and esbuild, are on the
+[Performance](./performance.md) page.
 
 ------
-[← Getting started](./Guide.Getting_started.html) | [Architecture →](./Guide.Architecture.html) 
+[← Performance](./performance.md) | [Architecture →](./Guide.Architecture.html) 
 

@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.0
+	Version: 2.3.1
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';

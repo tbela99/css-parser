@@ -7018,7 +7018,16 @@ declare class RenderResult {
      */
     static readonly shape: RenderResult;
     /**
-     * Rendered CSS, encoded as UTF-8
+     * Rendered CSS, encoded as UTF-8: the output of the render, no conversion. Use it to write the css to a file or to
+     * the network, or to send it to another thread without a copy:
+     *
+     * ```ts
+     * self.postMessage(result.write, [result.write.buffer]);
+     * ```
+     *
+     * It is a view of the first bytes of a larger buffer (`write.buffer`): without a transfer, `postMessage()` copies
+     * the whole buffer, send `write.slice()` to copy only the css. See
+     * [Zero copy between threads](../../files/usage.md#zero-copy-between-threads).
      */
     write: Uint8Array;
     /**
@@ -7049,7 +7058,11 @@ declare class RenderResult {
      */
     static codeLength(result: RenderResult): number;
     /**
-     * Rendered CSS. The bytes of {@link RenderResult.write} are decoded the first time the property is read
+     * Rendered CSS. The bytes of {@link RenderResult.write} are decoded the first time the property is read, the
+     * string is kept for the next reads: no string is created when it is not read.
+     *
+     * It is a getter, not a property of the object: `postMessage()` and `structuredClone()` do not send it, and it is
+     * an empty string when it is read for the first time after {@link RenderResult.write} was transferred.
      */
     get code(): string;
     /**
@@ -8407,7 +8420,7 @@ declare function parseSyntax(syntax: string): ValidationToken$1[];
 /**
  * Version number
  */
-declare const version = "2.3.0";
+declare const version = "2.3.1";
 
 /**
  * Load file or url
