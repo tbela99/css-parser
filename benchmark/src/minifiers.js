@@ -71,7 +71,7 @@ const versions = {
     "yuku-css": pkgVersion("yuku-css", "yuku-css/package.json"),
     "stacksjs-ts-css": pkgVersion("stacksjs-ts-css", "@stacksjs/ts-css/package.json"),
     "css-parser": pkgVersion("css-parser", "@tbela99/css-parser/package.json"),
-    "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser2/package.json"),
+    "css-parser-dev": pkgVersion("css-parser-dev", "@tbela99/css-parser/package.json"),
     "css-parser-napi": pkgVersion("css-parser-napi", "@tbela99/rust-css-parser-napi/package.json"),
     "css-parser-wasm": pkgVersion("css-parser-wasm", "@tbela99/rust-css-parser-wasm/package.json"),
 };

@@ -57,7 +57,7 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
-* **CSS mixins and custom functions evaluation** the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result.
+* **CSS mixins and custom functions evaluation** (experimental, enabled with `{evaluateMixins: true}`) the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result, see [syntax lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html).
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
   
 ## Benchmark
@@ -111,14 +111,29 @@ console.debug(result.code);
 console.debug(result.stats);
 ```
 
-Performance vs execution speed comparison
+Compared with lightningcss and esbuild: the 12 files of the [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
+(3.1 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "Fast settings" are the settings of
+the example above, "default settings" are the defaults (full minification). The
+[native](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) and the
+[WebAssembly](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) builds produce the
+same output as the TypeScript library, faster.
 
+| Library | Time | Output | Output vs lightningcss |
+|---------|-----:|-------:|-----------------------:|
+| lightningcss | 59.6 ms | 2370 KB | |
+| esbuild | 113.1 ms | 2487 KB | +4.9% |
+| N-API, default settings | 136.7 ms | 2098 KB | **-11.5%** |
+| WebAssembly, default settings | 166.3 ms | 2098 KB | **-11.5%** |
+| TypeScript, default settings | 292.8 ms | 2098 KB | **-11.5%** |
+| N-API, fast settings | 65.9 ms | 2404 KB | +1.4% |
+| WebAssembly, fast settings | 94.1 ms | 2404 KB | +1.4% |
+| TypeScript, fast settings | 176.7 ms | 2404 KB | +1.4% |
 
-| File:  tailwind.css   | Speed optimization | Minification optimization |
-| --------------------- | ------------------ | ------------------------- |
-| Size: 2,380,419 bytes | 1,890,835 bytes    | 1,633,188 bytes           |
-| Time                  | 109.07 ms          | 191.85 ms                 |
-| Size reduction        | -20.7%             | -31.8%                    |
+- With the default settings, the output is 11.5% smaller than lightningcss. Lightningcss is about 2.3 times faster
+  than the N-API build.
+- With the fast settings, the N-API build is about as fast as lightningcss, with an output 1.4% larger.
+
+See [Performance](https://tbela99.github.io/css-parser/docs/documents/Guide.Performance.html) for the details.
 
 ## Playground
 

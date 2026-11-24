@@ -65,7 +65,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.1/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.1/web';
 
     const css = `
 
@@ -92,8 +92,7 @@ It can be imported as an umd module.
 }
     `;
 
-    console.debug( transformSync(css, {beautify: true, convertColor:.ColorType.OKLCH}).then(r => r.code));
-    })();
+    console.debug(transformSync(css, {beautify: true, convertColor: ColorType.OKLCH}).code);
 </script>
 ```
 
@@ -103,12 +102,10 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.2.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.1/dist/index-umd-web.js"></script>
 <script>
 
-    (async () => {
-
-        const css = `
+    const css = `
 
 .table {
     border-collapse: collapse;
@@ -133,8 +130,7 @@ It can be imported as a module in the browser.
 }
     `;
 
-        console.debug(await CSSParser.transform(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).then(r => r.code));
-    })();
+    console.debug(CSSParser.transformSync(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).code);
 
 </script>
 ```
@@ -143,7 +139,7 @@ It can be imported as a module in the browser.
 
 ```ts
 
-import {transform, ColorType} from '@tbela99/css-parser';
+import {transformSync, ColorType} from '@tbela99/css-parser';
 
 const css = `
 
@@ -155,7 +151,7 @@ const css = `
 .hsl { color: #b3222280; }
 `;
 
-const result = await transform(css, {
+const result = transformSync(css, {
 
     beautify: true,
     convertColor: ColorType.SRGB
@@ -179,7 +175,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transform, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.2.1/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.1/web';
 
 const css = `
 
@@ -191,7 +187,7 @@ const css = `
 .hsl { color: #b3222280; }
 `;
 
-const result = await transform(css, {
+const result = transformSync(css, {
 
     beautify: true,
     convertColor: ColorType.RGB
@@ -206,12 +202,10 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.2.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.1/dist/index-umd-web.js"></script>
 <script>
 
-    (async () => {
-
-        const css = `
+    const css = `
 
 .table {
     border-collapse: collapse;
@@ -236,12 +230,11 @@ Load as an UMD module
 }
     `;
 
-        console.debug(await CSSParser.transform(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).then(r => r.code));
-    })();
+    console.debug(CSSParser.transformSync(css, {beautify: true, convertColor: CSSParser.ColorType.OKLCH}).code);
 
 </script>
 ```
 
 
 ------
-[← Index](./index.md) | [Usage →](./usage.md) 
+[← Index](./index.md) | [Native build →](./native.md) 
