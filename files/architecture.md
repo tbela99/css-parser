@@ -14,7 +14,7 @@ flowchart TB
     Input(["CSS"]) --> Parse["Parse"]
 
     subgraph Transform["Transform the tree"]
-        direction LR
+        direction TB
         Visitors["Visitors"] --> Minify["Minify"]
         Minify --> Modules["CSS modules"]
     end
