@@ -3,6 +3,8 @@ import taskLists from "markdown-it-task-lists";
 export default {
     $schema: "https://typedoc.org/schema.json",
     entryPoints: ["./src"],
+    // excludes test/ and scripts/
+    tsconfig: "typedoc-tsconfig.jsonc",
     readme: "files/index.md",
     entryPointStrategy: "resolve",
     navigationLinks: {

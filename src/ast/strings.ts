@@ -90,11 +90,20 @@ export interface StringTableData {
      */
     count: number;
     /**
-     * hash, source, start and end of each string
+     * hash of each string
      */
     hashes: Int32Array;
+    /**
+     * source of each string: the index of its text in {@link texts}
+     */
     sources: Int32Array;
+    /**
+     * start offset of each string in its source
+     */
     starts: Int32Array;
+    /**
+     * end offset of each string in its source
+     */
     ends: Int32Array;
     /**
      * text of each source, by source index

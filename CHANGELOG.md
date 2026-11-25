@@ -13,6 +13,14 @@
 - [x] minifier: two rules that have the same declarations are merged without computing the size of the output
 - [x] minifier: the vendor prefixes of the selectors are compared only when the rules share declarations
 
+## Types
+
+- [x] the bundled type declarations (dist/index.d.ts) type-check without `skipLibCheck`: duplicate exports, missing imports, wrong `EnumToken` members and visitor types fixed
+- [x] TSDoc for every exported symbol (JSR documentation lint)
+- [x] `LOC` and `ValidationTokenEnum` are exported (the keys of the tokens returned by `parseSyntax()`)
+- [x] the visitor maps accept the token type names (`VisitorTokenMap`, `VisitorSyncTokenMap`); `DeclarationVisitorSyncHandler`, `RuleVisitorSyncHandler` and `AtRuleVisitorSyncHandler` added
+- [x] the internal shorthand configuration types (`PropertiesConfig`, `Map`, ...) are no longer exported
+
 # v2.3.1
 
 - [x] fix deno install

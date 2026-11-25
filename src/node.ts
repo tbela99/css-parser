@@ -69,7 +69,18 @@ export {
     WalkerOptionEnum,
 } from "./ast/types.ts";
 export { SourceMap } from "./printer/sourcemap.ts";
-export type { ValidationToken } from "./validation/parser/types.d.ts";
+export type {
+    ValidationToken,
+    ValidationNumberToken,
+    ValidationDimensionToken,
+    ValidationValueRangeMatch,
+    ValidationDimensionRangeMatch,
+    Position,
+} from "./validation/parser/types.d.ts";
+export { ValidationTokenEnum } from "./validation/parser/typedef.ts";
+export { LOC } from "./syntax/constants.ts";
+export type { CodeUnits } from "./parser/utils/codes.ts";
+export type { StringTableData } from "./ast/strings.ts";
 export type { CssInput } from "./parser/input.ts";
 
 export { FeatureWalkMode } from "./ast/features/type.ts";

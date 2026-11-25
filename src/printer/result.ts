@@ -79,6 +79,7 @@ export class RenderResult {
     readonly #codeLength: number;
 
     /**
+     * create a render result
      * @param write rendered css, encoded as UTF-8
      * @param errors
      * @param stats
@@ -184,6 +185,7 @@ export class TransformResult extends RenderResult {
     declare revMapping?: Record<string, string>;
 
     /**
+     * create a transform result from the parse result and the render result
      * @param parseResult
      * @param renderResult
      * @param stats

@@ -2,6 +2,8 @@ import type { AstNode } from "./ast.d.ts";
 import type { Token } from "./token.d.ts";
 import type { ValidationOptions } from "./index.d.ts";
 import { MediaFeatureType, ValidationSyntaxGroupEnum } from "../validation/parser/typedef.ts";
+import type { ValidationToken } from "../validation/parser/types.d.ts";
+import type { ValidationContext } from "../validation/types.d.ts";
 
 /**
  * Validation syntax
@@ -109,5 +111,5 @@ export interface ValidationSyntaxResult extends ValidationResult {
     /**
      * context
      */
-    context: ValidationContext<Token> | Token[];
+    context: ValidationContext | Token[];
 }

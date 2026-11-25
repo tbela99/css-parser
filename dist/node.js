@@ -31,6 +31,8 @@ export { isOkLabClose, okLabDistance } from './syntax/color/utils/distance.js';
 export { Arena, AstArena, TokenField, arenaColumns } from './ast/arena.js';
 export { ARENA, ARENAID, AstArenaNode } from './ast/arena-node.js';
 export { SourceMap } from './printer/sourcemap.js';
+export { ValidationTokenEnum } from './validation/parser/typedef.js';
+export { LOC } from './syntax/constants.js';
 export { FeatureWalkMode } from './ast/features/type.js';
 export { parseSyntax } from './validation/parser/parse.js';
 export { version } from './version.js';

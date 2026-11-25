@@ -2,9 +2,9 @@ import { EnumToken } from "../ast/types.ts";
 import { config } from "../validation/json.ts";
 
 /**
- * Used by the validation parser
+ * key of the position of a validation token in the syntax, see {@link ValidationToken}
  */
-export const LOC = Symbol.for("loc");
+export const LOC: unique symbol = Symbol.for("loc");
 
 /**
  * the units of the validation data, in their canonical spelling (`Hz`, `Q`, `dB`)

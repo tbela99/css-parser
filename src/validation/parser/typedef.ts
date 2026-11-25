@@ -1,3 +1,6 @@
+/**
+ * type of a validation token: a node of the parsed value definition syntax, see {@link parseSyntax}
+ */
 export enum ValidationTokenEnum {
     Root,
     Keyword,

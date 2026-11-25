@@ -97,7 +97,8 @@ class PropertyList {
      */
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     /**
-     * declarations
+     * declarations, by property name
+     * @ignore
      */
     declarations;
     /**
@@ -114,8 +115,8 @@ class PropertyList {
      */
     descriptors;
     /**
-     *
-     * @param arena
+     * create an empty declaration list
+     * @param arena the arena the declarations are stored in
      * @param options
      * @param memo keys shared by the lists that use the same arena
      * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
@@ -360,7 +361,7 @@ class PropertyList {
         }
     }
     /**
-     *
+     * iterate over the declarations, the shorthands are expanded into their declarations
      * @returns
      */
     [Symbol.iterator]() {

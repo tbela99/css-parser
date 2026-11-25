@@ -48,7 +48,6 @@ export declare type GenericVisitorSyncHandler<T> = (arena: AstArena, node: T) =>
 export declare type GenericVisitorAstNodeSyncHandlerMap<T> =
     | Record<string, GenericVisitorSyncHandler<T>>
     | GenericVisitorSyncHandler<T>
-    | Function<T>
     | {
           /**
            * when the handler is called: {@link WalkerEvent.Enter} (before the children of the node) or
@@ -80,22 +79,29 @@ export declare type ValueVisitorSyncHandler = GenericVisitorSyncHandler<Token>;
 /**
  * Declaration visitor handler
  */
-export declare type DeclarationVisitorHandler = GenericVisitorHandler<AstDeclaration>;
+export declare type DeclarationVisitorSyncHandler = GenericVisitorSyncHandler<AstDeclaration>;
 /**
  * Rule visitor handler
  */
-export declare type RuleVisitorHandler = GenericVisitorHandler<AstRule>;
+export declare type RuleVisitorSyncHandler = GenericVisitorSyncHandler<AstRule>;
 
 /**
  * AtRule visitor handler
  */
-export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
+export declare type AtRuleVisitorSyncHandler = GenericVisitorSyncHandler<AstAtRule>;
+
+/**
+ * token visitors, by token type name (see {@link EnumToken})
+ */
+export declare type VisitorSyncTokenMap = {
+    [key in keyof typeof EnumToken]?: GenericVisitorAstNodeSyncHandlerMap<Token> | GenericVisitorAstNodeSyncHandlerMap<AstNode>;
+};
 
 /**
  * node visitor callback map
  *
  */
-export declare interface VisitorSyncNodeMap {
+export declare interface VisitorSyncNodeMap extends VisitorSyncTokenMap {
     /**
      * at rule visitor
      *
@@ -298,57 +304,6 @@ export declare interface VisitorSyncNodeMap {
      */
     Value?: GenericVisitorAstNodeSyncHandlerMap<Token>;
 
-    /**
-     * generic token visitor. the key name is of type keyof EnumToken.
-     * generic tokens are called for every token of the specified type.
-     *
-     * ```ts
-     *
-     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
-     *
-     * const options: ParserOptions = {
-     *
-     *     inlineCssVariables: true,
-     *     visitor: {
-     *
-     *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (arena, node) => {
-     *
-     *             // insert a new rule. nodes of another arena are imported
-     *             const result = await parse('html {--base-color: pink}');
-     *             arena.prependChildren(node, arena.import(result.arena, result.arena.getFirstChild(result.ast)));
-     *         },
-     *         ColorTokenType:  (arena, node) => {
-     *
-     *             // dump all color tokens
-     *             // console.debug(arena.toObject(node));
-     *          },
-     *          FunctionTokenType:  (arena, node) => {
-     *
-     *              // dump all function tokens
-     *              // console.debug(arena.toObject(node));
-     *          },
-     *          DeclarationNodeType:  (arena, node) => {
-     *
-     *              // dump all declaration nodes
-     *              // console.debug(arena.toObject(node));
-     *          }
-     *     }
-     * };
-     *
-     * const css = `
-     *
-     * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
-     * `;
-     *
-     * console.debug(await transform(css, options));
-     *
-     * // body {color:#f3fff0}
-     * ```
-     */
-    [key: keyof typeof EnumToken]:
-        | GenericVisitorAstNodeSyncHandlerMap<Token>
-        | GenericVisitorAstNodeSyncHandlerMap<AstNode>;
 }
 
 /**
@@ -411,7 +366,18 @@ export declare type AtRuleVisitorHandler = GenericVisitorHandler<AstAtRule>;
  * node visitor callback map
  *
  */
-export declare interface VisitorNodeMap {
+/**
+ * token visitors, by token type name (see {@link EnumToken})
+ */
+export declare type VisitorTokenMap = {
+    [key in keyof typeof EnumToken]?: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
+};
+
+/**
+ * node visitor callback map
+ *
+ */
+export declare interface VisitorNodeMap extends VisitorTokenMap {
     /**
      * at rule visitor
      *
@@ -614,55 +580,6 @@ export declare interface VisitorNodeMap {
      */
     Value?: GenericVisitorAstNodeHandlerMap<Token>;
 
-    /**
-     * generic token visitor. the key name is of type keyof EnumToken.
-     * generic tokens are called for every token of the specified type.
-     *
-     * ```ts
-     *
-     * import {transform, parse, parseDeclarations} from "@tbela99/css-parser";
-     *
-     * const options: ParserOptions = {
-     *
-     *     inlineCssVariables: true,
-     *     visitor: {
-     *
-     *         // Stylesheet node visitor
-     *         StyleSheetNodeType: async (arena, node) => {
-     *
-     *             // insert a new rule. nodes of another arena are imported
-     *             const result = await parse('html {--base-color: pink}');
-     *             arena.prependChildren(node, arena.import(result.arena, result.arena.getFirstChild(result.ast)));
-     *         },
-     *         ColorTokenType:  (arena, node) => {
-     *
-     *             // dump all color tokens
-     *             // console.debug(arena.toObject(node));
-     *          },
-     *          FunctionTokenType:  (arena, node) => {
-     *
-     *              // dump all function tokens
-     *              // console.debug(arena.toObject(node));
-     *          },
-     *          DeclarationNodeType:  (arena, node) => {
-     *
-     *              // dump all declaration nodes
-     *              // console.debug(arena.toObject(node));
-     *          }
-     *     }
-     * };
-     *
-     * const css = `
-     *
-     * body { color:    color(from var(--base-color) display-p3 r calc(g + 0.24) calc(b + 0.15)); }
-     * `;
-     *
-     * console.debug(await transform(css, options));
-     *
-     * // body {color:#f3fff0}
-     * ```
-     */
-    [key: keyof typeof EnumToken]: GenericVisitorAstNodeHandlerMap<Token> | GenericVisitorAstNodeHandlerMap<AstNode>;
 }
 
 /**
@@ -676,7 +593,12 @@ export interface ParsedVisitorHandlers {
     /**
      * all handlers
      */
-    allHandlers: Array<GenericVisitorAstNodeHandlerMap | Record<string, GenericVisitorAstNodeHandlerMap>>;
+    allHandlers: Array<
+        Map<
+            EnumToken | string,
+            Array<GenericVisitorAstNodeHandlerMap<any> | Record<string, Array<GenericVisitorAstNodeHandlerMap<any>>>>
+        >
+    >;
     /**
      * all visitors
      */

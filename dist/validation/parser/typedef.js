@@ -5,6 +5,9 @@
 	Version: 2.3.2
 	License: MIT
  */
+/**
+ * type of a validation token: a node of the parsed value definition syntax, see {@link parseSyntax}
+ */
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {
     ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";

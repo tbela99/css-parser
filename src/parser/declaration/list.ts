@@ -1,13 +1,13 @@
 import type {
     AstDeclaration,
     AstNode,
-    PropertiesConfig,
     PropertyListOptions,
     ShorthandMapType,
     ShorthandPropertyType,
     SinglePropertyTypeMapping,
     Token,
 } from "../../@types/index.d.ts";
+import type { PropertiesConfig } from "../../@types/config.d.ts";
 import { PropertySet } from "./set.ts";
 import { getConfig } from "../utils/config.ts";
 import { PropertyMap } from "./map.ts";
@@ -119,7 +119,8 @@ export class PropertyList {
     protected options: PropertyListOptions = { removeDuplicateDeclarations: true, computeShorthand: true };
 
     /**
-     * declarations
+     * declarations, by property name
+     * @ignore
      */
     protected declarations: Map<string, AstNode | PropertySet | PropertyMap>;
 
@@ -140,8 +141,8 @@ export class PropertyList {
     protected descriptors: Record<string, ValidationToken[]> | null;
 
     /**
-     *
-     * @param arena
+     * create an empty declaration list
+     * @param arena the arena the declarations are stored in
      * @param options
      * @param memo keys shared by the lists that use the same arena
      * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
@@ -450,7 +451,7 @@ export class PropertyList {
     }
 
     /**
-     *
+     * iterate over the declarations, the shorthands are expanded into their declarations
      * @returns
      */
     [Symbol.iterator](): IterableIterator<AstNode> {

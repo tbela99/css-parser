@@ -2,25 +2,49 @@ import { EnumToken } from "../../ast/types.ts";
 import { LOC } from "../../syntax/constants.ts";
 import { ValidationTokenEnum } from "./typedef.ts";
 
+/**
+ * position of a validation token in the syntax
+ */
 export interface Position {
+    /**
+     * offset
+     */
     ind: number;
+    /**
+     * line
+     */
     lin: number;
+    /**
+     * column
+     */
     col: number;
 }
 
+/**
+ * range of a numeric value: `<number [0,∞]>`
+ */
 export interface ValidationValueRangeMatch {
     /**
      * lower bound. null: -∞
      */
     min: ValidationNumberToken | null;
+    /**
+     * upper bound. null: ∞
+     */
     max: ValidationNumberToken | null;
 }
 
+/**
+ * range of a dimension: `<length [0,10px]>`
+ */
 export interface ValidationDimensionRangeMatch {
     /**
      * lower bound. null: -∞
      */
     min: ValidationDimensionToken | null;
+    /**
+     * upper bound. null: ∞
+     */
     max: ValidationDimensionToken | null;
 }
 
@@ -41,7 +65,7 @@ export interface ValidationToken {
      */
     isList?: boolean;
     /**
-     *
+     * source text of the token
      * @private
      */
     text?: string;
@@ -163,10 +187,25 @@ export interface ValidationAtRule extends ValidationToken {
     val: string;
 }
 
+/**
+ * Dimension token: a bound of a range `[0,10px]`
+ */
 export interface ValidationDimensionToken extends ValidationToken {
-    typ: ValidationTokenEnum.AtRuleName;
+    /**
+     * token type
+     */
+    typ: ValidationTokenEnum.Dimension;
+    /**
+     * token value
+     */
     val: number;
+    /**
+     * unit, as written
+     */
     unitText: string;
+    /**
+     * unit type
+     */
     unit: keyof EnumToken;
 }
 

@@ -382,6 +382,10 @@ export class Arena {
      */
     protected spans32: Uint32Array;
 
+    /**
+     * create an empty arena
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
+     */
     constructor(size: number = 4096) {
         this.dataTypes = new Uint8Array(size);
         this.capacity = size;
@@ -637,6 +641,7 @@ export class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string
+     * @ignore
      */
     public stringFlag(id: number, flag: StringFlag, compute: (str: string) => boolean): boolean {
         return this.stringTable.flag(id, flag, compute);
@@ -647,6 +652,7 @@ export class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string id
+     * @ignore
      */
     public stringFlagId(id: number, flag: StringFlag, compute: (id: number) => boolean): boolean {
         return this.stringTable.flagId(id, flag, compute);
@@ -657,6 +663,7 @@ export class Arena {
      * @param id
      * @param slot
      * @param compute computes the value from the string id
+     * @ignore
      */
     public stringDerived<T>(id: number, slot: StringDerived, compute: (id: number) => T): T {
         return this.stringTable.derived(id, slot, compute);
@@ -1212,23 +1219,26 @@ export class Arena {
     }
 
     /**
+     * Remove the tokens of the right hand side of a structured token
      *
-     * @param id
-     * @param rightId
+     * @param id the structured token
+     * @param rightId null
      */
     setRight(id: number, rightId: null): void;
 
     /**
+     * Replace the tokens of the right hand side of a structured token (denominator of a fraction, ...)
      *
-     * @param id
-     * @param rightId
+     * @param id the structured token
+     * @param rightId the tokens
      */
     setRight(id: number, ...rightId: number[]): void;
 
     /**
+     * Replace the tokens of the right hand side of a structured token. null removes them
      *
-     * @param id
-     * @param rightId
+     * @param id the structured token
+     * @param rightId the tokens, or null
      */
     setRight(id: number, ...rightId: number[] | [null]): void {
         // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
@@ -2661,8 +2671,8 @@ export class AstArena extends Arena {
     public inputLengths: Array<number | undefined> = [];
 
     /**
-     *
-     * @param size
+     * create an arena that holds an empty stylesheet
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
      */
     constructor(size: number = 4096) {
         super(size);
@@ -2674,7 +2684,10 @@ export class AstArena extends Arena {
     }
 
     /**
-     * @inheritDoc
+     * release nodes: detach them and drop their data (interned strings, errors) and their minification caches. node
+     * ids are never reused: the memory is reclaimed by {@link trim}
+     * @param id the node to release. every marked node (and its descendants) is released when omitted
+     * @param deep release the children and the tokens too
      */
     release(id?: number, deep: boolean = false): void {
         super.release(id, deep);
@@ -2696,7 +2709,11 @@ export class AstArena extends Arena {
     }
 
     /**
-     * @inheritDoc
+     * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+     * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+     * the unused strings and the minification caches are dropped too
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
      */
     compact(errors?: ErrorDescription[] | null): Uint32Array {
         const mapping: Uint32Array = super.compact(errors);
@@ -3864,7 +3881,7 @@ export class AstArena extends Arena {
     }
 
     /**
-     * @inheritDoc
+     * structured-cloneable properties of the arena, the sources and the minification caches included
      */
     protected exportProperties(): ArenaProperties {
         return {
@@ -3878,7 +3895,10 @@ export class AstArena extends Arena {
     }
 
     /**
-     * @inheritDoc
+     * initialize the arena from exported properties and column buffers, the sources and the minification caches
+     * included
+     * @param properties
+     * @param transferables
      */
     protected importProperties(properties: ArenaProperties, transferables: ArenaTransferables): void {
         super.importProperties(properties, transferables);

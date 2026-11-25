@@ -277,7 +277,7 @@ function reference(group: Group, key: string): string {
 function base(syntax: ValidationToken): string {
     switch (syntax.typ) {
         case ValidationTokenEnum.Keyword:
-            return `kw(${json((syntax as { val: string }).val.toLowerCase())})`;
+            return `kw(${json((syntax as ValidationToken & { val: string }).val.toLowerCase())})`;
 
         case ValidationTokenEnum.PipeToken: {
             const alternatives: ValidationToken[][] = (syntax as ValidationPipeToken).chi.map((alternative) =>
@@ -320,7 +320,7 @@ function base(syntax: ValidationToken): string {
         }
 
         case ValidationTokenEnum.PropertyType: {
-            const name: string = (syntax as { val: string }).val;
+            const name: string = (syntax as ValidationToken & { val: string }).val;
 
             if (builtinTypes.has(name)) {
                 return `leaf(${json(name)})`;
@@ -330,13 +330,13 @@ function base(syntax: ValidationToken): string {
         }
 
         case ValidationTokenEnum.DeclarationType:
-            return reference("declarations", (syntax as { val: string }).val);
+            return reference("declarations", (syntax as ValidationToken & { val: string }).val);
 
         case ValidationTokenEnum.Function:
             return `fn(${json((syntax as ValidationFunctionToken).val.toLowerCase())}, ${sequence((syntax as ValidationFunctionToken).chi)})`;
 
         case ValidationTokenEnum.FunctionDefinition: {
-            const name: string = (syntax as { val: string }).val;
+            const name: string = (syntax as ValidationToken & { val: string }).val;
             const found = resolve("syntaxes", name + "()");
 
             return `fndef(${json(name.toLowerCase())}, ${found == null ? "null" : `ref(${indexOf(found.group, found.key)})`})`;

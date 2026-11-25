@@ -128,8 +128,9 @@ class AstArenaNode {
      */
     [ARENAID];
     /**
-     * @param arena
-     * @param id
+     * create a view of a node of the arena. the view reads and writes the arena: it holds no data
+     * @param arena the arena that holds the node
+     * @param id the node or token id
      */
     constructor(arena, id) {
         this[ARENA] = arena;

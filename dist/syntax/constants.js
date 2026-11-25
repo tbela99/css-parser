@@ -9,7 +9,7 @@ import { EnumToken } from '../ast/types.js';
 import config from '../data/validation.json.js';
 
 /**
- * Used by the validation parser
+ * key of the position of a validation token in the syntax, see {@link ValidationToken}
  */
 const LOC = Symbol.for("loc");
 /**

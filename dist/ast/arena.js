@@ -271,6 +271,10 @@ class Arena {
      * the high word holds the 24 high bits of the start position and the source
      */
     spans32;
+    /**
+     * create an empty arena
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
+     */
     constructor(size = 4096) {
         this.dataTypes = new Uint8Array(size);
         this.capacity = size;
@@ -494,6 +498,7 @@ class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string
+     * @ignore
      */
     stringFlag(id, flag, compute) {
         return this.stringTable.flag(id, flag, compute);
@@ -503,6 +508,7 @@ class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string id
+     * @ignore
      */
     stringFlagId(id, flag, compute) {
         return this.stringTable.flagId(id, flag, compute);
@@ -512,6 +518,7 @@ class Arena {
      * @param id
      * @param slot
      * @param compute computes the value from the string id
+     * @ignore
      */
     stringDerived(id, slot, compute) {
         return this.stringTable.derived(id, slot, compute);
@@ -991,9 +998,10 @@ class Arena {
         return this.getChildAt(id, TokenField.L) == null ? null : this.fieldTokens(id, TokenField.L);
     }
     /**
+     * Replace the tokens of the right hand side of a structured token. null removes them
      *
-     * @param id
-     * @param rightId
+     * @param id the structured token
+     * @param rightId the tokens, or null
      */
     setRight(id, ...rightId) {
         // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
@@ -2212,8 +2220,8 @@ class AstArena extends Arena {
      */
     inputLengths = [];
     /**
-     *
-     * @param size
+     * create an arena that holds an empty stylesheet
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
      */
     constructor(size = 4096) {
         super(size);
@@ -2222,7 +2230,10 @@ class AstArena extends Arena {
         this.flags[this.root] = EnumAstNodeStatus.HasChildren;
     }
     /**
-     * @inheritDoc
+     * release nodes: detach them and drop their data (interned strings, errors) and their minification caches. node
+     * ids are never reused: the memory is reclaimed by {@link trim}
+     * @param id the node to release. every marked node (and its descendants) is released when omitted
+     * @param deep release the children and the tokens too
      */
     release(id, deep = false) {
         super.release(id, deep);
@@ -2240,7 +2251,11 @@ class AstArena extends Arena {
         }
     }
     /**
-     * @inheritDoc
+     * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+     * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+     * the unused strings and the minification caches are dropped too
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
      */
     compact(errors) {
         const mapping = super.compact(errors);
@@ -3178,7 +3193,7 @@ class AstArena extends Arena {
         return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
     }
     /**
-     * @inheritDoc
+     * structured-cloneable properties of the arena, the sources and the minification caches included
      */
     exportProperties() {
         return {
@@ -3191,7 +3206,10 @@ class AstArena extends Arena {
         };
     }
     /**
-     * @inheritDoc
+     * initialize the arena from exported properties and column buffers, the sources and the minification caches
+     * included
+     * @param properties
+     * @param transferables
      */
     importProperties(properties, transferables) {
         super.importProperties(properties, transferables);

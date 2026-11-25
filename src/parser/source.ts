@@ -46,7 +46,7 @@ export class SourceFile {
      * Update source content
      * @param content
      */
-    append(content: string) {
+    append(content: string): void {
         this.content += content;
     }
 
@@ -54,7 +54,7 @@ export class SourceFile {
      * set input source map
      * @param inputSourceMap
      */
-    setInputSourceMap(inputSourceMap: SourceMapObject | string | null) {
+    setInputSourceMap(inputSourceMap: SourceMapObject | string | null): void {
         this.inputSourceMap = inputSourceMap == null ? null : new SourceMap(inputSourceMap as SourceMapObject | string);
     }
 

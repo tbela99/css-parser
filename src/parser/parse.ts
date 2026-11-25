@@ -4590,10 +4590,7 @@ export function parseAtRule(
                             success = false;
                         } else {
                             context = createValidationContext(arena, stream, index);
-                            // @ts-ignore
-                            range = context.peekRange(
-                                (t: Token) => arena.dataTypes[t] === EnumToken.EndParensTokenType,
-                            );
+                            range = context.peekRange(EnumToken.EndParensTokenType);
                             // inlined: arena.typeOf(range.at(-1))
                             if (arena.dataTypes[range.at(-1) as number] !== EnumToken.EndParensTokenType) {
                                 errors.push({

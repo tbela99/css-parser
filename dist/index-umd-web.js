@@ -1439,8 +1439,9 @@
          */
         [ARENAID];
         /**
-         * @param arena
-         * @param id
+         * create a view of a node of the arena. the view reads and writes the arena: it holds no data
+         * @param arena the arena that holds the node
+         * @param id the node or token id
          */
         constructor(arena, id) {
             this[ARENA] = arena;
@@ -8520,7 +8521,7 @@
     };
 
     /**
-     * Used by the validation parser
+     * key of the position of a validation token in the syntax, see {@link ValidationToken}
      */
     const LOC = Symbol.for("loc");
     /**
@@ -12899,7 +12900,10 @@
         return arena.createColor("device-cmyk", exports.ColorType.DEVICE_CMYK, chi);
     }
 
-    var ValidationTokenEnum;
+    /**
+     * type of a validation token: a node of the parsed value definition syntax, see {@link parseSyntax}
+     */
+    exports.ValidationTokenEnum = void 0;
     (function (ValidationTokenEnum) {
         ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
         ValidationTokenEnum[ValidationTokenEnum["Keyword"] = 1] = "Keyword";
@@ -12974,7 +12978,7 @@
         ValidationTokenEnum[ValidationTokenEnum["Dimension"] = 45] = "Dimension";
         ValidationTokenEnum[ValidationTokenEnum["DisallowWhitespace"] = 46] = "DisallowWhitespace";
         ValidationTokenEnum[ValidationTokenEnum["Colon"] = 47] = "Colon";
-    })(ValidationTokenEnum || (ValidationTokenEnum = {}));
+    })(exports.ValidationTokenEnum || (exports.ValidationTokenEnum = {}));
     /**
      * Keys of the validation config object
      */
@@ -13009,37 +13013,37 @@
     })(MediaFeatureType || (MediaFeatureType = {}));
 
     const SymbolsMapTokens = {
-        "&&": ValidationTokenEnum.Ampersand,
-        "|": ValidationTokenEnum.Pipe,
-        "† ": ValidationTokenEnum.DisallowWhitespace,
-        "||": ValidationTokenEnum.Column,
-        "*": ValidationTokenEnum.Star,
-        ",": ValidationTokenEnum.Comma,
-        "/": ValidationTokenEnum.Separator,
-        "+": ValidationTokenEnum.Plus,
-        ";": ValidationTokenEnum.SemiColon,
-        "(": ValidationTokenEnum.OpenParenthesis,
-        ")": ValidationTokenEnum.CloseParenthesis,
-        "[": ValidationTokenEnum.OpenBracket,
-        "]": ValidationTokenEnum.CloseBracket,
-        "{": ValidationTokenEnum.OpenCurlyBrace,
-        "}": ValidationTokenEnum.CloseCurlyBrace,
-        "?": ValidationTokenEnum.QuestionMark,
-        "!": ValidationTokenEnum.Exclamation,
-        "#": ValidationTokenEnum.HashMark,
-        "<": ValidationTokenEnum.LessThan,
-        ">": ValidationTokenEnum.GreaterThan,
-        " ": ValidationTokenEnum.Whitespace,
-        "\t": ValidationTokenEnum.Whitespace,
-        "\r": ValidationTokenEnum.Whitespace,
-        "\n": ValidationTokenEnum.Whitespace,
-        "\f": ValidationTokenEnum.Whitespace,
+        "&&": exports.ValidationTokenEnum.Ampersand,
+        "|": exports.ValidationTokenEnum.Pipe,
+        "† ": exports.ValidationTokenEnum.DisallowWhitespace,
+        "||": exports.ValidationTokenEnum.Column,
+        "*": exports.ValidationTokenEnum.Star,
+        ",": exports.ValidationTokenEnum.Comma,
+        "/": exports.ValidationTokenEnum.Separator,
+        "+": exports.ValidationTokenEnum.Plus,
+        ";": exports.ValidationTokenEnum.SemiColon,
+        "(": exports.ValidationTokenEnum.OpenParenthesis,
+        ")": exports.ValidationTokenEnum.CloseParenthesis,
+        "[": exports.ValidationTokenEnum.OpenBracket,
+        "]": exports.ValidationTokenEnum.CloseBracket,
+        "{": exports.ValidationTokenEnum.OpenCurlyBrace,
+        "}": exports.ValidationTokenEnum.CloseCurlyBrace,
+        "?": exports.ValidationTokenEnum.QuestionMark,
+        "!": exports.ValidationTokenEnum.Exclamation,
+        "#": exports.ValidationTokenEnum.HashMark,
+        "<": exports.ValidationTokenEnum.LessThan,
+        ">": exports.ValidationTokenEnum.GreaterThan,
+        " ": exports.ValidationTokenEnum.Whitespace,
+        "\t": exports.ValidationTokenEnum.Whitespace,
+        "\r": exports.ValidationTokenEnum.Whitespace,
+        "\n": exports.ValidationTokenEnum.Whitespace,
+        "\f": exports.ValidationTokenEnum.Whitespace,
         // '∞'
-        "\u221e": ValidationTokenEnum.InfinityToken,
+        "\u221e": exports.ValidationTokenEnum.InfinityToken,
     };
     const makeBinaryOp = new Map([
-        [ValidationTokenEnum.Column, ValidationTokenEnum.ColumnToken],
-        [ValidationTokenEnum.Ampersand, ValidationTokenEnum.AmpersandToken],
+        [exports.ValidationTokenEnum.Column, exports.ValidationTokenEnum.ColumnToken],
+        [exports.ValidationTokenEnum.Ampersand, exports.ValidationTokenEnum.AmpersandToken],
     ]);
     /**
      * single character symbols, by character code
@@ -13126,7 +13130,7 @@
     function getTokenType(token, loc) {
         if (token === "<an+b>") {
             return {
-                typ: ValidationTokenEnum.PropertyType,
+                typ: exports.ValidationTokenEnum.PropertyType,
                 val: token.slice(1, -1),
                 [LOC]: loc,
             };
@@ -13135,7 +13139,7 @@
         // " or '
         if (first === 34 || first === 39) {
             return {
-                typ: ValidationTokenEnum.StringToken,
+                typ: exports.ValidationTokenEnum.StringToken,
                 val: token,
                 [LOC]: loc,
             };
@@ -13143,7 +13147,7 @@
         // integer, optionally negative: range bounds such as `<integer [-∞,-1]>`
         if (isDigits(token) || (first === 45 && isDigits(token.slice(1)))) {
             return {
-                typ: ValidationTokenEnum.Number,
+                typ: exports.ValidationTokenEnum.Number,
                 val: Number(token),
                 [LOC]: loc,
             };
@@ -13152,7 +13156,7 @@
         if (dimension) {
             // @ts-expect-error
             return {
-                typ: ValidationTokenEnum.Dimension,
+                typ: exports.ValidationTokenEnum.Dimension,
                 unit: exports.EnumToken[dimension.typ],
                 val: dimension.val,
                 unitText: dimension.unit,
@@ -13161,7 +13165,7 @@
         }
         if (isPseudo(token)) {
             return {
-                typ: ValidationTokenEnum.PseudoClassToken,
+                typ: exports.ValidationTokenEnum.PseudoClassToken,
                 val: token,
                 [LOC]: loc,
             };
@@ -13169,31 +13173,31 @@
         // @
         if (first === 64 && isIdent(token.slice(1))) {
             return {
-                typ: ValidationTokenEnum.AtRule,
+                typ: exports.ValidationTokenEnum.AtRule,
                 val: token.slice(1),
                 [LOC]: loc,
             };
         }
         return {
-            typ: ValidationTokenEnum.Keyword,
+            typ: exports.ValidationTokenEnum.Keyword,
             val: token,
             [LOC]: loc,
         };
     }
     function trimSyntaxArray(tokens) {
-        while (tokens[0]?.typ === ValidationTokenEnum.Whitespace) {
+        while (tokens[0]?.typ === exports.ValidationTokenEnum.Whitespace) {
             tokens.shift();
         }
-        while (tokens[tokens.length - 1]?.typ === ValidationTokenEnum.Whitespace) {
+        while (tokens[tokens.length - 1]?.typ === exports.ValidationTokenEnum.Whitespace) {
             tokens.pop();
         }
         let i = 0;
         for (; i < tokens.length; i++) {
-            if (tokens[i].typ === ValidationTokenEnum.Comma) {
-                if (i + 1 < tokens.length && tokens[i + 1].typ === ValidationTokenEnum.Whitespace) {
+            if (tokens[i].typ === exports.ValidationTokenEnum.Comma) {
+                if (i + 1 < tokens.length && tokens[i + 1].typ === exports.ValidationTokenEnum.Whitespace) {
                     tokens.splice(i + 1, 1);
                 }
-                if (i > 0 && tokens[i - 1].typ === ValidationTokenEnum.Whitespace) {
+                if (i > 0 && tokens[i - 1].typ === exports.ValidationTokenEnum.Whitespace) {
                     tokens.splice(--i, 1);
                 }
             }
@@ -13304,9 +13308,9 @@
             }
             type = symbolTypes.get(code) ?? null;
             if (type != null) {
-                if (type === ValidationTokenEnum.Whitespace) {
+                if (type === exports.ValidationTokenEnum.Whitespace) {
                     let k = i;
-                    while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === ValidationTokenEnum.Whitespace) {
+                    while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === exports.ValidationTokenEnum.Whitespace) {
                         k++;
                     }
                     if (k !== i) {
@@ -13336,7 +13340,7 @@
                         clear();
                     }
                     tokens.push({
-                        typ: ValidationTokenEnum.Colon,
+                        typ: exports.ValidationTokenEnum.Colon,
                         [LOC]: loc,
                     });
                     break;
@@ -13369,7 +13373,7 @@
             tokens.push(getTokenType(buffer(), startToken()));
         }
         tokens.push({
-            typ: ValidationTokenEnum.EOF,
+            typ: exports.ValidationTokenEnum.EOF,
             [LOC]: { ind: posInd, lin: posLin, col: posCol },
         });
         position.ind = posInd;
@@ -13395,30 +13399,30 @@
         for (const token of iterator) {
             tokens.push(token);
             switch (token.typ) {
-                case ValidationTokenEnum.EOF:
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                case exports.ValidationTokenEnum.EOF:
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                         stack.pop();
                     }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.ColumnToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.ColumnToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
                     tokens.pop();
                     break;
-                case ValidationTokenEnum.Pipe:
+                case exports.ValidationTokenEnum.Pipe:
                     {
-                        while (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken ||
-                            stack.at(-1)?.typ === ValidationTokenEnum.ColumnToken) {
+                        while (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken ||
+                            stack.at(-1)?.typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
-                            if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                            if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                                 stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                             }
                             else {
@@ -13427,9 +13431,9 @@
                             stack.pop();
                         }
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
-                        if (stack.at(-1)?.typ !== ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1)?.typ !== exports.ValidationTokenEnum.PipeToken) {
                             stack.push(Object.assign(token, {
-                                typ: ValidationTokenEnum.PipeToken,
+                                typ: exports.ValidationTokenEnum.PipeToken,
                                 chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
                             }));
                             break;
@@ -13438,11 +13442,11 @@
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
                     }
                     break;
-                case ValidationTokenEnum.Ampersand:
+                case exports.ValidationTokenEnum.Ampersand:
                     {
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
                         if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
-                            if (token.typ === ValidationTokenEnum.Ampersand) {
+                            if (token.typ === exports.ValidationTokenEnum.Ampersand) {
                                 stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                                 stack.pop();
                                 stack.push(Object.assign(token, {
@@ -13474,7 +13478,7 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.Column:
+                case exports.ValidationTokenEnum.Column:
                     {
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
                         if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
@@ -13497,18 +13501,18 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.OpenParenthesis:
-                    if (tokens.at(-2)?.typ === ValidationTokenEnum.Keyword) {
+                case exports.ValidationTokenEnum.OpenParenthesis:
+                    if (tokens.at(-2)?.typ === exports.ValidationTokenEnum.Keyword) {
                         stack.push(Object.assign(tokens.at(-2), {
-                            typ: ValidationTokenEnum.Function,
+                            typ: exports.ValidationTokenEnum.Function,
                             chi: [],
                         }));
                         tokens.pop();
                         break;
                     }
-                    if (tokens.at(-2)?.typ === ValidationTokenEnum.PseudoClassToken) {
+                    if (tokens.at(-2)?.typ === exports.ValidationTokenEnum.PseudoClassToken) {
                         stack.push(Object.assign(tokens.at(-2), {
-                            typ: ValidationTokenEnum.PseudoClassFunctionToken,
+                            typ: exports.ValidationTokenEnum.PseudoClassFunctionToken,
                             chi: [],
                         }));
                         tokens.pop();
@@ -13516,14 +13520,14 @@
                     }
                     stack.push(token);
                     break;
-                case ValidationTokenEnum.CloseParenthesis:
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                case exports.ValidationTokenEnum.CloseParenthesis:
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.OpenParenthesis ||
-                        (stack.at(-1)?.typ === ValidationTokenEnum.PropertyType &&
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.OpenParenthesis ||
+                        (stack.at(-1)?.typ === exports.ValidationTokenEnum.PropertyType &&
                             stack.at(-1).val === "function-token")) {
                         stack.pop();
                     }
@@ -13534,13 +13538,13 @@
                     //     );
                     //     stack.pop();
                     // }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                         stack.pop();
                     }
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.Function ||
-                        stack.at(-1)?.typ === ValidationTokenEnum.PseudoClassFunctionToken) {
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.Function ||
+                        stack.at(-1)?.typ === exports.ValidationTokenEnum.PseudoClassFunctionToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         tokens.pop();
                         stack.at(-1).chi =
@@ -13548,11 +13552,11 @@
                         stack.pop();
                     }
                     break;
-                case ValidationTokenEnum.GreaterThan:
-                    if (tokens[tokens.length - 3]?.typ === ValidationTokenEnum.LessThan) {
-                        if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Keyword) {
+                case exports.ValidationTokenEnum.GreaterThan:
+                    if (tokens[tokens.length - 3]?.typ === exports.ValidationTokenEnum.LessThan) {
+                        if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.Keyword) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.PropertyType,
+                                typ: exports.ValidationTokenEnum.PropertyType,
                                 val: tokens[tokens.length - 2].val,
                             });
                             if ("range" in tokens[tokens.length - 2]) {
@@ -13564,40 +13568,40 @@
                                 stack.push(tokens.at(-1));
                             }
                         }
-                        else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.StringToken) {
+                        else if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.StringToken) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.DeclarationType,
+                                typ: exports.ValidationTokenEnum.DeclarationType,
                                 val: tokens[tokens.length - 2].val.slice(1, -1),
                             });
                             tokens.splice(tokens.length - 2, 2);
                         }
-                        else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Function) {
+                        else if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.Function) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.FunctionDefinition,
+                                typ: exports.ValidationTokenEnum.FunctionDefinition,
                                 val: tokens[tokens.length - 2].val,
                             });
                             tokens.splice(tokens.length - 2, 2);
                         }
                     }
                     break;
-                case ValidationTokenEnum.OpenBracket:
+                case exports.ValidationTokenEnum.OpenBracket:
                     stack.push(token);
                     break;
-                case ValidationTokenEnum.CloseBracket:
+                case exports.ValidationTokenEnum.CloseBracket:
                     while (true) {
-                        if (stack.at(-1).typ === ValidationTokenEnum.AmpersandToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.AmpersandToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                             stack.pop();
                             continue;
                         }
-                        else if (stack.at(-1).typ === ValidationTokenEnum.ColumnToken) {
+                        else if (stack.at(-1).typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
                             continue;
                         }
-                        if (stack.at(-1).typ === ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.PipeToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
@@ -13613,24 +13617,24 @@
                     {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         // the lower bound of a range may be '-∞': <integer [-∞,-1]>
-                        const isNegativeInfinity = tokens[index + 1]?.typ === ValidationTokenEnum.Keyword &&
+                        const isNegativeInfinity = tokens[index + 1]?.typ === exports.ValidationTokenEnum.Keyword &&
                             tokens[index + 1].val === "-" &&
-                            tokens[index + 2]?.typ === ValidationTokenEnum.InfinityToken;
+                            tokens[index + 2]?.typ === exports.ValidationTokenEnum.InfinityToken;
                         if (isNegativeInfinity &&
-                            (tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
-                                tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
-                            tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
-                            tokens[index + 3]?.typ === ValidationTokenEnum.Comma &&
-                            (tokens[index + 4]?.typ === ValidationTokenEnum.Number ||
-                                tokens[index + 4]?.typ === ValidationTokenEnum.Dimension ||
-                                tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken) &&
-                            tokens[index + 5]?.typ === ValidationTokenEnum.CloseBracket) {
+                            (tokens[index - 2]?.typ === exports.ValidationTokenEnum.Keyword ||
+                                tokens[index - 2]?.typ === exports.ValidationTokenEnum.StringToken) &&
+                            tokens[index - 1]?.typ === exports.ValidationTokenEnum.Whitespace &&
+                            tokens[index + 3]?.typ === exports.ValidationTokenEnum.Comma &&
+                            (tokens[index + 4]?.typ === exports.ValidationTokenEnum.Number ||
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.Dimension ||
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.InfinityToken) &&
+                            tokens[index + 5]?.typ === exports.ValidationTokenEnum.CloseBracket) {
                             stack.pop();
                             // a null bound is unbounded
                             Object.assign(tokens[index - 2], {
                                 range: {
                                     min: null,
-                                    max: tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken
+                                    max: tokens[index + 4]?.typ === exports.ValidationTokenEnum.InfinityToken
                                         ? null
                                         : tokens[index + 4],
                                 },
@@ -13638,11 +13642,11 @@
                             tokens.splice(index - 1, 8);
                             break;
                         }
-                        if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
-                            tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
-                            tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
-                            (tokens[index + 1]?.typ === ValidationTokenEnum.Number ||
-                                tokens[index + 1]?.typ === ValidationTokenEnum.Dimension)) {
+                        if ((tokens[index - 2]?.typ === exports.ValidationTokenEnum.Keyword ||
+                            tokens[index - 2]?.typ === exports.ValidationTokenEnum.StringToken) &&
+                            tokens[index - 1]?.typ === exports.ValidationTokenEnum.Whitespace &&
+                            (tokens[index + 1]?.typ === exports.ValidationTokenEnum.Number ||
+                                tokens[index + 1]?.typ === exports.ValidationTokenEnum.Dimension)) {
                             // if (tokens[index + 2]?.typ === ValidationTokenEnum.CloseBracket) {
                             //     stack.pop();
                             //     Object.assign(tokens[index - 2], {
@@ -13654,10 +13658,10 @@
                             //     tokens.splice(index - 1, 5);
                             //     break;
                             // }
-                            if (tokens[index + 2]?.typ === ValidationTokenEnum.Comma &&
+                            if (tokens[index + 2]?.typ === exports.ValidationTokenEnum.Comma &&
                                 (tokens[index + 3]?.typ === tokens[index + 1]?.typ ||
-                                    tokens[index + 3]?.typ === ValidationTokenEnum.InfinityToken) &&
-                                tokens[index + 4]?.typ === ValidationTokenEnum.CloseBracket) {
+                                    tokens[index + 3]?.typ === exports.ValidationTokenEnum.InfinityToken) &&
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.CloseBracket) {
                                 stack.pop();
                                 Object.assign(tokens[index - 2], {
                                     range: {
@@ -13676,17 +13680,17 @@
                     startIndex = tokens.lastIndexOf(currentToken);
                     endIndex = tokens.indexOf(token);
                     Object.assign(currentToken, {
-                        typ: ValidationTokenEnum.Bracket,
+                        typ: exports.ValidationTokenEnum.Bracket,
                         chi: trimSyntaxArray(tokens.slice(startIndex + 1, endIndex)),
                     });
                     tokens.splice(startIndex + 1, tokens.length);
                     break;
                 // {
-                case ValidationTokenEnum.OpenCurlyBrace:
+                case exports.ValidationTokenEnum.OpenCurlyBrace:
                     stack.push(token);
                     break;
                 // }
-                case ValidationTokenEnum.CloseCurlyBrace:
+                case exports.ValidationTokenEnum.CloseCurlyBrace:
                     while (true) {
                         // if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.AmpersandToken) {
                         //     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
@@ -13696,13 +13700,13 @@
                         //     stack.pop();
                         //     continue;
                         // } else
-                        if (stack.at(-1).typ === ValidationTokenEnum.ColumnToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
                             continue;
                         }
-                        if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
@@ -13717,7 +13721,7 @@
                         let index = tokens.lastIndexOf(stack.at(-1));
                         const slice = tokens.slice(index + 1, -1);
                         if (slice.length === 1 || slice.length === 3) {
-                            if (slice[0].typ === ValidationTokenEnum.Number) {
+                            if (slice[0].typ === exports.ValidationTokenEnum.Number) {
                                 Object.assign(tokens[index - 1], {
                                     match: {
                                         min: slice[0],
@@ -13739,7 +13743,7 @@
                                     Object.assign(tokens[index - 1], {
                                         match: {
                                             min: slice[0],
-                                            max: slice[2].typ === ValidationTokenEnum.InfinityToken
+                                            max: slice[2].typ === exports.ValidationTokenEnum.InfinityToken
                                                 ? Number.POSITIVE_INFINITY
                                                 : slice[2],
                                         },
@@ -13753,11 +13757,11 @@
                     }
                     stack.pop();
                     break;
-                case ValidationTokenEnum.Star:
+                case exports.ValidationTokenEnum.Star:
                     tokens.pop();
                     tokens.at(-1).isRepeatable = true;
                     break;
-                case ValidationTokenEnum.QuestionMark:
+                case exports.ValidationTokenEnum.QuestionMark:
                     tokens.pop();
                     // if the previous token is a comma, we wrap them in a virtual group and mark the group as optional
                     {
@@ -13767,14 +13771,14 @@
                         //     sliceIndex = tokens.length - 2;
                         // } else
                         // {
-                        isGroup = tokens.at(-3)?.typ === ValidationTokenEnum.Comma;
+                        isGroup = tokens.at(-3)?.typ === exports.ValidationTokenEnum.Comma;
                         if (isGroup) {
                             sliceIndex = tokens.length - 3;
                         }
                         // }
                         if (isGroup) {
                             tokens.splice(sliceIndex, tokens.length - sliceIndex, {
-                                typ: ValidationTokenEnum.OptionalGroupToken,
+                                typ: exports.ValidationTokenEnum.OptionalGroupToken,
                                 chi: trimSyntaxArray(tokens.slice(sliceIndex)),
                                 isOptional: true,
                             });
@@ -13784,15 +13788,15 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.Comma:
+                case exports.ValidationTokenEnum.Comma:
                     {
                         let sliceIndex = -1;
                         // if (tokens.at(-2)?.isOptional && tokens.at(-2)!.typ !== ValidationTokenEnum.OptionalGroupToken) {
                         //     sliceIndex = tokens.length - 2;
                         // } else
-                        if (tokens.at(-2).typ === ValidationTokenEnum.Whitespace &&
+                        if (tokens.at(-2).typ === exports.ValidationTokenEnum.Whitespace &&
                             tokens.at(-3)?.isOptional &&
-                            tokens.at(-3).typ !== ValidationTokenEnum.OptionalGroupToken) {
+                            tokens.at(-3).typ !== exports.ValidationTokenEnum.OptionalGroupToken) {
                             sliceIndex = tokens.length - 3;
                         }
                         if (sliceIndex !== -1) {
@@ -13800,7 +13804,7 @@
                                 tokens.pop();
                             }
                             tokens.splice(sliceIndex, tokens.length - sliceIndex, {
-                                typ: ValidationTokenEnum.OptionalGroupToken,
+                                typ: exports.ValidationTokenEnum.OptionalGroupToken,
                                 chi: trimSyntaxArray(tokens.slice(sliceIndex).map((t) => {
                                     delete t.isOptional;
                                     return t;
@@ -13810,22 +13814,22 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.HashMark:
+                case exports.ValidationTokenEnum.HashMark:
                     tokens.pop();
                     tokens.at(-1).isList = true;
                     break;
-                case ValidationTokenEnum.Exclamation:
+                case exports.ValidationTokenEnum.Exclamation:
                     tokens.pop();
                     tokens.at(-1).isMandatatoryGroup = true;
                     break;
-                case ValidationTokenEnum.Plus:
+                case exports.ValidationTokenEnum.Plus:
                     tokens.pop();
                     tokens.at(-1).isRepeatableAtLeastOnce = true;
                     break;
             }
         }
         if (stack.length > 0) {
-            if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+            if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                 let index = tokens.lastIndexOf(stack.at(-1));
                 stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
                 stack.pop();
@@ -14025,8 +14029,8 @@
         let blockEnd = -1;
         let i;
         for (i = 0; i < syntaxRules.length; i++) {
-            if (syntaxRules[i].typ === ValidationTokenEnum.OpenCurlyBrace ||
-                syntaxRules[i].typ === ValidationTokenEnum.SemiColon) {
+            if (syntaxRules[i].typ === exports.ValidationTokenEnum.OpenCurlyBrace ||
+                syntaxRules[i].typ === exports.ValidationTokenEnum.SemiColon) {
                 blockStart = i;
                 break;
             }
@@ -14034,7 +14038,7 @@
         if (blockStart !== -1) {
             i = syntaxRules.length;
             while (i--) {
-                if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
+                if (syntaxRules[i].typ === exports.ValidationTokenEnum.CloseCurlyBrace) {
                     blockEnd = i;
                     break;
                 }
@@ -14055,14 +14059,14 @@
         let optionalBody = false;
         if (block == null || block.length === 0) {
             let k = prelude.length - 1;
-            if (ValidationTokenEnum.SemiColon === prelude[k].typ) {
+            if (exports.ValidationTokenEnum.SemiColon === prelude[k].typ) {
                 k--;
             }
-            if (k >= 0 && ValidationTokenEnum.Bracket === prelude[k].typ) {
+            if (k >= 0 && exports.ValidationTokenEnum.Bracket === prelude[k].typ) {
                 if (prelude[k].chi[0].typ ===
-                    ValidationTokenEnum.OpenCurlyBrace &&
+                    exports.ValidationTokenEnum.OpenCurlyBrace &&
                     prelude[k].chi.at(-1).typ ===
-                        ValidationTokenEnum.CloseCurlyBrace) {
+                        exports.ValidationTokenEnum.CloseCurlyBrace) {
                     block = prelude[k].chi.slice(1, -1);
                     optionalBody = prelude[k].isOptional ?? false;
                 }
@@ -14089,7 +14093,7 @@
      * @param syntax
      */
     function isNullable(syntax) {
-        if (syntax.typ === ValidationTokenEnum.Whitespace) {
+        if (syntax.typ === exports.ValidationTokenEnum.Whitespace) {
             return true;
         }
         // `[ <a>? <b>? ]!`: at least one token
@@ -14102,13 +14106,13 @@
         let nullable = nullableSyntaxes.get(syntax);
         if (nullable == null) {
             switch (syntax.typ) {
-                case ValidationTokenEnum.Bracket:
+                case exports.ValidationTokenEnum.Bracket:
                     nullable = syntax.chi.every(isNullable);
                     break;
-                case ValidationTokenEnum.PipeToken:
+                case exports.ValidationTokenEnum.PipeToken:
                     nullable = syntax.chi.some((syntaxes) => syntaxes.every(isNullable));
                     break;
-                case ValidationTokenEnum.AmpersandToken:
+                case exports.ValidationTokenEnum.AmpersandToken:
                     nullable =
                         syntax.l.every(isNullable) &&
                             syntax.r.every(isNullable);
@@ -14347,71 +14351,71 @@
         let nullable = false;
         let first;
         switch (syntax.typ) {
-            case ValidationTokenEnum.Whitespace:
+            case exports.ValidationTokenEnum.Whitespace:
                 nullable = true;
                 break;
-            case ValidationTokenEnum.Keyword:
+            case exports.ValidationTokenEnum.Keyword:
                 set.keywords.add(lowercase(syntax.val));
                 break;
-            case ValidationTokenEnum.Comma:
+            case exports.ValidationTokenEnum.Comma:
                 set.types.add(exports.EnumToken.CommaTokenType);
                 break;
-            case ValidationTokenEnum.Colon:
+            case exports.ValidationTokenEnum.Colon:
                 set.types.add(exports.EnumToken.ColonTokenType);
                 break;
-            case ValidationTokenEnum.Separator:
+            case exports.ValidationTokenEnum.Separator:
                 set.types.add(exports.EnumToken.LiteralTokenType);
                 break;
-            case ValidationTokenEnum.OpenParenthesis:
+            case exports.ValidationTokenEnum.OpenParenthesis:
                 set.types.add(exports.EnumToken.StartParensTokenType);
                 break;
-            case ValidationTokenEnum.CloseParenthesis:
+            case exports.ValidationTokenEnum.CloseParenthesis:
                 set.types.add(exports.EnumToken.EndParensTokenType);
                 break;
-            case ValidationTokenEnum.OpenCurlyBrace:
+            case exports.ValidationTokenEnum.OpenCurlyBrace:
                 set.types.add(exports.EnumToken.BlockStartTokenType);
                 break;
-            case ValidationTokenEnum.Number:
+            case exports.ValidationTokenEnum.Number:
                 set.types.add(exports.EnumToken.NumberTokenType);
                 break;
-            case ValidationTokenEnum.Dimension:
+            case exports.ValidationTokenEnum.Dimension:
                 set.types.add(exports.EnumToken[syntax.unit]);
                 break;
-            case ValidationTokenEnum.StringToken:
+            case exports.ValidationTokenEnum.StringToken:
                 // `'+'`, `'-'`, `'/'`
                 set.types.add(exports.EnumToken.Add);
                 set.types.add(exports.EnumToken.Sub);
                 set.types.add(exports.EnumToken.LiteralTokenType);
                 set.types.add(exports.EnumToken.Plus);
                 break;
-            case ValidationTokenEnum.Function:
-            case ValidationTokenEnum.FunctionDefinition:
+            case exports.ValidationTokenEnum.Function:
+            case exports.ValidationTokenEnum.FunctionDefinition:
                 set.functions.add(lowercase(syntax.val));
                 break;
-            case ValidationTokenEnum.Bracket:
+            case exports.ValidationTokenEnum.Bracket:
                 first = firstOfSequence(syntax.chi);
                 merge(set, first);
                 nullable = first.nullable;
                 break;
-            case ValidationTokenEnum.OptionalGroupToken:
+            case exports.ValidationTokenEnum.OptionalGroupToken:
                 // the group is skipped when it does not match
                 merge(set, firstOfSequence(syntax.chi));
                 nullable = true;
                 break;
-            case ValidationTokenEnum.PipeToken:
+            case exports.ValidationTokenEnum.PipeToken:
                 for (const syntaxes of syntax.chi) {
                     first = firstOfSequence(syntaxes);
                     merge(set, first);
                     nullable ||= first.nullable;
                 }
                 break;
-            case ValidationTokenEnum.ColumnToken:
+            case exports.ValidationTokenEnum.ColumnToken:
                 // one or more operands, in any order: at least one token
                 for (const syntaxes of syntax.chi) {
                     merge(set, firstOfSequence(syntaxes));
                 }
                 break;
-            case ValidationTokenEnum.AmpersandToken:
+            case exports.ValidationTokenEnum.AmpersandToken:
                 // all the operands, in any order
                 nullable = true;
                 for (const syntaxes of [syntax.l, syntax.r]) {
@@ -14420,12 +14424,12 @@
                     nullable &&= first.nullable;
                 }
                 break;
-            case ValidationTokenEnum.DeclarationType:
+            case exports.ValidationTokenEnum.DeclarationType:
                 first = firstOfSequence(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntax.val));
                 merge(set, first);
                 nullable = first.nullable;
                 break;
-            case ValidationTokenEnum.PropertyType: {
+            case exports.ValidationTokenEnum.PropertyType: {
                 const name = syntax.val;
                 if (builtinTypes.has(name)) {
                     const types = builtinTypes.get(name);
@@ -16576,7 +16580,7 @@
             return interpreted;
         }
         const property = {
-            typ: ValidationTokenEnum.PropertyType,
+            typ: exports.ValidationTokenEnum.PropertyType,
             val: name,
         };
         const fast = numericTypes[name] ?? null;
@@ -18258,9 +18262,9 @@
      */
     function countItemCommas(syntax) {
         let count = 0;
-        if (syntax.typ === ValidationTokenEnum.Bracket) {
+        if (syntax.typ === exports.ValidationTokenEnum.Bracket) {
             for (const token of syntax.chi) {
-                if (token.typ === ValidationTokenEnum.Comma) {
+                if (token.typ === exports.ValidationTokenEnum.Comma) {
                     count++;
                 }
             }
@@ -18422,7 +18426,7 @@
         if (arena.hasFraction(token) || arena.numericValue[token] !== syntax.val) {
             return false;
         }
-        if (syntax.typ === ValidationTokenEnum.Number) {
+        if (syntax.typ === exports.ValidationTokenEnum.Number) {
             return arena.dataTypes[token] === exports.EnumToken.NumberTokenType;
         }
         const type = exports.EnumToken[syntax.unit];
@@ -18446,7 +18450,7 @@
         const range = syntax.range;
         // a null lower bound is -∞
         let success = !arena.hasFraction(token) && (range.min == null || arena.numericValue[token] >= range.min.val);
-        if (range.min?.typ === ValidationTokenEnum.Dimension) {
+        if (range.min?.typ === exports.ValidationTokenEnum.Dimension) {
             success =
                 arena.dataTypes[token] ===
                     exports.EnumToken[
@@ -18520,12 +18524,12 @@
         let errors = noErrors;
         const candidates = [];
         // the function is a part of the syntax. a keyword, a comma, ... is matched by the function
-        if (syntaxes[index].typ !== ValidationTokenEnum.Keyword &&
-            syntaxes[index].typ !== ValidationTokenEnum.Comma &&
-            syntaxes[index].typ !== ValidationTokenEnum.Separator &&
-            syntaxes[index].typ !== ValidationTokenEnum.StringToken &&
-            syntaxes[index].typ !== ValidationTokenEnum.OpenParenthesis &&
-            syntaxes[index].typ !== ValidationTokenEnum.CloseParenthesis) {
+        if (syntaxes[index].typ !== exports.ValidationTokenEnum.Keyword &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.Comma &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.Separator &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.StringToken &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.OpenParenthesis &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.CloseParenthesis) {
             const previous = wildCardProbes.get(token);
             let probe;
             wildCardProbes.set(token, syntaxes[index]);
@@ -18624,7 +18628,7 @@
             return setMatch(out, true, true, context.peek(), context, null, noErrors);
         }
         while (++i < syntaxes.length) {
-            if (syntaxes[i].typ === ValidationTokenEnum.Whitespace) {
+            if (syntaxes[i].typ === exports.ValidationTokenEnum.Whitespace) {
                 continue;
             }
             isOptional =
@@ -18743,7 +18747,7 @@
             success = false;
             try {
                 switch (syntaxes[i].typ) {
-                    case ValidationTokenEnum.Colon:
+                    case exports.ValidationTokenEnum.Colon:
                         // `<ident-token> : <declaration-value>?`
                         if (arena.dataTypes[token] === exports.EnumToken.ColonTokenType) {
                             success = true;
@@ -18754,7 +18758,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Comma:
+                    case exports.ValidationTokenEnum.Comma:
                         if (arena.dataTypes[token] === exports.EnumToken.CommaTokenType) {
                             success = true;
                             visitedSyntaxes[visit] = null;
@@ -18762,7 +18766,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Keyword:
+                    case exports.ValidationTokenEnum.Keyword:
                         if (arena.dataTypes[token] === exports.EnumToken.IdenTokenType &&
                             lowercase(arena.resolveString(arena.stringValue[token])) ===
                                 lowercase(syntaxes[i].val)) {
@@ -18775,7 +18779,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.DeclarationType:
+                    case exports.ValidationTokenEnum.DeclarationType:
                         result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntaxes[i].val), context, options, out);
                         if (result.success) {
                             success = true;
@@ -18794,7 +18798,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
-                    case ValidationTokenEnum.OptionalGroupToken: {
+                    case exports.ValidationTokenEnum.OptionalGroupToken: {
                         const chi = syntaxes[i].chi;
                         // `<bg-layer>#? , <final-bg-layer>` (the group of the optional list, the comma is the list separator) is
                         // matched as `[ <bg-layer> , ]* <final-bg-layer>`: the last item is left to the next syntax
@@ -18802,7 +18806,7 @@
                             const { isList, isOptional, match, ...item } = chi[0];
                             const group = [
                                 item,
-                                { typ: ValidationTokenEnum.Comma },
+                                { typ: exports.ValidationTokenEnum.Comma },
                             ];
                             while (context.peek() != null) {
                                 const tmp = matchSyntax(arena, group, context.slice(), options);
@@ -18829,7 +18833,7 @@
                         }
                         break;
                     }
-                    case ValidationTokenEnum.StringToken:
+                    case exports.ValidationTokenEnum.StringToken:
                         if (arena.dataTypes[token] === exports.EnumToken.Add) {
                             success = syntaxes[i].val.slice(1, -1) === "+";
                         }
@@ -18852,7 +18856,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.PropertyType:
+                    case exports.ValidationTokenEnum.PropertyType:
                         result = matchProperty(arena, syntaxes[i], context, options);
                         if (!result.success) {
                             if (isOptional) {
@@ -18873,7 +18877,7 @@
                             context.update(result.context.current());
                         }
                         break;
-                    case ValidationTokenEnum.PipeToken:
+                    case exports.ValidationTokenEnum.PipeToken:
                         {
                             // each alternative is matched in the same scratch result, the best match is copied
                             const scratch = createMatch();
@@ -18919,7 +18923,7 @@
                                 syntax: syntaxes[i],
                             },
                         ]);
-                    case ValidationTokenEnum.Bracket:
+                    case exports.ValidationTokenEnum.Bracket:
                         result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options, out);
                         if (result.success) {
                             success = true;
@@ -18937,7 +18941,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.ColumnToken:
+                    case exports.ValidationTokenEnum.ColumnToken:
                         result = matchColumnSyntax(arena, syntaxes[i], context.slice(), options);
                         if (result.success) {
                             success = true;
@@ -18952,7 +18956,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.AmpersandToken:
+                    case exports.ValidationTokenEnum.AmpersandToken:
                         result = matchAmpersandSyntax(arena, syntaxes[i], context.slice(), options);
                         if (result.success) {
                             success = true;
@@ -18967,7 +18971,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Function:
+                    case exports.ValidationTokenEnum.Function:
                         if ((!isFunctionDefType(arena.dataTypes[token]) &&
                             !funcLike.includes(arena.dataTypes[token]) &&
                             !funcTypes.includes(arena.dataTypes[token])) ||
@@ -18999,8 +19003,8 @@
                             }
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
-                    case ValidationTokenEnum.Number:
-                    case ValidationTokenEnum.Dimension:
+                    case exports.ValidationTokenEnum.Number:
+                    case exports.ValidationTokenEnum.Dimension:
                         // a literal number or dimension: `-moz-force-broken-image-icon: 0 | 1`,
                         // `glyph-orientation-vertical: auto | 0deg | 90deg | 0 | 90`
                         if (isLiteralNumber(arena, token, syntaxes[i])) {
@@ -19013,7 +19017,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Separator:
+                    case exports.ValidationTokenEnum.Separator:
                         if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType &&
                             arena.resolveString(arena.stringValue[token]) === "/") {
                             visitedSyntaxes[visit] = null;
@@ -19021,7 +19025,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.FunctionDefinition:
+                    case exports.ValidationTokenEnum.FunctionDefinition:
                         if (arena.resolveString(arena.stringValue[token]) &&
                             equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), syntaxes[i].val)) {
                             if (isFunctionDefType(arena.dataTypes[token])) {
@@ -19045,21 +19049,21 @@
                             }
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.OpenParenthesis:
+                    case exports.ValidationTokenEnum.OpenParenthesis:
                         if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.OpenCurlyBrace:
+                    case exports.ValidationTokenEnum.OpenCurlyBrace:
                         if (arena.dataTypes[token] === exports.EnumToken.BlockStartTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.CloseParenthesis:
+                    case exports.ValidationTokenEnum.CloseParenthesis:
                         if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
@@ -19067,7 +19071,7 @@
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                     default:
-                        throw new Error(`Unexpected syntax ${ValidationTokenEnum[syntaxes[i].typ]}`);
+                        throw new Error(`Unexpected syntax ${exports.ValidationTokenEnum[syntaxes[i].typ]}`);
                 }
             }
             finally {
@@ -19205,9 +19209,9 @@
      */
     function ampersandOperands(syntax, operands = []) {
         for (const side of [syntax.l, syntax.r]) {
-            const tokens = side.filter((token) => token.typ !== ValidationTokenEnum.Whitespace);
+            const tokens = side.filter((token) => token.typ !== exports.ValidationTokenEnum.Whitespace);
             if (tokens.length === 1 &&
-                tokens[0].typ === ValidationTokenEnum.AmpersandToken &&
+                tokens[0].typ === exports.ValidationTokenEnum.AmpersandToken &&
                 !tokens[0].isOptional &&
                 !tokens[0].isRepeatable &&
                 !tokens[0].isRepeatableAtLeastOnce &&
@@ -22192,6 +22196,7 @@
          */
         #codeLength;
         /**
+         * create a render result
          * @param write rendered css, encoded as UTF-8
          * @param errors
          * @param stats
@@ -22256,6 +22261,7 @@
          */
         arena;
         /**
+         * create a transform result from the parse result and the render result
          * @param parseResult
          * @param renderResult
          * @param stats
@@ -30463,7 +30469,8 @@
          */
         options = { removeDuplicateDeclarations: true, computeShorthand: true };
         /**
-         * declarations
+         * declarations, by property name
+         * @ignore
          */
         declarations;
         /**
@@ -30480,8 +30487,8 @@
          */
         descriptors;
         /**
-         *
-         * @param arena
+         * create an empty declaration list
+         * @param arena the arena the declarations are stored in
          * @param options
          * @param memo keys shared by the lists that use the same arena
          * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
@@ -30726,7 +30733,7 @@
             }
         }
         /**
-         *
+         * iterate over the declarations, the shorthands are expanded into their declarations
          * @returns
          */
         [Symbol.iterator]() {
@@ -36349,6 +36356,10 @@
          * the high word holds the 24 high bits of the start position and the source
          */
         spans32;
+        /**
+         * create an empty arena
+         * @param size initial number of nodes the columns can hold. the columns grow when they are full
+         */
         constructor(size = 4096) {
             this.dataTypes = new Uint8Array(size);
             this.capacity = size;
@@ -36572,6 +36583,7 @@
          * @param id
          * @param flag
          * @param compute computes the property from the string
+         * @ignore
          */
         stringFlag(id, flag, compute) {
             return this.stringTable.flag(id, flag, compute);
@@ -36581,6 +36593,7 @@
          * @param id
          * @param flag
          * @param compute computes the property from the string id
+         * @ignore
          */
         stringFlagId(id, flag, compute) {
             return this.stringTable.flagId(id, flag, compute);
@@ -36590,6 +36603,7 @@
          * @param id
          * @param slot
          * @param compute computes the value from the string id
+         * @ignore
          */
         stringDerived(id, slot, compute) {
             return this.stringTable.derived(id, slot, compute);
@@ -37069,9 +37083,10 @@
             return this.getChildAt(id, exports.TokenField.L) == null ? null : this.fieldTokens(id, exports.TokenField.L);
         }
         /**
+         * Replace the tokens of the right hand side of a structured token. null removes them
          *
-         * @param id
-         * @param rightId
+         * @param id the structured token
+         * @param rightId the tokens, or null
          */
         setRight(id, ...rightId) {
             // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
@@ -38290,8 +38305,8 @@
          */
         inputLengths = [];
         /**
-         *
-         * @param size
+         * create an arena that holds an empty stylesheet
+         * @param size initial number of nodes the columns can hold. the columns grow when they are full
          */
         constructor(size = 4096) {
             super(size);
@@ -38300,7 +38315,10 @@
             this.flags[this.root] = exports.EnumAstNodeStatus.HasChildren;
         }
         /**
-         * @inheritDoc
+         * release nodes: detach them and drop their data (interned strings, errors) and their minification caches. node
+         * ids are never reused: the memory is reclaimed by {@link trim}
+         * @param id the node to release. every marked node (and its descendants) is released when omitted
+         * @param deep release the children and the tokens too
          */
         release(id, deep = false) {
             super.release(id, deep);
@@ -38318,7 +38336,11 @@
             }
         }
         /**
-         * @inheritDoc
+         * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+         * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+         * the unused strings and the minification caches are dropped too
+         * @param errors error descriptions whose `node` is remapped
+         * @returns mapping of the old ids to the new ids (0 when the node was dropped)
          */
         compact(errors) {
             const mapping = super.compact(errors);
@@ -39256,7 +39278,7 @@
             return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
         }
         /**
-         * @inheritDoc
+         * structured-cloneable properties of the arena, the sources and the minification caches included
          */
         exportProperties() {
             return {
@@ -39269,7 +39291,10 @@
             };
         }
         /**
-         * @inheritDoc
+         * initialize the arena from exported properties and column buffers, the sources and the minification caches
+         * included
+         * @param properties
+         * @param transferables
          */
         importProperties(properties, transferables) {
             super.importProperties(properties, transferables);
@@ -43899,7 +43924,7 @@
         const rules = syntaxRule?.getBlockRules?.();
         if (rules != null) {
             for (const rule of rules) {
-                if (ValidationTokenEnum.PropertyType === rule.typ &&
+                if (exports.ValidationTokenEnum.PropertyType === rule.typ &&
                     ("block-contents" === rule.val ||
                         "rule-list" === rule.val)) {
                     return true;
@@ -44350,7 +44375,7 @@
             // else
             if (syntaxRules == null ||
                 (syntaxRules.length === 1 &&
-                    syntaxRules[0].typ === ValidationTokenEnum.PropertyType &&
+                    syntaxRules[0].typ === exports.ValidationTokenEnum.PropertyType &&
                     (syntaxRules[0].val === "declaration-list" ||
                         syntaxRules[0].val === "declaration-rule-list" ||
                         syntaxRules[0].val === "block-contents"))) {
@@ -49616,8 +49641,7 @@
                             }
                             else {
                                 context = createValidationContext(arena, stream, index);
-                                // @ts-ignore
-                                range = context.peekRange((t) => arena.dataTypes[t] === exports.EnumToken.EndParensTokenType);
+                                range = context.peekRange(exports.EnumToken.EndParensTokenType);
                                 // inlined: arena.typeOf(range.at(-1))
                                 if (arena.dataTypes[range.at(-1)] !== exports.EnumToken.EndParensTokenType) {
                                     errors.push({
@@ -50691,6 +50715,7 @@
     exports.Arena = Arena;
     exports.AstArena = AstArena;
     exports.AstArenaNode = AstArenaNode;
+    exports.LOC = LOC;
     exports.PropertyList = PropertyList;
     exports.RenderResult = RenderResult;
     exports.SourceMap = SourceMap;

@@ -6,24 +6,23 @@ import type {
 } from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
 import { SourceMap } from "../printer/sourcemap.ts";
-import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
+import type { ParseInfo, PropertyListOptions } from "./parse.d.ts";
+import { ColorType, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
 import type { Token } from "./token.d.ts";
 import type { AstArenaNode } from "../ast/arena-node.ts";
 import { FeatureWalkMode } from "../ast/features/type.ts";
-import { ValidationToken } from "../validation/parser/types";
+import type { ValidationToken } from "../validation/parser/types.d.ts";
 import { SourceFile } from "../parser/source.ts";
 import type { CssInput } from "../parser/input.ts";
 import { ResponseType } from "../types.ts";
 import type { AstArena } from "../ast/arena.ts";
 
-export * from "./ast.d.ts";
-export * from "./token.d.ts";
-export * from "./shorthand.d.ts";
-export * from "./config.d.ts";
-export * from "./visitor.d.ts";
-export * from "./walker.d.ts";
-export * from "./parse.d.ts";
+export type * from "./ast.d.ts";
+export type * from "./token.d.ts";
+export type * from "./shorthand.d.ts";
+export type * from "./visitor.d.ts";
+export type * from "./walker.d.ts";
+export type * from "./parse.d.ts";
 
 /**
  * Error description
@@ -403,7 +402,10 @@ export declare interface ModuleSyncOptions {
     generateScopedName?: (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
 }
 
-export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
+/**
+ * CSS modules options of the asynchronous functions
+ */
+export declare interface ModuleAsyncOptions extends Omit<ModuleSyncOptions, "generateScopedName"> {
     /**
      * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
@@ -637,7 +639,7 @@ export declare interface ParserSyncOptions
      * Node visitor
      * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: GenericVisitorAstNodeSyncHandlerMap<T> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
+    visitor?: GenericVisitorAstNodeSyncHandlerMap<any> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -679,7 +681,7 @@ export declare interface ParserSyncOptions
 /**
  * Parser options
  */
-export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
+export declare interface ParserOptions extends Omit<ParserSyncOptions, "visitor">, ModuleAsyncOptions {
     /**
      * Resolve import
      */
@@ -703,8 +705,8 @@ export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOpt
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
     visitor?:
-        | GenericVisitorAstNodeSyncHandlerMap<T>
-        | GenericVisitorAstNodeHandlerMap<T>
+        | GenericVisitorAstNodeSyncHandlerMap<any>
+        | GenericVisitorAstNodeHandlerMap<any>
         | VisitorNodeMap
         | VisitorNodeMap[];
 }
