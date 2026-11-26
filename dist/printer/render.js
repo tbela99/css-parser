@@ -1734,7 +1734,8 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                         key === "0 0" ||
                                         key === "top left" ||
                                         key === "left top") {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 0));
+                                        // a single value is centered vertically: both values are kept
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 0), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.PercentageTokenType, 0));
                                     }
                                     else if (key === "50% 0%" ||
                                         key === "50% 0" ||
@@ -1758,7 +1759,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                         key === "0% 100%" ||
                                         key === "left bottom" ||
                                         key === "bottom left") {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.IdenTokenType, "bottom"));
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 0), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.PercentageTokenType, 100));
                                     }
                                     else if (key === "50% 100%" ||
                                         key === "center bottom" ||
@@ -1768,10 +1769,7 @@ function renderToken(arena, token, options, cache, reducer, errors) {
                                     else if (key === "100% 100%" ||
                                         key === "right bottom" ||
                                         key === "bottom right") {
-                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 100));
-                                    }
-                                    else if (position1 === position2) {
-                                        positions.splice(0, positions.length, positions[k]);
+                                        positions.splice(0, positions.length, arena.createToken(EnumToken.PercentageTokenType, 100), arena.createToken(EnumToken.WhitespaceTokenType), arena.createToken(EnumToken.PercentageTokenType, 100));
                                     }
                                 }
                             }

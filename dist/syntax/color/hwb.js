@@ -78,11 +78,17 @@ function hwbToken(arena, values) {
     return arena.createColor("hwb", ColorType.HWB, chi);
 }
 function rgb2hwbvalues(arena, token) {
-    const values = getColorComponents(arena, token).map((t, index) => {
+    const components = getColorComponents(arena, token);
+    // the components cannot be computed: var(), ...
+    if (components == null) {
+        return null;
+    }
+    const values = components.map((t, index) => {
         if (index === 3) {
             return getNumber(arena, t);
         }
-        return getNumber(arena, t) / 255;
+        // the components are from 0 to 255: 100% is 255
+        return ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, t)) / 255;
     });
     // @ts-ignore
     return srgb2hwb(values[0], values[1], values[2], values[3]);

@@ -13,6 +13,15 @@
 - [x] minifier: two rules that have the same declarations are merged without computing the size of the output
 - [x] minifier: the vendor prefixes of the selectors are compared only when the rules share declarations
 
+## Fix
+
+- [x] media queries: `@media not print` and `@media only screen` were dropped
+- [x] gradients: the positions `left top`, `left bottom`, `right bottom` and `X X` (`20% 20%`) were minified into a single value, which is centered vertically (`at left top` became `at 0`, which means `at left center`)
+- [x] colors: `hwb()` with a `var()` component was rendered as `#`
+- [x] colors: the percentages of `rgb()` were not converted to `hsl()` and `hwb()` (`rgb(100% 50% 0%)` was converted to `hsl(30 100% .196078%)`)
+- [x] colors: converting `rgb()` with a `var()` component to `hwb()` threw an error
+- [x] `signal`: an aborted signal did not stop `parse()` / `transform()`
+
 ## Types
 
 - [x] the bundled type declarations (dist/index.d.ts) type-check without `skipLibCheck`: duplicate exports, missing imports, wrong `EnumToken` members and visitor types fixed

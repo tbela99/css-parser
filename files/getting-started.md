@@ -20,7 +20,6 @@ Want to see it in action? Try the [CSS-Parser playground](https://tbela99.github
 
 A non-exhaustive list of features is provided below:
 
-
 * **Zero dependencies** — lightweight and easy to integrate into any project.
 * **All-in-one CSS parsing solution** for parsing, validation, transformation, and minification.
 * **Standards-based CSS validation** powered by the W3C specification definitions ([@webref/css](https://github.com/w3c/webref/tree/main/packages/css)).
@@ -46,6 +45,34 @@ A non-exhaustive list of features is provided below:
 * **51.5kb** once minified and gzipped.
 
 ## Installation
+
+### Native and WebAssembly builds
+
+The library is also ported to Rust, in two builds with the same API and the same output as the TypeScript library,
+faster:
+
+| Package | Runs in | Speed |
+|---------|---------|-------|
+| [`@tbela99/rust-css-parser-napi`](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) | Node.js on macOS and Linux | up to 2.4x faster than TypeScript |
+| [`@tbela99/rust-css-parser-wasm`](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) | Node.js and the browsers | up to 1.9x faster than TypeScript |
+
+The WebAssembly build is **only 2.4 MB (860 KB gzipped)**, with no native dependency: it runs anywhere WebAssembly
+runs. The native build is compiled from its Rust sources when it is installed (requires the
+[Rust toolchain](https://rustup.rs)).
+
+```shell
+$ npm install @tbela99/rust-css-parser-wasm
+$ npm install @tbela99/rust-css-parser-napi
+```
+
+Switching build only changes the import:
+
+```javascript
+import {transformSync} from '@tbela99/rust-css-parser-wasm';
+
+const result = transformSync('.a { color: #ff0000; width: calc(100px + 20px) }');
+console.debug(result.code); // .a{color:red;width:120px}
+```
 
 ### From NPM
 

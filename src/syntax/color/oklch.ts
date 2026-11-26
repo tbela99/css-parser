@@ -140,9 +140,9 @@ export function hsl2oklchvalues(arena: AstArena, token: Token): number[] | null 
     return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
-export function hwb2oklchvalues(arena: AstArena, token: Token): number[] {
-    const values = hwb2oklabvalues(arena, token) as number[];
-    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
+export function hwb2oklchvalues(arena: AstArena, token: Token): number[] | null {
+    const values: number[] | null = hwb2oklabvalues(arena, token);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 
 export function cmyk2oklchvalues(arena: AstArena, token: Token): number[] | null {

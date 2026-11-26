@@ -9507,7 +9507,7 @@
     }
     function hwb2oklchvalues(arena, token) {
         const values = hwb2oklabvalues(arena, token);
-        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function cmyk2oklchvalues(arena, token) {
         const values = cmyk2srgbvalues(arena, token);
@@ -10086,11 +10086,17 @@
         return arena.createColor("hwb", exports.ColorType.HWB, chi);
     }
     function rgb2hwbvalues(arena, token) {
-        const values = getColorComponents(arena, token).map((t, index) => {
+        const components = getColorComponents(arena, token);
+        // the components cannot be computed: var(), ...
+        if (components == null) {
+            return null;
+        }
+        const values = components.map((t, index) => {
             if (index === 3) {
                 return getNumber(arena, t);
             }
-            return getNumber(arena, t) / 255;
+            // the components are from 0 to 255: 100% is 255
+            return ((arena.dataTypes[t] === exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, t)) / 255;
         });
         // @ts-ignore
         return srgb2hwb(values[0], values[1], values[2], values[3]);
@@ -10301,8 +10307,9 @@
     }
     function hwb2srgbvalues(arena, token) {
         const { h, w, b, a } = hwbvalues(arena, token) ?? {};
+        // the components cannot be computed: var(), ...
         if (h == null || w == null || b == null) {
-            return [];
+            return null;
         }
         const rgb = hwb2srgb(h, w, b);
         if (a != null && a !== 1) {
@@ -10910,6 +10917,14 @@
         }
         return arena.createColor("hsl", exports.ColorType.HSL, chi);
     }
+    /**
+     * value of a red, green or blue component of an `rgb()` color, from 0 to 255: `100%` is 255
+     * @param arena
+     * @param token
+     */
+    function rgbChannel(arena, token) {
+        return (arena.dataTypes[token] === exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, token);
+    }
     function rgb2hslvalues(arena, token) {
         const chi = getColorComponents(arena, token);
         if (chi == null || chi.length < 3) {
@@ -10918,15 +10933,15 @@
         // @ts-ignore
         let t = chi[0];
         // @ts-ignore
-        let r = getNumber(arena, t);
+        let r = rgbChannel(arena, t);
         // @ts-ignore
         t = chi[1];
         // @ts-ignore
-        let g = getNumber(arena, t);
+        let g = rgbChannel(arena, t);
         // @ts-ignore
         t = chi[2];
         // @ts-ignore
-        let b = getNumber(arena, t);
+        let b = rgbChannel(arena, t);
         // @ts-ignore
         let a = null;
         if (chi.length === 4) {
@@ -23999,7 +24014,8 @@
                                             key === "0 0" ||
                                             key === "top left" ||
                                             key === "left top") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0));
+                                            // a single value is centered vertically: both values are kept
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 0));
                                         }
                                         else if (key === "50% 0%" ||
                                             key === "50% 0" ||
@@ -24023,7 +24039,7 @@
                                             key === "0% 100%" ||
                                             key === "left bottom" ||
                                             key === "bottom left") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.IdenTokenType, "bottom"));
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 100));
                                         }
                                         else if (key === "50% 100%" ||
                                             key === "center bottom" ||
@@ -24033,10 +24049,7 @@
                                         else if (key === "100% 100%" ||
                                             key === "right bottom" ||
                                             key === "bottom right") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 100));
-                                        }
-                                        else if (position1 === position2) {
-                                            positions.splice(0, positions.length, positions[k]);
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 100), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 100));
                                         }
                                     }
                                 }
@@ -44744,7 +44757,47 @@
                     i++;
                 }
                 // [not | only] <media-type> [ and <media-condition-without-or>  ]?
-                if (i < stream.length) {
+                let modifier = null;
+                if (i < stream.length && arena.dataTypes[stream[i]] === exports.EnumToken.IdenTokenType) {
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
+                    if (val === "not" || val === "only") {
+                        modifier = val;
+                        tokens.push(stream[i]);
+                        i++;
+                        while (i < stream.length &&
+                            (arena.dataTypes[stream[i]] === exports.EnumToken.WhitespaceTokenType ||
+                                arena.dataTypes[stream[i]] === exports.EnumToken.CommentTokenType)) {
+                            tokens.push(stream[i]);
+                            i++;
+                        }
+                    }
+                }
+                if (modifier != null && i === stream.length) {
+                    success = false;
+                    errors.push({
+                        action: "drop",
+                        message: `expecting '<media-type>'`,
+                        node: stream[i - 1],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i - 1])),
+                        ],
+                    });
+                }
+                else if (modifier === "only" && arena.dataTypes[stream[i]] !== exports.EnumToken.IdenTokenType) {
+                    // only is followed by a media type
+                    success = false;
+                    errors.push({
+                        action: "drop",
+                        message: `expecting '<media-type>'`,
+                        node: stream[i],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                        ],
+                    });
+                }
+                else if (i < stream.length) {
                     if (arena.dataTypes[stream[i]] === exports.EnumToken.IdenTokenType) {
                         const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                         if (mediaTypes.includes(val)) {
@@ -46880,6 +46933,8 @@
      */
     function doParseSync(tokenizer, options = {}) {
         if (options.signal != null) {
+            // an aborted signal does not dispatch the abort event
+            options.signal.throwIfAborted();
             options.signal.addEventListener("abort", reject);
         }
         options = {
@@ -47818,6 +47873,8 @@
      */
     async function doParse(iter, options = {}) {
         if (options.signal != null) {
+            // an aborted signal does not dispatch the abort event
+            options.signal.throwIfAborted();
             options.signal.addEventListener("abort", reject);
         }
         options = {

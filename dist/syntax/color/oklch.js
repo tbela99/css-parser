@@ -100,7 +100,7 @@ function hsl2oklchvalues(arena, token) {
 }
 function hwb2oklchvalues(arena, token) {
     const values = hwb2oklabvalues(arena, token);
-    return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
+    return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
 }
 function cmyk2oklchvalues(arena, token) {
     const values = cmyk2srgbvalues(arena, token);

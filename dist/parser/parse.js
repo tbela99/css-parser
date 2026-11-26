@@ -640,6 +640,8 @@ const fastModeOptions = Object.freeze({
  */
 function doParseSync(tokenizer, options = {}) {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
     options = {
@@ -1578,6 +1580,8 @@ function doParseSync(tokenizer, options = {}) {
  */
 async function doParse(iter, options = {}) {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
     options = {

@@ -865,6 +865,8 @@ export const fastModeOptions: Readonly<ParserSyncOptions> = Object.freeze({
  */
 export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {}): ParseResult {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
 
@@ -2067,6 +2069,8 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
  */
 export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: ParserOptions = {}): Promise<ParseResult> {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
 

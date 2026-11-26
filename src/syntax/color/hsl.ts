@@ -123,6 +123,15 @@ function hslToken(arena: AstArena, values: number[]): Token {
     return arena.createColor("hsl", ColorType.HSL, chi);
 }
 
+/**
+ * value of a red, green or blue component of an `rgb()` color, from 0 to 255: `100%` is 255
+ * @param arena
+ * @param token
+ */
+function rgbChannel(arena: AstArena, token: Token): number {
+    return (arena.dataTypes[token] === EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, token);
+}
+
 export function rgb2hslvalues(arena: AstArena, token: Token): number[] | null {
     const chi: Token[] | null = getColorComponents(arena, token);
 
@@ -134,17 +143,17 @@ export function rgb2hslvalues(arena: AstArena, token: Token): number[] | null {
     let t: Token = chi[0];
 
     // @ts-ignore
-    let r: number = getNumber(arena, t);
+    let r: number = rgbChannel(arena, t);
 
     // @ts-ignore
     t = chi[1];
     // @ts-ignore
-    let g: number = getNumber(arena, t);
+    let g: number = rgbChannel(arena, t);
 
     // @ts-ignore
     t = chi[2];
     // @ts-ignore
-    let b: number = getNumber(arena, t);
+    let b: number = rgbChannel(arena, t);
 
     // @ts-ignore
     let a: number = null;
