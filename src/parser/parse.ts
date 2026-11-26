@@ -852,7 +852,7 @@ function parseVisitors(
  */
 export const fastModeOptions: Readonly<ParserSyncOptions> = Object.freeze({
     minify: false,
-    mergeRules: MergeRulesEnum.Identical,
+    mergeRules: MergeRulesEnum.None,
 });
 
 /**

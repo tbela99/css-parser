@@ -559,8 +559,8 @@ Output:
 With `minify: false`, `MergeRulesEnum.Identical` and `MergeRulesEnum.All` merge the rules without minifying the ast: the
 adjacent rules and keyframes rules that have the same selector and the adjacent at-rules that have the same prelude are
 merged (`@font-face` is not merged), the last `@keyframes` of a name is kept, and the rules that have different
-selectors are merged as above. The other minifications are not applied. This is what the
-[fast mode](./performance.md#minification-vs-execution-speed) does.
+selectors are merged as above. The other minifications are not applied. The
+[fast mode](./performance.md#minification-vs-execution-speed) does not merge the rules (`MergeRulesEnum.None`).
 
 ```javascript
 import {transformSync, MergeRulesEnum} from '@tbela99/css-parser';
@@ -570,8 +570,7 @@ const result = transformSync(css, {minify: false, beautify: false, mergeRules: M
 ```
 
 `optimizeSelectors: false` keeps the selectors as they are: they are not reduced or factored with `:is()`. It only
-applies with `nestingRules: false`: the nesting of the rules reads the optimized selectors. Both options
-are used by the [fast mode](./performance.md#minification-vs-execution-speed).
+applies with `nestingRules: false`: the nesting of the rules reads the optimized selectors.
 
 ### Conditional wrapping or unwrapping selectors using :is()
 

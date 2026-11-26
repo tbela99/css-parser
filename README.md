@@ -126,16 +126,16 @@ import {transformSync} from "@tbela99/css-parser";
 
 const css = `...`;
 
-// the ast is not minified, the adjacent rules that have the same declarations are merged
+// the ast is not minified, the rules are not merged
 const result = transformSync(css, {fastMode: true});
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
 
-`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.Identical`: the ast is not minified, the adjacent
-rules that have the same declarations are merged. An option given explicitly takes precedence: `{fastMode: true,
-minify: true}` minifies the ast.
+`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.None`: the ast is not minified, the rules are not
+merged, the values are minified when they are rendered. An option given explicitly takes precedence: `{fastMode: true,
+minify: true}` minifies the ast without merging the rules.
 
 Compared with lightningcss and esbuild: the 12 files of the [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
 (3.1 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "fastMode" is the setting of
@@ -146,19 +146,19 @@ same output as the TypeScript library, faster.
 
 | Library | Time | Output | Output vs lightningcss |
 |---------|-----:|-------:|-----------------------:|
-| lightningcss | 57.1 ms | 2370 KB | |
-| N-API, fastMode | 67.9 ms | 2317 KB | **-2.3%** |
-| WebAssembly, fastMode | 93.2 ms | 2317 KB | **-2.3%** |
-| esbuild | 113.0 ms | 2487 KB | +4.9% |
-| N-API, default settings | 131.2 ms | 2098 KB | **-11.5%** |
-| WebAssembly, default settings | 162.0 ms | 2098 KB | **-11.5%** |
-| TypeScript, fastMode | 175.3 ms | 2317 KB | **-2.3%** |
-| TypeScript, default settings | 285.6 ms | 2098 KB | **-11.5%** |
+| lightningcss | 59.9 ms | 2370 KB | |
+| N-API, fastMode | 62.9 ms | 2413 KB | +1.8% |
+| WebAssembly, fastMode | 77.5 ms | 2413 KB | +1.8% |
+| esbuild | 118.8 ms | 2487 KB | +4.9% |
+| N-API, default settings | 131.6 ms | 2107 KB | **-11.1%** |
+| WebAssembly, default settings | 151.1 ms | 2107 KB | **-11.1%** |
+| TypeScript, fastMode | 153.6 ms | 2413 KB | +1.8% |
+| TypeScript, default settings | 264.9 ms | 2107 KB | **-11.1%** |
 
-- With the default settings, the output is 11.5% smaller than lightningcss. Lightningcss is about 2.3 times faster
+- With the default settings, the output is 11.1% smaller than lightningcss. Lightningcss is about 2.2 times faster
   than the N-API build.
-- With `fastMode`, the output is still 2.3% smaller than lightningcss, and lightningcss is about 1.2 times faster
-  than the N-API build.
+- With `fastMode`, the N-API build is about as fast as lightningcss (5% slower), and its output is 1.8% larger. It is
+  smaller than the output of esbuild.
 
 See [Performance](https://tbela99.github.io/css-parser/docs/documents/Guide.Performance.html) for the details.
 

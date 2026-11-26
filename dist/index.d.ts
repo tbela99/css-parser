@@ -7023,14 +7023,14 @@ interface MinifyOptions {
      */
     mergeRules?: boolean | MergeRulesEnum;
     /**
-     * Fast mode: the ast is not minified, only the adjacent rules that have the same declarations are merged. The
-     * output is larger and the minification is faster. It sets the default value of these options, an option given
+     * Fast mode: the ast is not minified and the rules are not merged, the values are minified when they are
+     * rendered. The output is larger and the minification is faster. It sets the default value of these options, an option given
      * explicitly takes precedence:
      *
      * ```ts
      * {
      *     minify: false,
-     *     mergeRules: MergeRulesEnum.Identical,
+     *     mergeRules: MergeRulesEnum.None,
      * }
      * ```
      *

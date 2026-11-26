@@ -628,7 +628,7 @@ function parseVisitors(visitorsDef, errors) {
  */
 const fastModeOptions = Object.freeze({
     minify: false,
-    mergeRules: MergeRulesEnum.Identical,
+    mergeRules: MergeRulesEnum.None,
 });
 /**
  * Parse css string

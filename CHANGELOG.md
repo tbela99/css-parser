@@ -6,7 +6,7 @@
 
 - [x] minifier: `mergeRules` option (`MergeRulesEnum`: `All`, `Identical`, `None`; `true` and `false` are shortcuts for `All` and `None`): `MergeRulesEnum.Identical` merges only the adjacent rules that have the same declarations, without computing the size of the output. with `minify: false`, `mergeRules` merges the adjacent rules and at-rules without minifying the ast
 - [x] minifier: `optimizeSelectors` option (`true` by default): `false` does not reduce the selectors or factor them with `:is()` (with `nestingRules: false`)
-- [x] `fastMode` option: `{fastMode: true}` sets `{minify: false, mergeRules: MergeRulesEnum.Identical}`, an option given explicitly takes precedence.
+- [x] `fastMode` option: `{fastMode: true}` sets `{minify: false, mergeRules: MergeRulesEnum.None}` (the ast is not minified, the rules are not merged), an option given explicitly takes precedence.
 
 ## Performance
 

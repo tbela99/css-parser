@@ -46921,7 +46921,7 @@
      */
     const fastModeOptions = Object.freeze({
         minify: false,
-        mergeRules: exports.MergeRulesEnum.Identical,
+        mergeRules: exports.MergeRulesEnum.None,
     });
     /**
      * Parse css string

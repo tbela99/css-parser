@@ -1042,17 +1042,21 @@ background:  conic-gradient(white 90deg, black 0.25turn 0.5turn, white calc(2*pi
         const css =
             ".a{color:red;width:1px}.b{width:1px;color:red}.c{margin:0px 0px 0px 0px;color:blue}.c .d{color:green}.e{color:red;width:1px;height:2px}";
 
-        it("fastMode does not minify the ast and merges the rules that have the same declarations", function () {
+        it("fastMode does not minify the ast and does not merge the rules", function () {
             expect(transformSync(css, { fastMode: true }).code).equals(
-                transformSync(css, { minify: false, beautify: false, mergeRules: MergeRulesEnum.Identical }).code,
+                transformSync(css, { minify: false, beautify: false, mergeRules: MergeRulesEnum.None }).code,
             );
             expect(transformSync(css, { fastMode: true }).code).equals(
-                ".a,.b{color:red;width:1px}.c{margin:0 0 0 0;color:blue}.c .d{color:green}.e{color:red;width:1px;height:2px}",
+                ".a{color:red;width:1px}.b{width:1px;color:red}.c{margin:0 0 0 0;color:blue}.c .d{color:green}.e{color:red;width:1px;height:2px}",
             );
         });
 
         it("an option given explicitly takes precedence over fastMode", function () {
+            // the ast is minified, the rules are not merged (mergeRules of fastMode)
             expect(transformSync(css, { fastMode: true, minify: true }).code).equals(
+                ".a{color:red;width:1px}.b{width:1px;color:red}.c{margin:0 0 0 0;color:blue;.d{color:green}}.e{color:red;width:1px;height:2px}",
+            );
+            expect(transformSync(css, { fastMode: true, minify: true, mergeRules: MergeRulesEnum.All }).code).equals(
                 ".a,.b{color:red;width:1px}.c{margin:0 0 0 0;color:blue;.d{color:green}}.e{color:red;width:1px;height:2px}",
             );
         });
