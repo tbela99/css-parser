@@ -369,7 +369,9 @@ class Arena {
         this.unit[id] = 0;
         this.flags[id] = 0;
         this.colorType[id] = 0;
-        this.spans[id] = 0n;
+        // the 32 bits view: no bigint
+        this.spans32[id << 1] = 0;
+        this.spans32[(id << 1) + 1] = 0;
         if (this.errors.size > 0) {
             this.errors.delete(id);
         }

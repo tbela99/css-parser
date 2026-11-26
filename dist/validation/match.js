@@ -117,6 +117,71 @@ function trimArray(arena, tokens) {
     return tokens;
 }
 /**
+ * true if the token is a simple selector without arguments: a type (`a`), an id (`#a`), a class (`.a`), a
+ * pseudo-class (`:hover`) or a pseudo-element (`::before`)
+ * @param type
+ */
+function isSimpleSelectorToken(type) {
+    return (type === EnumToken.ClassSelectorTokenType ||
+        type === EnumToken.IdenTokenType ||
+        type === EnumToken.PseudoElementTokenType ||
+        type === EnumToken.PseudoClassTokenType ||
+        type === EnumToken.HashTokenType);
+}
+/**
+ * match a selector made of simple selectors (see {@link isSimpleSelectorToken}), separated by whitespace (the
+ * descendant combinator) and by commas: `.a:hover`, `.a .b`, `.a, #b`. such a selector is valid: the whitespace
+ * around the commas is removed, the tokens are the tokens produced by {@link matchSelectorSyntax}. the tokens of
+ * another selector are not changed
+ * @param arena
+ * @param tokens
+ * @returns true if the selector is made of simple selectors
+ */
+function matchSimpleSelector(arena, tokens) {
+    const length = tokens.length;
+    // a simple selector is expected: at the start of the selector and after a comma
+    let expected = true;
+    let commaWhitespace = false;
+    for (let i = 0; i < length; i++) {
+        const type = arena.dataTypes[tokens[i]];
+        if (isSimpleSelectorToken(type)) {
+            expected = false;
+            continue;
+        }
+        if (type === EnumToken.WhitespaceTokenType) {
+            // leading whitespace
+            if (i === 0) {
+                return false;
+            }
+            // whitespace after a comma or before a comma
+            if (expected || arena.dataTypes[tokens[i + 1]] === EnumToken.CommaTokenType) {
+                commaWhitespace = true;
+            }
+            continue;
+        }
+        if (type !== EnumToken.CommaTokenType || expected) {
+            return false;
+        }
+        expected = true;
+    }
+    if (expected) {
+        return false;
+    }
+    if (commaWhitespace) {
+        let write = 0;
+        for (let i = 0; i < length; i++) {
+            if (arena.dataTypes[tokens[i]] === EnumToken.WhitespaceTokenType &&
+                (arena.dataTypes[tokens[i - 1]] === EnumToken.CommaTokenType ||
+                    arena.dataTypes[tokens[i + 1]] === EnumToken.CommaTokenType)) {
+                continue;
+            }
+            tokens[write++] = tokens[i];
+        }
+        tokens.length = write;
+    }
+    return true;
+}
+/**
  *
  * @param featureName
  * @returns
@@ -3176,4 +3241,4 @@ function matchRepeatableSyntax(arena, syntax, context, options) {
     };
 }
 
-export { ValidationTokenContext, createValidationContext, funcTypes, getMFInfo, isCssWideKeyword, isMFValue, isValidDeclarationValue, matchAllSyntaxes, matchDeclarationSyntax, matchOccurenceSyntax, matchProperty, matchSelectorSyntax, selectorFunctionSyntax, trimArray };
+export { ValidationTokenContext, createValidationContext, funcTypes, getMFInfo, isCssWideKeyword, isMFValue, isValidDeclarationValue, matchAllSyntaxes, matchDeclarationSyntax, matchOccurenceSyntax, matchProperty, matchSelectorSyntax, matchSimpleSelector, selectorFunctionSyntax, trimArray };

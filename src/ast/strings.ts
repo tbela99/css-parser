@@ -120,12 +120,30 @@ export interface StringTableData {
 }
 
 /**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes: number[] = [];
+
+/**
  * string of a range of code units
  * @param codes
  * @param start
  * @param end
  */
 function fromCodes(codes: Uint16Array, start: number, end: number): string {
+    const length: number = end - start;
+
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+
+        for (let i: number = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+
+        return String.fromCharCode.apply(null, shortCodes);
+    }
+
     let result: string = "";
 
     // String.fromCharCode() with a limited number of arguments

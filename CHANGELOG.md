@@ -12,6 +12,10 @@
 
 - [x] minifier: two rules that have the same declarations are merged without computing the size of the output
 - [x] minifier: the vendor prefixes of the selectors are compared only when the rules share declarations
+- [x] parser: the selectors made of types, classes, ids, pseudo-classes and pseudo-elements, and the keyframe selectors (`from`, `to`, percentages) are not matched with the selector syntax
+- [x] parser: the whitespace at the start of a statement and before `;`, `{` and `}` is not allocated in the arena
+- [x] parser: the tokens of a statement without errors are recycled without looking for references
+- [x] binary input: the ascii check reads the bytes 4 at a time
 
 ## Fix
 

@@ -163,4 +163,4 @@ The WebAssembly module is loaded when the package is imported (top-level `await`
   renders an empty string.
 
 ------
-[← Native build](./native.md) | [Performance →](./performance.md)
+[← Native build](./native.md) | [Rust crate →](./rust.md)

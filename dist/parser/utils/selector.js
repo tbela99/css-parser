@@ -11,7 +11,7 @@ import { renderValue } from '../../printer/render.js';
 import { isFunctionDefType, tokensfuncDefMap, pseudoElements, combinators } from '../../syntax/constants.js';
 import { isHash, isIdent } from '../../syntax/syntax.js';
 import { getParsedSyntax, getSyntaxRule } from '../../validation/config.js';
-import { matchAllSyntaxes, createValidationContext, trimArray, selectorFunctionSyntax, matchSelectorSyntax } from '../../validation/match.js';
+import { matchAllSyntaxes, createValidationContext, trimArray, selectorFunctionSyntax, matchSimpleSelector, matchSelectorSyntax } from '../../validation/match.js';
 import { ValidationSyntaxGroupEnum, ValidationTokenEnum } from '../../validation/parser/typedef.js';
 import { splitTokenList } from '../../validation/utils/list.js';
 import { trimWhiteSpace } from '../parse.js';
@@ -184,6 +184,58 @@ function splitUnicodeRanges(arena, tokens) {
     }
 }
 /**
+ * true if the token is a keyframe selector: `from`, `to` or a percentage between 0 and 100
+ * @param arena
+ * @param token
+ */
+function isKeyframeSelectorToken(arena, token) {
+    if (token === undefined) {
+        return false;
+    }
+    if (arena.dataTypes[token] === EnumToken.PercentageTokenType) {
+        return arena.numericValue[token] >= 0 && arena.numericValue[token] <= 100;
+    }
+    if (arena.dataTypes[token] !== EnumToken.IdenTokenType) {
+        return false;
+    }
+    const id = arena.stringValue[token];
+    const length = arena.stringLength(id);
+    // `from` and `to`, case-insensitive
+    return length === 4
+        ? (arena.stringCodeAt(id, 0) | 0x20) === 0x66 &&
+            (arena.stringCodeAt(id, 1) | 0x20) === 0x72 &&
+            (arena.stringCodeAt(id, 2) | 0x20) === 0x6f &&
+            (arena.stringCodeAt(id, 3) | 0x20) === 0x6d
+        : length === 2 && (arena.stringCodeAt(id, 0) | 0x20) === 0x74 && (arena.stringCodeAt(id, 1) | 0x20) === 0x6f;
+}
+/**
+ * true if the selector of a keyframe is a list of `from`, `to` and percentages between 0 and 100, separated by commas
+ * and whitespace: it matches the `keyframe-selectors` syntax
+ * @param arena
+ * @param tokens
+ */
+function isSimpleKeyframeSelector(arena, tokens) {
+    // a keyframe selector is expected
+    let selector = true;
+    let i = 0;
+    for (; i < tokens.length; i++) {
+        const type = arena.dataTypes[tokens[i]];
+        if (type === EnumToken.WhitespaceTokenType) {
+            continue;
+        }
+        if (selector) {
+            if (!isKeyframeSelectorToken(arena, tokens[i])) {
+                return false;
+            }
+        }
+        else if (type !== EnumToken.CommaTokenType) {
+            return false;
+        }
+        selector = !selector;
+    }
+    return !selector;
+}
+/**
  * parse selector
  * @param arena
  * @param tokens
@@ -195,7 +247,10 @@ function parseSelector(arena, tokens, context, options, errors) {
     const contextType = context == null ? null : arena.dataTypes[context];
     splitUnicodeRanges(arena, tokens);
     if (contextType === EnumToken.KeyframesAtRuleNodeType) {
-        const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
+        // `from`, `to` and the percentages are valid: the syntax is not matched
+        const result = isSimpleKeyframeSelector(arena, tokens)
+            ? { success: true, errors: [] }
+            : matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
         const parts = splitTokenList(arena, tokens);
         for (const part of parts) {
             trimArray(arena, part);
@@ -345,9 +400,11 @@ function parseSelector(arena, tokens, context, options, errors) {
         }
         tokens.length = write;
     }
-    const result = matchSelectorSyntax(arena, tokens, errors, options, nested);
+    // a selector made of simple selectors is valid, it has no attribute selector and no function
+    const simple = matchSimpleSelector(arena, tokens);
+    const result = simple ? simpleSelectorMatch : matchSelectorSyntax(arena, tokens, errors, options, nested);
     trimArray(arena, tokens);
-    if (result.success) {
+    if (result.success && !simple) {
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             switch (arena.dataTypes[token]) {
@@ -400,7 +457,7 @@ function parseSelector(arena, tokens, context, options, errors) {
             }
         }
     }
-    const node = arena.createRule(EnumToken.RuleNodeType, renderSelector(arena, tokens), tokens, result.success && allowed
+    const node = arena.createRule(EnumToken.RuleNodeType, simple ? renderSimpleSelector(arena, tokens) : renderSelector(arena, tokens), tokens, result.success && allowed
         ? EnumAstNodeStatus.Validated
         : allowed
             ? EnumAstNodeStatus.Invalid
@@ -409,6 +466,13 @@ function parseSelector(arena, tokens, context, options, errors) {
     arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
     return node;
 }
+/**
+ * result of the validation of a simple selector, see {@link matchSimpleSelector}
+ */
+const simpleSelectorMatch = Object.freeze({
+    success: true,
+    errors: Object.freeze([]),
+});
 // options of the rendering of the selector tokens
 const selectorRenderOptions = { minify: false };
 /**
@@ -672,6 +736,31 @@ function addSelectorCodes(count, selectors) {
     selectorOffsets[selectors * 2] = start;
     selectorOffsets[selectors * 2 + 1] = end;
     return selectors + 1;
+}
+/**
+ * selector of a rule made of simple selectors (see {@link matchSimpleSelector}), without the leading and the trailing
+ * whitespace: the string of a single token is used as is, a compound or a complex selector is built without
+ * {@link renderSelector}. a selector list is rendered with {@link renderSelector}: the duplicate selectors are removed
+ * @param arena
+ * @param tokens
+ * @returns the interned string id of the selector
+ */
+function renderSimpleSelector(arena, tokens) {
+    if (tokens.length === 1) {
+        const type = arena.dataTypes[tokens[0]];
+        // rendered as their string by appendSelectorToken()
+        if (type !== EnumToken.PseudoElementTokenType) {
+            return arena.stringValue[tokens[0]];
+        }
+    }
+    selectorBuilder.reset();
+    for (let index = 0; index < tokens.length; index++) {
+        if (arena.dataTypes[tokens[index]] === EnumToken.CommaTokenType) {
+            return renderSelector(arena, tokens);
+        }
+        appendSelectorToken(arena, tokens[index], selectorBuilder);
+    }
+    return arena.internBuilder(selectorBuilder);
 }
 /**
  * selector of a rule: the distinct comma separated selectors, the whitespace around the combinators is removed.

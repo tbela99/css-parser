@@ -89,12 +89,25 @@ var StringDerived;
     StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
 })(StringDerived || (StringDerived = {}));
 /**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes = [];
+/**
  * string of a range of code units
  * @param codes
  * @param start
  * @param end
  */
 function fromCodes(codes, start, end) {
+    const length = end - start;
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+        for (let i = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+        return String.fromCharCode.apply(null, shortCodes);
+    }
     let result = "";
     // String.fromCharCode() with a limited number of arguments
     while (start < end) {

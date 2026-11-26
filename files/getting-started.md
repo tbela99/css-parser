@@ -74,6 +74,9 @@ const result = transformSync('.a { color: #ff0000; width: calc(100px + 20px) }')
 console.debug(result.code); // .a{color:red;width:120px}
 ```
 
+It is also available as a Rust library on crates.io: [`rust-css-parser`](https://crates.io/crates/rust-css-parser)
+(`cargo add rust-css-parser`), see [Rust crate](./rust.md).
+
 ### From NPM
 
 ```shell

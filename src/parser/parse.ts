@@ -223,6 +223,34 @@ function allocateToken(arena: AstArena, tokenizer: Tokenizer, sourceIndex: numbe
 }
 
 /**
+ * allocate a whitespace token
+ * @param arena
+ * @param sourceIndex index of the source in the arena sources table
+ * @param start
+ * @param end
+ */
+function allocateWhitespace(arena: AstArena, sourceIndex: number, start: number, end: number): Token {
+    const item: Token = arena.allocate();
+
+    arena.dataTypes[item] = EnumToken.WhitespaceTokenType;
+    arena.setTokenLocation(item, sourceIndex, start, end);
+    return item;
+}
+
+/**
+ * true if the token ends a statement or a block: the whitespace that precedes it is not significant
+ * @param type
+ */
+function isStatementEnd(type: EnumToken): boolean {
+    return (
+        type === EnumToken.SemiColonTokenType ||
+        type === EnumToken.BlockStartTokenType ||
+        type === EnumToken.BlockEndTokenType ||
+        type === EnumToken.EOFTokenType
+    );
+}
+
+/**
  * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
  * the tokens referenced by the errors or the invalid nodes of the statement are kept
  * @param arena
@@ -240,6 +268,9 @@ function recycleStatementTokens(
     invalidNodes: AstNode[],
     invalidStart: number,
 ): void {
+    // the statement has errors or invalid nodes: the tokens they reference are kept
+    const references: boolean = errors.length > errorStart || invalidNodes.length > invalidStart;
+
     for (let i = 0; i < tokens.length; i++) {
         const token: Token = tokens[i];
 
@@ -250,6 +281,11 @@ function recycleStatementTokens(
             arena.firstChild[token] !== 0 ||
             arena.firstToken[token] !== 0
         ) {
+            continue;
+        }
+
+        if (!references) {
+            arena.recycle(token);
             continue;
         }
 
@@ -958,15 +994,42 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
     arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
     let itemType: EnumToken;
 
+    // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+    // is not allocated. the whitespace that follows a token is allocated when the next token is read
+    let whitespaceStart: number = -1;
+    let whitespaceEnd: number = 0;
+
     // inlined: tokenizer.done()
     while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
-        item = allocateToken(arena, tokenizer, sourceIndex);
         itemType = tokenizer.typ as EnumToken;
 
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
+
+        if (parensMatch === 0) {
+            if (itemType === EnumToken.WhitespaceTokenType) {
+                if (tokens.length > 0) {
+                    whitespaceStart = tokenizer.sta as number;
+                    whitespaceEnd = tokenizer.end as number;
+                }
+
+                continue;
+            }
+
+            if (whitespaceStart !== -1) {
+                if (!isStatementEnd(itemType)) {
+                    item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                    tokens.push(item);
+                    statement.push(item);
+                }
+
+                whitespaceStart = -1;
+            }
+        }
+
+        item = allocateToken(arena, tokenizer, sourceIndex);
 
         if (isBadToken(itemType)) {
             tokens.push(item);
@@ -2171,15 +2234,42 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
     let itemType: EnumToken;
 
+    // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+    // is not allocated. the whitespace that follows a token is allocated when the next token is read
+    let whitespaceStart: number = -1;
+    let whitespaceEnd: number = 0;
+
     // inlined: tokenizer.done()
     while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
-        item = allocateToken(arena, tokenizer, sourceIndex);
         itemType = tokenizer.typ as EnumToken;
 
         stats.bytesIn = tokenizer.bytesIn as number;
         stats.tokensCount++;
+
+        if (parensMatch === 0) {
+            if (itemType === EnumToken.WhitespaceTokenType) {
+                if (tokens.length > 0) {
+                    whitespaceStart = tokenizer.sta as number;
+                    whitespaceEnd = tokenizer.end as number;
+                }
+
+                continue;
+            }
+
+            if (whitespaceStart !== -1) {
+                if (!isStatementEnd(itemType)) {
+                    item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                    tokens.push(item);
+                    statement.push(item);
+                }
+
+                whitespaceStart = -1;
+            }
+        }
+
+        item = allocateToken(arena, tokenizer, sourceIndex);
 
         if (isBadToken(itemType)) {
             tokens.push(item);

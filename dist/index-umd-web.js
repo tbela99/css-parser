@@ -17083,6 +17083,71 @@
         return tokens;
     }
     /**
+     * true if the token is a simple selector without arguments: a type (`a`), an id (`#a`), a class (`.a`), a
+     * pseudo-class (`:hover`) or a pseudo-element (`::before`)
+     * @param type
+     */
+    function isSimpleSelectorToken(type) {
+        return (type === exports.EnumToken.ClassSelectorTokenType ||
+            type === exports.EnumToken.IdenTokenType ||
+            type === exports.EnumToken.PseudoElementTokenType ||
+            type === exports.EnumToken.PseudoClassTokenType ||
+            type === exports.EnumToken.HashTokenType);
+    }
+    /**
+     * match a selector made of simple selectors (see {@link isSimpleSelectorToken}), separated by whitespace (the
+     * descendant combinator) and by commas: `.a:hover`, `.a .b`, `.a, #b`. such a selector is valid: the whitespace
+     * around the commas is removed, the tokens are the tokens produced by {@link matchSelectorSyntax}. the tokens of
+     * another selector are not changed
+     * @param arena
+     * @param tokens
+     * @returns true if the selector is made of simple selectors
+     */
+    function matchSimpleSelector(arena, tokens) {
+        const length = tokens.length;
+        // a simple selector is expected: at the start of the selector and after a comma
+        let expected = true;
+        let commaWhitespace = false;
+        for (let i = 0; i < length; i++) {
+            const type = arena.dataTypes[tokens[i]];
+            if (isSimpleSelectorToken(type)) {
+                expected = false;
+                continue;
+            }
+            if (type === exports.EnumToken.WhitespaceTokenType) {
+                // leading whitespace
+                if (i === 0) {
+                    return false;
+                }
+                // whitespace after a comma or before a comma
+                if (expected || arena.dataTypes[tokens[i + 1]] === exports.EnumToken.CommaTokenType) {
+                    commaWhitespace = true;
+                }
+                continue;
+            }
+            if (type !== exports.EnumToken.CommaTokenType || expected) {
+                return false;
+            }
+            expected = true;
+        }
+        if (expected) {
+            return false;
+        }
+        if (commaWhitespace) {
+            let write = 0;
+            for (let i = 0; i < length; i++) {
+                if (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType &&
+                    (arena.dataTypes[tokens[i - 1]] === exports.EnumToken.CommaTokenType ||
+                        arena.dataTypes[tokens[i + 1]] === exports.EnumToken.CommaTokenType)) {
+                    continue;
+                }
+                tokens[write++] = tokens[i];
+            }
+            tokens.length = write;
+        }
+        return true;
+    }
+    /**
      *
      * @param featureName
      * @returns
@@ -33130,12 +33195,25 @@
         StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
     })(StringDerived || (StringDerived = {}));
     /**
+     * code units of a short string, see {@link fromCodes}
+     */
+    const shortCodes = [];
+    /**
      * string of a range of code units
      * @param codes
      * @param start
      * @param end
      */
     function fromCodes(codes, start, end) {
+        const length = end - start;
+        // a short string: the code units are copied to an array, a subarray is slower to create
+        if (length <= 256) {
+            shortCodes.length = length;
+            for (let i = 0; i < length; i++) {
+                shortCodes[i] = codes[start + i];
+            }
+            return String.fromCharCode.apply(null, shortCodes);
+        }
         let result = "";
         // String.fromCharCode() with a limited number of arguments
         while (start < end) {
@@ -36467,7 +36545,9 @@
             this.unit[id] = 0;
             this.flags[id] = 0;
             this.colorType[id] = 0;
-            this.spans[id] = 0n;
+            // the 32 bits view: no bigint
+            this.spans32[id << 1] = 0;
+            this.spans32[(id << 1) + 1] = 0;
             if (this.errors.size > 0) {
                 this.errors.delete(id);
             }
@@ -41306,7 +41386,30 @@
      */
     const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
     const decoder = new TextDecoder();
-    const nonAscii = /[^\x00-\x7f]/;
+    /**
+     * true if the bytes are ascii. the bytes are read 4 at a time when they are aligned: 5 times faster than a regular
+     * expression on the decoded text
+     * @param bytes
+     */
+    function isAscii(bytes) {
+        const length = bytes.length;
+        let bits = 0;
+        let i = 0;
+        if ((bytes.byteOffset & 3) === 0) {
+            const words = new Uint32Array(bytes.buffer, bytes.byteOffset, length >>> 2);
+            for (let k = 0; k < words.length; k++) {
+                bits |= words[k];
+            }
+            if ((bits & 0x80808080) !== 0) {
+                return false;
+            }
+            i = words.length << 2;
+        }
+        for (; i < length; i++) {
+            bits |= bytes[i];
+        }
+        return (bits & 0x80) === 0;
+    }
     const empty = new Uint8Array(0);
     /**
      * true if the input is an ArrayBuffer or a view of an ArrayBuffer
@@ -41369,7 +41472,7 @@
         const bytes = bytesOf(input);
         const text = decoder.decode(bytes);
         // the text of an ascii input has a character for each byte. the byte order mark is removed by the decoder
-        if (text.length === bytes.length && !nonAscii.test(text)) {
+        if (text.length === bytes.length && isAscii(bytes)) {
             return { codes: bytes, text };
         }
         return { codes: codeUnitsOf(text), text };
@@ -43689,6 +43792,58 @@
         }
     }
     /**
+     * true if the token is a keyframe selector: `from`, `to` or a percentage between 0 and 100
+     * @param arena
+     * @param token
+     */
+    function isKeyframeSelectorToken(arena, token) {
+        if (token === undefined) {
+            return false;
+        }
+        if (arena.dataTypes[token] === exports.EnumToken.PercentageTokenType) {
+            return arena.numericValue[token] >= 0 && arena.numericValue[token] <= 100;
+        }
+        if (arena.dataTypes[token] !== exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        const id = arena.stringValue[token];
+        const length = arena.stringLength(id);
+        // `from` and `to`, case-insensitive
+        return length === 4
+            ? (arena.stringCodeAt(id, 0) | 0x20) === 0x66 &&
+                (arena.stringCodeAt(id, 1) | 0x20) === 0x72 &&
+                (arena.stringCodeAt(id, 2) | 0x20) === 0x6f &&
+                (arena.stringCodeAt(id, 3) | 0x20) === 0x6d
+            : length === 2 && (arena.stringCodeAt(id, 0) | 0x20) === 0x74 && (arena.stringCodeAt(id, 1) | 0x20) === 0x6f;
+    }
+    /**
+     * true if the selector of a keyframe is a list of `from`, `to` and percentages between 0 and 100, separated by commas
+     * and whitespace: it matches the `keyframe-selectors` syntax
+     * @param arena
+     * @param tokens
+     */
+    function isSimpleKeyframeSelector(arena, tokens) {
+        // a keyframe selector is expected
+        let selector = true;
+        let i = 0;
+        for (; i < tokens.length; i++) {
+            const type = arena.dataTypes[tokens[i]];
+            if (type === exports.EnumToken.WhitespaceTokenType) {
+                continue;
+            }
+            if (selector) {
+                if (!isKeyframeSelectorToken(arena, tokens[i])) {
+                    return false;
+                }
+            }
+            else if (type !== exports.EnumToken.CommaTokenType) {
+                return false;
+            }
+            selector = !selector;
+        }
+        return !selector;
+    }
+    /**
      * parse selector
      * @param arena
      * @param tokens
@@ -43700,7 +43855,10 @@
         const contextType = context == null ? null : arena.dataTypes[context];
         splitUnicodeRanges(arena, tokens);
         if (contextType === exports.EnumToken.KeyframesAtRuleNodeType) {
-            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
+            // `from`, `to` and the percentages are valid: the syntax is not matched
+            const result = isSimpleKeyframeSelector(arena, tokens)
+                ? { success: true, errors: [] }
+                : matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
             const parts = splitTokenList(arena, tokens);
             for (const part of parts) {
                 trimArray(arena, part);
@@ -43850,9 +44008,11 @@
             }
             tokens.length = write;
         }
-        const result = matchSelectorSyntax(arena, tokens, errors, options, nested);
+        // a selector made of simple selectors is valid, it has no attribute selector and no function
+        const simple = matchSimpleSelector(arena, tokens);
+        const result = simple ? simpleSelectorMatch : matchSelectorSyntax(arena, tokens, errors, options, nested);
         trimArray(arena, tokens);
-        if (result.success) {
+        if (result.success && !simple) {
             for (let i = 0; i < tokens.length; i++) {
                 const token = tokens[i];
                 switch (arena.dataTypes[token]) {
@@ -43905,7 +44065,7 @@
                 }
             }
         }
-        const node = arena.createRule(exports.EnumToken.RuleNodeType, renderSelector(arena, tokens), tokens, result.success && allowed
+        const node = arena.createRule(exports.EnumToken.RuleNodeType, simple ? renderSimpleSelector(arena, tokens) : renderSelector(arena, tokens), tokens, result.success && allowed
             ? exports.EnumAstNodeStatus.Validated
             : allowed
                 ? exports.EnumAstNodeStatus.Invalid
@@ -43914,6 +44074,13 @@
         arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
         return node;
     }
+    /**
+     * result of the validation of a simple selector, see {@link matchSimpleSelector}
+     */
+    const simpleSelectorMatch = Object.freeze({
+        success: true,
+        errors: Object.freeze([]),
+    });
     // options of the rendering of the selector tokens
     const selectorRenderOptions = { minify: false };
     /**
@@ -44177,6 +44344,31 @@
         selectorOffsets[selectors * 2] = start;
         selectorOffsets[selectors * 2 + 1] = end;
         return selectors + 1;
+    }
+    /**
+     * selector of a rule made of simple selectors (see {@link matchSimpleSelector}), without the leading and the trailing
+     * whitespace: the string of a single token is used as is, a compound or a complex selector is built without
+     * {@link renderSelector}. a selector list is rendered with {@link renderSelector}: the duplicate selectors are removed
+     * @param arena
+     * @param tokens
+     * @returns the interned string id of the selector
+     */
+    function renderSimpleSelector(arena, tokens) {
+        if (tokens.length === 1) {
+            const type = arena.dataTypes[tokens[0]];
+            // rendered as their string by appendSelectorToken()
+            if (type !== exports.EnumToken.PseudoElementTokenType) {
+                return arena.stringValue[tokens[0]];
+            }
+        }
+        selectorBuilder.reset();
+        for (let index = 0; index < tokens.length; index++) {
+            if (arena.dataTypes[tokens[index]] === exports.EnumToken.CommaTokenType) {
+                return renderSelector(arena, tokens);
+            }
+            appendSelectorToken(arena, tokens[index], selectorBuilder);
+        }
+        return arena.internBuilder(selectorBuilder);
     }
     /**
      * selector of a rule: the distinct comma separated selectors, the whitespace around the combinators is removed.
@@ -46453,6 +46645,29 @@
         return item;
     }
     /**
+     * allocate a whitespace token
+     * @param arena
+     * @param sourceIndex index of the source in the arena sources table
+     * @param start
+     * @param end
+     */
+    function allocateWhitespace(arena, sourceIndex, start, end) {
+        const item = arena.allocate();
+        arena.dataTypes[item] = exports.EnumToken.WhitespaceTokenType;
+        arena.setTokenLocation(item, sourceIndex, start, end);
+        return item;
+    }
+    /**
+     * true if the token ends a statement or a block: the whitespace that precedes it is not significant
+     * @param type
+     */
+    function isStatementEnd(type) {
+        return (type === exports.EnumToken.SemiColonTokenType ||
+            type === exports.EnumToken.BlockStartTokenType ||
+            type === exports.EnumToken.BlockEndTokenType ||
+            type === exports.EnumToken.EOFTokenType);
+    }
+    /**
      * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
      * the tokens referenced by the errors or the invalid nodes of the statement are kept
      * @param arena
@@ -46463,6 +46678,8 @@
      * @param invalidStart index of the first invalid node of the statement
      */
     function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes, invalidStart) {
+        // the statement has errors or invalid nodes: the tokens they reference are kept
+        const references = errors.length > errorStart || invalidNodes.length > invalidStart;
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             // already recycled (a token can be recorded twice), attached or holding other tokens
@@ -46470,6 +46687,10 @@
                 arena.parents[token] !== 0 ||
                 arena.firstChild[token] !== 0 ||
                 arena.firstToken[token] !== 0) {
+                continue;
+            }
+            if (!references) {
+                arena.recycle(token);
                 continue;
             }
             let referenced = invalidNodes.indexOf(token, invalidStart) !== -1;
@@ -47011,13 +47232,34 @@
         // the strings of the tokens are ranges of the content of the source
         arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
         let itemType;
+        // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+        // is not allocated. the whitespace that follows a token is allocated when the next token is read
+        let whitespaceStart = -1;
+        let whitespaceEnd = 0;
         // inlined: tokenizer.done()
         while (!(tokenizer.typ === exports.EnumToken.EOF)) {
             tokenizer.next();
-            item = allocateToken(arena, tokenizer, sourceIndex);
             itemType = tokenizer.typ;
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
+            if (parensMatch === 0) {
+                if (itemType === exports.EnumToken.WhitespaceTokenType) {
+                    if (tokens.length > 0) {
+                        whitespaceStart = tokenizer.sta;
+                        whitespaceEnd = tokenizer.end;
+                    }
+                    continue;
+                }
+                if (whitespaceStart !== -1) {
+                    if (!isStatementEnd(itemType)) {
+                        item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                        tokens.push(item);
+                        statement.push(item);
+                    }
+                    whitespaceStart = -1;
+                }
+            }
+            item = allocateToken(arena, tokenizer, sourceIndex);
             if (isBadToken(itemType)) {
                 tokens.push(item);
                 statement.push(item);
@@ -47957,13 +48199,34 @@
         // the strings of the tokens are ranges of the content of the source
         arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
         let itemType;
+        // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+        // is not allocated. the whitespace that follows a token is allocated when the next token is read
+        let whitespaceStart = -1;
+        let whitespaceEnd = 0;
         // inlined: tokenizer.done()
         while (!(tokenizer.typ === exports.EnumToken.EOF)) {
             tokenizer.next();
-            item = allocateToken(arena, tokenizer, sourceIndex);
             itemType = tokenizer.typ;
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
+            if (parensMatch === 0) {
+                if (itemType === exports.EnumToken.WhitespaceTokenType) {
+                    if (tokens.length > 0) {
+                        whitespaceStart = tokenizer.sta;
+                        whitespaceEnd = tokenizer.end;
+                    }
+                    continue;
+                }
+                if (whitespaceStart !== -1) {
+                    if (!isStatementEnd(itemType)) {
+                        item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                        tokens.push(item);
+                        statement.push(item);
+                    }
+                    whitespaceStart = -1;
+                }
+            }
+            item = allocateToken(arena, tokenizer, sourceIndex);
             if (isBadToken(itemType)) {
                 tokens.push(item);
                 statement.push(item);

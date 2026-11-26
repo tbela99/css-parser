@@ -89,4 +89,4 @@ median times and of the output sizes:
   smaller than the output of esbuild.
 
 ------
-[← WebAssembly build](./wasm.md) | [Usage →](./usage.md)
+[← Rust crate](./rust.md) | [Usage →](./usage.md)
