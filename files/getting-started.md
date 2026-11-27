@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Getting started
 
 CSS-Parser is a high-performance, fault-tolerant, and dependency-free all-in-one CSS parsing solution for Node.js and browsers.
 
@@ -19,7 +19,6 @@ Want to see it in action? Try the [CSS-Parser playground](https://tbela99.github
 ## Features
 
 A non-exhaustive list of features is provided below:
-
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
 * **All-in-one CSS parsing solution** for parsing, validation, transformation, and minification.
@@ -47,6 +46,37 @@ A non-exhaustive list of features is provided below:
 
 ## Installation
 
+### Native and WebAssembly builds
+
+The library is also ported to Rust, in two builds with the same API and the same output as the TypeScript library,
+faster:
+
+| Package | Runs in | Speed |
+|---------|---------|-------|
+| [`@tbela99/rust-css-parser-napi`](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) | Node.js on macOS and Linux | up to 2.1x faster than TypeScript |
+| [`@tbela99/rust-css-parser-wasm`](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) | Node.js and the browsers | up to 1.9x faster than TypeScript |
+
+The WebAssembly build is **only 2.5 MB (865 KB gzipped)**, with no native dependency: it runs anywhere WebAssembly
+runs. The native build is compiled from its Rust sources when it is installed (requires the
+[Rust toolchain](https://rustup.rs)).
+
+```shell
+$ npm install @tbela99/rust-css-parser-wasm
+$ npm install @tbela99/rust-css-parser-napi
+```
+
+Switching build only changes the import:
+
+```javascript
+import {transformSync} from '@tbela99/rust-css-parser-wasm';
+
+const result = transformSync('.a { color: #ff0000; width: calc(100px + 20px) }');
+console.debug(result.code); // .a{color:red;width:120px}
+```
+
+It is also available as a Rust library on crates.io: [`rust-css-parser`](https://crates.io/crates/rust-css-parser)
+(`cargo add rust-css-parser`), see [Rust crate](./rust.md).
+
 ### From NPM
 
 ```shell
@@ -65,7 +95,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.1/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.2/web';
 
     const css = `
 
@@ -102,7 +132,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.3.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.2/dist/index-umd-web.js"></script>
 <script>
 
     const css = `
@@ -175,7 +205,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.1/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.2/web';
 
 const css = `
 
@@ -202,7 +232,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.3.1/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.2/dist/index-umd-web.js"></script>
 <script>
 
     const css = `

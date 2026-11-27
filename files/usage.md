@@ -102,6 +102,13 @@ console.debug(result.code);
 
 The parse() and transform() functions accept a string or readable stream as first argument.
 
+The stream is parsed while it is read: a chunk is read when the tokenizer reaches the end of the CSS received so far.
+A token that may continue in the next chunk (an identifier, a number, a string, a comment, ...) is read again once the
+next chunk is received. The chunks can be bytes (UTF-8, a character can be split between two chunks) or text.
+When the size of the stream is known (a file loaded with `{file, asStream: true}`, a response with a
+`Content-Length` and no `Content-Encoding`), the buffers of the parser are allocated once, like for an `ArrayBuffer`.
+Otherwise they grow as the stream is read.
+
 ```ts
 import {parse} from '@tbela99/css-parser';
 import {Readable} from "node:stream";
@@ -598,7 +605,7 @@ The parser provides settings that let you choose the balance between minificatio
 
 However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
 
-The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
+The example below demonstrates a balanced configuration that improves execution speed by disabling the expensive minification features and keeping the inexpensive ones.
 
 ```ts
 
@@ -606,23 +613,20 @@ import {transformSync} from "@tbela99/css-parser";
 
 const css = `...`;
 
-const result = transformSync({
-                  input: css,
-                  minify: false,
-                  beautify: false,
-                  removeEmpty: true,
-                  removeComments: true,
-                  convertColor: true,
-                  minifyValues: true,
-                });
+// the ast is not minified, the rules are not merged
+const result = transformSync(css, {fastMode: true});
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
 
+`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.None`: the ast is not minified, the rules are not
+merged, the values are minified when they are rendered. An option given explicitly takes precedence: `{fastMode: true,
+minify: true}` minifies the ast without merging the rules.
+
 The measures of both settings, and a comparison with lightningcss and esbuild, are on the
 [Performance](./performance.md) page.
 
 ------
-[← Performance](./performance.md) | [Architecture →](./Guide.Architecture.html) 
+[← Performance](./Guide.Performance.html) | [Architecture →](./Guide.Architecture.html) 
 

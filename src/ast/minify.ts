@@ -14,7 +14,7 @@ import type {
     RenderOptions,
     Token,
 } from "../@types/index.d.ts";
-import { EnumAstNodeStatus, EnumToken } from "./types.ts";
+import { EnumAstNodeStatus, EnumToken, MergeRulesEnum } from "./types.ts";
 import type { AstArena } from "./arena.ts";
 import { StringBuilder, StringFlag, StringSource } from "./strings.ts";
 import { isFunction, isIdent, isIdentStart, isWhiteSpace } from "../syntax/syntax.ts";
@@ -425,6 +425,23 @@ function factorSelector(optimized: OptimizedSelector): string | null {
  *
  * @private
  */
+/**
+ * Merge the adjacent rules without minifying the ast: `minify: false` with {@link ParserOptions.mergeRules}. The style
+ * rules that have the same selector, the keyframes rules that have the same selector, the at-rules that have the same
+ * name and prelude (not `@font-face`) and, depending on `mergeRules`, the rules that share declarations are merged. Of
+ * the `@keyframes` that have the same name, the last one is kept. The other minifications are not applied
+ * @param arena
+ * @param ast
+ * @param options
+ *
+ * @private
+ */
+export function mergeRules(arena: AstArena, ast: AstNode, options: ParserOptions): AstNode {
+    return doMinify(arena, ast, { ...options, nestingRules: false, optimizeSelectors: false }, true, undefined, false, {
+        mergeOnly: true,
+    });
+}
+
 function doMinify(
     arena: AstArena,
     ast: AstNode,
@@ -499,7 +516,7 @@ function doMinify(
 
                 // there is no early return: the result that precedes the conditional rules is moved after them.
                 // the conditional rules are never removed
-                if (equalsIgnoreCase(nam, "function")) {
+                if (!context.mergeOnly && equalsIgnoreCase(nam, "function")) {
                     moveResult(arena, node);
                 }
             }
@@ -534,7 +551,8 @@ function doMinify(
                     continue;
                 }
 
-                let k: AstNode = arena.firstChild[node];
+                // merge only (see mergeRules()): the declarations are not removed
+                let k: AstNode = context.mergeOnly ? 0 : arena.firstChild[node];
 
                 while (k !== 0) {
                     const next: AstNode = arena.nextSibling[k];
@@ -576,7 +594,9 @@ function doMinify(
                         ? ""
                         : renderValue(arena, curr));
 
-                if (nam === "apply") {
+                if (context.mergeOnly) {
+                    // merge only (see mergeRules()): the preludes are not minified
+                } else if (nam === "apply") {
                     // `@apply --mixin()` is equivalent to `@apply --mixin`
                     minifyApplyPrelude(arena, node);
                 } else if (nam === "media") {
@@ -625,10 +645,14 @@ function doMinify(
                             trimArray(arena, tokens).reduce(renderPrelude, ""),
                         );
                     }
-                } else if (
+                }
+
+                if (
                     arena.dataTypes[ast] === nodeType &&
                     arena.name[ast] === arena.name[node] &&
-                    arena.stringValue[ast] === arena.stringValue[node]
+                    arena.stringValue[ast] === arena.stringValue[node] &&
+                    // the at-rules handled above are not replaced when the ast is minified
+                    (context.mergeOnly || (nam !== "apply" && nam !== "media" && !(nam === "import" && tokens != null)))
                 ) {
                     // the node is replaced by its children
                     cursor = arena.firstChild[node] || arena.nextSibling[node];
@@ -667,8 +691,11 @@ function doMinify(
                 continue;
             } else if (nodeType === EnumToken.RuleNodeType) {
                 // a single selector that does not end with a combinator is not reduced (see isSimpleSelector()): the
-                // selector is not read
-                if (!isSimpleSelector(arena, arena.name[node])) {
+                // selector is not read. the nesting reads the reduced selectors: optimizeSelectors only applies without it
+                if (
+                    (options.optimizeSelectors !== false || options.nestingRules) &&
+                    !isSimpleSelector(arena, arena.name[node])
+                ) {
                     reduceRuleSelector(arena, node);
                 }
 
@@ -890,6 +917,8 @@ function doMinify(
 
                                 continue;
                             } else if (
+                                options.mergeRules !== false &&
+                                options.mergeRules !== MergeRulesEnum.None &&
                                 nodeType === previousType &&
                                 [EnumToken.KeyframesRuleNodeType, EnumToken.RuleNodeType].includes(nodeType)
                             ) {
@@ -939,6 +968,7 @@ function doMinify(
 
             if (
                 !nestingContent &&
+                !context.mergeOnly &&
                 previous != null &&
                 arena.dataTypes[previous] === EnumToken.RuleNodeType &&
                 arena.stringIndexOf(arena.name[previous], 0x26) !== -1
@@ -965,6 +995,7 @@ function doMinify(
 
         if (
             !nestingContent &&
+            !context.mergeOnly &&
             node != null &&
             arena.dataTypes[node] === EnumToken.RuleNodeType &&
             arena.stringIndexOf(arena.name[node], 0x26) !== -1
@@ -1717,36 +1748,42 @@ function hasAtRuleStatement(arena: AstArena, node: AstNode): boolean {
  *
  * @private
  */
-function diff(
-    arena: AstArena,
-    n1: AstRule,
-    n2: AstRule,
-    options: ParserOptions,
-    context: {
-        [key: string]: any;
-    },
-): { result: AstRule | null; node1: AstRule; node2: AstRule } | null {
-    // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
-    // the declarations that follow it override them
-    if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
-        return null;
+/**
+ * the number of declarations of a rule: its children that are not comments
+ * @param arena
+ * @param node
+ */
+function declarationCount(arena: AstArena, node: AstNode): number {
+    let count: number = 0;
+
+    for (let child: AstNode = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+        if (arena.dataTypes[child] !== EnumToken.CommentNodeType) {
+            count++;
+        }
     }
 
-    if (!("cache" in options)) {
-        options.cache = new Map<AstNode, number>();
+    return count;
+}
+
+/**
+ * clear the matched flag of the children of a rule
+ * @param arena
+ * @param node
+ */
+function clearMatched(arena: AstArena, node: AstNode): void {
+    for (let child: AstNode = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+        arena.flags[child] &= ~EnumAstNodeStatus.Matched;
     }
+}
 
-    let node1: AstRule = n1;
-    let node2: AstRule = n2;
-    let exchanged: boolean = false;
-
-    if (arena.childCount(node1) > arena.childCount(node2)) {
-        const t: AstRule = node1;
-        node1 = node2;
-        node2 = t;
-        exchanged = true;
-    }
-
+/**
+ * the selectors of both rules have the same vendor prefixes: the rules that do not are not merged (a browser drops a
+ * selector list that contains a pseudo class with an unknown prefix)
+ * @param arena
+ * @param node1
+ * @param node2
+ */
+function samePrefixes(arena: AstArena, node1: AstRule, node2: AstRule): boolean {
     const raw1: RawSelectorTokens = <RawSelectorTokens>arena.raw.get(node1);
     const raw2: RawSelectorTokens = <RawSelectorTokens>arena.raw.get(node2);
 
@@ -1759,12 +1796,12 @@ function diff(
             raw2 == null ? selectorPrefixes(arena, arena.name[node2]) : rawSelectorPrefixes(raw2);
 
         if (prefixes1.size !== prefixes2.size) {
-            return null;
+            return false;
         }
 
         for (const prefix of prefixes1) {
             if (!prefixes2.has(prefix)) {
-                return null;
+                return false;
             }
         }
     } else {
@@ -1816,14 +1853,53 @@ function diff(
         }
 
         if (prefixes1.size !== prefixes2.size) {
-            return null;
+            return false;
         }
 
         for (const prefix of prefixes1) {
             if (!prefixes2.has(prefix)) {
-                return null;
+                return false;
             }
         }
+    }
+
+    return true;
+}
+
+function diff(
+    arena: AstArena,
+    n1: AstRule,
+    n2: AstRule,
+    options: ParserOptions,
+    context: {
+        [key: string]: any;
+    },
+): { result: AstRule | null; node1: AstRule; node2: AstRule } | null {
+    // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
+    // the declarations that follow it override them
+    if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
+        return null;
+    }
+
+    // only the rules that have the same declarations are merged: the rules that have a different number of
+    // declarations are not compared
+    if (options.mergeRules === MergeRulesEnum.Identical && declarationCount(arena, n1) !== declarationCount(arena, n2)) {
+        return null;
+    }
+
+    if (!("cache" in options)) {
+        options.cache = new Map<AstNode, number>();
+    }
+
+    let node1: AstRule = n1;
+    let node2: AstRule = n2;
+    let exchanged: boolean = false;
+
+    if (arena.childCount(node1) > arena.childCount(node2)) {
+        const t: AstRule = node1;
+        node1 = node2;
+        node2 = t;
+        exchanged = true;
     }
 
     // match the declarations of both rules, from the last to the first
@@ -1849,9 +1925,34 @@ function diff(
                 break;
             }
         }
+
+        // a declaration without a match: the rules are not identical
+        if (options.mergeRules === MergeRulesEnum.Identical && !(arena.flags[child1] & EnumAstNodeStatus.Matched)) {
+            clearMatched(arena, node1);
+            clearMatched(arena, node2);
+            return null;
+        }
     }
 
     if (matches === 0 && (arena.firstChild[node1] !== 0 || arena.firstChild[node2] !== 0)) {
+        return null;
+    }
+
+    // every declaration of both rules is matched: the merged rule replaces both rules, it is always smaller, the sizes
+    // are not computed
+    const identical: boolean = matches === declarationCount(arena, node1) && matches === declarationCount(arena, node2);
+
+    if (!identical && options.mergeRules === MergeRulesEnum.Identical) {
+        // the rules are not merged: the matched declarations are released
+        clearMatched(arena, node1);
+        clearMatched(arena, node2);
+        return null;
+    }
+
+    // the vendor prefixes are compared once the rules share declarations
+    if (!samePrefixes(arena, node1, node2)) {
+        clearMatched(arena, node1);
+        clearMatched(arena, node2);
         return null;
     }
 
@@ -1873,7 +1974,7 @@ function diff(
     };
 
     // size of the original nodes
-    const size: number = renderedSize(n1, true) + renderedSize(n2, true);
+    const size: number = identical ? 0 : renderedSize(n1, true) + renderedSize(n2, true);
 
     // the shared declarations are moved into the result node
     const result: AstRule = arena.cloneNode(node1);
@@ -1931,7 +2032,9 @@ function diff(
     // the merge is kept when the output is smaller, or when it has the same size and removes a rule (an emptied rule is
     // removed, its size is 0). the other rule keeps its selector, which is repeated in the merged selector: the merge of
     // `html{margin:0}` and `body,div,...{margin:0;font:inherit}` is larger than the rules
-    const mergedSize: number = renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
+    const mergedSize: number = identical
+        ? 0
+        : renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
 
     if (
         size < mergedSize ||
@@ -1962,7 +2065,8 @@ function diff(
         arena.optimized.set(result, null);
     }
 
-    const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
+    const optimized =
+        options.optimizeSelectors === false ? null : optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
 
     if (optimized?.match) {
         const sel: string | null = factorSelector(optimized);
@@ -2412,9 +2516,14 @@ function readSelector(arena: AstArena, id: number): number {
  * @param id selector string id
  */
 function isSimpleSelector(arena: AstArena, id: number): boolean {
+    const previousSelectorArena: AstArena | null = selectorArena;
     selectorArena = arena;
 
-    return arena.stringFlagId(id, StringFlag.SimpleSelector, computeSimpleSelector);
+    const simple: boolean = arena.stringFlagId(id, StringFlag.SimpleSelector, computeSimpleSelector);
+
+    // the arena is not kept after the minification: the previous arena is restored (a nested call)
+    selectorArena = previousSelectorArena;
+    return simple;
 }
 
 /**
@@ -2533,9 +2642,15 @@ function hasVendorPrefix(id: number): boolean {
  */
 function selectorPrefixes(arena: AstArena, id: number): Set<string> {
     // the selectors without `:-` are skipped: computed once per string id
+    const previousSelectorArena: AstArena | null = selectorArena;
     selectorArena = arena;
 
-    if (!arena.stringFlagId(id, StringFlag.VendorPrefix, hasVendorPrefix)) {
+    const prefixed: boolean = arena.stringFlagId(id, StringFlag.VendorPrefix, hasVendorPrefix);
+
+    // the arena is not kept after the minification: the previous arena is restored (a nested call)
+    selectorArena = previousSelectorArena;
+
+    if (!prefixed) {
         return emptyPrefixes;
     }
 

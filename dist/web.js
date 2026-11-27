@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { doParse, doParseSync } from './parser/parse.js';
@@ -11,9 +11,9 @@ import { doRender } from './printer/render.js';
 export { renderValue } from './printer/render.js';
 import { TransformResult, RenderResult } from './printer/result.js';
 import { ModuleScopeEnumOptions } from './ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
-import { isCssInput } from './parser/input.js';
+import { setStreamSize, responseSize, isCssInput } from './parser/input.js';
 import { matchUrl, resolve, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './parser/source.js';
@@ -25,6 +25,8 @@ export { Arena, AstArena, TokenField, arenaColumns } from './ast/arena.js';
 export { ARENA, ARENAID, AstArenaNode } from './ast/arena-node.js';
 export { PropertyList } from './parser/declaration/list.js';
 export { SourceMap } from './printer/sourcemap.js';
+export { ValidationTokenEnum } from './validation/parser/typedef.js';
+export { LOC } from './syntax/constants.js';
 export { FeatureWalkMode } from './ast/features/type.js';
 export { parseSyntax } from './validation/parser/parse.js';
 export { version } from './version.js';
@@ -69,7 +71,10 @@ async function load(url, currentDirectory = ".", responseType = false) {
         if (responseType === ResponseType.JSON) {
             return response.json();
         }
-        return responseType === ResponseType.ReadableStream ? response.body : response.text();
+        // the size of the body: the parser allocates its buffers once
+        return responseType === ResponseType.ReadableStream
+            ? setStreamSize(response.body, responseSize(response))
+            : response.text();
     });
 }
 /**
@@ -206,7 +211,8 @@ function transformSync(...args) {
         validateSyncArguments(options);
     }
     // the options of the caller are not modified: they may be reused
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     const parseResult = parseSyncInput(stream, options);
     let mapping = null;
@@ -353,7 +359,8 @@ async function transform(...args) {
             stream = input;
         }
     }
-    options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
     const startTime = performance.now();
     return parseInput(stream, options).then((parseResult) => {
         let mapping = null;

@@ -6,24 +6,23 @@ import type {
 } from "./visitor.d.ts";
 import type { AstAtRule, AstDeclaration, AstNode, AstRule, AstStyleSheet } from "./ast.d.ts";
 import { SourceMap } from "../printer/sourcemap.ts";
-import type { PropertyListOptions } from "./parse.d.ts";
-import { EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
+import type { ParseInfo, PropertyListOptions } from "./parse.d.ts";
+import { ColorType, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../ast/types.ts";
 import type { Token } from "./token.d.ts";
 import type { AstArenaNode } from "../ast/arena-node.ts";
 import { FeatureWalkMode } from "../ast/features/type.ts";
-import { ValidationToken } from "../validation/parser/types";
+import type { ValidationToken } from "../validation/parser/types.d.ts";
 import { SourceFile } from "../parser/source.ts";
 import type { CssInput } from "../parser/input.ts";
 import { ResponseType } from "../types.ts";
 import type { AstArena } from "../ast/arena.ts";
 
-export * from "./ast.d.ts";
-export * from "./token.d.ts";
-export * from "./shorthand.d.ts";
-export * from "./config.d.ts";
-export * from "./visitor.d.ts";
-export * from "./walker.d.ts";
-export * from "./parse.d.ts";
+export type * from "./ast.d.ts";
+export type * from "./token.d.ts";
+export type * from "./shorthand.d.ts";
+export type * from "./visitor.d.ts";
+export type * from "./walker.d.ts";
+export type * from "./parse.d.ts";
 
 /**
  * Error description
@@ -138,6 +137,53 @@ export interface MinifyOptions {
      * Generate nested rules
      */
     nestingRules?: boolean;
+    /**
+     * Merge the adjacent rules ({@link MergeRulesEnum}, `true` is a shortcut for {@link MergeRulesEnum.All}, `false`
+     * for {@link MergeRulesEnum.None}).
+     *
+     * - {@link MergeRulesEnum.All}: the rules that share declarations are merged when the output is smaller
+     * - {@link MergeRulesEnum.Identical}: only the rules that have the same declarations are merged, the size of the
+     *   output is not computed: `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     * - {@link MergeRulesEnum.None}: the rules that have different selectors are not merged
+     *
+     * The default is {@link MergeRulesEnum.All} when the ast is minified, {@link MergeRulesEnum.None} otherwise. With
+     * `minify: false`, {@link MergeRulesEnum.Identical} and {@link MergeRulesEnum.All} merge the rules without
+     * minifying the ast: the adjacent rules and keyframes rules that have the same selector and the adjacent at-rules
+     * that have the same prelude are merged (`@font-face` is not merged), the last `@keyframes` of a name is kept, the
+     * rules that have different selectors are merged as above. The other minifications are not applied.
+     *
+     * ```ts
+     * import {transformSync, MergeRulesEnum} from '@tbela99/css-parser';
+     *
+     * // the adjacent rules that have the same declarations are merged, the ast is not minified
+     * const result = transformSync(css, {minify: false, mergeRules: MergeRulesEnum.Identical});
+     * ```
+     */
+    mergeRules?: boolean | MergeRulesEnum;
+    /**
+     * Fast mode: the ast is not minified and the rules are not merged, the values are minified when they are
+     * rendered. The output is larger and the minification is faster. It sets the default value of these options, an option given
+     * explicitly takes precedence:
+     *
+     * ```ts
+     * {
+     *     minify: false,
+     *     mergeRules: MergeRulesEnum.None,
+     * }
+     * ```
+     *
+     * ```ts
+     * import {transformSync} from '@tbela99/css-parser';
+     *
+     * const result = transformSync(css, {fastMode: true});
+     * ```
+     */
+    fastMode?: boolean;
+    /**
+     * Optimize the selectors (default `true`): remove the redundant selectors, factor the selectors with `:is()`.
+     * `false` only applies when {@link nestingRules} is `false`: the nesting of the rules reads the optimized selectors.
+     */
+    optimizeSelectors?: boolean;
     /**
      * Remove duplicate declarations from the same rule. if passed as a string array, duplicated declarations are removed, except for those in the array
      *
@@ -356,7 +402,10 @@ export declare interface ModuleSyncOptions {
     generateScopedName?: (localName: string, filePath: string, pattern: string, hashLength?: number) => string;
 }
 
-export declare interface ModuleAsyncOptions extends ModuleSyncOptions {
+/**
+ * CSS modules options of the asynchronous functions
+ */
+export declare interface ModuleAsyncOptions extends Omit<ModuleSyncOptions, "generateScopedName"> {
     /**
      * The pattern used to generate scoped names. the supported placeholders are:
      * - name: the file base name without the extension
@@ -590,7 +639,7 @@ export declare interface ParserSyncOptions
      * Node visitor
      * {@link VisitorSyncNodeMap | VisitorSyncNodeMap[]}
      */
-    visitor?: GenericVisitorAstNodeSyncHandlerMap<T> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
+    visitor?: GenericVisitorAstNodeSyncHandlerMap<any> | VisitorSyncNodeMap | VisitorSyncNodeMap[];
     /**
      * Abort signal
      *
@@ -632,7 +681,7 @@ export declare interface ParserSyncOptions
 /**
  * Parser options
  */
-export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOptions {
+export declare interface ParserOptions extends Omit<ParserSyncOptions, "visitor">, ModuleAsyncOptions {
     /**
      * Resolve import
      */
@@ -656,8 +705,8 @@ export declare interface ParserOptions extends ParserSyncOptions, ModuleAsyncOpt
      * {@link VisitorNodeMap | VisitorNodeMap[]}
      */
     visitor?:
-        | GenericVisitorAstNodeSyncHandlerMap<T>
-        | GenericVisitorAstNodeHandlerMap<T>
+        | GenericVisitorAstNodeSyncHandlerMap<any>
+        | GenericVisitorAstNodeHandlerMap<any>
         | VisitorNodeMap
         | VisitorNodeMap[];
 }

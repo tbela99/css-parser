@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { PropertySet } from './set.js';
@@ -97,7 +97,8 @@ class PropertyList {
      */
     options = { removeDuplicateDeclarations: true, computeShorthand: true };
     /**
-     * declarations
+     * declarations, by property name
+     * @ignore
      */
     declarations;
     /**
@@ -114,8 +115,8 @@ class PropertyList {
      */
     descriptors;
     /**
-     *
-     * @param arena
+     * create an empty declaration list
+     * @param arena the arena the declarations are stored in
      * @param options
      * @param memo keys shared by the lists that use the same arena
      * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
@@ -294,6 +295,8 @@ class PropertyList {
         return this;
     }
     /**
+     * Normalize the values of a declaration with the mapping of its property: the values are reordered by the patterns
+     * of the mapping, the keywords are replaced by their mapped value
      *
      * @param declaration
      * @param mapping
@@ -358,7 +361,7 @@ class PropertyList {
         }
     }
     /**
-     *
+     * iterate over the declarations, the shorthands are expanded into their declarations
      * @returns
      */
     [Symbol.iterator]() {

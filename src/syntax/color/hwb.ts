@@ -109,13 +109,21 @@ export function hwbToken(arena: AstArena, values: number[]): Token {
     return arena.createColor("hwb", ColorType.HWB, chi);
 }
 
-export function rgb2hwbvalues(arena: AstArena, token: Token): number[] {
-    const values = getColorComponents(arena, token)!.map((t: Token, index: number): number => {
+export function rgb2hwbvalues(arena: AstArena, token: Token): number[] | null {
+    const components: Token[] | null = getColorComponents(arena, token);
+
+    // the components cannot be computed: var(), ...
+    if (components == null) {
+        return null;
+    }
+
+    const values = components.map((t: Token, index: number): number => {
         if (index === 3) {
             return getNumber(arena, t);
         }
 
-        return getNumber(arena, t) / 255;
+        // the components are from 0 to 255: 100% is 255
+        return ((arena.dataTypes[t] === EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, t)) / 255;
     }) as [number, number, number, number];
 
     // @ts-ignore

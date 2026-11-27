@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';
@@ -271,6 +271,10 @@ class Arena {
      * the high word holds the 24 high bits of the start position and the source
      */
     spans32;
+    /**
+     * create an empty arena
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
+     */
     constructor(size = 4096) {
         this.dataTypes = new Uint8Array(size);
         this.capacity = size;
@@ -335,6 +339,9 @@ class Arena {
         arena.importProperties(properties, transferables);
         return arena;
     }
+    /**
+     * Allocate a node or a token: a released id is reused, the columns grow when the arena is full. Returns the new id
+     */
     allocate() {
         let id = this.freeList;
         if (id !== 0) {
@@ -362,7 +369,9 @@ class Arena {
         this.unit[id] = 0;
         this.flags[id] = 0;
         this.colorType[id] = 0;
-        this.spans[id] = 0n;
+        // the 32 bits view: no bigint
+        this.spans32[id << 1] = 0;
+        this.spans32[(id << 1) + 1] = 0;
         if (this.errors.size > 0) {
             this.errors.delete(id);
         }
@@ -404,6 +413,14 @@ class Arena {
      */
     setSourceText(source, text, codes = null) {
         this.stringTable.setText(source, text, codes);
+    }
+    /**
+     * code unit of the text of a source, NaN after its end. no string is created
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    sourceCodeAt(source, offset) {
+        return this.stringTable.sourceCodeAt(source, offset);
     }
     /**
      * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
@@ -491,6 +508,7 @@ class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string
+     * @ignore
      */
     stringFlag(id, flag, compute) {
         return this.stringTable.flag(id, flag, compute);
@@ -500,6 +518,7 @@ class Arena {
      * @param id
      * @param flag
      * @param compute computes the property from the string id
+     * @ignore
      */
     stringFlagId(id, flag, compute) {
         return this.stringTable.flagId(id, flag, compute);
@@ -509,6 +528,7 @@ class Arena {
      * @param id
      * @param slot
      * @param compute computes the value from the string id
+     * @ignore
      */
     stringDerived(id, slot, compute) {
         return this.stringTable.derived(id, slot, compute);
@@ -546,6 +566,7 @@ class Arena {
         return this.stringTable.epoch;
     }
     /**
+     * Type of a node or a token, see {@link EnumToken}
      *
      * @param id
      */
@@ -560,6 +581,7 @@ class Arena {
         return id == null ? null : this.dataTypes[id];
     }
     /**
+     * Set the type of a node or a token, see {@link EnumToken}
      *
      * @param id
      * @param type
@@ -568,6 +590,7 @@ class Arena {
         this.dataTypes[id] = type;
     }
     /**
+     * Set the name of a node or a token: `nameId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param nameId
@@ -576,6 +599,7 @@ class Arena {
         this.name[id] = nameId;
     }
     /**
+     * Name of a node or a token: the name of an at-rule, a declaration, a function, ...
      *
      * @param id
      */
@@ -583,6 +607,7 @@ class Arena {
         return this.resolveString(this.name[id]) ?? null;
     }
     /**
+     * Set the value of a node or a token: `valueId` is a string table id, see {@link AstArena.internString}
      *
      * @param id
      * @param valueId
@@ -591,6 +616,7 @@ class Arena {
         this.stringValue[id] = valueId;
     }
     /**
+     * Value of a node or a token: the value of an identifier, a string, a hash, ...
      *
      * @param id
      */
@@ -598,6 +624,7 @@ class Arena {
         return this.resolveString(this.stringValue[id]) ?? null;
     }
     /**
+     * Set the numeric value of a token
      *
      * @param id
      * @param numericValue
@@ -606,6 +633,7 @@ class Arena {
         this.numericValue[id] = numericValue;
     }
     /**
+     * Set the unit of a dimension token: `unit` is a string table id
      *
      * @param id
      * @param unit
@@ -614,6 +642,7 @@ class Arena {
         this.unit[id] = unit;
     }
     /**
+     * Unit of a dimension token
      *
      * @param id
      */
@@ -621,6 +650,7 @@ class Arena {
         return this.resolveString(this.unit[id]) ?? null;
     }
     /**
+     * Numeric value of a token: number, dimension, percentage, ...
      *
      * @param id
      */
@@ -628,6 +658,8 @@ class Arena {
         return this.numericValue[id];
     }
     /**
+     * Set the parent id of a node. The node is not moved: use {@link AstArena.appendChild} or {@link
+     * AstArena.insertBefore} to move it
      *
      * @param id
      * @param parentId
@@ -710,6 +742,7 @@ class Arena {
         }
     }
     /**
+     * Last child of a node. 0 when the node has no children
      *
      * @param id
      */
@@ -792,6 +825,7 @@ class Arena {
         }
     }
     /**
+     * Set the color type of a color token, see {@link ColorType}
      *
      * @param id
      * @param colorType
@@ -800,6 +834,7 @@ class Arena {
         this.colorType[id] = colorType;
     }
     /**
+     * Color type of a color token, see {@link ColorType}
      *
      * @param id
      */
@@ -807,6 +842,7 @@ class Arena {
         return this.colorType[id];
     }
     /**
+     * Replace the flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flags
@@ -815,6 +851,7 @@ class Arena {
         this.flags[id] = flags;
     }
     /**
+     * Flags of a node, see {@link EnumAstNodeStatus}
      *
      * @param id
      */
@@ -822,6 +859,7 @@ class Arena {
         return this.flags[id];
     }
     /**
+     * `true` when a node has all the given flags, see {@link EnumAstNodeStatus}
      *
      * @param id
      * @param flag
@@ -830,6 +868,7 @@ class Arena {
         return (this.flags[id] & flag) === flag;
     }
     /**
+     * The child of a node at a position (0 based). null when the position is out of range
      *
      * @param id
      * @param index
@@ -951,6 +990,7 @@ class Arena {
         this.appendTokenList(this.fieldList(id, field), tokens);
     }
     /**
+     * Replace the tokens of the left hand side of a structured token
      *
      * @param id
      * @param children
@@ -960,6 +1000,7 @@ class Arena {
         this.setTokenList(this.fieldList(id, TokenField.L), children);
     }
     /**
+     * Tokens of the left hand side of a structured token (numerator of a fraction, ...). null when it is not set
      *
      * @param id
      */
@@ -967,15 +1008,17 @@ class Arena {
         return this.getChildAt(id, TokenField.L) == null ? null : this.fieldTokens(id, TokenField.L);
     }
     /**
+     * Replace the tokens of the right hand side of a structured token. null removes them
      *
-     * @param id
-     * @param rightId
+     * @param id the structured token
+     * @param rightId the tokens, or null
      */
     setRight(id, ...rightId) {
         // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
         this.setTokenList(this.fieldList(id, TokenField.R), rightId == null || rightId[0] == null ? [] : rightId);
     }
     /**
+     * Tokens of the right hand side of a structured token (denominator of a fraction, ...). null when it is not set
      *
      * @param id
      */
@@ -983,6 +1026,7 @@ class Arena {
         return this.getChildAt(id, TokenField.R) == null ? null : this.fieldTokens(id, TokenField.R);
     }
     /**
+     * Set the operator token of a structured token
      *
      * @param id
      * @param opId
@@ -992,6 +1036,7 @@ class Arena {
         this.setTokenList(this.fieldList(id, TokenField.Op), [opId]);
     }
     /**
+     * Operator token of a structured token: the operator of a binary expression, ...
      *
      * @param id
      */
@@ -999,6 +1044,7 @@ class Arena {
         return this.field(id, TokenField.Op);
     }
     /**
+     * Set the second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      * @param op2Id
@@ -1008,6 +1054,7 @@ class Arena {
         this.setTokenList(this.fieldList(id, TokenField.Op2), [op2Id]);
     }
     /**
+     * Second operator token of a structured token: the second operator of a media range query
      *
      * @param id
      */
@@ -1015,6 +1062,7 @@ class Arena {
         return this.field(id, TokenField.Op2);
     }
     /**
+     * Set the location of a node or a token: the id of its source file and its start and end offsets
      *
      * @param id
      * @param sourceId
@@ -1043,6 +1091,7 @@ class Arena {
         this.spans32[t + 1] = this.spans32[s + 1];
     }
     /**
+     * Id of the source file of a node or a token, see {@link getSpanStart} and {@link getSpanEnd}
      *
      * @param id
      */
@@ -1053,6 +1102,7 @@ class Arena {
         return Number((this.spans[id] >> 56n) & 0xffn);
     }
     /**
+     * Start offset of a node or a token in its source file
      *
      * @param id
      */
@@ -1065,6 +1115,7 @@ class Arena {
     }
     // ---- spans ---------------------------------------------------------------------
     /**
+     * Set the start offset of a node or a token in its source file
      *
      * @param id
      * @param start
@@ -1073,6 +1124,7 @@ class Arena {
         this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
     }
     /**
+     * End offset of a node or a token in its source file
      *
      * @param id
      */
@@ -1083,6 +1135,7 @@ class Arena {
         return Number(this.spans[id] & 0xfffffffn);
     }
     /**
+     * Set the end offset of a node or a token in its source file
      *
      * @param id
      * @param end
@@ -1091,6 +1144,7 @@ class Arena {
         this.setSpan(id, this.getSourceId(id), this.getSpanStart(id), end);
     }
     /**
+     * Parent of a node. 0 when the node has no parent
      *
      * @param id
      */
@@ -1098,6 +1152,7 @@ class Arena {
         return this.parents[id];
     }
     /**
+     * The string of a string table id. The string is created the first time it is read
      *
      * @param id
      */
@@ -1440,6 +1495,7 @@ class Arena {
         return result;
     }
     /**
+     * The first child of a node for which the predicate returns `true`. null when there is none
      *
      * @param id
      * @param predicate
@@ -1535,6 +1591,7 @@ class Arena {
         return count;
     }
     /**
+     * Replace the children of a node
      *
      * @param id
      * @param children
@@ -1561,6 +1618,7 @@ class Arena {
         this.appendChildList(id, children);
     }
     /**
+     * Replace the tokens of a node or a token
      *
      * @param id
      * @param children
@@ -1610,6 +1668,7 @@ class Arena {
         }
     }
     /**
+     * Append children to a node
      *
      * @param id
      * @param children
@@ -1648,6 +1707,7 @@ class Arena {
         }
     }
     /**
+     * Append tokens to a node or a token
      *
      * @param id
      * @param children
@@ -1752,6 +1812,8 @@ class Arena {
         }
     }
     /**
+     * Compare the name (`"nam"`) or the value (`"val"`) of a node with a string, ignoring the case. The string of the
+     * node is not created
      *
      * @param node
      * @param key
@@ -1762,6 +1824,8 @@ class Arena {
         return this.stringTable.equalsIgnoreCase(key === "nam" ? this.name[node] : this.stringValue[node], string);
     }
     /**
+     * `true` when the name (`"nam"`) or the value (`"val"`) of a node starts with a string. The string of the node is
+     * not created
      *
      * @param node
      * @param key
@@ -1772,6 +1836,7 @@ class Arena {
         return this.stringTable.startsWith(key === "nam" ? this.name[node] : this.stringValue[node], string);
     }
     /**
+     * Grow the columns of the arena so they hold `newSize` ids. The columns are never shrunk
      *
      * @param newSize
      */
@@ -2039,6 +2104,7 @@ class Arena {
         return this.compact(errors);
     }
     /**
+     * Set the validation errors of a node. null or an empty list removes them
      *
      * @param id
      * @param errors
@@ -2053,6 +2119,7 @@ class Arena {
         }
     }
     /**
+     * Validation errors of a node. null when the node has no errors
      *
      * @param id
      */
@@ -2163,8 +2230,8 @@ class AstArena extends Arena {
      */
     inputLengths = [];
     /**
-     *
-     * @param size
+     * create an arena that holds an empty stylesheet
+     * @param size initial number of nodes the columns can hold. the columns grow when they are full
      */
     constructor(size = 4096) {
         super(size);
@@ -2173,7 +2240,10 @@ class AstArena extends Arena {
         this.flags[this.root] = EnumAstNodeStatus.HasChildren;
     }
     /**
-     * @inheritDoc
+     * release nodes: detach them and drop their data (interned strings, errors) and their minification caches. node
+     * ids are never reused: the memory is reclaimed by {@link trim}
+     * @param id the node to release. every marked node (and its descendants) is released when omitted
+     * @param deep release the children and the tokens too
      */
     release(id, deep = false) {
         super.release(id, deep);
@@ -2191,7 +2261,11 @@ class AstArena extends Arena {
         }
     }
     /**
-     * @inheritDoc
+     * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+     * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+     * the unused strings and the minification caches are dropped too
+     * @param errors error descriptions whose `node` is remapped
+     * @returns mapping of the old ids to the new ids (0 when the node was dropped)
      */
     compact(errors) {
         const mapping = super.compact(errors);
@@ -3129,7 +3203,7 @@ class AstArena extends Arena {
         return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
     }
     /**
-     * @inheritDoc
+     * structured-cloneable properties of the arena, the sources and the minification caches included
      */
     exportProperties() {
         return {
@@ -3142,7 +3216,10 @@ class AstArena extends Arena {
         };
     }
     /**
-     * @inheritDoc
+     * initialize the arena from exported properties and column buffers, the sources and the minification caches
+     * included
+     * @param properties
+     * @param transferables
      */
     importProperties(properties, transferables) {
         super.importProperties(properties, transferables);
@@ -3550,6 +3627,7 @@ class AstArena extends Arena {
         }
     }
     /**
+     * Replace the nesting selectors (`&`) of a compound selector with a selector
      *
      * @param selector
      * @param replace

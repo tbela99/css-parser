@@ -49,3 +49,7 @@ export * as input from './input.js';
 export * as renderResult from './render-result.js';
 export * as strings from './strings.js';
 export * as first from './first.js';
+export * as arenaApi from './arena-api.js';
+export * as colorConvert from './color-convert.js';
+export * as options from './options.js';
+export * as renderValues from './render-values.js';

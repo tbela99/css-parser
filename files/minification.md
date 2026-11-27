@@ -546,6 +546,32 @@ Output:
 }
 ```
 
+`mergeRules` controls the merge of the rules that have different selectors (`true` is a shortcut for
+`MergeRulesEnum.All`, `false` for `MergeRulesEnum.None`):
+
+- `MergeRulesEnum.All` (default when the ast is minified): the shared declarations are moved into a rule with both
+  selectors, when the output is smaller
+- `MergeRulesEnum.Identical`: only the rules that have the same declarations are merged, the size of the output is not
+  computed: `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`, `.a{color:red;width:1px}.b{color:red}` is
+  left as is
+- `MergeRulesEnum.None`: the rules that have different selectors are not merged
+
+With `minify: false`, `MergeRulesEnum.Identical` and `MergeRulesEnum.All` merge the rules without minifying the ast: the
+adjacent rules and keyframes rules that have the same selector and the adjacent at-rules that have the same prelude are
+merged (`@font-face` is not merged), the last `@keyframes` of a name is kept, and the rules that have different
+selectors are merged as above. The other minifications are not applied. The
+[fast mode](./performance.md#minification-vs-execution-speed) does not merge the rules (`MergeRulesEnum.None`).
+
+```javascript
+import {transformSync, MergeRulesEnum} from '@tbela99/css-parser';
+
+// the ast is not minified, the adjacent rules are merged
+const result = transformSync(css, {minify: false, beautify: false, mergeRules: MergeRulesEnum.Identical});
+```
+
+`optimizeSelectors: false` keeps the selectors as they are: they are not reduced or factored with `:is()`. It only
+applies with `nestingRules: false`: the nesting of the rules reads the optimized selectors.
+
 ### Conditional wrapping or unwrapping selectors using :is()
 
 This feature is enabled by default. It is disabled by turning off minification using `{minify: false}`.

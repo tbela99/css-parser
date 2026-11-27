@@ -1,6 +1,7 @@
 import { parse, render, resolve, transform, transformSync, parseSync } from "../../dist/node.js";
 import { ColorType, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions } from "../../dist/ast/types.js";
 import * as tests from "./code/index.js";
+import * as streamTests from "./node/stream.js";
 import { expect, use } from "chai";
 import { readFile } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -29,3 +30,6 @@ for (const test of Object.values(tests)) {
         parseSync,
     );
 }
+
+// node only
+streamTests.run(describe, expect, it, transform, dirname);

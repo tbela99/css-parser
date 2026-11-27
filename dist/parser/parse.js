@@ -2,14 +2,14 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
 import { camelize, equalsIgnoreCase, dasherize } from './utils/text.js';
 import { renderValue } from '../printer/render.js';
-import { EnumToken, EnumAstNodeStatus, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent } from '../ast/types.js';
-import { minify } from '../ast/minify.js';
+import { EnumToken, EnumAstNodeStatus, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent } from '../ast/types.js';
+import { minify, mergeRules } from '../ast/minify.js';
 import { Tokenizer, createParseInfo } from './tokenize.js';
 import { ResponseType } from '../types.js';
 import { AstArena, TokenField } from '../ast/arena.js';
@@ -117,7 +117,8 @@ function clearArray(array) {
  * @param tokenizer
  */
 function arenaCapacity(tokenizer) {
-    const length = tokenizer.streamLength;
+    // a stream: the size of the css when it is known, the arena is allocated as for an ArrayBuffer
+    const length = Math.max(tokenizer.streamLength, tokenizer.expectedLength);
     // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
     return length === 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
 }
@@ -160,6 +161,29 @@ function allocateToken(arena, tokenizer, sourceIndex) {
     return item;
 }
 /**
+ * allocate a whitespace token
+ * @param arena
+ * @param sourceIndex index of the source in the arena sources table
+ * @param start
+ * @param end
+ */
+function allocateWhitespace(arena, sourceIndex, start, end) {
+    const item = arena.allocate();
+    arena.dataTypes[item] = EnumToken.WhitespaceTokenType;
+    arena.setTokenLocation(item, sourceIndex, start, end);
+    return item;
+}
+/**
+ * true if the token ends a statement or a block: the whitespace that precedes it is not significant
+ * @param type
+ */
+function isStatementEnd(type) {
+    return (type === EnumToken.SemiColonTokenType ||
+        type === EnumToken.BlockStartTokenType ||
+        type === EnumToken.BlockEndTokenType ||
+        type === EnumToken.EOFTokenType);
+}
+/**
  * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
  * the tokens referenced by the errors or the invalid nodes of the statement are kept
  * @param arena
@@ -170,6 +194,8 @@ function allocateToken(arena, tokenizer, sourceIndex) {
  * @param invalidStart index of the first invalid node of the statement
  */
 function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes, invalidStart) {
+    // the statement has errors or invalid nodes: the tokens they reference are kept
+    const references = errors.length > errorStart || invalidNodes.length > invalidStart;
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         // already recycled (a token can be recorded twice), attached or holding other tokens
@@ -177,6 +203,10 @@ function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes,
             arena.parents[token] !== 0 ||
             arena.firstChild[token] !== 0 ||
             arena.firstToken[token] !== 0) {
+            continue;
+        }
+        if (!references) {
+            arena.recycle(token);
             continue;
         }
         let referenced = invalidNodes.indexOf(token, invalidStart) !== -1;
@@ -623,6 +653,14 @@ function parseVisitors(visitorsDef, errors) {
     return result;
 }
 /**
+ * the settings of the fast mode (see {@link ParserOptions.fastMode}): the default values of these options when
+ * `fastMode` is `true`
+ */
+const fastModeOptions = Object.freeze({
+    minify: false,
+    mergeRules: MergeRulesEnum.None,
+});
+/**
  * Parse css string
  * @param tokenizer
  * @param options
@@ -632,6 +670,8 @@ function parseVisitors(visitorsDef, errors) {
  */
 function doParseSync(tokenizer, options = {}) {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
     options = {
@@ -656,6 +696,7 @@ function doParseSync(tokenizer, options = {}) {
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
     options.validation = !!options.validation;
@@ -707,13 +748,34 @@ function doParseSync(tokenizer, options = {}) {
     // the strings of the tokens are ranges of the content of the source
     arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
     let itemType;
+    // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+    // is not allocated. the whitespace that follows a token is allocated when the next token is read
+    let whitespaceStart = -1;
+    let whitespaceEnd = 0;
     // inlined: tokenizer.done()
     while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
-        item = allocateToken(arena, tokenizer, sourceIndex);
         itemType = tokenizer.typ;
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
+        if (parensMatch === 0) {
+            if (itemType === EnumToken.WhitespaceTokenType) {
+                if (tokens.length > 0) {
+                    whitespaceStart = tokenizer.sta;
+                    whitespaceEnd = tokenizer.end;
+                }
+                continue;
+            }
+            if (whitespaceStart !== -1) {
+                if (!isStatementEnd(itemType)) {
+                    item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                    tokens.push(item);
+                    statement.push(item);
+                }
+                whitespaceStart = -1;
+            }
+        }
+        item = allocateToken(arena, tokenizer, sourceIndex);
         if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
@@ -1006,6 +1068,13 @@ function doParseSync(tokenizer, options = {}) {
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    }
+    else if (options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
     stats.bytesIn += stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
@@ -1562,6 +1631,8 @@ function doParseSync(tokenizer, options = {}) {
  */
 async function doParse(iter, options = {}) {
     if (options.signal != null) {
+        // an aborted signal does not dispatch the abort event
+        options.signal.throwIfAborted();
         options.signal.addEventListener("abort", reject);
     }
     options = {
@@ -1587,6 +1658,7 @@ async function doParse(iter, options = {}) {
         removePrefix: false,
         validation: false,
         lenient: true,
+        ...(options.fastMode ? fastModeOptions : null),
         ...options,
     };
     options.minifyAST ??= options.minify;
@@ -1643,13 +1715,41 @@ async function doParse(iter, options = {}) {
     // the strings of the tokens are ranges of the content of the source
     arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
     let itemType;
+    // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+    // is not allocated. the whitespace that follows a token is allocated when the next token is read
+    let whitespaceStart = -1;
+    let whitespaceEnd = 0;
     // inlined: tokenizer.done()
     while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
-        item = allocateToken(arena, tokenizer, sourceIndex);
+        // a stream: the token may continue in the next chunk, the chunk is read and the token is read again
+        if (tokenizer.waiting) {
+            await tokenizer.read();
+            // the strings of the tokens are ranges of the content read so far
+            arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+            continue;
+        }
         itemType = tokenizer.typ;
         stats.bytesIn = tokenizer.bytesIn;
         stats.tokensCount++;
+        if (parensMatch === 0) {
+            if (itemType === EnumToken.WhitespaceTokenType) {
+                if (tokens.length > 0) {
+                    whitespaceStart = tokenizer.sta;
+                    whitespaceEnd = tokenizer.end;
+                }
+                continue;
+            }
+            if (whitespaceStart !== -1) {
+                if (!isStatementEnd(itemType)) {
+                    item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                    tokens.push(item);
+                    statement.push(item);
+                }
+                whitespaceStart = -1;
+            }
+        }
+        item = allocateToken(arena, tokenizer, sourceIndex);
         if (isBadToken(itemType)) {
             tokens.push(item);
             statement.push(item);
@@ -1711,6 +1811,11 @@ async function doParse(iter, options = {}) {
                 tokens.push(item);
                 do {
                     tokenizer.next();
+                    if (tokenizer.waiting) {
+                        await tokenizer.read();
+                        arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                        continue;
+                    }
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ;
                     tokens.push(item);
@@ -2002,6 +2107,13 @@ async function doParse(iter, options = {}) {
                 minify(arena, ast, minifyOptions, true, errors, false);
             }
         }
+    }
+    else if (options.mergeRules != null &&
+        options.mergeRules !== false &&
+        options.mergeRules !== MergeRulesEnum.None &&
+        arena.firstChild[ast] !== 0) {
+        // the ast is not minified: the adjacent rules are merged
+        mergeRules(arena, ast, minifyOptions);
     }
     stats.bytesIn += stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
@@ -2966,10 +3078,7 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
             if (stream.length === 0 ||
                 arena.dataTypes[stream[0]] !== EnumToken.WhitespaceTokenType ||
                 arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
-                // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
-                options.sourcesMap
-                    ?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)
-                    ?.content.charCodeAt(arena.getSpanStart(stream[0])) !== 0x20) {
+                arena.sourceCodeAt(arena.getSourceId(stream[0]), arena.getSpanStart(stream[0])) !== 0x20) {
                 success = false;
                 errors.push({
                     action: "drop",
@@ -3377,8 +3486,7 @@ function parseAtRule(arena, stream, context, options, errors, parseAsBlock = nul
                         }
                         else {
                             context = createValidationContext(arena, stream, index);
-                            // @ts-ignore
-                            range = context.peekRange((t) => arena.dataTypes[t] === EnumToken.EndParensTokenType);
+                            range = context.peekRange(EnumToken.EndParensTokenType);
                             // inlined: arena.typeOf(range.at(-1))
                             if (arena.dataTypes[range.at(-1)] !== EnumToken.EndParensTokenType) {
                                 errors.push({
@@ -4014,4 +4122,4 @@ function parseTokens(arena, tokens, options, errors) {
     return tokens;
 }
 
-export { doParse, doParseSync, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, isDefinitionBlock, parseAtRule, parseDeclarations, parseRuleContent, parseString, parseTokens, trimWhiteSpace };
+export { doParse, doParseSync, fastModeOptions, generateScopedName, generateSyncScopedName, getKeyName, getShortNameGenerator, isDefinitionBlock, parseAtRule, parseDeclarations, parseRuleContent, parseString, parseTokens, trimWhiteSpace };

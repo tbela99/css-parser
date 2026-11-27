@@ -49,6 +49,91 @@ button {
 }
 ````
 
+## CSS color-mix() syntax
+
+Convert new color-mix() syntax into legacy color syntax.
+
+```ts
+import {transform, ColorType} from '@tbela99/css-parser';
+
+const css = `
+table.colortable {
+    color: color-mix(firebrick, goldenrod);
+}
+`;
+
+const result = await transform(css, {
+    beautify: true,
+    convertColor: ColorType.SRGB
+}); 
+
+console.debug(rendered.code);
+````
+
+result:
+
+```css
+table.colortable {
+ color: color(srgb .787974 .417034 .141379)
+}
+````
+
+## CSS nesting
+
+Expand CSS into legacy syntax.
+
+```ts
+import {transform} from '@tbela99/css-parser';
+
+const css = `
+table.colortable {
+    & td {
+        text-align: center;
+
+        &.c {
+            text-transform: uppercase
+        }
+
+        &:first-child, &:first-child + td {
+            border: 1px solid #000
+        }
+    }
+
+    & th {
+        text-align: center;
+        background: #000;
+        color: #fff
+    }
+}
+`;
+
+const result = await transform(css, {
+    beautify: true,
+    nestingRules: false
+}); 
+
+console.debug(rendered.code);
+````
+
+result:
+
+```css
+table.colortable td {
+ text-align: center
+}
+table.colortable td.c {
+ text-transform: uppercase
+}
+table.colortable td:is(:first-child,:first-child+td) {
+ border: 1px solid #000
+}
+table.colortable th {
+ text-align: center;
+ background: #000;
+ color: #fff
+}
+````
+
 ## CSS mixins (experimental)
 
 Evaluate [CSS mixins](https://drafts.csswg.org/css-mixins-1/#mixin-rule): the `@apply` rules are replaced by the body of the mixin they reference.
@@ -352,91 +437,6 @@ result:
  padding: calc(-1*var(--gap))
 }
 ```
-
-## CSS color-mix() syntax
-
-Convert new color-mix() syntax into legacy color syntax.
-
-```ts
-import {transform, ColorType} from '@tbela99/css-parser';
-
-const css = `
-table.colortable {
-    color: color-mix(firebrick, goldenrod);
-}
-`;
-
-const result = await transform(css, {
-    beautify: true,
-    convertColor: ColorType.SRGB
-}); 
-
-console.debug(rendered.code);
-````
-
-result:
-
-```css
-table.colortable {
- color: color(srgb .787974 .417034 .141379)
-}
-````
-
-## CSS nesting
-
-Expand CSS into legacy syntax.
-
-```ts
-import {transform} from '@tbela99/css-parser';
-
-const css = `
-table.colortable {
-    & td {
-        text-align: center;
-
-        &.c {
-            text-transform: uppercase
-        }
-
-        &:first-child, &:first-child + td {
-            border: 1px solid #000
-        }
-    }
-
-    & th {
-        text-align: center;
-        background: #000;
-        color: #fff
-    }
-}
-`;
-
-const result = await transform(css, {
-    beautify: true,
-    nestingRules: false
-}); 
-
-console.debug(rendered.code);
-````
-
-result:
-
-```css
-table.colortable td {
- text-align: center
-}
-table.colortable td.c {
- text-transform: uppercase
-}
-table.colortable td:is(:first-child,:first-child+td) {
- border: 1px solid #000
-}
-table.colortable th {
- text-align: center;
- background: #000;
- color: #fff
-}
-````
 
 ------
 [← Plugins API](./plugins.md) | [Prefix Removal →](./prefix-removal.md) 

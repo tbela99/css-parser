@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { hashString, hashRange } from '../parser/utils/codes.js';
@@ -89,12 +89,25 @@ var StringDerived;
     StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
 })(StringDerived || (StringDerived = {}));
 /**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes = [];
+/**
  * string of a range of code units
  * @param codes
  * @param start
  * @param end
  */
 function fromCodes(codes, start, end) {
+    const length = end - start;
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+        for (let i = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+        return String.fromCharCode.apply(null, shortCodes);
+    }
     let result = "";
     // String.fromCharCode() with a limited number of arguments
     while (start < end) {
@@ -265,6 +278,18 @@ class StringTable {
     setText(source, text, codes = null) {
         this.texts[source] = text;
         this.codes[source] = codes ?? undefined;
+    }
+    /**
+     * code unit of the text of a source, NaN after its end
+     * @param source source index
+     * @param offset
+     */
+    sourceCodeAt(source, offset) {
+        const text = this.texts[source];
+        if (text !== undefined && offset < text.length) {
+            return text.charCodeAt(offset);
+        }
+        return this.codes[source]?.[offset] ?? NaN;
     }
     /**
      * drop the code units of a source: the source is no longer tokenized, see {@link setText}

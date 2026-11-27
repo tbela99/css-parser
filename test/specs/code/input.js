@@ -77,4 +77,85 @@ export function run(
             expect(transformSync(new ArrayBuffer(0)).code).equals("");
         });
     });
+
+    describe("ReadableStream input", function () {
+        // the chunks are given one at a time, when the parser asks for them
+        const streamOf = (chunks) => {
+            let index = 0;
+
+            return new ReadableStream(
+                {
+                    pull(controller) {
+                        if (index < chunks.length) {
+                            controller.enqueue(chunks[index++]);
+                        } else {
+                            controller.close();
+                        }
+                    },
+                },
+                { highWaterMark: 0 },
+            );
+        };
+
+        // the bytes split every `size` bytes: tokens, characters and \r\n are split between chunks
+        const split = (bytes, size) => {
+            const chunks = [];
+
+            for (let i = 0; i < bytes.length; i += size) {
+                chunks.push(bytes.slice(i, i + size));
+            }
+
+            return chunks;
+        };
+
+        const source = `@charset "utf-8";\r\n.a\\31 b::before { content: "été \\f26e"; color: #ff0000 }\r\n/* comment é */
+.b{width:calc(1px + 2px);background:url( "x y.png" )} @media (min-width: 40em){.c{margin:0 0 0 0}}\r\n.d{unicode-range: U+0025-00FF}
+.e:hover > .f , .g{transform:rotate(-0.25turn)}${css}`;
+
+        it("chunks of 1, 2, 3, 7 and 64 bytes #1", async function () {
+            const expected = await transform(source);
+            const bytes = encoder.encode(source);
+
+            for (const size of [1, 2, 3, 7, 64]) {
+                const result = await transform(streamOf(split(bytes, size)));
+
+                expect(result.code, `chunks of ${size} bytes`).equals(expected.code);
+                expect(result.errors.length).equals(expected.errors.length);
+            }
+        });
+
+        it("chunks of text #2", async function () {
+            const expected = await transform(source, { minify: false, beautify: true });
+            const chunks = [];
+
+            for (let i = 0; i < source.length; i += 5) {
+                chunks.push(source.slice(i, i + 5));
+            }
+
+            expect((await transform(streamOf(chunks), { minify: false, beautify: true })).code).equals(expected.code);
+        });
+
+        it("locations of the tokens #3", async function () {
+            const expected = await parse(source, { minify: false });
+            const result = await parse(streamOf(split(encoder.encode(source), 3)), { minify: false });
+            const locations = (result) => {
+                const list = [];
+
+                for (const node of result.arena.walk(result.ast)) {
+                    const location = result.arena.getLocation(node);
+
+                    list.push([location.sta, location.end]);
+                }
+
+                return list;
+            };
+
+            expect(locations(result)).deep.equals(locations(expected));
+            expect(result.stats.bytesIn).equals(expected.stats.bytesIn);
+        });
+
+        it("empty stream #4", async function () {
+            expect((await transform(streamOf([]))).code).equals("");
+        });
+    });
 }

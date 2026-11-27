@@ -30,6 +30,7 @@ export declare interface ParseInfo {
 
     /**
      * Source file
+     * @ignore
      */
     source: SourceFile;
 

@@ -1,5 +1,43 @@
 # Changelog
 
+# v2.3.2
+
+## Feature
+
+- [x] minifier: `mergeRules` option (`MergeRulesEnum`: `All`, `Identical`, `None`; `true` and `false` are shortcuts for `All` and `None`): `MergeRulesEnum.Identical` merges only the adjacent rules that have the same declarations, without computing the size of the output. with `minify: false`, `mergeRules` merges the adjacent rules and at-rules without minifying the ast
+- [x] minifier: `optimizeSelectors` option (`true` by default): `false` does not reduce the selectors or factor them with `:is()` (with `nestingRules: false`)
+- [x] `fastMode` option: `{fastMode: true}` sets `{minify: false, mergeRules: MergeRulesEnum.None}` (the ast is not minified, the rules are not merged), an option given explicitly takes precedence.
+
+## Performance
+
+- [x] minifier: two rules that have the same declarations are merged without computing the size of the output
+- [x] minifier: the vendor prefixes of the selectors are compared only when the rules share declarations
+- [x] parser: the selectors made of types, classes, ids, pseudo-classes and pseudo-elements, and the keyframe selectors (`from`, `to`, percentages) are not matched with the selector syntax
+- [x] parser: the whitespace at the start of a statement and before `;`, `{` and `}` is not allocated in the arena
+- [x] parser: the tokens of a statement without errors are recycled without looking for references
+- [x] binary input: the ascii check reads the bytes 4 at a time
+- [x] `ReadableStream` input: the stream is parsed while it is read, chunk by chunk, instead of being read to its end first
+- [x] `ReadableStream` input: the chunks are appended in batches that grow with the css (at least 64 KB, or half of the css read so far): the text is not copied for each chunk
+- [x] `ReadableStream` input: the size of a file loaded with `{file, asStream: true}` (or the content length of an uncompressed response) is recorded by the loader: the code units and the arena are allocated once, like for an ArrayBuffer. 0 means unknown: the buffers grow as the stream is read
+- [x] memory: the last arena used by the selector, validation, minification and transform helpers is no longer referenced by a module variable after the call: it was kept alive until the next parse
+
+## Fix
+
+- [x] media queries: `@media not print` and `@media only screen` were dropped
+- [x] gradients: the positions `left top`, `left bottom`, `right bottom` and `X X` (`20% 20%`) were minified into a single value, which is centered vertically (`at left top` became `at 0`, which means `at left center`)
+- [x] colors: `hwb()` with a `var()` component was rendered as `#`
+- [x] colors: the percentages of `rgb()` were not converted to `hsl()` and `hwb()` (`rgb(100% 50% 0%)` was converted to `hsl(30 100% .196078%)`)
+- [x] colors: converting `rgb()` with a `var()` component to `hwb()` threw an error
+- [x] `signal`: an aborted signal did not stop `parse()` / `transform()`
+
+## Types
+
+- [x] the bundled type declarations (dist/index.d.ts) type-check without `skipLibCheck`: duplicate exports, missing imports, wrong `EnumToken` members and visitor types fixed
+- [x] TSDoc for every exported symbol (JSR documentation lint)
+- [x] `LOC` and `ValidationTokenEnum` are exported (the keys of the tokens returned by `parseSyntax()`)
+- [x] the visitor maps accept the token type names (`VisitorTokenMap`, `VisitorSyncTokenMap`); `DeclarationVisitorSyncHandler`, `RuleVisitorSyncHandler` and `AtRuleVisitorSyncHandler` added
+- [x] the internal shorthand configuration types (`PropertiesConfig`, `Map`, ...) are no longer exported
+
 # v2.3.1
 
 - [x] fix deno install

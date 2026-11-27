@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { Readable } from 'node:stream';
@@ -16,9 +16,9 @@ import { TransformResult, RenderResult } from './printer/result.js';
 import { useNativeBuffer } from './printer/writer.js';
 import { Buffer } from 'node:buffer';
 import { ModuleScopeEnumOptions } from './ast/types.js';
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
-import { isCssInput } from './parser/input.js';
+import { setStreamSize, responseSize, isCssInput } from './parser/input.js';
 import { resolve, matchUrl, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
@@ -31,6 +31,8 @@ export { isOkLabClose, okLabDistance } from './syntax/color/utils/distance.js';
 export { Arena, AstArena, TokenField, arenaColumns } from './ast/arena.js';
 export { ARENA, ARENAID, AstArenaNode } from './ast/arena-node.js';
 export { SourceMap } from './printer/sourcemap.js';
+export { ValidationTokenEnum } from './validation/parser/typedef.js';
+export { LOC } from './syntax/constants.js';
 export { FeatureWalkMode } from './ast/features/type.js';
 export { parseSyntax } from './validation/parser/parse.js';
 export { version } from './version.js';
@@ -66,7 +68,8 @@ async function load(url, currentDirectory = ".", responseType = false) {
                 return response.json();
             }
             return responseType === ResponseType.ReadableStream
-                ? response.body
+                ? // the size of the body: the parser allocates its buffers once
+                    setStreamSize(response.body, responseSize(response))
                 : response.text();
         });
     }
@@ -82,10 +85,11 @@ async function load(url, currentDirectory = ".", responseType = false) {
                     ? buffer.buffer
                     : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
             }
-            return Readable.toWeb(createReadStream(resolved.absolute, {
+            // the size of the file: the parser allocates its buffers once
+            return setStreamSize(Readable.toWeb(createReadStream(resolved.absolute, {
                 encoding: "utf-8",
                 highWaterMark: 64 * 1024,
-            }));
+            })), stats.size);
         }
     }
     catch (error) { }
@@ -217,7 +221,8 @@ function transformSync(...args) {
     }
     // the options of the caller are not modified: they may be reused
     options = { ...options };
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
     if (options.removeEmpty == null) {
@@ -410,7 +415,8 @@ async function transform(...args) {
     }
     // the options of the caller are not modified: they may be reused
     options = { ...options };
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
     if (options.removeEmpty == null) {

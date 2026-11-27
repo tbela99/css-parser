@@ -1,6 +1,7 @@
 import type { ErrorDescription, Token } from "../@types/index.d.ts";
 import type { AstArena } from "../ast/arena.ts";
 import type { ValidationToken } from "./parser/types.d.ts";
+import { EnumToken } from "../ast/types.ts";
 
 /**
  * validation context
