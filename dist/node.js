@@ -18,7 +18,7 @@ import { Buffer } from 'node:buffer';
 import { ModuleScopeEnumOptions } from './ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
-import { isCssInput } from './parser/input.js';
+import { setStreamSize, responseSize, isCssInput } from './parser/input.js';
 import { resolve, matchUrl, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
 import { resolve as resolve$1 } from 'node:path';
@@ -68,7 +68,8 @@ async function load(url, currentDirectory = ".", responseType = false) {
                 return response.json();
             }
             return responseType === ResponseType.ReadableStream
-                ? response.body
+                ? // the size of the body: the parser allocates its buffers once
+                    setStreamSize(response.body, responseSize(response))
                 : response.text();
         });
     }
@@ -84,10 +85,11 @@ async function load(url, currentDirectory = ".", responseType = false) {
                     ? buffer.buffer
                     : buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
             }
-            return Readable.toWeb(createReadStream(resolved.absolute, {
+            // the size of the file: the parser allocates its buffers once
+            return setStreamSize(Readable.toWeb(createReadStream(resolved.absolute, {
                 encoding: "utf-8",
                 highWaterMark: 64 * 1024,
-            }));
+            })), stats.size);
         }
     }
     catch (error) { }

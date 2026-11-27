@@ -117,7 +117,8 @@ function clearArray(array) {
  * @param tokenizer
  */
 function arenaCapacity(tokenizer) {
-    const length = tokenizer.streamLength;
+    // a stream: the size of the css when it is known, the arena is allocated as for an ArrayBuffer
+    const length = Math.max(tokenizer.streamLength, tokenizer.expectedLength);
     // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
     return length === 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
 }

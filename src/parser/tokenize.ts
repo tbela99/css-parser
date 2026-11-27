@@ -32,7 +32,7 @@ import {
     timeUnits,
 } from "../syntax/syntax.ts";
 import { SourceFile } from "./source.ts";
-import { type CssInput, isCssInput, toCodeUnits } from "./input.ts";
+import { type CssInput, getStreamSize, isCssInput, toCodeUnits } from "./input.ts";
 import { type CodeUnits, hashRangeLower, lowerAscii } from "./utils/codes.ts";
 import { canonicalCodes, canonicalEnd, canonicalStart, registerCanonical } from "./utils/canonical.ts";
 import type { AstArena } from "../ast/arena.ts";
@@ -810,6 +810,10 @@ export class Tokenizer {
      * code units. the buffer doubles when it is full, the code units are copied once per doubling
      */
     private buffer: Uint8Array | Uint16Array = new Uint8Array(0);
+    /**
+     * the size of the css of the stream, in bytes, when it is known (see {@link setStreamSize}). 0: not known
+     */
+    public expectedLength: number = 0;
 
     /**
      * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
@@ -821,6 +825,13 @@ export class Tokenizer {
     ) {
         if (input != null) {
             this.streamDone = false;
+            this.expectedLength = getStreamSize(input);
+
+            // the size of the stream is known: the code units are allocated once. the size in bytes is not less than
+            // the number of utf-16 code units
+            if (this.expectedLength > 0) {
+                this.buffer = new Uint8Array(this.expectedLength);
+            }
         }
 
         if (isCssInput(parseInfo)) {

@@ -13,7 +13,7 @@ import { TransformResult, RenderResult } from './printer/result.js';
 import { ModuleScopeEnumOptions } from './ast/types.js';
 export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, WalkerEvent, WalkerOptionEnum } from './ast/types.js';
 import { createParseInfo, Tokenizer } from './parser/tokenize.js';
-import { isCssInput } from './parser/input.js';
+import { setStreamSize, responseSize, isCssInput } from './parser/input.js';
 import { matchUrl, resolve, dirname } from './fs/resolve.js';
 import { ResponseType } from './types.js';
 import { SourceFile } from './parser/source.js';
@@ -71,7 +71,10 @@ async function load(url, currentDirectory = ".", responseType = false) {
         if (responseType === ResponseType.JSON) {
             return response.json();
         }
-        return responseType === ResponseType.ReadableStream ? response.body : response.text();
+        // the size of the body: the parser allocates its buffers once
+        return responseType === ResponseType.ReadableStream
+            ? setStreamSize(response.body, responseSize(response))
+            : response.text();
     });
 }
 /**

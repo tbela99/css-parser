@@ -41517,6 +41517,41 @@
         }
         return { codes: codeUnitsOf(text), text };
     }
+    /**
+     * the size of the css of the streams, in bytes, when it is known (a file, a response with a content length)
+     */
+    const streamSizes = new WeakMap();
+    /**
+     * record the size of the css of a stream, in bytes: the parser allocates the code units and the arena once, like for
+     * an ArrayBuffer, instead of growing them as the stream is read. 0: the size is not known
+     * @param stream
+     * @param size
+     */
+    function setStreamSize(stream, size) {
+        if (size > 0) {
+            streamSizes.set(stream, size);
+        }
+        return stream;
+    }
+    /**
+     * the size of the css of a stream, in bytes, see {@link setStreamSize}. 0: the size is not known
+     * @param stream
+     */
+    function getStreamSize(stream) {
+        return stream == null ? 0 : (streamSizes.get(stream) ?? 0);
+    }
+    /**
+     * the size of the body of a response: its content length, 0 when it is not known or when the body is compressed (the
+     * content length is the size of the compressed body)
+     * @param response
+     */
+    function responseSize(response) {
+        if (response.headers.get("content-encoding") != null) {
+            return 0;
+        }
+        const length = Number(response.headers.get("content-length"));
+        return Number.isFinite(length) && length > 0 ? length : 0;
+    }
 
     /**
      * decoded code units of the last value decoded by {@link decodeEscapes}
@@ -42195,6 +42230,10 @@
          */
         buffer = new Uint8Array(0);
         /**
+         * the size of the css of the stream, in bytes, when it is known (see {@link setStreamSize}). 0: not known
+         */
+        expectedLength = 0;
+        /**
          * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
          * @param input a stream of css
          */
@@ -42202,6 +42241,12 @@
             this.input = input;
             if (input != null) {
                 this.streamDone = false;
+                this.expectedLength = getStreamSize(input);
+                // the size of the stream is known: the code units are allocated once. the size in bytes is not less than
+                // the number of utf-16 code units
+                if (this.expectedLength > 0) {
+                    this.buffer = new Uint8Array(this.expectedLength);
+                }
             }
             if (isCssInput(parseInfo)) {
                 this.parseInfo = createParseInfo(parseInfo, new SourceFile("", [], ""));
@@ -46777,7 +46822,8 @@
      * @param tokenizer
      */
     function arenaCapacity(tokenizer) {
-        const length = tokenizer.streamLength;
+        // a stream: the size of the css when it is known, the arena is allocated as for an ArrayBuffer
+        const length = Math.max(tokenizer.streamLength, tokenizer.expectedLength);
         // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
         return length === 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
     }
@@ -50902,7 +50948,10 @@
             if (responseType === exports.ResponseType.JSON) {
                 return response.json();
             }
-            return responseType === exports.ResponseType.ReadableStream ? response.body : response.text();
+            // the size of the body: the parser allocates its buffers once
+            return responseType === exports.ResponseType.ReadableStream
+                ? setStreamSize(response.body, responseSize(response))
+                : response.text();
         });
     }
     /**

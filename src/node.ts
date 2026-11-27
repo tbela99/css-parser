@@ -22,7 +22,7 @@ import { Buffer } from "node:buffer";
 import type { AstArena } from "./ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./ast/types.ts";
 import { createParseInfo, Tokenizer } from "./parser/tokenize.ts";
-import { type CssInput, isCssInput } from "./parser/input.ts";
+import { type CssInput, isCssInput, responseSize, setStreamSize } from "./parser/input.ts";
 import { dirname, matchUrl, resolve } from "./fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { resolve as resolvePath } from "node:path";
@@ -131,7 +131,8 @@ export async function load(
                 }
 
                 return responseType === ResponseType.ReadableStream
-                    ? (response.body as ReadableStream<Uint8Array<ArrayBuffer>>)
+                    ? // the size of the body: the parser allocates its buffers once
+                      setStreamSize(response.body as ReadableStream<Uint8Array<ArrayBuffer>>, responseSize(response))
                     : response.text();
             },
         );
@@ -156,12 +157,16 @@ export async function load(
                 );
             }
 
-            return Readable.toWeb(
-                createReadStream(resolved.absolute, {
-                    encoding: "utf-8",
-                    highWaterMark: 64 * 1024,
-                }),
-            ) as ReadableStream<Uint8Array>;
+            // the size of the file: the parser allocates its buffers once
+            return setStreamSize(
+                Readable.toWeb(
+                    createReadStream(resolved.absolute, {
+                        encoding: "utf-8",
+                        highWaterMark: 64 * 1024,
+                    }),
+                ) as ReadableStream<Uint8Array>,
+                stats.size,
+            );
         }
     } catch (error) {}
 

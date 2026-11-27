@@ -105,6 +105,9 @@ The parse() and transform() functions accept a string or readable stream as firs
 The stream is parsed while it is read: a chunk is read when the tokenizer reaches the end of the CSS received so far.
 A token that may continue in the next chunk (an identifier, a number, a string, a comment, ...) is read again once the
 next chunk is received. The chunks can be bytes (UTF-8, a character can be split between two chunks) or text.
+When the size of the stream is known (a file loaded with `{file, asStream: true}`, a response with a
+`Content-Length` and no `Content-Encoding`), the buffers of the parser are allocated once, like for an `ArrayBuffer`.
+Otherwise they grow as the stream is read.
 
 ```ts
 import {parse} from '@tbela99/css-parser';

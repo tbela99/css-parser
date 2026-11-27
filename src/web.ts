@@ -18,7 +18,7 @@ import { RenderResult, TransformResult } from "./printer/result.ts";
 import type { AstArena } from "./ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./ast/types.ts";
 import { createParseInfo, Tokenizer } from "./parser/tokenize.ts";
-import { type CssInput, isCssInput } from "./parser/input.ts";
+import { type CssInput, isCssInput, responseSize, setStreamSize } from "./parser/input.ts";
 import { dirname, matchUrl, resolve } from "./fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { SourceFile } from "./parser/source.ts";
@@ -132,7 +132,10 @@ export async function load(
             return response.json();
         }
 
-        return responseType === ResponseType.ReadableStream ? response.body : response.text();
+        // the size of the body: the parser allocates its buffers once
+        return responseType === ResponseType.ReadableStream
+            ? setStreamSize(response.body as ReadableStream<Uint8Array>, responseSize(response))
+            : response.text();
     }) as Promise<string | ArrayBuffer | ReadableStream<Uint8Array<ArrayBufferLike>>>;
 }
 

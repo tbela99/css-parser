@@ -104,5 +104,40 @@ function toCodeUnits(input) {
     }
     return { codes: codeUnitsOf(text), text };
 }
+/**
+ * the size of the css of the streams, in bytes, when it is known (a file, a response with a content length)
+ */
+const streamSizes = new WeakMap();
+/**
+ * record the size of the css of a stream, in bytes: the parser allocates the code units and the arena once, like for
+ * an ArrayBuffer, instead of growing them as the stream is read. 0: the size is not known
+ * @param stream
+ * @param size
+ */
+function setStreamSize(stream, size) {
+    if (size > 0) {
+        streamSizes.set(stream, size);
+    }
+    return stream;
+}
+/**
+ * the size of the css of a stream, in bytes, see {@link setStreamSize}. 0: the size is not known
+ * @param stream
+ */
+function getStreamSize(stream) {
+    return stream == null ? 0 : (streamSizes.get(stream) ?? 0);
+}
+/**
+ * the size of the body of a response: its content length, 0 when it is not known or when the body is compressed (the
+ * content length is the size of the compressed body)
+ * @param response
+ */
+function responseSize(response) {
+    if (response.headers.get("content-encoding") != null) {
+        return 0;
+    }
+    const length = Number(response.headers.get("content-length"));
+    return Number.isFinite(length) && length > 0 ? length : 0;
+}
 
-export { isBinaryInput, isCssInput, toCodeUnits };
+export { getStreamSize, isBinaryInput, isCssInput, responseSize, setStreamSize, toCodeUnits };

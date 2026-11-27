@@ -9,7 +9,7 @@ import { EnumToken, ColorType } from '../ast/types.js';
 import { validationUnits, pseudoElements, containerFunc, urlFunc, gridTemplateFunc, imageFunc, timelineFunc, supportFunc, timingFunc, colorsFunc, mathFuncs, transformFunctions, whenElseFunc, wildCardFuncs } from '../syntax/constants.js';
 import { isNewLine, isWhiteSpace, isLetter, isIdentStart, isIdentCodepoint, isNonPrintable, isDigit, flexUnits, dimensionUnits, resolutionUnits, angleUnits, timeUnits, frequencyUnits } from '../syntax/syntax.js';
 import { SourceFile } from './source.js';
-import { isCssInput, toCodeUnits } from './input.js';
+import { getStreamSize, isCssInput, toCodeUnits } from './input.js';
 import { hashRangeLower, lowerAscii } from './utils/codes.js';
 import { canonicalStart, canonicalEnd, canonicalCodes, registerCanonical } from './utils/canonical.js';
 
@@ -690,6 +690,10 @@ class Tokenizer {
      */
     buffer = new Uint8Array(0);
     /**
+     * the size of the css of the stream, in bytes, when it is known (see {@link setStreamSize}). 0: not known
+     */
+    expectedLength = 0;
+    /**
      * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
      * @param input a stream of css
      */
@@ -697,6 +701,12 @@ class Tokenizer {
         this.input = input;
         if (input != null) {
             this.streamDone = false;
+            this.expectedLength = getStreamSize(input);
+            // the size of the stream is known: the code units are allocated once. the size in bytes is not less than
+            // the number of utf-16 code units
+            if (this.expectedLength > 0) {
+                this.buffer = new Uint8Array(this.expectedLength);
+            }
         }
         if (isCssInput(parseInfo)) {
             this.parseInfo = createParseInfo(parseInfo, new SourceFile("", [], ""));
