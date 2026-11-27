@@ -298,8 +298,11 @@ function parseSelector(arena, tokens, context, options, errors) {
         allowed = false;
         if (contextType === EnumToken.AtRuleNodeType) {
             // computed once per at-rule name: the name is not concatenated for each selector
+            const previousAtRuleArena = atRuleArena;
             atRuleArena = arena;
             allowed = arena.stringDerived(arena.name[context], 3 /* StringDerived.AtRuleAcceptsRules */, atRuleAcceptsRules);
+            // the arena is not kept after the parse: the previous arena is restored (a nested call)
+            atRuleArena = previousAtRuleArena;
         }
     }
     while (parent != null && parent > 0) {

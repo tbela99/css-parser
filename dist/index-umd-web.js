@@ -18548,8 +18548,12 @@
      * @param token
      */
     function functionSyntax(arena, token) {
+        const previousSyntaxArena = syntaxArena;
         syntaxArena = arena;
-        return arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+        const syntax = arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+        // the arena is not kept after the parse: the previous arena is restored (a nested call)
+        syntaxArena = previousSyntaxArena;
+        return syntax;
     }
     /**
      * the arena of the function names read by {@link computeFunctionSyntax} and {@link computeSelectorFunctionSyntax}:
@@ -18576,8 +18580,12 @@
      * @param token
      */
     function selectorFunctionSyntax(arena, token) {
+        const previousSyntaxArena = syntaxArena;
         syntaxArena = arena;
-        return arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+        const syntax = arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+        // the arena is not kept after the parse: the previous arena is restored (a nested call)
+        syntaxArena = previousSyntaxArena;
+        return syntax;
     }
     /**
      * the wildcard functions being matched with a syntax, see {@link matchWildCardFunction}
@@ -32121,8 +32129,12 @@
      * @param id interned string id
      */
     function transformKind(arena, id) {
+        const previousKindArena = kindArena;
         kindArena = arena;
-        return arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+        const kind = arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+        // the arena is not kept after the transformation: the previous arena is restored (a nested call)
+        kindArena = previousKindArena;
+        return kind;
     }
     /**
      * numeric arguments of a transform function (the first 16 arguments), reused
@@ -33384,6 +33396,18 @@
         setText(source, text, codes = null) {
             this.texts[source] = text;
             this.codes[source] = codes ?? undefined;
+        }
+        /**
+         * code unit of the text of a source, NaN after its end
+         * @param source source index
+         * @param offset
+         */
+        sourceCodeAt(source, offset) {
+            const text = this.texts[source];
+            if (text !== undefined && offset < text.length) {
+                return text.charCodeAt(offset);
+            }
+            return this.codes[source]?.[offset] ?? NaN;
         }
         /**
          * drop the code units of a source: the source is no longer tokenized, see {@link setText}
@@ -35919,8 +35943,12 @@
      * @param id selector string id
      */
     function isSimpleSelector(arena, id) {
+        const previousSelectorArena = selectorArena;
         selectorArena = arena;
-        return arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+        const simple = arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+        // the arena is not kept after the minification: the previous arena is restored (a nested call)
+        selectorArena = previousSelectorArena;
+        return simple;
     }
     /**
      * the arena of the selector read by {@link computeSimpleSelector} and {@link hasVendorPrefix}: the functions passed to
@@ -36015,8 +36043,12 @@
      */
     function selectorPrefixes(arena, id) {
         // the selectors without `:-` are skipped: computed once per string id
+        const previousSelectorArena = selectorArena;
         selectorArena = arena;
-        if (!arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix)) {
+        const prefixed = arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix);
+        // the arena is not kept after the minification: the previous arena is restored (a nested call)
+        selectorArena = previousSelectorArena;
+        if (!prefixed) {
             return emptyPrefixes;
         }
         const prefixes = new Set();
@@ -36589,6 +36621,14 @@
          */
         setSourceText(source, text, codes = null) {
             this.stringTable.setText(source, text, codes);
+        }
+        /**
+         * code unit of the text of a source, NaN after its end. no string is created
+         * @param source source index (see {@link getSourceId})
+         * @param offset
+         */
+        sourceCodeAt(source, offset) {
+            return this.stringTable.sourceCodeAt(source, offset);
         }
         /**
          * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
@@ -42133,16 +42173,41 @@
         state = null;
         parseInfo;
         /**
+         * true when the whole css is in {@link ParseInfo.codes}: the input is not a stream, or the stream is read to its end
+         */
+        streamDone = true;
+        /**
+         * the last call of {@link next} reached the end of the code units read from the stream: the token may continue in
+         * the next chunk. no token is returned, the stream must be read ({@link read}) before {@link next} is called again
+         */
+        waiting = false;
+        /**
+         * reader of the stream
+         */
+        reader = null;
+        /**
+         * decoder of the chunks of the stream: a character can be split between two chunks
+         */
+        decoder = null;
+        /**
+         * the code units read from the stream: {@link ParseInfo.codes} is a view of its first {@link ParseInfo.length}
+         * code units. the buffer doubles when it is full, the code units are copied once per doubling
+         */
+        buffer = new Uint8Array(0);
+        /**
          * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
          * @param input a stream of css
          */
         constructor(parseInfo, input = null) {
             this.input = input;
+            if (input != null) {
+                this.streamDone = false;
+            }
             if (isCssInput(parseInfo)) {
                 this.parseInfo = createParseInfo(parseInfo, new SourceFile("", [], ""));
             }
             else {
-                // the parse info of a stream is loaded by tokenizeStream()
+                // the code units of a stream are appended chunk by chunk, see read()
                 if (parseInfo.codes == null && input == null) {
                     Tokenizer.load(parseInfo, parseInfo.source.content);
                 }
@@ -43040,9 +43105,37 @@
             return this.typ === exports.EnumToken.EOF;
         }
         /**
-         * Tokenize CSS string
+         * read the next token. when the input is a stream that is not read to its end, a token that ends near the end of
+         * the code units read so far may continue in the next chunk (an identifier, a number, a string, a comment, ...): the
+         * token is not returned, {@link waiting} is true and the stream must be read ({@link read}) before the next call
          */
-        next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
+        next() {
+            if (this.streamDone) {
+                return this.nextToken();
+            }
+            const parseInfo = this.parseInfo;
+            const position = parseInfo.position;
+            const currentPosition = parseInfo.currentPosition;
+            const state = this.state;
+            const lineStarts = parseInfo.source.lineStarts.lineStarts;
+            const lineCount = lineStarts.length;
+            this.nextToken();
+            // the tokenizer reads at most a few code units after the end of a token: the token is complete when the
+            // stream has more code units after it
+            if (parseInfo.currentPosition + STREAM_LOOKAHEAD > parseInfo.length) {
+                parseInfo.position = position;
+                parseInfo.currentPosition = currentPosition;
+                this.state = state;
+                lineStarts.length = lineCount;
+                this.typ = null;
+                this.waiting = true;
+            }
+            return this;
+        }
+        /**
+         * read the next token from the code units of the input
+         */
+        nextToken() {
             const parseInfo = this.parseInfo;
             this.source = parseInfo.source;
             let charCode;
@@ -43469,27 +43562,106 @@
             return this.makeToken(parseInfo, exports.EnumToken.EOFTokenType);
         }
         /**
-         * tokenize readable stream
+         * start reading the stream: the first chunk is read. the next chunks are read when the tokenizer reaches the end
+         * of the code units read so far, see {@link next} and {@link read}
          */
         async tokenizeStream() {
-            const decoder = new TextDecoder("utf-8");
-            const reader = this.input.getReader();
-            let parseInfo = this.parseInfo;
-            while (true) {
-                const { done, value } = await reader.read();
-                const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
-                if (!done) {
-                    // inlined: parseInfo.source.append(stream as string)
-                    parseInfo.source.content += stream;
-                }
-                else {
+            if (!this.streamDone && this.reader == null) {
+                await this.read();
+            }
+            return this;
+        }
+        /**
+         * read the next chunk of the stream and append it to the css: the text of the source file and the code units.
+         * the code units stay a view of the bytes while the css is ascii, they are utf-16 code units otherwise
+         */
+        async read() {
+            if (this.streamDone) {
+                this.waiting = false;
+                return;
+            }
+            if (this.reader == null) {
+                this.reader = this.input.getReader();
+                this.decoder = new TextDecoder("utf-8");
+            }
+            // the chunks are appended together: at least 64 KB, or half of the css read so far. the text of the css is copied
+            // when it is read after a chunk is appended (a string is not appended in place): the batches grow with the css,
+            // the text is copied a few times instead of once per chunk
+            const batch = Math.max(STREAM_BATCH, this.parseInfo.length >> 1);
+            const texts = [];
+            let length = 0;
+            while (length < batch) {
+                const { done, value } = await this.reader.read();
+                if (done) {
+                    // the end of a character split between the last chunks
+                    texts.push(this.decoder.decode());
+                    this.streamDone = true;
+                    this.reader.releaseLock();
                     break;
                 }
+                const text = typeof value === "string" ? value : this.decoder.decode(value, { stream: true });
+                texts.push(text);
+                length += text.length;
             }
-            Tokenizer.load(parseInfo, parseInfo.source.content);
-            return this; // .next();
+            const text = texts.length === 1 ? texts[0] : texts.join("");
+            if (text.length > 0) {
+                this.append(text);
+            }
+            this.waiting = false;
+        }
+        /**
+         * append the text of a chunk to the css
+         * @param text
+         */
+        append(text) {
+            const parseInfo = this.parseInfo;
+            const length = parseInfo.length;
+            const required = length + text.length;
+            parseInfo.source.content += text;
+            if (required > this.buffer.length) {
+                let capacity = this.buffer.length > 0 ? this.buffer.length * 2 : 1 << 16;
+                while (capacity < required) {
+                    capacity *= 2;
+                }
+                const buffer = this.buffer instanceof Uint8Array ? new Uint8Array(capacity) : new Uint16Array(capacity);
+                buffer.set(this.buffer.subarray(0, length));
+                this.buffer = buffer;
+            }
+            let ascii = false;
+            if (this.buffer instanceof Uint8Array) {
+                // an ascii text has a byte for each character
+                const { read, written } = streamEncoder.encodeInto(text, this.buffer.subarray(length, required));
+                ascii = read === text.length && written === text.length;
+                if (!ascii) {
+                    // the css is not ascii: the code units are utf-16 code units from now on
+                    const buffer = new Uint16Array(this.buffer.length);
+                    buffer.set(this.buffer.subarray(0, length));
+                    this.buffer = buffer;
+                }
+            }
+            if (!ascii) {
+                const buffer = this.buffer;
+                for (let i = 0; i < text.length; i++) {
+                    buffer[length + i] = text.charCodeAt(i);
+                }
+            }
+            parseInfo.length = required;
+            parseInfo.codes = this.buffer.subarray(0, required);
         }
     }
+    /**
+     * number of code units the tokenizer may read after the end of a token (escape sequences, unicode ranges, `<!--`,
+     * ...): a token read from a stream is complete when the stream has more code units after it, see {@link Tokenizer.next}
+     */
+    const STREAM_LOOKAHEAD = 32;
+    /**
+     * minimum number of code units appended to the css when a stream is read, see {@link Tokenizer.read}
+     */
+    const STREAM_BATCH = 1 << 16;
+    /**
+     * encoder of the chunks of a stream, see {@link Tokenizer.append}
+     */
+    const streamEncoder = new TextEncoder();
 
     /**
      * response type
@@ -43906,8 +44078,11 @@
             allowed = false;
             if (contextType === exports.EnumToken.AtRuleNodeType) {
                 // computed once per at-rule name: the name is not concatenated for each selector
+                const previousAtRuleArena = atRuleArena;
                 atRuleArena = arena;
                 allowed = arena.stringDerived(arena.name[context], 3 /* StringDerived.AtRuleAcceptsRules */, atRuleAcceptsRules);
+                // the arena is not kept after the parse: the previous arena is restored (a nested call)
+                atRuleArena = previousAtRuleArena;
             }
         }
         while (parent != null && parent > 0) {
@@ -48206,6 +48381,13 @@
         // inlined: tokenizer.done()
         while (!(tokenizer.typ === exports.EnumToken.EOF)) {
             tokenizer.next();
+            // a stream: the token may continue in the next chunk, the chunk is read and the token is read again
+            if (tokenizer.waiting) {
+                await tokenizer.read();
+                // the strings of the tokens are ranges of the content read so far
+                arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                continue;
+            }
             itemType = tokenizer.typ;
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
@@ -48288,6 +48470,11 @@
                     tokens.push(item);
                     do {
                         tokenizer.next();
+                        if (tokenizer.waiting) {
+                            await tokenizer.read();
+                            arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                            continue;
+                        }
                         item = allocateToken(arena, tokenizer, sourceIndex);
                         itemType = tokenizer.typ;
                         tokens.push(item);
@@ -49550,10 +49737,7 @@
                 if (stream.length === 0 ||
                     arena.dataTypes[stream[0]] !== exports.EnumToken.WhitespaceTokenType ||
                     arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
-                    // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
-                    options.sourcesMap
-                        ?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)
-                        ?.content.charCodeAt(arena.getSpanStart(stream[0])) !== 0x20) {
+                    arena.sourceCodeAt(arena.getSourceId(stream[0]), arena.getSpanStart(stream[0])) !== 0x20) {
                     success = false;
                     errors.push({
                         action: "drop",

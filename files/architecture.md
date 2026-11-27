@@ -28,7 +28,8 @@ flowchart TB
 ## Parse
 
 The input can be a string, an `ArrayBuffer` (or a `Uint8Array`) or a `ReadableStream` (see
-[Usage](./usage.md#parsing)).
+[Usage](./usage.md#parsing)). A stream is parsed while it is read: the parser waits for the next chunk when the
+tokenizer reaches the end of the CSS received so far.
 
 The parser reads the CSS and builds a tree of rules, at-rules and declarations. It is fault-tolerant, like a browser:
 it always produces a tree. What is invalid is dropped and reported in `errors`, the rest is kept.

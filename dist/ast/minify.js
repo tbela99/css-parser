@@ -1912,8 +1912,12 @@ function readSelector(arena, id) {
  * @param id selector string id
  */
 function isSimpleSelector(arena, id) {
+    const previousSelectorArena = selectorArena;
     selectorArena = arena;
-    return arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+    const simple = arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+    // the arena is not kept after the minification: the previous arena is restored (a nested call)
+    selectorArena = previousSelectorArena;
+    return simple;
 }
 /**
  * the arena of the selector read by {@link computeSimpleSelector} and {@link hasVendorPrefix}: the functions passed to
@@ -2008,8 +2012,12 @@ function hasVendorPrefix(id) {
  */
 function selectorPrefixes(arena, id) {
     // the selectors without `:-` are skipped: computed once per string id
+    const previousSelectorArena = selectorArena;
     selectorArena = arena;
-    if (!arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix)) {
+    const prefixed = arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix);
+    // the arena is not kept after the minification: the previous arena is restored (a nested call)
+    selectorArena = previousSelectorArena;
+    if (!prefixed) {
         return emptyPrefixes;
     }
     const prefixes = new Set();

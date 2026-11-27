@@ -1534,6 +1534,12 @@ declare class StringTable {
      */
     setText(source: number, text: string, codes?: CodeUnits | null): void;
     /**
+     * code unit of the text of a source, NaN after its end
+     * @param source source index
+     * @param offset
+     */
+    sourceCodeAt(source: number, offset: number): number;
+    /**
      * drop the code units of a source: the source is no longer tokenized, see {@link setText}
      * @param source
      */
@@ -1984,6 +1990,12 @@ declare class Arena {
      * @param codes code units of the text while the source is tokenized (faster comparisons)
      */
     setSourceText(source: number, text: string, codes?: CodeUnits | null): void;
+    /**
+     * code unit of the text of a source, NaN after its end. no string is created
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    sourceCodeAt(source: number, offset: number): number;
     /**
      * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
      * @param source source index

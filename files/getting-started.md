@@ -53,10 +53,10 @@ faster:
 
 | Package | Runs in | Speed |
 |---------|---------|-------|
-| [`@tbela99/rust-css-parser-napi`](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) | Node.js on macOS and Linux | up to 2.4x faster than TypeScript |
+| [`@tbela99/rust-css-parser-napi`](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) | Node.js on macOS and Linux | up to 2.1x faster than TypeScript |
 | [`@tbela99/rust-css-parser-wasm`](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) | Node.js and the browsers | up to 1.9x faster than TypeScript |
 
-The WebAssembly build is **only 2.4 MB (860 KB gzipped)**, with no native dependency: it runs anywhere WebAssembly
+The WebAssembly build is **only 2.5 MB (865 KB gzipped)**, with no native dependency: it runs anywhere WebAssembly
 runs. The native build is compiled from its Rust sources when it is installed (requires the
 [Rust toolchain](https://rustup.rs)).
 

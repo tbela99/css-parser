@@ -2243,6 +2243,14 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
     while (!(tokenizer.typ === EnumToken.EOF)) {
         tokenizer.next();
 
+        // a stream: the token may continue in the next chunk, the chunk is read and the token is read again
+        if (tokenizer.waiting) {
+            await tokenizer.read();
+            // the strings of the tokens are ranges of the content read so far
+            arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+            continue;
+        }
+
         itemType = tokenizer.typ as EnumToken;
 
         stats.bytesIn = tokenizer.bytesIn as number;
@@ -2348,6 +2356,12 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
 
                 do {
                     tokenizer.next();
+
+                    if (tokenizer.waiting) {
+                        await tokenizer.read();
+                        arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                        continue;
+                    }
 
                     item = allocateToken(arena, tokenizer, sourceIndex);
                     itemType = tokenizer.typ as EnumToken;
@@ -4072,10 +4086,7 @@ export function parseAtRule(
                 stream.length === 0 ||
                 arena.dataTypes[stream[0]] !== EnumToken.WhitespaceTokenType ||
                 arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
-                // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
-                options.sourcesMap
-                    ?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)
-                    ?.content.charCodeAt(arena.getSpanStart(stream[0])) !== 0x20
+                arena.sourceCodeAt(arena.getSourceId(stream[0]), arena.getSpanStart(stream[0])) !== 0x20
             ) {
                 success = false;
                 errors.push({

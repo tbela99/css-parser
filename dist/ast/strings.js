@@ -280,6 +280,18 @@ class StringTable {
         this.codes[source] = codes ?? undefined;
     }
     /**
+     * code unit of the text of a source, NaN after its end
+     * @param source source index
+     * @param offset
+     */
+    sourceCodeAt(source, offset) {
+        const text = this.texts[source];
+        if (text !== undefined && offset < text.length) {
+            return text.charCodeAt(offset);
+        }
+        return this.codes[source]?.[offset] ?? NaN;
+    }
+    /**
      * drop the code units of a source: the source is no longer tokenized, see {@link setText}
      * @param source
      */

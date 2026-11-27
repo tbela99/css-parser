@@ -415,6 +415,14 @@ class Arena {
         this.stringTable.setText(source, text, codes);
     }
     /**
+     * code unit of the text of a source, NaN after its end. no string is created
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    sourceCodeAt(source, offset) {
+        return this.stringTable.sourceCodeAt(source, offset);
+    }
+    /**
      * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
      * @param source source index
      */

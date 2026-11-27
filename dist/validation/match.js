@@ -1582,8 +1582,12 @@ function isInRange(arena, token, syntax) {
  * @param token
  */
 function functionSyntax(arena, token) {
+    const previousSyntaxArena = syntaxArena;
     syntaxArena = arena;
-    return arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+    const syntax = arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+    // the arena is not kept after the parse: the previous arena is restored (a nested call)
+    syntaxArena = previousSyntaxArena;
+    return syntax;
 }
 /**
  * the arena of the function names read by {@link computeFunctionSyntax} and {@link computeSelectorFunctionSyntax}:
@@ -1610,8 +1614,12 @@ function computeSelectorFunctionSyntax(id) {
  * @param token
  */
 function selectorFunctionSyntax(arena, token) {
+    const previousSyntaxArena = syntaxArena;
     syntaxArena = arena;
-    return arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+    const syntax = arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+    // the arena is not kept after the parse: the previous arena is restored (a nested call)
+    syntaxArena = previousSyntaxArena;
+    return syntax;
 }
 /**
  * the wildcard functions being matched with a syntax, see {@link matchWildCardFunction}

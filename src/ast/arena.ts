@@ -548,6 +548,15 @@ export class Arena {
     }
 
     /**
+     * code unit of the text of a source, NaN after its end. no string is created
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    public sourceCodeAt(source: number, offset: number): number {
+        return this.stringTable.sourceCodeAt(source, offset);
+    }
+
+    /**
      * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
      * @param source source index
      */

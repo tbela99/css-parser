@@ -414,8 +414,11 @@ export function parseSelector(
 
         if (contextType === EnumToken.AtRuleNodeType) {
             // computed once per at-rule name: the name is not concatenated for each selector
+            const previousAtRuleArena: AstArena | null = atRuleArena;
             atRuleArena = arena;
             allowed = arena.stringDerived(arena.name[context as AstNode], StringDerived.AtRuleAcceptsRules, atRuleAcceptsRules);
+            // the arena is not kept after the parse: the previous arena is restored (a nested call)
+            atRuleArena = previousAtRuleArena;
         }
     }
 

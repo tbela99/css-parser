@@ -132,8 +132,12 @@ function computeTransformKind(id) {
  * @param id interned string id
  */
 function transformKind(arena, id) {
+    const previousKindArena = kindArena;
     kindArena = arena;
-    return arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+    const kind = arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+    // the arena is not kept after the transformation: the previous arena is restored (a nested call)
+    kindArena = previousKindArena;
+    return kind;
 }
 /**
  * numeric arguments of a transform function (the first 16 arguments), reused

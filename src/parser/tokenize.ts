@@ -789,6 +789,29 @@ export class Tokenizer {
     private readonly parseInfo: ParseInfo;
 
     /**
+     * true when the whole css is in {@link ParseInfo.codes}: the input is not a stream, or the stream is read to its end
+     */
+    private streamDone: boolean = true;
+    /**
+     * the last call of {@link next} reached the end of the code units read from the stream: the token may continue in
+     * the next chunk. no token is returned, the stream must be read ({@link read}) before {@link next} is called again
+     */
+    public waiting: boolean = false;
+    /**
+     * reader of the stream
+     */
+    private reader: ReadableStreamDefaultReader<Uint8Array | string> | null = null;
+    /**
+     * decoder of the chunks of the stream: a character can be split between two chunks
+     */
+    private decoder: TextDecoder | null = null;
+    /**
+     * the code units read from the stream: {@link ParseInfo.codes} is a view of its first {@link ParseInfo.length}
+     * code units. the buffer doubles when it is full, the code units are copied once per doubling
+     */
+    private buffer: Uint8Array | Uint16Array = new Uint8Array(0);
+
+    /**
      * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
      * @param input a stream of css
      */
@@ -796,10 +819,14 @@ export class Tokenizer {
         parseInfo: ParseInfo | CssInput,
         private input: ReadableStream<Uint8Array> | null = null,
     ) {
+        if (input != null) {
+            this.streamDone = false;
+        }
+
         if (isCssInput(parseInfo)) {
             this.parseInfo = createParseInfo(parseInfo, new SourceFile("", [], ""));
         } else {
-            // the parse info of a stream is loaded by tokenizeStream()
+            // the code units of a stream are appended chunk by chunk, see read()
             if (parseInfo.codes == null && input == null) {
                 Tokenizer.load(parseInfo, parseInfo.source.content);
             }
@@ -1906,9 +1933,42 @@ export class Tokenizer {
     }
 
     /**
-     * Tokenize CSS string
+     * read the next token. when the input is a stream that is not read to its end, a token that ends near the end of
+     * the code units read so far may continue in the next chunk (an identifier, a number, a string, a comment, ...): the
+     * token is not returned, {@link waiting} is true and the stream must be read ({@link read}) before the next call
      */
-    next(/* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */): this {
+    next(): this {
+        if (this.streamDone) {
+            return this.nextToken();
+        }
+
+        const parseInfo: ParseInfo = this.parseInfo;
+        const position: number = parseInfo.position;
+        const currentPosition: number = parseInfo.currentPosition;
+        const state: EnumToken | null = this.state;
+        const lineStarts: number[] = parseInfo.source.lineStarts.lineStarts;
+        const lineCount: number = lineStarts.length;
+
+        this.nextToken();
+
+        // the tokenizer reads at most a few code units after the end of a token: the token is complete when the
+        // stream has more code units after it
+        if (parseInfo.currentPosition + STREAM_LOOKAHEAD > parseInfo.length) {
+            parseInfo.position = position;
+            parseInfo.currentPosition = currentPosition;
+            this.state = state;
+            lineStarts.length = lineCount;
+            this.typ = null;
+            this.waiting = true;
+        }
+
+        return this;
+    }
+
+    /**
+     * read the next token from the code units of the input
+     */
+    private nextToken(): this {
         const parseInfo: ParseInfo = this.parseInfo as ParseInfo;
 
         this.source = parseInfo.source;
@@ -2477,28 +2537,133 @@ export class Tokenizer {
     }
 
     /**
-     * tokenize readable stream
+     * start reading the stream: the first chunk is read. the next chunks are read when the tokenizer reaches the end
+     * of the code units read so far, see {@link next} and {@link read}
      */
     async tokenizeStream(): Promise<this> {
-        const decoder = new TextDecoder("utf-8");
-        const reader = this.input!.getReader();
+        if (!this.streamDone && this.reader == null) {
+            await this.read();
+        }
 
-        let parseInfo: ParseInfo = this.parseInfo as ParseInfo;
+        return this;
+    }
 
+    /**
+     * read the next chunk of the stream and append it to the css: the text of the source file and the code units.
+     * the code units stay a view of the bytes while the css is ascii, they are utf-16 code units otherwise
+     */
+    async read(): Promise<void> {
+        if (this.streamDone) {
+            this.waiting = false;
+            return;
+        }
 
-        while (true) {
-            const { done, value } = await reader.read();
-            const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
+        if (this.reader == null) {
+            this.reader = (this.input as ReadableStream<Uint8Array | string>).getReader();
+            this.decoder = new TextDecoder("utf-8");
+        }
 
-            if (!done) {
-                // inlined: parseInfo.source.append(stream as string)
-                parseInfo.source.content += stream as string;
-            } else {
+        // the chunks are appended together: at least 64 KB, or half of the css read so far. the text of the css is copied
+        // when it is read after a chunk is appended (a string is not appended in place): the batches grow with the css,
+        // the text is copied a few times instead of once per chunk
+        const batch: number = Math.max(STREAM_BATCH, this.parseInfo.length >> 1);
+        const texts: string[] = [];
+        let length: number = 0;
+
+        while (length < batch) {
+            const { done, value } = await this.reader.read();
+
+            if (done) {
+                // the end of a character split between the last chunks
+                texts.push((this.decoder as TextDecoder).decode());
+                this.streamDone = true;
+                this.reader.releaseLock();
                 break;
+            }
+
+            const text: string =
+                typeof value === "string" ? value : (this.decoder as TextDecoder).decode(value, { stream: true });
+
+            texts.push(text);
+            length += text.length;
+        }
+
+        const text: string = texts.length === 1 ? texts[0] : texts.join("");
+
+        if (text.length > 0) {
+            this.append(text);
+        }
+
+        this.waiting = false;
+    }
+
+    /**
+     * append the text of a chunk to the css
+     * @param text
+     */
+    private append(text: string): void {
+        const parseInfo: ParseInfo = this.parseInfo;
+        const length: number = parseInfo.length;
+        const required: number = length + text.length;
+
+        parseInfo.source.content += text;
+
+        if (required > this.buffer.length) {
+            let capacity: number = this.buffer.length > 0 ? this.buffer.length * 2 : 1 << 16;
+
+            while (capacity < required) {
+                capacity *= 2;
+            }
+
+            const buffer: Uint8Array | Uint16Array =
+                this.buffer instanceof Uint8Array ? new Uint8Array(capacity) : new Uint16Array(capacity);
+
+            buffer.set(this.buffer.subarray(0, length));
+            this.buffer = buffer;
+        }
+
+        let ascii: boolean = false;
+
+        if (this.buffer instanceof Uint8Array) {
+            // an ascii text has a byte for each character
+            const { read, written } = streamEncoder.encodeInto(text, this.buffer.subarray(length, required));
+
+            ascii = read === text.length && written === text.length;
+
+            if (!ascii) {
+                // the css is not ascii: the code units are utf-16 code units from now on
+                const buffer: Uint16Array = new Uint16Array(this.buffer.length);
+
+                buffer.set(this.buffer.subarray(0, length));
+                this.buffer = buffer;
             }
         }
 
-        Tokenizer.load(parseInfo, parseInfo.source.content);
-        return this; // .next();
+        if (!ascii) {
+            const buffer: Uint16Array = this.buffer as Uint16Array;
+
+            for (let i: number = 0; i < text.length; i++) {
+                buffer[length + i] = text.charCodeAt(i);
+            }
+        }
+
+        parseInfo.length = required;
+        parseInfo.codes = this.buffer.subarray(0, required);
     }
 }
+
+/**
+ * number of code units the tokenizer may read after the end of a token (escape sequences, unicode ranges, `<!--`,
+ * ...): a token read from a stream is complete when the stream has more code units after it, see {@link Tokenizer.next}
+ */
+const STREAM_LOOKAHEAD: number = 32;
+
+/**
+ * minimum number of code units appended to the css when a stream is read, see {@link Tokenizer.read}
+ */
+const STREAM_BATCH: number = 1 << 16;
+
+/**
+ * encoder of the chunks of a stream, see {@link Tokenizer.append}
+ */
+const streamEncoder: TextEncoder = new TextEncoder();

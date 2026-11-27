@@ -2246,9 +2246,14 @@ function isInRange(arena: AstArena, token: Token, syntax: ValidationToken): bool
  * @param token
  */
 function functionSyntax(arena: AstArena, token: Token): ValidationToken[] | null {
+    const previousSyntaxArena: AstArena | null = syntaxArena;
     syntaxArena = arena;
 
-    return arena.stringDerived(arena.stringValue[token], StringDerived.FunctionSyntax, computeFunctionSyntax);
+    const syntax = arena.stringDerived(arena.stringValue[token], StringDerived.FunctionSyntax, computeFunctionSyntax);
+
+    // the arena is not kept after the parse: the previous arena is restored (a nested call)
+    syntaxArena = previousSyntaxArena;
+    return syntax;
 }
 
 /**
@@ -2279,13 +2284,18 @@ function computeSelectorFunctionSyntax(id: number): ValidationToken[] | null {
  * @param token
  */
 export function selectorFunctionSyntax(arena: AstArena, token: Token): ValidationToken[] | null {
+    const previousSyntaxArena: AstArena | null = syntaxArena;
     syntaxArena = arena;
 
-    return arena.stringDerived(
+    const syntax = arena.stringDerived(
         arena.stringValue[token],
         StringDerived.SelectorFunctionSyntax,
         computeSelectorFunctionSyntax,
     );
+
+    // the arena is not kept after the parse: the previous arena is restored (a nested call)
+    syntaxArena = previousSyntaxArena;
+    return syntax;
 }
 
 /**

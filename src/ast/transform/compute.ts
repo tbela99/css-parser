@@ -144,9 +144,14 @@ function computeTransformKind(id: number): number {
  * @param id interned string id
  */
 export function transformKind(arena: AstArena, id: number): number {
+    const previousKindArena: AstArena | null = kindArena;
     kindArena = arena;
 
-    return arena.stringDerived(id, StringDerived.TransformKind, computeTransformKind);
+    const kind = arena.stringDerived(id, StringDerived.TransformKind, computeTransformKind);
+
+    // the arena is not kept after the transformation: the previous arena is restored (a nested call)
+    kindArena = previousKindArena;
+    return kind;
 }
 
 /**

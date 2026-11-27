@@ -21,7 +21,7 @@ The source code is in the [rust-css-parser](https://github.com/tbela99/rust-css-
 
 ## Performance
 
-The N-API build is the fastest build: up to 2.4 times faster than the TypeScript library, with the same output. See
+The N-API build is the fastest build: up to 2.1 times faster than the TypeScript library, with the same output. See
 [Performance](./performance.md) for the measures and a comparison with lightningcss and esbuild.
 
 ## Installation

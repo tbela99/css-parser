@@ -130,7 +130,7 @@ const shortCodes: number[] = [];
  * @param start
  * @param end
  */
-function fromCodes(codes: Uint16Array, start: number, end: number): string {
+function fromCodes(codes: CodeUnits, start: number, end: number): string {
     const length: number = end - start;
 
     // a short string: the code units are copied to an array, a subarray is slower to create
@@ -332,6 +332,21 @@ export class StringTable {
     setText(source: number, text: string, codes: CodeUnits | null = null): void {
         this.texts[source] = text;
         this.codes[source] = codes ?? undefined;
+    }
+
+    /**
+     * code unit of the text of a source, NaN after its end
+     * @param source source index
+     * @param offset
+     */
+    sourceCodeAt(source: number, offset: number): number {
+        const text: string | undefined = this.texts[source];
+
+        if (text !== undefined && offset < text.length) {
+            return text.charCodeAt(offset);
+        }
+
+        return this.codes[source]?.[offset] ?? NaN;
     }
 
     /**

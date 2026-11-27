@@ -16,6 +16,9 @@
 - [x] parser: the whitespace at the start of a statement and before `;`, `{` and `}` is not allocated in the arena
 - [x] parser: the tokens of a statement without errors are recycled without looking for references
 - [x] binary input: the ascii check reads the bytes 4 at a time
+- [x] `ReadableStream` input: the stream is parsed while it is read, chunk by chunk, instead of being read to its end first
+- [x] `ReadableStream` input: the chunks are appended in batches that grow with the css (at least 64 KB, or half of the css read so far): the text is not copied for each chunk
+- [x] memory: the last arena used by the selector, validation, minification and transform helpers is no longer referenced by a module variable after the call: it was kept alive until the next parse
 
 ## Fix
 

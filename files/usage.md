@@ -102,6 +102,10 @@ console.debug(result.code);
 
 The parse() and transform() functions accept a string or readable stream as first argument.
 
+The stream is parsed while it is read: a chunk is read when the tokenizer reaches the end of the CSS received so far.
+A token that may continue in the next chunk (an identifier, a number, a string, a comment, ...) is read again once the
+next chunk is received. The chunks can be bytes (UTF-8, a character can be split between two chunks) or text.
+
 ```ts
 import {parse} from '@tbela99/css-parser';
 import {Readable} from "node:stream";
