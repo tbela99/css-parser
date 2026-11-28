@@ -40,7 +40,7 @@ A non-exhaustive list of features is provided below:
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
 * **Vendor prefix cleanup** to modernize generated CSS.
-* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII or UTF-8 buffer is tokenized from its bytes, without copy or decoding.
 * **Experimental**: evaluate @mixin and @function
 * **51.5kb** once minified and gzipped.
 
@@ -95,7 +95,7 @@ It can be imported as an umd module.
 ```html
 <script type="module">
 
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.2/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.3/web';
 
     const css = `
 
@@ -132,7 +132,7 @@ It can be imported as a module in the browser.
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.3.2/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.3/dist/index-umd-web.js"></script>
 <script>
 
     const css = `
@@ -205,7 +205,7 @@ Load as javascript module
 ```html
 <script type="module">
 
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.2/web';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/css-parser@2.3.3/web';
 
 const css = `
 
@@ -232,7 +232,7 @@ Load as an UMD module
 
 ```html
 
-<script src="https://unpkg.com/@tbela99/css-parser@2.3.2/dist/index-umd-web.js"></script>
+<script src="https://unpkg.com/@tbela99/css-parser@2.3.3/dist/index-umd-web.js"></script>
 <script>
 
     const css = `

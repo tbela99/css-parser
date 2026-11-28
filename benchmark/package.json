@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@stacksjs/ts-css": "^0.3.29",
-    "@tbela99/css-parser": "github:tbela99/css-parser#c3cb851",
-    "@tbela99/rust-css-parser-napi": "^2.3.2",
-    "@tbela99/rust-css-parser-wasm": "^2.3.2",
+    "@tbela99/css-parser": "github:tbela99/css-parser#3e9798c",
+    "@tbela99/rust-css-parser-napi": "../../rust-css-parser/extensions/css-parser-napi",
+    "@tbela99/rust-css-parser-wasm": "../../rust-css-parser/extensions/css-parser-wasm",
     "clean-css": "^5.3.3",
     "css-tree": "^3.2.1",
     "cssnano": "^9.9.0",

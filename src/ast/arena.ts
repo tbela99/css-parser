@@ -53,6 +53,7 @@ import { combinators } from "../syntax/constants.ts";
 import { parseString } from "../parser/parse.ts";
 import { renderValue } from "../printer/render.ts";
 import type { CodeUnits } from "../parser/utils/codes.ts";
+import type { SourceText } from "../parser/input.ts";
 import {
     StringBuilder,
     type StringDerived,
@@ -543,8 +544,17 @@ export class Arena {
      * @param text content of the source
      * @param codes code units of the text while the source is tokenized (faster comparisons)
      */
-    public setSourceText(source: number, text: string, codes: CodeUnits | null = null): void {
+    public setSourceText(source: number, text: SourceText, codes: CodeUnits | null = null): void {
         this.stringTable.setText(source, text, codes);
+    }
+
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of the utf-8 sources are byte offsets
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    public utf16Offset(source: number, offset: number): number {
+        return this.stringTable.utf16Offset(source, offset);
     }
 
     /**
@@ -2876,10 +2886,13 @@ export class AstArena extends Arena {
             return null;
         }
 
+        const source: number = this.getSourceId(id);
+
+        // utf-8 css: the spans are byte offsets, the locations are utf-16 offsets
         return {
-            sta: this.getSpanStart(id),
-            end: this.getSpanEnd(id),
-            srcId: this.sources[this.getSourceId(id)] ?? 0,
+            sta: this.stringTable.utf16Offset(source, this.getSpanStart(id)),
+            end: this.stringTable.utf16Offset(source, this.getSpanEnd(id)),
+            srcId: this.sources[source] ?? 0,
         };
     }
 

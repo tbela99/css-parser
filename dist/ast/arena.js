@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';
@@ -413,6 +413,14 @@ class Arena {
      */
     setSourceText(source, text, codes = null) {
         this.stringTable.setText(source, text, codes);
+    }
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of the utf-8 sources are byte offsets
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    utf16Offset(source, offset) {
+        return this.stringTable.utf16Offset(source, offset);
     }
     /**
      * code unit of the text of a source, NaN after its end. no string is created
@@ -2385,10 +2393,12 @@ class AstArena extends Arena {
         if ((this.flags[id] & EnumAstNodeStatus.HasLocation) === 0) {
             return null;
         }
+        const source = this.getSourceId(id);
+        // utf-8 css: the spans are byte offsets, the locations are utf-16 offsets
         return {
-            sta: this.getSpanStart(id),
-            end: this.getSpanEnd(id),
-            srcId: this.sources[this.getSourceId(id)] ?? 0,
+            sta: this.stringTable.utf16Offset(source, this.getSpanStart(id)),
+            end: this.stringTable.utf16Offset(source, this.getSpanEnd(id)),
+            srcId: this.sources[source] ?? 0,
         };
     }
     /**

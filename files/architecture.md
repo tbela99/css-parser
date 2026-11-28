@@ -31,6 +31,11 @@ The input can be a string, an `ArrayBuffer` (or a `Uint8Array`) or a `ReadableSt
 [Usage](./usage.md#parsing)). A stream is parsed while it is read: the parser waits for the next chunk when the
 tokenizer reaches the end of the CSS received so far.
 
+The tokenizer reads the bytes of an ASCII or UTF-8 input, without copy or decoding: the positions of the tokens are
+byte offsets, the locations of the nodes, the columns of the errors and of the source maps, and `stats.bytesIn` are
+converted to UTF-16 offsets (the offsets in a JavaScript string). The input that is not valid UTF-8, that contains
+U+2028, U+2029 or U+212A, or that is mostly not ASCII, and the streams, are decoded to UTF-16 code units.
+
 The parser reads the CSS and builds a tree of rules, at-rules and declarations. It is fault-tolerant, like a browser:
 it always produces a tree. What is invalid is dropped and reported in `errors`, the rest is kept.
 

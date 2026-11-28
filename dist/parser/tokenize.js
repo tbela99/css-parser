@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 import { EnumToken, ColorType } from '../ast/types.js';
@@ -27,7 +27,7 @@ let decoded = new Uint16Array(256);
  * @param end
  * @returns the number of decoded code units
  */
-function decodeEscapes(codes, start, end) {
+function decodeEscapes(codes, start, end, utf8) {
     // the decoded value is not longer than the value
     if (decoded.length < end - start) {
         decoded = new Uint16Array(end - start);
@@ -37,6 +37,12 @@ function decodeEscapes(codes, start, end) {
     let i = start;
     while (i < end) {
         const code = codes[i];
+        if (code >= 0x80 && utf8) {
+            const next = decodeUtf8Char(codes, i, output, length);
+            length = decodedLength;
+            i = next;
+            continue;
+        }
         if (code !== 0x5c || i + 1 >= end) {
             output[length++] = code;
             i++;
@@ -80,6 +86,77 @@ function decodeEscapes(codes, start, end) {
         // an optional space ends the escape sequence
         if (i < end && codes[i] === 0x20) {
             i++;
+        }
+    }
+    return length;
+}
+/**
+ * the number of code units written by the last call of {@link decodeUtf8Char}
+ */
+let decodedLength = 0;
+/**
+ * decode the utf-8 character at an offset of the bytes (valid utf-8, see {@link toCodeUnits}) into utf-16 code units:
+ * the code units are written at an index of the output, the new length of the output is {@link decodedLength}
+ * @param codes
+ * @param offset
+ * @param output
+ * @param index
+ * @returns the offset of the next character
+ */
+function decodeUtf8Char(codes, offset, output, index) {
+    const code = codes[offset];
+    let codepoint;
+    if (code < 0xe0) {
+        codepoint = ((code & 0x1f) << 6) | (codes[offset + 1] & 0x3f);
+        offset += 2;
+    }
+    else if (code < 0xf0) {
+        codepoint = ((code & 0x0f) << 12) | ((codes[offset + 1] & 0x3f) << 6) | (codes[offset + 2] & 0x3f);
+        offset += 3;
+    }
+    else {
+        codepoint =
+            ((code & 0x07) << 18) |
+                ((codes[offset + 1] & 0x3f) << 12) |
+                ((codes[offset + 2] & 0x3f) << 6) |
+                (codes[offset + 3] & 0x3f);
+        offset += 4;
+    }
+    if (codepoint > 0xffff) {
+        codepoint -= 0x10000;
+        output[index++] = 0xd800 + (codepoint >> 10);
+        output[index++] = 0xdc00 + (codepoint & 0x3ff);
+    }
+    else {
+        output[index++] = codepoint;
+    }
+    decodedLength = index;
+    return offset;
+}
+/**
+ * decode a range of utf-8 bytes into {@link decoded}
+ * @param codes
+ * @param start
+ * @param end
+ * @returns the number of decoded code units
+ */
+function decodeUtf8(codes, start, end) {
+    // the decoded value is not longer than the bytes
+    if (decoded.length < end - start) {
+        decoded = new Uint16Array(end - start);
+    }
+    const output = decoded;
+    let length = 0;
+    let i = start;
+    while (i < end) {
+        const code = codes[i];
+        if (code < 0x80) {
+            output[length++] = code;
+            i++;
+        }
+        else {
+            i = decodeUtf8Char(codes, i, output, length);
+            length = decodedLength;
         }
     }
     return length;
@@ -586,6 +663,7 @@ function createParseInfo(input, source) {
     const parseInfo = {
         codes: new Uint8Array(0),
         length: 0,
+        utf8: null,
         source,
         offset: 0,
         time: 0,
@@ -729,7 +807,8 @@ class Tokenizer {
         const { codes, text } = toCodeUnits(input);
         parseInfo.codes = codes;
         parseInfo.length = codes.length;
-        parseInfo.source.content = text;
+        parseInfo.utf8 = typeof text === "string" ? null : text;
+        parseInfo.source.setText(text);
     }
     /**
      * id of the source file being tokenized
@@ -1190,10 +1269,10 @@ class Tokenizer {
         let canonical = -1;
         let valueStart = start;
         let hasValue = false;
-        this.typ = null;
-        this.kin = null;
-        this.num = 0;
-        this.field = 0 /* TokenValueField.None */;
+        let typ = null;
+        let kin = null;
+        let num = 0;
+        let field = 0 /* TokenValueField.None */;
         this.slice = null;
         this.hint = null;
         if (slice) {
@@ -1247,47 +1326,51 @@ class Tokenizer {
                         : -1;
                 hasValue = true;
             }
-            this.typ = hint;
+            typ = hint;
             if (!isHint) {
                 if (hasUnit || hint === EnumToken.PercentageTokenType || hint === EnumToken.DimensionTokenType) {
-                    this.num = parseNumber(parseInfo.codes, start, slice);
+                    num = parseNumber(parseInfo.codes, start, slice);
                     if (hint !== EnumToken.PercentageTokenType) {
-                        this.field = hasValue ? 4 /* TokenValueField.Unit */ : 1 /* TokenValueField.Number */;
+                        field = hasValue ? 4 /* TokenValueField.Unit */ : 1 /* TokenValueField.Number */;
                         // a dashed ident: a user defined unit. the canonical units are not dashed idents
                         if (canonical === -1 &&
                             parseInfo.codes[valueStart] === 0x2d &&
                             parseInfo.codes[valueStart + 1] === 0x2d) {
-                            this.typ = EnumToken.UserDefinedDimensionTokenType;
+                            typ = EnumToken.UserDefinedDimensionTokenType;
                         }
                     }
                     else {
-                        this.field = 1 /* TokenValueField.Number */;
+                        field = 1 /* TokenValueField.Number */;
                     }
                 }
                 else if (hint === EnumToken.NumberTokenType) {
-                    this.num = parseNumber(parseInfo.codes, slice ?? start, end);
-                    this.field = 1 /* TokenValueField.Number */;
+                    num = parseNumber(parseInfo.codes, slice ?? start, end);
+                    field = 1 /* TokenValueField.Number */;
                 }
                 else if (hint === EnumToken.AtRuleTokenType) {
-                    this.field = hasValue ? 2 /* TokenValueField.Name */ : 0 /* TokenValueField.None */;
+                    field = hasValue ? 2 /* TokenValueField.Name */ : 0 /* TokenValueField.None */;
                 }
                 else {
-                    this.field = hasValue ? 3 /* TokenValueField.Value */ : 0 /* TokenValueField.None */;
+                    field = hasValue ? 3 /* TokenValueField.Value */ : 0 /* TokenValueField.None */;
                     if (hint === EnumToken.ColorTokenType) {
-                        this.kin = ColorType.HEX;
+                        kin = ColorType.HEX;
                     }
                 }
             }
         }
         else if (this.equalsIgnoreCase(parseInfo, "!important")) {
-            this.typ = EnumToken.ImportantTokenType;
+            typ = EnumToken.ImportantTokenType;
         }
-        if (this.typ == null) {
+        if (typ == null) {
             valueStart = start;
             hasValue = true;
-            this.typ = EnumToken.LiteralTokenType;
-            this.field = 3 /* TokenValueField.Value */;
+            typ = EnumToken.LiteralTokenType;
+            field = 3 /* TokenValueField.Value */;
         }
+        this.typ = typ;
+        this.kin = kin;
+        this.num = num;
+        this.field = field;
         if (hasValue) {
             if (canonical !== -1) {
                 this.valueKind = 1 /* TokenValueKind.Canonical */;
@@ -1321,23 +1404,40 @@ class Tokenizer {
      * @param sourceIndex index of the source in the arena, -1 when the tokens have no location
      */
     internValue(arena, sourceIndex) {
-        switch (this.valueKind) {
+        return this.intern(arena, sourceIndex, this.valueKind, this.valueStart, this.valueEnd);
+    }
+    /**
+     * id of a string value of a token in the arena, see {@link internValue}
+     * @param arena
+     * @param sourceIndex index of the source in the arena, -1 when the tokens have no location
+     * @param valueKind
+     * @param valueStart
+     * @param valueEnd
+     */
+    intern(arena, sourceIndex, valueKind, valueStart, valueEnd) {
+        switch (valueKind) {
             case 1 /* TokenValueKind.Canonical */:
-                return arena.internRange(canonicalCodes(), this.valueStart, this.valueEnd, -2 /* StringSource.Canonical */);
+                return arena.internRange(canonicalCodes(), valueStart, valueEnd, -2 /* StringSource.Canonical */);
             case 2 /* TokenValueKind.Escaped */: {
                 // the buffer may be reallocated by the decoder: it is read after the decoding
-                const length = decodeEscapes(this.parseInfo.codes, this.valueStart, this.valueEnd);
+                const length = decodeEscapes(this.parseInfo.codes, valueStart, valueEnd, this.parseInfo.utf8 !== null);
                 return arena.internRange(decoded, 0, length, -1 /* StringSource.Pool */);
             }
             default:
-                return arena.internRange(this.parseInfo.codes, this.valueStart, this.valueEnd, sourceIndex < 0 ? -1 /* StringSource.Pool */ : sourceIndex);
+                // utf-8 css: the ranges of a source are ascii, the other values are decoded
+                if (this.parseInfo.utf8 !== null && this.parseInfo.utf8.hasNonAscii(valueStart, valueEnd)) {
+                    const length = decodeUtf8(this.parseInfo.codes, valueStart, valueEnd);
+                    return arena.internRange(decoded, 0, length, -1 /* StringSource.Pool */);
+                }
+                return arena.internRange(this.parseInfo.codes, valueStart, valueEnd, sourceIndex < 0 ? -1 /* StringSource.Pool */ : sourceIndex);
         }
     }
     /**
-     * content of the source being tokenized: the offsets of the tokens are offsets of the content
+     * text of the source being tokenized: the offsets of the tokens are offsets of the text (utf-8 css: the bytes, see
+     * {@link Utf8Text})
      */
     get content() {
-        return this.parseInfo.source.content;
+        return this.parseInfo.source.text;
     }
     /**
      * code units of the source being tokenized

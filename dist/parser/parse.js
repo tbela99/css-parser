@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 import { isIdentColor, parseColor, isColor } from '../syntax/syntax.js';
@@ -1076,11 +1076,12 @@ function doParseSync(tokenizer, options = {}) {
         // the ast is not minified: the adjacent rules are merged
         mergeRules(arena, ast, minifyOptions);
     }
-    stats.bytesIn += stats.importedBytesIn;
+    // the render buffer is allocated from the input length, in bytes
+    arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+    // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+    stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
     arena.releaseSourceCodes(sourceIndex);
-    // the render buffer is allocated from the input length
-    arena.inputLengths[ast] = stats.bytesIn;
     let endTime = performance.now();
     const result = {
         ast,
@@ -2115,11 +2116,12 @@ async function doParse(iter, options = {}) {
         // the ast is not minified: the adjacent rules are merged
         mergeRules(arena, ast, minifyOptions);
     }
-    stats.bytesIn += stats.importedBytesIn;
+    // the render buffer is allocated from the input length, in bytes
+    arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+    // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+    stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
     arena.releaseSourceCodes(sourceIndex);
-    // the render buffer is allocated from the input length
-    arena.inputLengths[ast] = stats.bytesIn;
     let endTime = performance.now();
     const result = {
         ast,

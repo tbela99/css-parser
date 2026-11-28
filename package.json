@@ -1,7 +1,7 @@
 {
   "name": "@tbela99/css-parser",
   "description": "CSS parser, minifier and validator for node, deno, bun and the browser",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

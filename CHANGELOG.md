@@ -1,5 +1,11 @@
 # Changelog
 
+# v2.3.3
+
+## Performance
+
+- [x] tokenizer: a UTF-8 input that is not ASCII (a string or bytes) is tokenized from its bytes, like an ASCII input: it is not decoded to a string then copied to UTF-16 code units. the positions of the tokens are byte offsets, the locations of the nodes, the columns of the errors and of the source maps, and `stats.bytesIn` are still UTF-16 offsets. the values of the tokens that have non-ASCII characters are decoded when they are interned. the input that is not valid UTF-8 (the invalid sequences are replaced by U+FFFD), that contains U+2028, U+2029 or U+212A, or that is mostly not ASCII, and the streams, are decoded to UTF-16 code units as before. the input is loaded 2.5 times faster with node.js and 9 times faster in the browsers (no native decoder for the code units), the tokenizer is 3 to 7% faster (13 to 15% in the browsers)
+
 # v2.3.2
 
 ## Feature

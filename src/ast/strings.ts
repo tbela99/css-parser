@@ -19,8 +19,9 @@
  * @module
  * @internal
  */
-import { type CodeUnits, hashRange, hashString } from "../parser/utils/codes.ts";
+import { type CodeUnits, fromCodes, hashRange, hashString } from "../parser/utils/codes.ts";
 import { canonicalCodes, canonicalText } from "../parser/utils/canonical.ts";
+import { type SourceText, Utf8Text } from "../parser/input.ts";
 
 /**
  * where the code units of an interned string are stored. a value that is not negative is the index of a source
@@ -108,7 +109,7 @@ export interface StringTableData {
     /**
      * text of each source, by source index
      */
-    texts: string[];
+    texts: Array<string | Uint8Array>;
     /**
      * code units of the pool
      */
@@ -119,43 +120,7 @@ export interface StringTableData {
     values: Array<string | undefined>;
 }
 
-/**
- * code units of a short string, see {@link fromCodes}
- */
-const shortCodes: number[] = [];
 
-/**
- * string of a range of code units
- * @param codes
- * @param start
- * @param end
- */
-function fromCodes(codes: CodeUnits, start: number, end: number): string {
-    const length: number = end - start;
-
-    // a short string: the code units are copied to an array, a subarray is slower to create
-    if (length <= 256) {
-        shortCodes.length = length;
-
-        for (let i: number = 0; i < length; i++) {
-            shortCodes[i] = codes[start + i];
-        }
-
-        return String.fromCharCode.apply(null, shortCodes);
-    }
-
-    let result: string = "";
-
-    // String.fromCharCode() with a limited number of arguments
-    while (start < end) {
-        const next: number = end - start > 4096 ? start + 4096 : end;
-
-        result += String.fromCharCode.apply(null, codes.subarray(start, next) as unknown as number[]);
-        start = next;
-    }
-
-    return result;
-}
 
 /**
  * builds a string from code units, strings and interned strings, then interns it: no string is created
@@ -290,9 +255,19 @@ export class StringTable {
      */
     private slots: Int32Array = new Int32Array(512);
     /**
-     * text of the sources, by source index
+     * text of the sources, by source index. utf-8 sources: an empty string, the text is read from the bytes (see
+     * {@link utf8})
      */
     private texts: string[] = [];
+    /**
+     * the utf-8 sources, by source index: the strings are read from the bytes. the strings and the utf-8 sources are
+     * not mixed in {@link texts}: the methods of the strings are called on strings only
+     */
+    private utf8: Array<Uint8Array | undefined> = [];
+    /**
+     * the converters of the byte offsets of the utf-8 sources to utf-16 offsets, by source index
+     */
+    private utf8Texts: Array<Utf8Text | undefined> = [];
     /**
      * code units of the sources being tokenized, by source index
      */
@@ -329,9 +304,29 @@ export class StringTable {
      * @param codes code units of the text, while the source is tokenized: the ranges are compared with the code units
      * (faster than the text). see {@link releaseCodes}
      */
-    setText(source: number, text: string, codes: CodeUnits | null = null): void {
-        this.texts[source] = text;
+    setText(source: number, text: SourceText, codes: CodeUnits | null = null): void {
+        if (typeof text === "string") {
+            this.texts[source] = text;
+            this.utf8[source] = undefined;
+            this.utf8Texts[source] = undefined;
+        } else {
+            this.texts[source] = "";
+            this.utf8[source] = text.bytes;
+            this.utf8Texts[source] = text;
+        }
+
         this.codes[source] = codes ?? undefined;
+    }
+
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of utf-8 sources are byte offsets
+     * @param source source index
+     * @param offset
+     */
+    utf16Offset(source: number, offset: number): number {
+        const text: Utf8Text | undefined = this.utf8Texts[source];
+
+        return text === undefined ? offset : text.utf16(offset);
     }
 
     /**
@@ -340,6 +335,12 @@ export class StringTable {
      * @param offset
      */
     sourceCodeAt(source: number, offset: number): number {
+        const bytes: Uint8Array | undefined = this.utf8[source];
+
+        if (bytes !== undefined) {
+            return bytes[offset] ?? NaN;
+        }
+
         const text: string | undefined = this.texts[source];
 
         if (text !== undefined && offset < text.length) {
@@ -474,13 +475,17 @@ export class StringTable {
         if (str === undefined && id < this.count) {
             const source: number = this.sources[id];
 
+            const bytes: Uint8Array | undefined = source >= 0 ? this.utf8[source] : undefined;
+
             str =
                 source === StringSource.Pool
                     ? fromCodes(this.pool, this.starts[id], this.ends[id])
-                    : (source === StringSource.Canonical ? canonicalText() : this.texts[source]).slice(
-                          this.starts[id],
-                          this.ends[id],
-                      );
+                    : bytes !== undefined
+                      ? fromCodes(bytes, this.starts[id], this.ends[id])
+                      : (source === StringSource.Canonical ? canonicalText() : this.texts[source]).slice(
+                            this.starts[id],
+                            this.ends[id],
+                        );
 
             this.cache[id] = str;
         }
@@ -506,7 +511,9 @@ export class StringTable {
         const offset: number = this.starts[id] + index;
 
         if (source >= 0) {
-            return this.texts[source].charCodeAt(offset);
+            const bytes: Uint8Array | undefined = this.utf8[source];
+
+            return bytes === undefined ? this.texts[source].charCodeAt(offset) : bytes[offset];
         }
 
         switch (source) {
@@ -535,6 +542,8 @@ export class StringTable {
             target.set(this.pool.subarray(start, start + length), offset);
         } else if (source === StringSource.Canonical) {
             target.set(canonicalCodes().subarray(start, start + length), offset);
+        } else if (source >= 0 && this.utf8[source] !== undefined) {
+            target.set((this.utf8[source] as Uint8Array).subarray(start, start + length), offset);
         } else {
             const text: string = source === StringSource.Value ? (this.cache[id] as string) : this.texts[source];
             const base: number = source === StringSource.Value ? 0 : start;
@@ -646,6 +655,16 @@ export class StringTable {
 
                 target[offset + i] = code;
             }
+        } else if (source >= 0 && this.utf8[source] !== undefined) {
+            const bytes: Uint8Array = this.utf8[source] as Uint8Array;
+
+            for (let i: number = 0; i < length; i++) {
+                if ((code = bytes[start + i]) > 0x7f) {
+                    return -1;
+                }
+
+                target[offset + i] = code;
+            }
         } else {
             const text: string = source === StringSource.Value ? (this.cache[id] as string) : this.texts[source];
             const base: number = source === StringSource.Value ? 0 : start;
@@ -677,6 +696,18 @@ export class StringTable {
 
             for (let i: number = 0; i < length; i++) {
                 if (codes[start + i] === code) {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        if (source >= 0 && this.utf8[source] !== undefined) {
+            const bytes: Uint8Array = this.utf8[source] as Uint8Array;
+
+            for (let i: number = 0; i < length; i++) {
+                if (bytes[start + i] === code) {
                     return i;
                 }
             }
@@ -872,6 +903,8 @@ export class StringTable {
         this.pool = pool;
         this.poolLength = poolLength;
         this.texts = previous.texts;
+        this.utf8 = previous.utf8;
+        this.utf8Texts = previous.utf8Texts;
         this.rehash();
 
         return mapping;
@@ -895,7 +928,9 @@ export class StringTable {
             sources: this.sources.slice(0, this.count),
             starts: this.starts.slice(0, this.count),
             ends: this.ends.slice(0, this.count),
-            texts: this.texts.slice(),
+            texts: this.texts.map((text: string, source: number): string | Uint8Array =>
+                this.utf8[source] === undefined ? text : (this.utf8[source] as Uint8Array).slice(),
+            ),
             pool: this.pool.slice(0, this.poolLength),
             values,
         };
@@ -911,7 +946,12 @@ export class StringTable {
         this.sources.set(data.sources);
         this.starts.set(data.starts);
         this.ends.set(data.ends);
-        this.texts = data.texts.slice();
+        this.texts = [];
+        this.utf8 = [];
+        this.utf8Texts = [];
+        data.texts.forEach((text: string | Uint8Array, source: number): void =>
+            this.setText(source, typeof text === "string" ? text : Utf8Text.from(text)),
+        );
         this.pool = data.pool.length > 0 ? data.pool.slice() : new Uint16Array(1024);
         this.poolLength = data.pool.length;
 
@@ -992,7 +1032,9 @@ export class StringTable {
             return true;
         }
 
-        const sourceCodes: CodeUnits | undefined = source >= 0 ? this.codes[source] : undefined;
+        // the source being tokenized (its code units are compared), or a utf-8 source (its bytes are compared)
+        const sourceCodes: CodeUnits | undefined =
+            source >= 0 ? (this.codes[source] ?? this.utf8[source]) : undefined;
 
         // the source being tokenized: the code units are compared
         if (sourceCodes !== undefined) {
@@ -1040,6 +1082,18 @@ export class StringTable {
 
             for (let i: number = 0; i < length; i++) {
                 if (pool[offset + i] !== str.charCodeAt(i)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        const bytes: Uint8Array | undefined = source >= 0 ? this.utf8[source] : undefined;
+
+        if (bytes !== undefined) {
+            for (let i: number = 0; i < length; i++) {
+                if (bytes[offset + i] !== str.charCodeAt(i)) {
                     return false;
                 }
             }
@@ -1134,6 +1188,8 @@ export class StringTable {
         table.starts = this.starts;
         table.ends = this.ends;
         table.texts = this.texts;
+        table.utf8 = this.utf8;
+        table.utf8Texts = this.utf8Texts;
         table.pool = this.pool;
         table.poolLength = this.poolLength;
 

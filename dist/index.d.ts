@@ -1307,6 +1307,81 @@ declare class AstArenaNode {
 type CodeUnits = Uint8Array | Uint16Array;
 
 /**
+ * css input: the utf-8 encoded css in an ArrayBuffer or in a view of an ArrayBuffer (Uint8Array, Buffer), the preferred
+ * input, or a string
+ */
+type CssInput = string | ArrayBuffer | ArrayBufferView;
+/**
+ * the text of a source: the values of the tokens are ranges of the text. a string, or the bytes of a utf-8 css
+ */
+type SourceText = string | Utf8Text;
+/**
+ * the text of a utf-8 css that is not ascii, read from its bytes: the tokenizer reads the bytes, the offsets of the
+ * tokens are byte offsets. the values of the tokens that are interned as ranges of the source are ascii (see
+ * `Tokenizer.internValue()`): {@link charCodeAt} and {@link slice} read the bytes like the methods of a string. the
+ * locations of the nodes and the columns of the source maps are utf-16 offsets, see {@link utf16}
+ */
+declare class Utf8Text {
+    readonly bytes: Uint8Array;
+    private readonly positions;
+    private readonly deltas;
+    private decoded;
+    /**
+     * @param bytes the valid utf-8 bytes of the css
+     * @param positions the offsets of the non ascii characters, in increasing order
+     * @param deltas the number of bytes minus the number of utf-16 code units of the non ascii characters, up to the
+     * character at the same index in the positions (included)
+     * @param decoded the text of the css, null when it is decoded when it is read (see {@link content})
+     */
+    constructor(bytes: Uint8Array, positions?: Int32Array, deltas?: Int32Array, decoded?: string | null);
+    /**
+     * the text of the bytes of a utf-8 css (see `StringTable.import()`): the positions of the non ascii characters are
+     * computed again
+     * @param bytes
+     */
+    static from(bytes: Uint8Array): Utf8Text;
+    /**
+     * true if the bytes are ascii
+     */
+    get isAscii(): boolean;
+    /**
+     * the number of bytes
+     */
+    get length(): number;
+    /**
+     * the byte at an offset, NaN after the end
+     * @param offset
+     */
+    charCodeAt(offset: number): number;
+    /**
+     * the string of a range of ascii bytes
+     * @param start
+     * @param end
+     */
+    slice(start: number, end: number): string;
+    /**
+     * the text of the css
+     */
+    get content(): string;
+    /**
+     * index of the first non ascii character at or after an offset (the number of non ascii characters before it)
+     * @param offset
+     */
+    private search;
+    /**
+     * true if a range of the bytes has non ascii characters
+     * @param start
+     * @param end
+     */
+    hasNonAscii(start: number, end: number): boolean;
+    /**
+     * the utf-16 offset of a byte offset (the offset of a character)
+     * @param offset
+     */
+    utf16(offset: number): number;
+}
+
+/**
  * String table of an arena.
  *
  * The strings of the nodes (selectors, names, identifiers, strings, units, ...) are interned: a node stores a string id.
@@ -1393,7 +1468,7 @@ interface StringTableData {
     /**
      * text of each source, by source index
      */
-    texts: string[];
+    texts: Array<string | Uint8Array>;
     /**
      * code units of the pool
      */
@@ -1494,9 +1569,19 @@ declare class StringTable {
      */
     private slots;
     /**
-     * text of the sources, by source index
+     * text of the sources, by source index. utf-8 sources: an empty string, the text is read from the bytes (see
+     * {@link utf8})
      */
     private texts;
+    /**
+     * the utf-8 sources, by source index: the strings are read from the bytes. the strings and the utf-8 sources are
+     * not mixed in {@link texts}: the methods of the strings are called on strings only
+     */
+    private utf8;
+    /**
+     * the converters of the byte offsets of the utf-8 sources to utf-16 offsets, by source index
+     */
+    private utf8Texts;
     /**
      * code units of the sources being tokenized, by source index
      */
@@ -1532,7 +1617,13 @@ declare class StringTable {
      * @param codes code units of the text, while the source is tokenized: the ranges are compared with the code units
      * (faster than the text). see {@link releaseCodes}
      */
-    setText(source: number, text: string, codes?: CodeUnits | null): void;
+    setText(source: number, text: SourceText, codes?: CodeUnits | null): void;
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of utf-8 sources are byte offsets
+     * @param source source index
+     * @param offset
+     */
+    utf16Offset(source: number, offset: number): number;
     /**
      * code unit of the text of a source, NaN after its end
      * @param source source index
@@ -1989,7 +2080,13 @@ declare class Arena {
      * @param text content of the source
      * @param codes code units of the text while the source is tokenized (faster comparisons)
      */
-    setSourceText(source: number, text: string, codes?: CodeUnits | null): void;
+    setSourceText(source: number, text: SourceText, codes?: CodeUnits | null): void;
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of the utf-8 sources are byte offsets
+     * @param source source index (see {@link getSourceId})
+     * @param offset
+     */
+    utf16Offset(source: number, offset: number): number;
     /**
      * code unit of the text of a source, NaN after its end. no string is created
      * @param source source index (see {@link getSourceId})
@@ -5943,6 +6040,10 @@ declare class SourceMap {
  */
 declare class LineMap {
     /**
+     * utf-8 css: the offsets are byte offsets, the columns are utf-16 columns
+     */
+    utf8: Utf8Text | null;
+    /**
      * line starts
      */
     readonly lineStarts: number[];
@@ -5982,9 +6083,10 @@ declare class SourceFile {
      */
     readonly lineStarts: LineMap;
     /**
-     * Source file content
+     * the text the tokens are read from: the offsets of the tokens are offsets of the text. utf-8 css: the bytes of the
+     * css (a {@link Utf8Text}), the offsets are byte offsets
      */
-    content: string;
+    text: SourceText;
     private inputSourceMap;
     /**
      * Constructor
@@ -5993,6 +6095,16 @@ declare class SourceFile {
      * @param file
      */
     constructor(content: string, lines: number[], file?: string | null);
+    /**
+     * Source file content
+     */
+    get content(): string;
+    set content(content: string);
+    /**
+     * set the text the tokens are read from, see {@link text}
+     * @param text
+     */
+    setText(text: SourceText): void;
     /**
      * Update source content
      * @param content
@@ -6029,7 +6141,8 @@ export declare interface PropertyListOptions {
  */
 export declare interface ParseInfo {
     /**
-     * the utf-16 code units of the css, read by the tokenizer. the code units of an ascii ArrayBuffer are its bytes
+     * the code units of the css, read by the tokenizer: the bytes of an ascii or utf-8 css (see {@link utf8}), the
+     * utf-16 code units otherwise
      */
     codes: Uint8Array | Uint16Array;
 
@@ -6037,6 +6150,12 @@ export declare interface ParseInfo {
      * the number of code units: the length of a typed array is a getter
      */
     length: number;
+
+    /**
+     * the code units are the utf-8 bytes of a css that is not ascii (the text of the css), null otherwise: the
+     * offsets of the tokens are byte offsets
+     */
+    utf8: Utf8Text | null;
 
     /**
      * Source file
@@ -6337,12 +6456,6 @@ interface ValidationDimensionToken extends ValidationToken {
      */
     unit: keyof EnumToken;
 }
-
-/**
- * css input: the utf-8 encoded css in an ArrayBuffer or in a view of an ArrayBuffer (Uint8Array, Buffer), the preferred
- * input, or a string
- */
-type CssInput = string | ArrayBuffer | ArrayBufferView;
 
 /**
  * response type
@@ -8331,7 +8444,7 @@ declare function parseSyntax(syntax: string): ValidationToken[];
 /**
  * Version number
  */
-declare const version = "2.3.2";
+declare const version = "2.3.3";
 
 /**
  * Load file or url

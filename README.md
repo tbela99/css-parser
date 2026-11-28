@@ -77,7 +77,7 @@ It is also available as a Rust library on crates.io: [`rust-css-parser`](https:/
 * **Duplicate declaration removal** to eliminate redundant rules.
 * **`@import` flattening** to produce self-contained stylesheets.
 * **Vendor prefix cleanup** to modernize generated CSS.
-* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
+* **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII or UTF-8 buffer is tokenized from its bytes, without copy or decoding.
 * **Experimental**: evaluate @mixin and @function
 * **51.5kb** once minified and gzipped.
 * **Native and WebAssembly builds** — the same API ported to Rust: an N-API addon for Node.js, and a WebAssembly build of **only 2.5 MB** (865 KB gzipped) for Node.js and the browsers.

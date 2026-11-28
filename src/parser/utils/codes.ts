@@ -105,3 +105,41 @@ export function hashRangeLower(codes: ArrayLike<number>, start: number, end: num
 
     return hash & HASH_MASK;
 }
+
+/**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes: number[] = [];
+
+/**
+ * string of a range of code units
+ * @param codes
+ * @param start
+ * @param end
+ */
+export function fromCodes(codes: CodeUnits, start: number, end: number): string {
+    const length: number = end - start;
+
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+
+        for (let i: number = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+
+        return String.fromCharCode.apply(null, shortCodes);
+    }
+
+    let result: string = "";
+
+    // String.fromCharCode() with a limited number of arguments
+    while (start < end) {
+        const next: number = end - start > 4096 ? start + 4096 : end;
+
+        result += String.fromCharCode.apply(null, codes.subarray(start, next) as unknown as number[]);
+        start = next;
+    }
+
+    return result;
+}

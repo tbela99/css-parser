@@ -158,4 +158,84 @@ export function run(
             expect((await transform(streamOf([]))).code).equals("");
         });
     });
+
+    // a utf-8 css without U+2028, U+2029 and U+212A is tokenized from its bytes: the offsets are byte offsets, the
+    // locations, the columns and the lengths are utf-16 offsets. a stream is decoded to utf-16 code units: it is the
+    // reference
+    describe("UTF-8 input", function () {
+        const streamOf = (bytes) =>
+            new ReadableStream({
+                start(controller) {
+                    for (let i = 0; i < bytes.length; i += 3) {
+                        controller.enqueue(bytes.slice(i, i + 3));
+                    }
+
+                    controller.close();
+                },
+            });
+
+        const utf8 = `.a { content: "été 😀"; color: #ff0000 } .ü\\31 x::after { content: "\\e9 😀 →" }
+.😀b { background: url(données.png) } /* commentaire é */ .c{width:calc(1px + 2px)} .d { color: }
+@media (min-width: 40em) { .日本 { margin: 0 } } .e { font-family: "Noto Sans 日本語", sans-serif } .f { color: red`;
+
+        const locations = (result) => {
+            const list = [];
+
+            for (const node of result.arena.walk(result.ast)) {
+                const location = result.arena.getLocation(node);
+
+                list.push(location && [location.sta, location.end]);
+            }
+
+            return list;
+        };
+
+        const summary = (result) => [
+            result.code,
+            result.errors.map((error) => [error.message, error.location]),
+            JSON.stringify(result.map ?? null),
+            result.stats.bytesIn,
+        ];
+
+        it("locations are utf-16 offsets #1", async function () {
+            const bytes = encoder.encode(utf8);
+            const expected = locations(await parse(streamOf(bytes), { minify: false }));
+
+            expect(locations(parseSync(utf8, { minify: false }))).deep.equals(expected);
+            expect(locations(parseSync(bytes, { minify: false }))).deep.equals(expected);
+            expect(locations(await parse(bytes.buffer, { minify: false }))).deep.equals(expected);
+        });
+
+        it("output, errors, source map and length #2", async function () {
+            const bytes = encoder.encode(utf8);
+
+            for (const options of [{}, { minify: false, sourcemap: true, src: "a.css" }, { beautify: true }]) {
+                const expected = summary(await transform(streamOf(bytes), options));
+
+                expect(summary(transformSync(utf8, options)), JSON.stringify(options)).deep.equals(expected);
+                expect(summary(transformSync(bytes, options)), JSON.stringify(options)).deep.equals(expected);
+            }
+        });
+
+        it("the length of the css is in utf-16 code units #3", function () {
+            expect(transformSync(encoder.encode(utf8)).stats.bytesIn).equals(utf8.length);
+        });
+
+        it("invalid utf-8 is decoded #4", function () {
+            // 0xff is not utf-8: it is replaced by U+FFFD
+            const bytes = new Uint8Array([...encoder.encode('.a{content:"é'), 0xff, ...encoder.encode('"}')]);
+
+            expect(transformSync(bytes).code).equals(transformSync(new TextDecoder().decode(bytes)).code);
+            expect(transformSync(bytes).code).equals('.a{content:"é�"}');
+        });
+
+        it("U+2028 and dense non ascii css #5", async function () {
+            for (const source of [`.a{content:"é"} .b{color:red}`, `.日本語{content:"日本語のテキスト"}.ü{color:red}`]) {
+                const bytes = encoder.encode(source);
+                const expected = await transform(streamOf(bytes), { minify: false, sourcemap: true });
+
+                expect(summary(transformSync(bytes, { minify: false, sourcemap: true }))).deep.equals(summary(expected));
+            }
+        });
+    });
 }

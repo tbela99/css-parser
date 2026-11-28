@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 import { interpreted, seq, kws, alt, leaf, kw, rep, list, unordered, fn, comma, occ, opt, rng, ref, slash, fndef, num, optGroup, closeParens, str, colon, openParens, optList, empty } from './runtime.js';

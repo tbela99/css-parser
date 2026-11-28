@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 /**
@@ -89,5 +89,34 @@ function hashRangeLower(codes, start, end) {
     }
     return hash & HASH_MASK;
 }
+/**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes = [];
+/**
+ * string of a range of code units
+ * @param codes
+ * @param start
+ * @param end
+ */
+function fromCodes(codes, start, end) {
+    const length = end - start;
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+        for (let i = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+        return String.fromCharCode.apply(null, shortCodes);
+    }
+    let result = "";
+    // String.fromCharCode() with a limited number of arguments
+    while (start < end) {
+        const next = end - start > 4096 ? start + 4096 : end;
+        result += String.fromCharCode.apply(null, codes.subarray(start, next));
+        start = next;
+    }
+    return result;
+}
 
-export { hashRange, hashRangeLower, hashString, lowerAscii };
+export { fromCodes, hashRange, hashRangeLower, hashString, lowerAscii };

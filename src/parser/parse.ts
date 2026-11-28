@@ -1399,11 +1399,12 @@ export function doParseSync(tokenizer: Tokenizer, options: ParserSyncOptions = {
         mergeRules(arena, ast, minifyOptions);
     }
 
-    stats.bytesIn += stats.importedBytesIn;
+    // the render buffer is allocated from the input length, in bytes
+    arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+    // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+    stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
     arena.releaseSourceCodes(sourceIndex);
-    // the render buffer is allocated from the input length
-    arena.inputLengths[ast] = stats.bytesIn;
 
     let endTime: number = performance.now();
     const result = {
@@ -2733,11 +2734,12 @@ export async function doParse(iter: Tokenizer | Promise<Tokenizer>, options: Par
         mergeRules(arena, ast, minifyOptions);
     }
 
-    stats.bytesIn += stats.importedBytesIn;
+    // the render buffer is allocated from the input length, in bytes
+    arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+    // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+    stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
     // the source is no longer tokenized: the code units are not kept
     arena.releaseSourceCodes(sourceIndex);
-    // the render buffer is allocated from the input length
-    arena.inputLengths[ast] = stats.bytesIn;
 
     let endTime: number = performance.now();
     const result = {

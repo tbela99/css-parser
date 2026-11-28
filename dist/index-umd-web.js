@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 (function (global, factory) {
@@ -21335,6 +21335,10 @@
      */
     class LineMap {
         /**
+         * utf-8 css: the offsets are byte offsets, the columns are utf-16 columns
+         */
+        utf8 = null;
+        /**
          * line starts
          */
         lineStarts;
@@ -21355,7 +21359,9 @@
          */
         getOffsets(offset) {
             const line = this.search(offset);
-            const column = offset - this.lineStarts[line];
+            const column = this.utf8 === null
+                ? offset - this.lineStarts[line]
+                : this.utf8.utf16(offset) - this.utf8.utf16(this.lineStarts[line]);
             // [line, column]
             return [line + 1, line === 0 ? column + 1 : column];
         }
@@ -21603,9 +21609,10 @@
          */
         lineStarts;
         /**
-         * Source file content
+         * the text the tokens are read from: the offsets of the tokens are offsets of the text. utf-8 css: the bytes of the
+         * css (a {@link Utf8Text}), the offsets are byte offsets
          */
-        content;
+        text;
         inputSourceMap = null;
         /**
          * Constructor
@@ -21615,9 +21622,26 @@
          */
         constructor(content, lines, file = null) {
             this.id = sourceId++;
-            this.content = content;
+            this.text = content;
             this.file = file;
             this.lineStarts = new LineMap(lines);
+        }
+        /**
+         * Source file content
+         */
+        get content() {
+            return typeof this.text === "string" ? this.text : this.text.content;
+        }
+        set content(content) {
+            this.setText(content);
+        }
+        /**
+         * set the text the tokens are read from, see {@link text}
+         * @param text
+         */
+        setText(text) {
+            this.text = text;
+            this.lineStarts.utf8 = typeof text === "string" ? null : text;
         }
         /**
          * Update source content
@@ -33055,6 +33079,35 @@
         }
         return hash & HASH_MASK;
     }
+    /**
+     * code units of a short string, see {@link fromCodes}
+     */
+    const shortCodes = [];
+    /**
+     * string of a range of code units
+     * @param codes
+     * @param start
+     * @param end
+     */
+    function fromCodes(codes, start, end) {
+        const length = end - start;
+        // a short string: the code units are copied to an array, a subarray is slower to create
+        if (length <= 256) {
+            shortCodes.length = length;
+            for (let i = 0; i < length; i++) {
+                shortCodes[i] = codes[start + i];
+            }
+            return String.fromCharCode.apply(null, shortCodes);
+        }
+        let result = "";
+        // String.fromCharCode() with a limited number of arguments
+        while (start < end) {
+            const next = end - start > 4096 ? start + 4096 : end;
+            result += String.fromCharCode.apply(null, codes.subarray(start, next));
+            start = next;
+        }
+        return result;
+    }
 
     /**
      * Canonical strings: the spellings of the known units and function names (`dB`, `translateX`, ...).
@@ -33124,6 +33177,324 @@
             }
         }
         return codes;
+    }
+
+    const encoder = new TextEncoder();
+    /**
+     * the code units of a Uint16Array are stored in the platform byte order
+     */
+    const littleEndian$1 = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+    const decoder = new TextDecoder();
+    const empty = new Uint8Array(0);
+    /**
+     * true if the input is an ArrayBuffer or a view of an ArrayBuffer
+     * @param input
+     */
+    function isBinaryInput(input) {
+        return input instanceof ArrayBuffer || ArrayBuffer.isView(input);
+    }
+    /**
+     * true if the input is css: a string, an ArrayBuffer or a view of an ArrayBuffer
+     * @param input
+     */
+    function isCssInput(input) {
+        return typeof input === "string" || isBinaryInput(input);
+    }
+    /**
+     * the bytes of a binary input
+     * @param input
+     */
+    function bytesOf(input) {
+        return input instanceof Uint8Array
+            ? input
+            : input instanceof ArrayBuffer
+                ? new Uint8Array(input)
+                : new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+    }
+    /**
+     * the utf-16 code units of a text
+     * @param text
+     */
+    function codeUnitsOf(text) {
+        const native = nativeBufferClass();
+        // node.js: the code units are written by the native encoder (little endian platforms)
+        if (native !== null && littleEndian$1) {
+            const buffer = native.allocUnsafeSlow(text.length * 2);
+            buffer.write(text, 0, text.length * 2, "utf16le");
+            return new Uint16Array(buffer.buffer, buffer.byteOffset, text.length);
+        }
+        const codes = new Uint16Array(text.length);
+        for (let i = 0; i < text.length; i++) {
+            codes[i] = text.charCodeAt(i);
+        }
+        return codes;
+    }
+    /**
+     * the utf-8 css is read as utf-16 code units when more than 1 byte in 16 is not ascii: the positions of the non
+     * ascii characters are recorded, see {@link scanUtf8}
+     */
+    const DENSE_SHIFT = 4;
+    /**
+     * read the bytes of a css that is not ascii, 4 bytes at a time when they are ascii: the positions of the non ascii
+     * characters are recorded, they are validated. the text is null when the bytes are read as utf-16 code units:
+     *
+     * - the bytes are not valid utf-8 (the invalid sequences are replaced by U+FFFD when they are decoded)
+     * - they contain characters that are new lines (U+2028, U+2029) or that are lowercased to an ascii letter (KELVIN
+     *   SIGN, U+212A)
+     * - more than 1 byte in 16 is not ascii
+     * @param bytes
+     * @param content the decoded text, when it is known
+     */
+    function scanUtf8(bytes, content) {
+        const length = bytes.length;
+        // the bytes before the first word aligned on 4 bytes are read one at a time
+        const base = (4 - (bytes.byteOffset & 3)) & 3;
+        const words = base < length
+            ? new Uint32Array(bytes.buffer, bytes.byteOffset + base, (length - base) >>> 2)
+            : new Uint32Array(0);
+        const wordsEnd = base + (words.length << 2);
+        const limit = length >>> DENSE_SHIFT;
+        const positions = [];
+        const deltas = [];
+        let delta = 0;
+        let i = 0;
+        while (i < length) {
+            // the ascii words are skipped
+            if (i >= base && i < wordsEnd && ((i - base) & 3) === 0) {
+                let k = (i - base) >>> 2;
+                while (k < words.length && (words[k] & 0x80808080) === 0) {
+                    k++;
+                }
+                i = base + (k << 2);
+                if (i >= length) {
+                    break;
+                }
+            }
+            const code = bytes[i];
+            if (code < 0x80) {
+                i++;
+                continue;
+            }
+            let size;
+            if (code >= 0xc2 && code <= 0xdf) {
+                if ((bytes[i + 1] & 0xc0) !== 0x80) {
+                    return null;
+                }
+                size = 2;
+            }
+            else if (code >= 0xe0 && code <= 0xef) {
+                const next = bytes[i + 1];
+                const last = bytes[i + 2];
+                if ((next & 0xc0) !== 0x80 ||
+                    (last & 0xc0) !== 0x80 ||
+                    (code === 0xe0 && next < 0xa0) ||
+                    (code === 0xed && next > 0x9f) ||
+                    // U+2028, U+2029, U+212A
+                    (code === 0xe2 && ((next === 0x80 && (last === 0xa8 || last === 0xa9)) || (next === 0x84 && last === 0xaa)))) {
+                    return null;
+                }
+                size = 3;
+            }
+            else if (code >= 0xf0 && code <= 0xf4) {
+                const next = bytes[i + 1];
+                if ((next & 0xc0) !== 0x80 ||
+                    (bytes[i + 2] & 0xc0) !== 0x80 ||
+                    (bytes[i + 3] & 0xc0) !== 0x80 ||
+                    (code === 0xf0 && next < 0x90) ||
+                    (code === 0xf4 && next > 0x8f)) {
+                    return null;
+                }
+                size = 4;
+            }
+            else {
+                return null;
+            }
+            if (positions.length >= limit) {
+                return null;
+            }
+            // a 4 bytes character is a surrogate pair: 2 code units
+            delta += size === 4 ? 2 : size - 1;
+            positions.push(i);
+            deltas.push(delta);
+            i += size;
+        }
+        return new Utf8Text(bytes, new Int32Array(positions), new Int32Array(deltas), content);
+    }
+    /**
+     * the text of a utf-8 css that is not ascii, read from its bytes: the tokenizer reads the bytes, the offsets of the
+     * tokens are byte offsets. the values of the tokens that are interned as ranges of the source are ascii (see
+     * `Tokenizer.internValue()`): {@link charCodeAt} and {@link slice} read the bytes like the methods of a string. the
+     * locations of the nodes and the columns of the source maps are utf-16 offsets, see {@link utf16}
+     */
+    class Utf8Text {
+        bytes;
+        positions;
+        deltas;
+        decoded;
+        /**
+         * @param bytes the valid utf-8 bytes of the css
+         * @param positions the offsets of the non ascii characters, in increasing order
+         * @param deltas the number of bytes minus the number of utf-16 code units of the non ascii characters, up to the
+         * character at the same index in the positions (included)
+         * @param decoded the text of the css, null when it is decoded when it is read (see {@link content})
+         */
+        constructor(bytes, positions = new Int32Array(0), deltas = new Int32Array(0), decoded = null) {
+            this.bytes = bytes;
+            this.positions = positions;
+            this.deltas = deltas;
+            this.decoded = decoded;
+        }
+        /**
+         * the text of the bytes of a utf-8 css (see `StringTable.import()`): the positions of the non ascii characters are
+         * computed again
+         * @param bytes
+         */
+        static from(bytes) {
+            return scanUtf8(bytes, null) ?? new Utf8Text(bytes);
+        }
+        /**
+         * true if the bytes are ascii
+         */
+        get isAscii() {
+            return this.positions.length === 0;
+        }
+        /**
+         * the number of bytes
+         */
+        get length() {
+            return this.bytes.length;
+        }
+        /**
+         * the byte at an offset, NaN after the end
+         * @param offset
+         */
+        charCodeAt(offset) {
+            return this.bytes[offset] ?? NaN;
+        }
+        /**
+         * the string of a range of ascii bytes
+         * @param start
+         * @param end
+         */
+        slice(start, end) {
+            return fromCodes(this.bytes, start, end);
+        }
+        /**
+         * the text of the css
+         */
+        get content() {
+            return (this.decoded ??= decoder.decode(this.bytes));
+        }
+        /**
+         * index of the first non ascii character at or after an offset (the number of non ascii characters before it)
+         * @param offset
+         */
+        search(offset) {
+            const positions = this.positions;
+            let low = 0;
+            let high = positions.length;
+            while (low < high) {
+                const middle = (low + high) >>> 1;
+                if (positions[middle] < offset) {
+                    low = middle + 1;
+                }
+                else {
+                    high = middle;
+                }
+            }
+            return low;
+        }
+        /**
+         * true if a range of the bytes has non ascii characters
+         * @param start
+         * @param end
+         */
+        hasNonAscii(start, end) {
+            const index = this.search(start);
+            return index < this.positions.length && this.positions[index] < end;
+        }
+        /**
+         * the utf-16 offset of a byte offset (the offset of a character)
+         * @param offset
+         */
+        utf16(offset) {
+            const index = this.search(offset);
+            return index === 0 ? offset : offset - this.deltas[index - 1];
+        }
+    }
+    /**
+     * convert the css input to code units: the tokenizer reads the code units.
+     *
+     * - an ascii input is read from its bytes: the code units are the bytes
+     * - a utf-8 input is read from its bytes (the text is a {@link Utf8Text}): the input is not decoded, the offsets of
+     *   the tokens are byte offsets. a string is encoded
+     * - the inputs that are not valid utf-8, or that contain U+2028, U+2029 or U+212A, are decoded to utf-16 code units:
+     *   the positions of the tokens are utf-16 positions, like the positions in a string
+     * @param input
+     */
+    function toCodeUnits(input) {
+        if (input == null || input === "") {
+            return { codes: empty, text: "" };
+        }
+        if (typeof input === "string") {
+            // an ascii string has a byte for each code unit: the encoded string is the code units
+            const bytes = encoder.encode(input);
+            if (bytes.length === input.length) {
+                return { codes: bytes, text: input };
+            }
+            const text = scanUtf8(bytes, input);
+            return text !== null ? { codes: bytes, text } : { codes: codeUnitsOf(input), text: input };
+        }
+        let bytes = bytesOf(input);
+        // the byte order mark is removed, like the decoder does
+        if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+            bytes = bytes.subarray(3);
+        }
+        const text = scanUtf8(bytes, null);
+        if (text === null) {
+            const decoded = decoder.decode(bytes);
+            return { codes: codeUnitsOf(decoded), text: decoded };
+        }
+        // ascii
+        if (text.isAscii) {
+            return { codes: bytes, text: decoder.decode(bytes) };
+        }
+        return { codes: bytes, text };
+    }
+    /**
+     * the size of the css of the streams, in bytes, when it is known (a file, a response with a content length)
+     */
+    const streamSizes = new WeakMap();
+    /**
+     * record the size of the css of a stream, in bytes: the parser allocates the code units and the arena once, like for
+     * an ArrayBuffer, instead of growing them as the stream is read. 0: the size is not known
+     * @param stream
+     * @param size
+     */
+    function setStreamSize(stream, size) {
+        if (size > 0) {
+            streamSizes.set(stream, size);
+        }
+        return stream;
+    }
+    /**
+     * the size of the css of a stream, in bytes, see {@link setStreamSize}. 0: the size is not known
+     * @param stream
+     */
+    function getStreamSize(stream) {
+        return stream == null ? 0 : (streamSizes.get(stream) ?? 0);
+    }
+    /**
+     * the size of the body of a response: its content length, 0 when it is not known or when the body is compressed (the
+     * content length is the size of the compressed body)
+     * @param response
+     */
+    function responseSize(response) {
+        if (response.headers.get("content-encoding") != null) {
+            return 0;
+        }
+        const length = Number(response.headers.get("content-length"));
+        return Number.isFinite(length) && length > 0 ? length : 0;
     }
 
     /**
@@ -33206,35 +33577,6 @@
          */
         StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
     })(StringDerived || (StringDerived = {}));
-    /**
-     * code units of a short string, see {@link fromCodes}
-     */
-    const shortCodes = [];
-    /**
-     * string of a range of code units
-     * @param codes
-     * @param start
-     * @param end
-     */
-    function fromCodes(codes, start, end) {
-        const length = end - start;
-        // a short string: the code units are copied to an array, a subarray is slower to create
-        if (length <= 256) {
-            shortCodes.length = length;
-            for (let i = 0; i < length; i++) {
-                shortCodes[i] = codes[start + i];
-            }
-            return String.fromCharCode.apply(null, shortCodes);
-        }
-        let result = "";
-        // String.fromCharCode() with a limited number of arguments
-        while (start < end) {
-            const next = end - start > 4096 ? start + 4096 : end;
-            result += String.fromCharCode.apply(null, codes.subarray(start, next));
-            start = next;
-        }
-        return result;
-    }
     /**
      * builds a string from code units, strings and interned strings, then interns it: no string is created
      *
@@ -33355,9 +33697,19 @@
          */
         slots = new Int32Array(512);
         /**
-         * text of the sources, by source index
+         * text of the sources, by source index. utf-8 sources: an empty string, the text is read from the bytes (see
+         * {@link utf8})
          */
         texts = [];
+        /**
+         * the utf-8 sources, by source index: the strings are read from the bytes. the strings and the utf-8 sources are
+         * not mixed in {@link texts}: the methods of the strings are called on strings only
+         */
+        utf8 = [];
+        /**
+         * the converters of the byte offsets of the utf-8 sources to utf-16 offsets, by source index
+         */
+        utf8Texts = [];
         /**
          * code units of the sources being tokenized, by source index
          */
@@ -33394,8 +33746,26 @@
          * (faster than the text). see {@link releaseCodes}
          */
         setText(source, text, codes = null) {
-            this.texts[source] = text;
+            if (typeof text === "string") {
+                this.texts[source] = text;
+                this.utf8[source] = undefined;
+                this.utf8Texts[source] = undefined;
+            }
+            else {
+                this.texts[source] = "";
+                this.utf8[source] = text.bytes;
+                this.utf8Texts[source] = text;
+            }
             this.codes[source] = codes ?? undefined;
+        }
+        /**
+         * the utf-16 offset of an offset of a source: the offsets of utf-8 sources are byte offsets
+         * @param source source index
+         * @param offset
+         */
+        utf16Offset(source, offset) {
+            const text = this.utf8Texts[source];
+            return text === undefined ? offset : text.utf16(offset);
         }
         /**
          * code unit of the text of a source, NaN after its end
@@ -33403,6 +33773,10 @@
          * @param offset
          */
         sourceCodeAt(source, offset) {
+            const bytes = this.utf8[source];
+            if (bytes !== undefined) {
+                return bytes[offset] ?? NaN;
+            }
             const text = this.texts[source];
             if (text !== undefined && offset < text.length) {
                 return text.charCodeAt(offset);
@@ -33508,10 +33882,13 @@
             let str = this.cache[id];
             if (str === undefined && id < this.count) {
                 const source = this.sources[id];
+                const bytes = source >= 0 ? this.utf8[source] : undefined;
                 str =
                     source === -1 /* StringSource.Pool */
                         ? fromCodes(this.pool, this.starts[id], this.ends[id])
-                        : (source === -2 /* StringSource.Canonical */ ? canonicalText() : this.texts[source]).slice(this.starts[id], this.ends[id]);
+                        : bytes !== undefined
+                            ? fromCodes(bytes, this.starts[id], this.ends[id])
+                            : (source === -2 /* StringSource.Canonical */ ? canonicalText() : this.texts[source]).slice(this.starts[id], this.ends[id]);
                 this.cache[id] = str;
             }
             return str;
@@ -33532,7 +33909,8 @@
             const source = this.sources[id];
             const offset = this.starts[id] + index;
             if (source >= 0) {
-                return this.texts[source].charCodeAt(offset);
+                const bytes = this.utf8[source];
+                return bytes === undefined ? this.texts[source].charCodeAt(offset) : bytes[offset];
             }
             switch (source) {
                 case -1 /* StringSource.Pool */:
@@ -33559,6 +33937,9 @@
             }
             else if (source === -2 /* StringSource.Canonical */) {
                 target.set(canonicalCodes().subarray(start, start + length), offset);
+            }
+            else if (source >= 0 && this.utf8[source] !== undefined) {
+                target.set(this.utf8[source].subarray(start, start + length), offset);
             }
             else {
                 const text = source === -3 /* StringSource.Value */ ? this.cache[id] : this.texts[source];
@@ -33651,6 +34032,15 @@
                     target[offset + i] = code;
                 }
             }
+            else if (source >= 0 && this.utf8[source] !== undefined) {
+                const bytes = this.utf8[source];
+                for (let i = 0; i < length; i++) {
+                    if ((code = bytes[start + i]) > 0x7f) {
+                        return -1;
+                    }
+                    target[offset + i] = code;
+                }
+            }
             else {
                 const text = source === -3 /* StringSource.Value */ ? this.cache[id] : this.texts[source];
                 const base = source === -3 /* StringSource.Value */ ? 0 : start;
@@ -33676,6 +34066,15 @@
                 const codes = source === -1 /* StringSource.Pool */ ? this.pool : canonicalCodes();
                 for (let i = 0; i < length; i++) {
                     if (codes[start + i] === code) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+            if (source >= 0 && this.utf8[source] !== undefined) {
+                const bytes = this.utf8[source];
+                for (let i = 0; i < length; i++) {
+                    if (bytes[start + i] === code) {
                         return i;
                     }
                 }
@@ -33832,6 +34231,8 @@
             this.pool = pool;
             this.poolLength = poolLength;
             this.texts = previous.texts;
+            this.utf8 = previous.utf8;
+            this.utf8Texts = previous.utf8Texts;
             this.rehash();
             return mapping;
         }
@@ -33851,7 +34252,7 @@
                 sources: this.sources.slice(0, this.count),
                 starts: this.starts.slice(0, this.count),
                 ends: this.ends.slice(0, this.count),
-                texts: this.texts.slice(),
+                texts: this.texts.map((text, source) => this.utf8[source] === undefined ? text : this.utf8[source].slice()),
                 pool: this.pool.slice(0, this.poolLength),
                 values,
             };
@@ -33866,7 +34267,10 @@
             this.sources.set(data.sources);
             this.starts.set(data.starts);
             this.ends.set(data.ends);
-            this.texts = data.texts.slice();
+            this.texts = [];
+            this.utf8 = [];
+            this.utf8Texts = [];
+            data.texts.forEach((text, source) => this.setText(source, typeof text === "string" ? text : Utf8Text.from(text)));
             this.pool = data.pool.length > 0 ? data.pool.slice() : new Uint16Array(1024);
             this.poolLength = data.pool.length;
             for (let id = 0; id < data.count; id++) {
@@ -33931,7 +34335,8 @@
                 }
                 return true;
             }
-            const sourceCodes = source >= 0 ? this.codes[source] : undefined;
+            // the source being tokenized (its code units are compared), or a utf-8 source (its bytes are compared)
+            const sourceCodes = source >= 0 ? (this.codes[source] ?? this.utf8[source]) : undefined;
             // the source being tokenized: the code units are compared
             if (sourceCodes !== undefined) {
                 for (let i = 0; i < length; i++) {
@@ -33968,6 +34373,15 @@
                 const pool = this.pool;
                 for (let i = 0; i < length; i++) {
                     if (pool[offset + i] !== str.charCodeAt(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            const bytes = source >= 0 ? this.utf8[source] : undefined;
+            if (bytes !== undefined) {
+                for (let i = 0; i < length; i++) {
+                    if (bytes[offset + i] !== str.charCodeAt(i)) {
                         return false;
                     }
                 }
@@ -34044,6 +34458,8 @@
             table.starts = this.starts;
             table.ends = this.ends;
             table.texts = this.texts;
+            table.utf8 = this.utf8;
+            table.utf8Texts = this.utf8Texts;
             table.pool = this.pool;
             table.poolLength = this.poolLength;
             return table;
@@ -36328,7 +36744,7 @@
     /**
      * little endian platform
      */
-    const littleEndian$1 = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+    const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
     /**
      * arena columns stored as typed arrays, in the order of the transferable buffers
      */
@@ -36621,6 +37037,14 @@
          */
         setSourceText(source, text, codes = null) {
             this.stringTable.setText(source, text, codes);
+        }
+        /**
+         * the utf-16 offset of an offset of a source: the offsets of the utf-8 sources are byte offsets
+         * @param source source index (see {@link getSourceId})
+         * @param offset
+         */
+        utf16Offset(source, offset) {
+            return this.stringTable.utf16Offset(source, offset);
         }
         /**
          * code unit of the text of a source, NaN after its end. no string is created
@@ -37278,7 +37702,7 @@
          * @param end
          */
         setSpan(id, sourceId, start, end) {
-            if (littleEndian$1) {
+            if (littleEndian) {
                 const index = id << 1;
                 this.spans32[index] = ((end & 0xfffffff) | ((start & 0xf) << 28)) >>> 0;
                 this.spans32[index + 1] = (((start >>> 4) & 0xffffff) | ((sourceId & 0xff) << 24)) >>> 0;
@@ -37304,7 +37728,7 @@
          * @param id
          */
         getSourceId(id) {
-            if (littleEndian$1) {
+            if (littleEndian) {
                 return this.spans32[(id << 1) + 1] >>> 24;
             }
             return Number((this.spans[id] >> 56n) & 0xffn);
@@ -37315,7 +37739,7 @@
          * @param id
          */
         getSpanStart(id) {
-            if (littleEndian$1) {
+            if (littleEndian) {
                 const index = id << 1;
                 return ((this.spans32[index + 1] & 0xffffff) << 4) | (this.spans32[index] >>> 28);
             }
@@ -37337,7 +37761,7 @@
          * @param id
          */
         getSpanEnd(id) {
-            if (littleEndian$1) {
+            if (littleEndian) {
                 return this.spans32[id << 1] & 0xfffffff;
             }
             return Number(this.spans[id] & 0xfffffffn);
@@ -38593,10 +39017,12 @@
             if ((this.flags[id] & exports.EnumAstNodeStatus.HasLocation) === 0) {
                 return null;
             }
+            const source = this.getSourceId(id);
+            // utf-8 css: the spans are byte offsets, the locations are utf-16 offsets
             return {
-                sta: this.getSpanStart(id),
-                end: this.getSpanEnd(id),
-                srcId: this.sources[this.getSourceId(id)] ?? 0,
+                sta: this.stringTable.utf16Offset(source, this.getSpanStart(id)),
+                end: this.stringTable.utf16Offset(source, this.getSpanEnd(id)),
+                srcId: this.sources[source] ?? 0,
             };
         }
         /**
@@ -41420,139 +41846,6 @@
         return angle;
     }
 
-    const encoder = new TextEncoder();
-    /**
-     * the code units of a Uint16Array are stored in the platform byte order
-     */
-    const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
-    const decoder = new TextDecoder();
-    /**
-     * true if the bytes are ascii. the bytes are read 4 at a time when they are aligned: 5 times faster than a regular
-     * expression on the decoded text
-     * @param bytes
-     */
-    function isAscii(bytes) {
-        const length = bytes.length;
-        let bits = 0;
-        let i = 0;
-        if ((bytes.byteOffset & 3) === 0) {
-            const words = new Uint32Array(bytes.buffer, bytes.byteOffset, length >>> 2);
-            for (let k = 0; k < words.length; k++) {
-                bits |= words[k];
-            }
-            if ((bits & 0x80808080) !== 0) {
-                return false;
-            }
-            i = words.length << 2;
-        }
-        for (; i < length; i++) {
-            bits |= bytes[i];
-        }
-        return (bits & 0x80) === 0;
-    }
-    const empty = new Uint8Array(0);
-    /**
-     * true if the input is an ArrayBuffer or a view of an ArrayBuffer
-     * @param input
-     */
-    function isBinaryInput(input) {
-        return input instanceof ArrayBuffer || ArrayBuffer.isView(input);
-    }
-    /**
-     * true if the input is css: a string, an ArrayBuffer or a view of an ArrayBuffer
-     * @param input
-     */
-    function isCssInput(input) {
-        return typeof input === "string" || isBinaryInput(input);
-    }
-    /**
-     * the bytes of a binary input
-     * @param input
-     */
-    function bytesOf(input) {
-        return input instanceof Uint8Array
-            ? input
-            : input instanceof ArrayBuffer
-                ? new Uint8Array(input)
-                : new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
-    }
-    /**
-     * the utf-16 code units of a text
-     * @param text
-     */
-    function codeUnitsOf(text) {
-        const native = nativeBufferClass();
-        // node.js: the code units are written by the native encoder (little endian platforms)
-        if (native !== null && littleEndian) {
-            const buffer = native.allocUnsafeSlow(text.length * 2);
-            buffer.write(text, 0, text.length * 2, "utf16le");
-            return new Uint16Array(buffer.buffer, buffer.byteOffset, text.length);
-        }
-        const codes = new Uint16Array(text.length);
-        for (let i = 0; i < text.length; i++) {
-            codes[i] = text.charCodeAt(i);
-        }
-        return codes;
-    }
-    /**
-     * convert the css input to code units: the tokenizer reads the code units. a string is encoded to an ArrayBuffer.
-     * an ascii input is read from its bytes: the code units are the bytes. the other inputs are decoded (utf-8) to
-     * utf-16 code units: the positions of the tokens are utf-16 positions, like the positions in a string
-     * @param input
-     */
-    function toCodeUnits(input) {
-        if (input == null || input === "") {
-            return { codes: empty, text: "" };
-        }
-        if (typeof input === "string") {
-            // an ascii string has a byte for each code unit: the encoded string is the code units
-            const bytes = encoder.encode(input);
-            return { codes: bytes.length === input.length ? bytes : codeUnitsOf(input), text: input };
-        }
-        const bytes = bytesOf(input);
-        const text = decoder.decode(bytes);
-        // the text of an ascii input has a character for each byte. the byte order mark is removed by the decoder
-        if (text.length === bytes.length && isAscii(bytes)) {
-            return { codes: bytes, text };
-        }
-        return { codes: codeUnitsOf(text), text };
-    }
-    /**
-     * the size of the css of the streams, in bytes, when it is known (a file, a response with a content length)
-     */
-    const streamSizes = new WeakMap();
-    /**
-     * record the size of the css of a stream, in bytes: the parser allocates the code units and the arena once, like for
-     * an ArrayBuffer, instead of growing them as the stream is read. 0: the size is not known
-     * @param stream
-     * @param size
-     */
-    function setStreamSize(stream, size) {
-        if (size > 0) {
-            streamSizes.set(stream, size);
-        }
-        return stream;
-    }
-    /**
-     * the size of the css of a stream, in bytes, see {@link setStreamSize}. 0: the size is not known
-     * @param stream
-     */
-    function getStreamSize(stream) {
-        return stream == null ? 0 : (streamSizes.get(stream) ?? 0);
-    }
-    /**
-     * the size of the body of a response: its content length, 0 when it is not known or when the body is compressed (the
-     * content length is the size of the compressed body)
-     * @param response
-     */
-    function responseSize(response) {
-        if (response.headers.get("content-encoding") != null) {
-            return 0;
-        }
-        const length = Number(response.headers.get("content-length"));
-        return Number.isFinite(length) && length > 0 ? length : 0;
-    }
-
     /**
      * decoded code units of the last value decoded by {@link decodeEscapes}
      */
@@ -41567,7 +41860,7 @@
      * @param end
      * @returns the number of decoded code units
      */
-    function decodeEscapes(codes, start, end) {
+    function decodeEscapes(codes, start, end, utf8) {
         // the decoded value is not longer than the value
         if (decoded.length < end - start) {
             decoded = new Uint16Array(end - start);
@@ -41577,6 +41870,12 @@
         let i = start;
         while (i < end) {
             const code = codes[i];
+            if (code >= 0x80 && utf8) {
+                const next = decodeUtf8Char(codes, i, output, length);
+                length = decodedLength;
+                i = next;
+                continue;
+            }
             if (code !== 0x5c || i + 1 >= end) {
                 output[length++] = code;
                 i++;
@@ -41620,6 +41919,77 @@
             // an optional space ends the escape sequence
             if (i < end && codes[i] === 0x20) {
                 i++;
+            }
+        }
+        return length;
+    }
+    /**
+     * the number of code units written by the last call of {@link decodeUtf8Char}
+     */
+    let decodedLength = 0;
+    /**
+     * decode the utf-8 character at an offset of the bytes (valid utf-8, see {@link toCodeUnits}) into utf-16 code units:
+     * the code units are written at an index of the output, the new length of the output is {@link decodedLength}
+     * @param codes
+     * @param offset
+     * @param output
+     * @param index
+     * @returns the offset of the next character
+     */
+    function decodeUtf8Char(codes, offset, output, index) {
+        const code = codes[offset];
+        let codepoint;
+        if (code < 0xe0) {
+            codepoint = ((code & 0x1f) << 6) | (codes[offset + 1] & 0x3f);
+            offset += 2;
+        }
+        else if (code < 0xf0) {
+            codepoint = ((code & 0x0f) << 12) | ((codes[offset + 1] & 0x3f) << 6) | (codes[offset + 2] & 0x3f);
+            offset += 3;
+        }
+        else {
+            codepoint =
+                ((code & 0x07) << 18) |
+                    ((codes[offset + 1] & 0x3f) << 12) |
+                    ((codes[offset + 2] & 0x3f) << 6) |
+                    (codes[offset + 3] & 0x3f);
+            offset += 4;
+        }
+        if (codepoint > 0xffff) {
+            codepoint -= 0x10000;
+            output[index++] = 0xd800 + (codepoint >> 10);
+            output[index++] = 0xdc00 + (codepoint & 0x3ff);
+        }
+        else {
+            output[index++] = codepoint;
+        }
+        decodedLength = index;
+        return offset;
+    }
+    /**
+     * decode a range of utf-8 bytes into {@link decoded}
+     * @param codes
+     * @param start
+     * @param end
+     * @returns the number of decoded code units
+     */
+    function decodeUtf8(codes, start, end) {
+        // the decoded value is not longer than the bytes
+        if (decoded.length < end - start) {
+            decoded = new Uint16Array(end - start);
+        }
+        const output = decoded;
+        let length = 0;
+        let i = start;
+        while (i < end) {
+            const code = codes[i];
+            if (code < 0x80) {
+                output[length++] = code;
+                i++;
+            }
+            else {
+                i = decodeUtf8Char(codes, i, output, length);
+                length = decodedLength;
             }
         }
         return length;
@@ -42126,6 +42496,7 @@
         const parseInfo = {
             codes: new Uint8Array(0),
             length: 0,
+            utf8: null,
             source,
             offset: 0,
             time: 0,
@@ -42269,7 +42640,8 @@
             const { codes, text } = toCodeUnits(input);
             parseInfo.codes = codes;
             parseInfo.length = codes.length;
-            parseInfo.source.content = text;
+            parseInfo.utf8 = typeof text === "string" ? null : text;
+            parseInfo.source.setText(text);
         }
         /**
          * id of the source file being tokenized
@@ -42730,10 +43102,10 @@
             let canonical = -1;
             let valueStart = start;
             let hasValue = false;
-            this.typ = null;
-            this.kin = null;
-            this.num = 0;
-            this.field = 0 /* TokenValueField.None */;
+            let typ = null;
+            let kin = null;
+            let num = 0;
+            let field = 0 /* TokenValueField.None */;
             this.slice = null;
             this.hint = null;
             if (slice) {
@@ -42787,47 +43159,51 @@
                             : -1;
                     hasValue = true;
                 }
-                this.typ = hint;
+                typ = hint;
                 if (!isHint) {
                     if (hasUnit || hint === exports.EnumToken.PercentageTokenType || hint === exports.EnumToken.DimensionTokenType) {
-                        this.num = parseNumber(parseInfo.codes, start, slice);
+                        num = parseNumber(parseInfo.codes, start, slice);
                         if (hint !== exports.EnumToken.PercentageTokenType) {
-                            this.field = hasValue ? 4 /* TokenValueField.Unit */ : 1 /* TokenValueField.Number */;
+                            field = hasValue ? 4 /* TokenValueField.Unit */ : 1 /* TokenValueField.Number */;
                             // a dashed ident: a user defined unit. the canonical units are not dashed idents
                             if (canonical === -1 &&
                                 parseInfo.codes[valueStart] === 0x2d &&
                                 parseInfo.codes[valueStart + 1] === 0x2d) {
-                                this.typ = exports.EnumToken.UserDefinedDimensionTokenType;
+                                typ = exports.EnumToken.UserDefinedDimensionTokenType;
                             }
                         }
                         else {
-                            this.field = 1 /* TokenValueField.Number */;
+                            field = 1 /* TokenValueField.Number */;
                         }
                     }
                     else if (hint === exports.EnumToken.NumberTokenType) {
-                        this.num = parseNumber(parseInfo.codes, slice ?? start, end);
-                        this.field = 1 /* TokenValueField.Number */;
+                        num = parseNumber(parseInfo.codes, slice ?? start, end);
+                        field = 1 /* TokenValueField.Number */;
                     }
                     else if (hint === exports.EnumToken.AtRuleTokenType) {
-                        this.field = hasValue ? 2 /* TokenValueField.Name */ : 0 /* TokenValueField.None */;
+                        field = hasValue ? 2 /* TokenValueField.Name */ : 0 /* TokenValueField.None */;
                     }
                     else {
-                        this.field = hasValue ? 3 /* TokenValueField.Value */ : 0 /* TokenValueField.None */;
+                        field = hasValue ? 3 /* TokenValueField.Value */ : 0 /* TokenValueField.None */;
                         if (hint === exports.EnumToken.ColorTokenType) {
-                            this.kin = exports.ColorType.HEX;
+                            kin = exports.ColorType.HEX;
                         }
                     }
                 }
             }
             else if (this.equalsIgnoreCase(parseInfo, "!important")) {
-                this.typ = exports.EnumToken.ImportantTokenType;
+                typ = exports.EnumToken.ImportantTokenType;
             }
-            if (this.typ == null) {
+            if (typ == null) {
                 valueStart = start;
                 hasValue = true;
-                this.typ = exports.EnumToken.LiteralTokenType;
-                this.field = 3 /* TokenValueField.Value */;
+                typ = exports.EnumToken.LiteralTokenType;
+                field = 3 /* TokenValueField.Value */;
             }
+            this.typ = typ;
+            this.kin = kin;
+            this.num = num;
+            this.field = field;
             if (hasValue) {
                 if (canonical !== -1) {
                     this.valueKind = 1 /* TokenValueKind.Canonical */;
@@ -42861,23 +43237,40 @@
          * @param sourceIndex index of the source in the arena, -1 when the tokens have no location
          */
         internValue(arena, sourceIndex) {
-            switch (this.valueKind) {
+            return this.intern(arena, sourceIndex, this.valueKind, this.valueStart, this.valueEnd);
+        }
+        /**
+         * id of a string value of a token in the arena, see {@link internValue}
+         * @param arena
+         * @param sourceIndex index of the source in the arena, -1 when the tokens have no location
+         * @param valueKind
+         * @param valueStart
+         * @param valueEnd
+         */
+        intern(arena, sourceIndex, valueKind, valueStart, valueEnd) {
+            switch (valueKind) {
                 case 1 /* TokenValueKind.Canonical */:
-                    return arena.internRange(canonicalCodes(), this.valueStart, this.valueEnd, -2 /* StringSource.Canonical */);
+                    return arena.internRange(canonicalCodes(), valueStart, valueEnd, -2 /* StringSource.Canonical */);
                 case 2 /* TokenValueKind.Escaped */: {
                     // the buffer may be reallocated by the decoder: it is read after the decoding
-                    const length = decodeEscapes(this.parseInfo.codes, this.valueStart, this.valueEnd);
+                    const length = decodeEscapes(this.parseInfo.codes, valueStart, valueEnd, this.parseInfo.utf8 !== null);
                     return arena.internRange(decoded, 0, length, -1 /* StringSource.Pool */);
                 }
                 default:
-                    return arena.internRange(this.parseInfo.codes, this.valueStart, this.valueEnd, sourceIndex < 0 ? -1 /* StringSource.Pool */ : sourceIndex);
+                    // utf-8 css: the ranges of a source are ascii, the other values are decoded
+                    if (this.parseInfo.utf8 !== null && this.parseInfo.utf8.hasNonAscii(valueStart, valueEnd)) {
+                        const length = decodeUtf8(this.parseInfo.codes, valueStart, valueEnd);
+                        return arena.internRange(decoded, 0, length, -1 /* StringSource.Pool */);
+                    }
+                    return arena.internRange(this.parseInfo.codes, valueStart, valueEnd, sourceIndex < 0 ? -1 /* StringSource.Pool */ : sourceIndex);
             }
         }
         /**
-         * content of the source being tokenized: the offsets of the tokens are offsets of the content
+         * text of the source being tokenized: the offsets of the tokens are offsets of the text (utf-8 css: the bytes, see
+         * {@link Utf8Text})
          */
         get content() {
-            return this.parseInfo.source.content;
+            return this.parseInfo.source.text;
         }
         /**
          * code units of the source being tokenized
@@ -47781,11 +48174,12 @@
             // the ast is not minified: the adjacent rules are merged
             mergeRules(arena, ast, minifyOptions);
         }
-        stats.bytesIn += stats.importedBytesIn;
+        // the render buffer is allocated from the input length, in bytes
+        arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+        // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+        stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
         arena.releaseSourceCodes(sourceIndex);
-        // the render buffer is allocated from the input length
-        arena.inputLengths[ast] = stats.bytesIn;
         let endTime = performance.now();
         const result = {
             ast,
@@ -48820,11 +49214,12 @@
             // the ast is not minified: the adjacent rules are merged
             mergeRules(arena, ast, minifyOptions);
         }
-        stats.bytesIn += stats.importedBytesIn;
+        // the render buffer is allocated from the input length, in bytes
+        arena.inputLengths[ast] = stats.bytesIn + stats.importedBytesIn;
+        // utf-8 css: the offsets are byte offsets, the length of the css is reported in utf-16 code units
+        stats.bytesIn = arena.utf16Offset(sourceIndex, stats.bytesIn) + stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
         arena.releaseSourceCodes(sourceIndex);
-        // the render buffer is allocated from the input length
-        arena.inputLengths[ast] = stats.bytesIn;
         let endTime = performance.now();
         const result = {
             ast,
@@ -50906,7 +51301,7 @@
     /**
      * Version number
      */
-    const version = "2.3.2";
+    const version = "2.3.3";
 
     /**
      * Load file or url

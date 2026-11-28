@@ -23,7 +23,8 @@ export interface NativeBufferClass {
  * node.js `Buffer` instance
  */
 export interface NativeBuffer {
-    write(str: string, offset: number, length?: number, encoding?: "utf8" | "utf16le"): number;
+    write(str: string, offset: number, length?: number, encoding?: "utf8" | "utf16le" | "latin1"): number;
+    toString(encoding: "latin1"): string;
 }
 
 /**

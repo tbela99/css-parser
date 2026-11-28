@@ -2,11 +2,12 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
-import { hashString, hashRange } from '../parser/utils/codes.js';
+import { hashString, fromCodes, hashRange } from '../parser/utils/codes.js';
 import { canonicalText, canonicalCodes } from '../parser/utils/canonical.js';
+import { Utf8Text } from '../parser/input.js';
 
 /**
  * String table of an arena.
@@ -88,35 +89,6 @@ var StringDerived;
      */
     StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
 })(StringDerived || (StringDerived = {}));
-/**
- * code units of a short string, see {@link fromCodes}
- */
-const shortCodes = [];
-/**
- * string of a range of code units
- * @param codes
- * @param start
- * @param end
- */
-function fromCodes(codes, start, end) {
-    const length = end - start;
-    // a short string: the code units are copied to an array, a subarray is slower to create
-    if (length <= 256) {
-        shortCodes.length = length;
-        for (let i = 0; i < length; i++) {
-            shortCodes[i] = codes[start + i];
-        }
-        return String.fromCharCode.apply(null, shortCodes);
-    }
-    let result = "";
-    // String.fromCharCode() with a limited number of arguments
-    while (start < end) {
-        const next = end - start > 4096 ? start + 4096 : end;
-        result += String.fromCharCode.apply(null, codes.subarray(start, next));
-        start = next;
-    }
-    return result;
-}
 /**
  * builds a string from code units, strings and interned strings, then interns it: no string is created
  *
@@ -237,9 +209,19 @@ class StringTable {
      */
     slots = new Int32Array(512);
     /**
-     * text of the sources, by source index
+     * text of the sources, by source index. utf-8 sources: an empty string, the text is read from the bytes (see
+     * {@link utf8})
      */
     texts = [];
+    /**
+     * the utf-8 sources, by source index: the strings are read from the bytes. the strings and the utf-8 sources are
+     * not mixed in {@link texts}: the methods of the strings are called on strings only
+     */
+    utf8 = [];
+    /**
+     * the converters of the byte offsets of the utf-8 sources to utf-16 offsets, by source index
+     */
+    utf8Texts = [];
     /**
      * code units of the sources being tokenized, by source index
      */
@@ -276,8 +258,26 @@ class StringTable {
      * (faster than the text). see {@link releaseCodes}
      */
     setText(source, text, codes = null) {
-        this.texts[source] = text;
+        if (typeof text === "string") {
+            this.texts[source] = text;
+            this.utf8[source] = undefined;
+            this.utf8Texts[source] = undefined;
+        }
+        else {
+            this.texts[source] = "";
+            this.utf8[source] = text.bytes;
+            this.utf8Texts[source] = text;
+        }
         this.codes[source] = codes ?? undefined;
+    }
+    /**
+     * the utf-16 offset of an offset of a source: the offsets of utf-8 sources are byte offsets
+     * @param source source index
+     * @param offset
+     */
+    utf16Offset(source, offset) {
+        const text = this.utf8Texts[source];
+        return text === undefined ? offset : text.utf16(offset);
     }
     /**
      * code unit of the text of a source, NaN after its end
@@ -285,6 +285,10 @@ class StringTable {
      * @param offset
      */
     sourceCodeAt(source, offset) {
+        const bytes = this.utf8[source];
+        if (bytes !== undefined) {
+            return bytes[offset] ?? NaN;
+        }
         const text = this.texts[source];
         if (text !== undefined && offset < text.length) {
             return text.charCodeAt(offset);
@@ -390,10 +394,13 @@ class StringTable {
         let str = this.cache[id];
         if (str === undefined && id < this.count) {
             const source = this.sources[id];
+            const bytes = source >= 0 ? this.utf8[source] : undefined;
             str =
                 source === -1 /* StringSource.Pool */
                     ? fromCodes(this.pool, this.starts[id], this.ends[id])
-                    : (source === -2 /* StringSource.Canonical */ ? canonicalText() : this.texts[source]).slice(this.starts[id], this.ends[id]);
+                    : bytes !== undefined
+                        ? fromCodes(bytes, this.starts[id], this.ends[id])
+                        : (source === -2 /* StringSource.Canonical */ ? canonicalText() : this.texts[source]).slice(this.starts[id], this.ends[id]);
             this.cache[id] = str;
         }
         return str;
@@ -414,7 +421,8 @@ class StringTable {
         const source = this.sources[id];
         const offset = this.starts[id] + index;
         if (source >= 0) {
-            return this.texts[source].charCodeAt(offset);
+            const bytes = this.utf8[source];
+            return bytes === undefined ? this.texts[source].charCodeAt(offset) : bytes[offset];
         }
         switch (source) {
             case -1 /* StringSource.Pool */:
@@ -441,6 +449,9 @@ class StringTable {
         }
         else if (source === -2 /* StringSource.Canonical */) {
             target.set(canonicalCodes().subarray(start, start + length), offset);
+        }
+        else if (source >= 0 && this.utf8[source] !== undefined) {
+            target.set(this.utf8[source].subarray(start, start + length), offset);
         }
         else {
             const text = source === -3 /* StringSource.Value */ ? this.cache[id] : this.texts[source];
@@ -533,6 +544,15 @@ class StringTable {
                 target[offset + i] = code;
             }
         }
+        else if (source >= 0 && this.utf8[source] !== undefined) {
+            const bytes = this.utf8[source];
+            for (let i = 0; i < length; i++) {
+                if ((code = bytes[start + i]) > 0x7f) {
+                    return -1;
+                }
+                target[offset + i] = code;
+            }
+        }
         else {
             const text = source === -3 /* StringSource.Value */ ? this.cache[id] : this.texts[source];
             const base = source === -3 /* StringSource.Value */ ? 0 : start;
@@ -558,6 +578,15 @@ class StringTable {
             const codes = source === -1 /* StringSource.Pool */ ? this.pool : canonicalCodes();
             for (let i = 0; i < length; i++) {
                 if (codes[start + i] === code) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        if (source >= 0 && this.utf8[source] !== undefined) {
+            const bytes = this.utf8[source];
+            for (let i = 0; i < length; i++) {
+                if (bytes[start + i] === code) {
                     return i;
                 }
             }
@@ -714,6 +743,8 @@ class StringTable {
         this.pool = pool;
         this.poolLength = poolLength;
         this.texts = previous.texts;
+        this.utf8 = previous.utf8;
+        this.utf8Texts = previous.utf8Texts;
         this.rehash();
         return mapping;
     }
@@ -733,7 +764,7 @@ class StringTable {
             sources: this.sources.slice(0, this.count),
             starts: this.starts.slice(0, this.count),
             ends: this.ends.slice(0, this.count),
-            texts: this.texts.slice(),
+            texts: this.texts.map((text, source) => this.utf8[source] === undefined ? text : this.utf8[source].slice()),
             pool: this.pool.slice(0, this.poolLength),
             values,
         };
@@ -748,7 +779,10 @@ class StringTable {
         this.sources.set(data.sources);
         this.starts.set(data.starts);
         this.ends.set(data.ends);
-        this.texts = data.texts.slice();
+        this.texts = [];
+        this.utf8 = [];
+        this.utf8Texts = [];
+        data.texts.forEach((text, source) => this.setText(source, typeof text === "string" ? text : Utf8Text.from(text)));
         this.pool = data.pool.length > 0 ? data.pool.slice() : new Uint16Array(1024);
         this.poolLength = data.pool.length;
         for (let id = 0; id < data.count; id++) {
@@ -813,7 +847,8 @@ class StringTable {
             }
             return true;
         }
-        const sourceCodes = source >= 0 ? this.codes[source] : undefined;
+        // the source being tokenized (its code units are compared), or a utf-8 source (its bytes are compared)
+        const sourceCodes = source >= 0 ? (this.codes[source] ?? this.utf8[source]) : undefined;
         // the source being tokenized: the code units are compared
         if (sourceCodes !== undefined) {
             for (let i = 0; i < length; i++) {
@@ -850,6 +885,15 @@ class StringTable {
             const pool = this.pool;
             for (let i = 0; i < length; i++) {
                 if (pool[offset + i] !== str.charCodeAt(i)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        const bytes = source >= 0 ? this.utf8[source] : undefined;
+        if (bytes !== undefined) {
+            for (let i = 0; i < length; i++) {
+                if (bytes[offset + i] !== str.charCodeAt(i)) {
                     return false;
                 }
             }
@@ -926,6 +970,8 @@ class StringTable {
         table.starts = this.starts;
         table.ends = this.ends;
         table.texts = this.texts;
+        table.utf8 = this.utf8;
+        table.utf8Texts = this.utf8Texts;
         table.pool = this.pool;
         table.poolLength = this.poolLength;
         return table;

@@ -1,7 +1,14 @@
+import type { Utf8Text } from "./input.ts";
+
 /**
  * Compute line and column of the offset
  */
 export class LineMap {
+    /**
+     * utf-8 css: the offsets are byte offsets, the columns are utf-16 columns
+     */
+    utf8: Utf8Text | null = null;
+
     /**
      * line starts
      */
@@ -26,7 +33,10 @@ export class LineMap {
      */
     getOffsets(offset: number): [number, number] {
         const line: number = this.search(offset);
-        const column: number = offset - this.lineStarts[line];
+        const column: number =
+            this.utf8 === null
+                ? offset - this.lineStarts[line]
+                : this.utf8.utf16(offset) - this.utf8.utf16(this.lineStarts[line]);
 
         // [line, column]
         return [line + 1, line === 0 ? column + 1 : column];

@@ -2,13 +2,17 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.2
+	Version: 2.3.3
 	License: MIT
  */
 /**
  * Compute line and column of the offset
  */
 class LineMap {
+    /**
+     * utf-8 css: the offsets are byte offsets, the columns are utf-16 columns
+     */
+    utf8 = null;
     /**
      * line starts
      */
@@ -30,7 +34,9 @@ class LineMap {
      */
     getOffsets(offset) {
         const line = this.search(offset);
-        const column = offset - this.lineStarts[line];
+        const column = this.utf8 === null
+            ? offset - this.lineStarts[line]
+            : this.utf8.utf16(offset) - this.utf8.utf16(this.lineStarts[line]);
         // [line, column]
         return [line + 1, line === 0 ? column + 1 : column];
     }
