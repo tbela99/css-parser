@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 /**
@@ -70,6 +70,7 @@ class RenderResult {
      */
     #codeLength;
     /**
+     * create a render result
      * @param write rendered css, encoded as UTF-8
      * @param errors
      * @param stats
@@ -134,6 +135,7 @@ class TransformResult extends RenderResult {
      */
     arena;
     /**
+     * create a transform result from the parse result and the render result
      * @param parseResult
      * @param renderResult
      * @param stats

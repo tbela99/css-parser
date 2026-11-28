@@ -1049,3 +1049,23 @@ export enum WalkerEvent {
      */
     Leave = 0x2,
 }
+
+/**
+ * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+ * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+ */
+export enum MergeRulesEnum {
+    /**
+     * the rules are not merged
+     */
+    None = 0,
+    /**
+     * only the rules that have the same declarations are merged, the size of the output is not computed:
+     * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     */
+    Identical = 1,
+    /**
+     * the rules that share declarations are merged when the output is smaller
+     */
+    All = 2,
+}

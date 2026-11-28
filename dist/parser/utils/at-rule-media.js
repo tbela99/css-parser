@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { TokenField } from '../../ast/arena.js';
@@ -55,7 +55,47 @@ function parseMediaqueryList(arena, stream, options) {
                 i++;
             }
             // [not | only] <media-type> [ and <media-condition-without-or>  ]?
-            if (i < stream.length) {
+            let modifier = null;
+            if (i < stream.length && arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
+                const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
+                if (val === "not" || val === "only") {
+                    modifier = val;
+                    tokens.push(stream[i]);
+                    i++;
+                    while (i < stream.length &&
+                        (arena.dataTypes[stream[i]] === EnumToken.WhitespaceTokenType ||
+                            arena.dataTypes[stream[i]] === EnumToken.CommentTokenType)) {
+                        tokens.push(stream[i]);
+                        i++;
+                    }
+                }
+            }
+            if (modifier != null && i === stream.length) {
+                success = false;
+                errors.push({
+                    action: "drop",
+                    message: `expecting '<media-type>'`,
+                    node: stream[i - 1],
+                    location: [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i - 1])),
+                    ],
+                });
+            }
+            else if (modifier === "only" && arena.dataTypes[stream[i]] !== EnumToken.IdenTokenType) {
+                // only is followed by a media type
+                success = false;
+                errors.push({
+                    action: "drop",
+                    message: `expecting '<media-type>'`,
+                    node: stream[i],
+                    location: [
+                        options.source.file,
+                        ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                    ],
+                });
+            }
+            else if (i < stream.length) {
                 if (arena.dataTypes[stream[i]] === EnumToken.IdenTokenType) {
                     const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                     if (mediaTypes.includes(val)) {

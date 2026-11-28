@@ -15,6 +15,7 @@ import { isHash, isIdent } from "../../syntax/syntax.ts";
 import { getParsedSyntax, getSyntaxRule } from "../../validation/config.ts";
 import {
     createValidationContext,
+    matchSimpleSelector,
     matchAllSyntaxes,
     matchSelectorSyntax,
     selectorFunctionSyntax,
@@ -240,6 +241,68 @@ function splitUnicodeRanges(arena: AstArena, tokens: Token[]): void {
 }
 
 /**
+ * true if the token is a keyframe selector: `from`, `to` or a percentage between 0 and 100
+ * @param arena
+ * @param token
+ */
+function isKeyframeSelectorToken(arena: AstArena, token: Token | undefined): boolean {
+    if (token === undefined) {
+        return false;
+    }
+
+    if (arena.dataTypes[token] === EnumToken.PercentageTokenType) {
+        return arena.numericValue[token] >= 0 && arena.numericValue[token] <= 100;
+    }
+
+    if (arena.dataTypes[token] !== EnumToken.IdenTokenType) {
+        return false;
+    }
+
+    const id: number = arena.stringValue[token];
+    const length: number = arena.stringLength(id);
+
+    // `from` and `to`, case-insensitive
+    return length === 4
+        ? (arena.stringCodeAt(id, 0) | 0x20) === 0x66 &&
+              (arena.stringCodeAt(id, 1) | 0x20) === 0x72 &&
+              (arena.stringCodeAt(id, 2) | 0x20) === 0x6f &&
+              (arena.stringCodeAt(id, 3) | 0x20) === 0x6d
+        : length === 2 && (arena.stringCodeAt(id, 0) | 0x20) === 0x74 && (arena.stringCodeAt(id, 1) | 0x20) === 0x6f;
+}
+
+/**
+ * true if the selector of a keyframe is a list of `from`, `to` and percentages between 0 and 100, separated by commas
+ * and whitespace: it matches the `keyframe-selectors` syntax
+ * @param arena
+ * @param tokens
+ */
+function isSimpleKeyframeSelector(arena: AstArena, tokens: Token[]): boolean {
+    // a keyframe selector is expected
+    let selector: boolean = true;
+    let i: number = 0;
+
+    for (; i < tokens.length; i++) {
+        const type: EnumToken = arena.dataTypes[tokens[i]];
+
+        if (type === EnumToken.WhitespaceTokenType) {
+            continue;
+        }
+
+        if (selector) {
+            if (!isKeyframeSelectorToken(arena, tokens[i])) {
+                return false;
+            }
+        } else if (type !== EnumToken.CommaTokenType) {
+            return false;
+        }
+
+        selector = !selector;
+    }
+
+    return !selector;
+}
+
+/**
  * parse selector
  * @param arena
  * @param tokens
@@ -260,12 +323,15 @@ export function parseSelector(
     splitUnicodeRanges(arena, tokens);
 
     if (contextType === EnumToken.KeyframesAtRuleNodeType) {
-        const result = matchAllSyntaxes(
-            arena,
-            getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
-            createValidationContext(arena, tokens),
-            options,
-        );
+        // `from`, `to` and the percentages are valid: the syntax is not matched
+        const result = isSimpleKeyframeSelector(arena, tokens)
+            ? { success: true, errors: [] as ErrorDescription[] }
+            : matchAllSyntaxes(
+                  arena,
+                  getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"),
+                  createValidationContext(arena, tokens),
+                  options,
+              );
 
         const parts: Token[][] = splitTokenList(arena, tokens);
 
@@ -348,8 +414,11 @@ export function parseSelector(
 
         if (contextType === EnumToken.AtRuleNodeType) {
             // computed once per at-rule name: the name is not concatenated for each selector
+            const previousAtRuleArena: AstArena | null = atRuleArena;
             atRuleArena = arena;
             allowed = arena.stringDerived(arena.name[context as AstNode], StringDerived.AtRuleAcceptsRules, atRuleAcceptsRules);
+            // the arena is not kept after the parse: the previous arena is restored (a nested call)
+            atRuleArena = previousAtRuleArena;
         }
     }
 
@@ -488,11 +557,13 @@ export function parseSelector(
         tokens.length = write;
     }
 
-    const result = matchSelectorSyntax(arena, tokens, errors, options, nested);
+    // a selector made of simple selectors is valid, it has no attribute selector and no function
+    const simple: boolean = matchSimpleSelector(arena, tokens);
+    const result = simple ? simpleSelectorMatch : matchSelectorSyntax(arena, tokens, errors, options, nested);
 
     trimArray(arena, tokens);
 
-    if (result.success) {
+    if (result.success && !simple) {
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
 
@@ -562,7 +633,7 @@ export function parseSelector(
 
     const node: AstRule = arena.createRule(
         EnumToken.RuleNodeType,
-        renderSelector(arena, tokens),
+        simple ? renderSimpleSelector(arena, tokens) : renderSelector(arena, tokens),
         tokens,
         result.success && allowed
             ? EnumAstNodeStatus.Validated
@@ -581,6 +652,14 @@ export function parseSelector(
     );
     return node;
 }
+
+/**
+ * result of the validation of a simple selector, see {@link matchSimpleSelector}
+ */
+const simpleSelectorMatch: { success: boolean; errors: ErrorDescription[] } = Object.freeze({
+    success: true,
+    errors: Object.freeze([]) as unknown as ErrorDescription[],
+});
 
 // options of the rendering of the selector tokens
 const selectorRenderOptions: ParserOptions = { minify: false };
@@ -906,6 +985,37 @@ function addSelectorCodes(count: number, selectors: number): number {
     selectorOffsets[selectors * 2 + 1] = end;
 
     return selectors + 1;
+}
+
+/**
+ * selector of a rule made of simple selectors (see {@link matchSimpleSelector}), without the leading and the trailing
+ * whitespace: the string of a single token is used as is, a compound or a complex selector is built without
+ * {@link renderSelector}. a selector list is rendered with {@link renderSelector}: the duplicate selectors are removed
+ * @param arena
+ * @param tokens
+ * @returns the interned string id of the selector
+ */
+function renderSimpleSelector(arena: AstArena, tokens: Token[]): number {
+    if (tokens.length === 1) {
+        const type: EnumToken = arena.dataTypes[tokens[0]];
+
+        // rendered as their string by appendSelectorToken()
+        if (type !== EnumToken.PseudoElementTokenType) {
+            return arena.stringValue[tokens[0]];
+        }
+    }
+
+    selectorBuilder.reset();
+
+    for (let index = 0; index < tokens.length; index++) {
+        if (arena.dataTypes[tokens[index]] === EnumToken.CommaTokenType) {
+            return renderSelector(arena, tokens);
+        }
+
+        appendSelectorToken(arena, tokens[index], selectorBuilder);
+    }
+
+    return arena.internBuilder(selectorBuilder);
 }
 
 /**

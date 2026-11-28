@@ -22,7 +22,7 @@ import { Buffer } from "node:buffer";
 import type { AstArena } from "./ast/arena.ts";
 import { ModuleScopeEnumOptions } from "./ast/types.ts";
 import { createParseInfo, Tokenizer } from "./parser/tokenize.ts";
-import { type CssInput, isCssInput } from "./parser/input.ts";
+import { type CssInput, isCssInput, responseSize, setStreamSize } from "./parser/input.ts";
 import { dirname, matchUrl, resolve } from "./fs/resolve.ts";
 import { ResponseType } from "./types.ts";
 import { resolve as resolvePath } from "node:path";
@@ -64,11 +64,23 @@ export {
     EnumAstNodeStatus,
     ModuleScopeEnumOptions,
     ModuleCaseTransformEnum,
+    MergeRulesEnum,
     WalkerEvent,
     WalkerOptionEnum,
 } from "./ast/types.ts";
 export { SourceMap } from "./printer/sourcemap.ts";
-export type { ValidationToken } from "./validation/parser/types.d.ts";
+export type {
+    ValidationToken,
+    ValidationNumberToken,
+    ValidationDimensionToken,
+    ValidationValueRangeMatch,
+    ValidationDimensionRangeMatch,
+    Position,
+} from "./validation/parser/types.d.ts";
+export { ValidationTokenEnum } from "./validation/parser/typedef.ts";
+export { LOC } from "./syntax/constants.ts";
+export type { CodeUnits } from "./parser/utils/codes.ts";
+export type { StringTableData } from "./ast/strings.ts";
 export type { CssInput } from "./parser/input.ts";
 
 export { FeatureWalkMode } from "./ast/features/type.ts";
@@ -119,7 +131,8 @@ export async function load(
                 }
 
                 return responseType === ResponseType.ReadableStream
-                    ? (response.body as ReadableStream<Uint8Array<ArrayBuffer>>)
+                    ? // the size of the body: the parser allocates its buffers once
+                      setStreamSize(response.body as ReadableStream<Uint8Array<ArrayBuffer>>, responseSize(response))
                     : response.text();
             },
         );
@@ -144,12 +157,16 @@ export async function load(
                 );
             }
 
-            return Readable.toWeb(
-                createReadStream(resolved.absolute, {
-                    encoding: "utf-8",
-                    highWaterMark: 64 * 1024,
-                }),
-            ) as ReadableStream<Uint8Array>;
+            // the size of the file: the parser allocates its buffers once
+            return setStreamSize(
+                Readable.toWeb(
+                    createReadStream(resolved.absolute, {
+                        encoding: "utf-8",
+                        highWaterMark: 64 * 1024,
+                    }),
+                ) as ReadableStream<Uint8Array>,
+                stats.size,
+            );
         }
     } catch (error) {}
 
@@ -387,7 +404,8 @@ export function transformSync(
     // the options of the caller are not modified: they may be reused
     options = { ...options };
 
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
 
@@ -874,7 +892,8 @@ export async function transform(
     // the options of the caller are not modified: they may be reused
     options = { ...options };
 
-    if (options.minify == null) {
+    // the fast mode sets the default value of minify (see fastModeOptions)
+    if (options.minify == null && !options.fastMode) {
         options.minify = true;
     }
 

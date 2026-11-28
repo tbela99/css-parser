@@ -75,6 +75,12 @@ const versions = {
     "css-parser-wasm": pkgVersion("css-parser-wasm", "@tbela99/rust-css-parser-wasm/package.json"),
 };
 
+/**
+ * the fast settings of css-parser: the inexpensive minifications only (see files/performance.md). `fastMode` requires a
+ * version that supports it (2.3.2 or later): an older version ignores it and runs the default minification
+ */
+const fastSettings = { fastMode: true };
+
 const cleanCssInstance = new CleanCSS();
 const cssnanoProcessor = postcss([cssnano]);
 
@@ -104,13 +110,7 @@ export const minifiers = [
         minify: (css) =>
             tbelaDevNApiTransform({
                 input: Buffer.from(css),
-                minify: false,
-                beautify: false,
-                removeEmpty: true,
-                removeComments: true,
-                convertColor: true,
-                validate: false,
-                // minifyValues: true,
+                ...fastSettings,
             }).code,
     },
     {
@@ -120,13 +120,7 @@ export const minifiers = [
         minify: (css) =>
             tbelaDevWasmTransform({
                 input: Buffer.from(css),
-                minify: false,
-                beautify: false,
-                removeEmpty: true,
-                removeComments: true,
-                convertColor: true,
-                validate: false,
-                // minifyValues: true,
+                ...fastSettings,
             }).code,
     },
     {
@@ -160,21 +154,15 @@ export const minifiers = [
         id: "css-parser-speed",
         url: versions["css-parser"].url,
         label: `@tbela99/css-parser (fast) - ${versions["css-parser"].version}`,
-        title: `settings: { minify: false, beautify: false, removeEmpty: true, removeComments: true, convertColor: true }`,
+        title: `settings: ${JSON.stringify(fastSettings)}`,
         minify: (css) =>
             tbelaDevTransform({
                 input: Buffer.from(css),
-                minify: false,
-                beautify: false,
-                removeEmpty: true,
-                removeComments: true,
-                convertColor: true,
-                validate: false,
-                // minifyValues: true,
+                ...fastSettings,
             }).code,
     },
     {
-        id: "css-parser-dev",
+        id: "css-parser",
         url: versions["css-parser"].url,
         label: `@tbela99/css-parser - ${versions["css-parser"].version}`,
         minify: (css) => tbelaDevTransform({ input: Buffer.from(css) }).code,

@@ -119,8 +119,9 @@ export function xyz2srgb(x: number, y: number, z: number, alpha: number | null =
 export function hwb2srgbvalues(arena: AstArena, token: Token): number[] | null {
     const { h, w, b, a } = hwbvalues(arena, token) ?? {};
 
+    // the components cannot be computed: var(), ...
     if (h == null || w == null || b == null) {
-        return [];
+        return null;
     }
 
     const rgb: number[] = hwb2srgb(h, w, b);

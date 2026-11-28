@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1012/1012</span>
+                <span class='fraction'>1032/1032</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1012/1012</span>
+                <span class='fraction'>1032/1032</span>
             </div>
         
             
@@ -1075,7 +1075,27 @@
 <a name='L1010'></a><a href='#L1010'>1010</a>
 <a name='L1011'></a><a href='#L1011'>1011</a>
 <a name='L1012'></a><a href='#L1012'>1012</a>
-<a name='L1013'></a><a href='#L1013'>1013</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L1013'></a><a href='#L1013'>1013</a>
+<a name='L1014'></a><a href='#L1014'>1014</a>
+<a name='L1015'></a><a href='#L1015'>1015</a>
+<a name='L1016'></a><a href='#L1016'>1016</a>
+<a name='L1017'></a><a href='#L1017'>1017</a>
+<a name='L1018'></a><a href='#L1018'>1018</a>
+<a name='L1019'></a><a href='#L1019'>1019</a>
+<a name='L1020'></a><a href='#L1020'>1020</a>
+<a name='L1021'></a><a href='#L1021'>1021</a>
+<a name='L1022'></a><a href='#L1022'>1022</a>
+<a name='L1023'></a><a href='#L1023'>1023</a>
+<a name='L1024'></a><a href='#L1024'>1024</a>
+<a name='L1025'></a><a href='#L1025'>1025</a>
+<a name='L1026'></a><a href='#L1026'>1026</a>
+<a name='L1027'></a><a href='#L1027'>1027</a>
+<a name='L1028'></a><a href='#L1028'>1028</a>
+<a name='L1029'></a><a href='#L1029'>1029</a>
+<a name='L1030'></a><a href='#L1030'>1030</a>
+<a name='L1031'></a><a href='#L1031'>1031</a>
+<a name='L1032'></a><a href='#L1032'>1032</a>
+<a name='L1033'></a><a href='#L1033'>1033</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -2076,6 +2096,26 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -2091,7 +2131,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 &nbsp;
 	Author(s): Thierry Bela
-	Version: 2.3.0
+	Version: 2.3.2
 	License: MIT
  */
 /**
@@ -3097,8 +3137,28 @@ var WalkerEvent;
      */
     WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
 })(WalkerEvent || (WalkerEvent = {}));
+/**
+ * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+ * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+ */
+var MergeRulesEnum;
+(function (MergeRulesEnum) {
+    /**
+     * the rules are not merged
+     */
+    MergeRulesEnum[MergeRulesEnum["None"] = 0] = "None";
+    /**
+     * only the rules that have the same declarations are merged, the size of the output is not computed:
+     * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+     */
+    MergeRulesEnum[MergeRulesEnum["Identical"] = 1] = "Identical";
+    /**
+     * the rules that share declarations are merged when the output is smaller
+     */
+    MergeRulesEnum[MergeRulesEnum["All"] = 2] = "All";
+})(MergeRulesEnum || (MergeRulesEnum = {}));
 &nbsp;
-export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };
+export { ColorType, EnumAstNodeStatus, EnumToken, MergeRulesEnum, ModuleCaseTransformEnum, ModuleScopeEnumOptions, WalkerEvent, WalkerOptionEnum };
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -3106,7 +3166,7 @@ export { ColorType, EnumAstNodeStatus, EnumToken, ModuleCaseTransformEnum, Modul
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-11-24T05:26:25.340Z
+                at 2026-11-28T00:30:19.624Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

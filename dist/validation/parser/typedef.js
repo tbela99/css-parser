@@ -2,8 +2,11 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
+ */
+/**
+ * type of a validation token: a node of the parsed value definition syntax, see {@link parseSyntax}
  */
 var ValidationTokenEnum;
 (function (ValidationTokenEnum) {

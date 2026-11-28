@@ -6,6 +6,7 @@ children:
     - ./getting-started.md
     - ./native.md
     - ./wasm.md
+    - ./rust.md
     - ./performance.md
     - ./usage.md
     - ./architecture.md
@@ -28,6 +29,7 @@ children:
 - [Getting started](./getting-started.md)
 - [Native build (N-API)](./native.md)
 - [WebAssembly build](./wasm.md)
+- [Rust crate](./rust.md)
 - [Performance](./performance.md)
 - [Usage](./usage.md)
 - [Architecture](./architecture.md)

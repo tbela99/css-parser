@@ -2,14 +2,14 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { EnumToken } from '../ast/types.js';
 import config from '../data/validation.json.js';
 
 /**
- * Used by the validation parser
+ * key of the position of a validation token in the syntax, see {@link ValidationToken}
  */
 const LOC = Symbol.for("loc");
 /**

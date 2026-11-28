@@ -6,7 +6,13 @@ import { ColorType, EnumToken, EnumAstNodeStatus } from "../ast/types.ts";
  * Unicode range token: `U+0025-00FF`, `U+4??`
  */
 export declare interface UniCodeRangeToken extends BaseToken {
+    /**
+     * token type: {@link EnumToken.UniCodeRange}
+     */
     typ: EnumToken.UniCodeRange;
+    /**
+     * the range: `U+0025-00FF`, `U+4??`
+     */
     val: string;
 }
 
@@ -15,7 +21,7 @@ export declare interface UniCodeRangeToken extends BaseToken {
  */
 export declare interface LiteralToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.LiteralTokenType}
      */
     typ: EnumToken.LiteralTokenType;
     /**
@@ -29,7 +35,7 @@ export declare interface LiteralToken extends BaseToken {
  */
 export declare interface ClassSelectorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ClassSelectorTokenType}
      */
     typ: EnumToken.ClassSelectorTokenType;
     /**
@@ -43,7 +49,7 @@ export declare interface ClassSelectorToken extends BaseToken {
  */
 export declare interface UniversalSelectorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.UniversalSelectorTokenType}
      */
     typ: EnumToken.UniversalSelectorTokenType;
 }
@@ -53,7 +59,7 @@ export declare interface UniversalSelectorToken extends BaseToken {
  */
 export declare interface IdentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.IdenTokenType}
      */
     typ: EnumToken.IdenTokenType;
     /**
@@ -67,7 +73,7 @@ export declare interface IdentToken extends BaseToken {
  */
 export declare interface CssTypeTokenType extends BaseToken {
  /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CssTypeTokenType}
      */
     typ: EnumToken.CssTypeTokenType;
     /**
@@ -81,7 +87,7 @@ export declare interface CssTypeTokenType extends BaseToken {
  */
 export declare interface IdentListToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.IdenListTokenType}
      */
     typ: EnumToken.IdenListTokenType;
     /**
@@ -95,7 +101,7 @@ export declare interface IdentListToken extends BaseToken {
  */
 export declare interface DashedIdentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DashedIdenTokenType}
      */
     typ: EnumToken.DashedIdenTokenType;
     /**
@@ -109,7 +115,7 @@ export declare interface DashedIdentToken extends BaseToken {
  */
 export declare interface CommaToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CommaTokenType}
      */
     typ: EnumToken.CommaTokenType;
 }
@@ -119,7 +125,7 @@ export declare interface CommaToken extends BaseToken {
  */
 export declare interface ColonToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ColonTokenType}
      */
     typ: EnumToken.ColonTokenType;
 }
@@ -129,7 +135,7 @@ export declare interface ColonToken extends BaseToken {
  */
 export declare interface DoubleColonToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DoubleColonTokenType}
      */
     typ: EnumToken.DoubleColonTokenType;
 }
@@ -139,7 +145,7 @@ export declare interface DoubleColonToken extends BaseToken {
  */
 export declare interface SemiColonToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.SemiColonTokenType}
      */
     typ: EnumToken.SemiColonTokenType;
 }
@@ -149,7 +155,7 @@ export declare interface SemiColonToken extends BaseToken {
  */
 export declare interface NestingSelectorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NestingSelectorTokenType}
      */
     typ: EnumToken.NestingSelectorTokenType;
 }
@@ -159,7 +165,7 @@ export declare interface NestingSelectorToken extends BaseToken {
  */
 export declare interface NumberToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NumberTokenType}
      */
     typ: EnumToken.NumberTokenType;
     /**
@@ -172,23 +178,32 @@ export declare interface NumberToken extends BaseToken {
     val: number | FractionToken;
 }
 
+/**
+ * `NaN` constant of a math function: `calc(NaN * 1px)`
+ */
 export declare interface NaNToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NaNTokenType}
      */
     typ: EnumToken.NaNTokenType;
 }
 
+/**
+ * `infinity` constant of a math function: `calc(infinity * 1px)`
+ */
 export declare interface InfinityToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.InfinityTokenType}
      */
     typ: EnumToken.InfinityTokenType;
 }
 
+/**
+ * `-infinity` constant of a math function: `calc(-infinity * 1px)`
+ */
 export declare interface NegativeInfinityToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NegativeInfinityTokenType}
      */
     typ: EnumToken.NegativeInfinityTokenType;
 }
@@ -198,7 +213,7 @@ export declare interface NegativeInfinityToken extends BaseToken {
  */
 export declare interface AtRuleToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AtRuleTokenType}
      */
     typ: EnumToken.AtRuleTokenType;
     /**
@@ -216,7 +231,7 @@ export declare interface AtRuleToken extends BaseToken {
  */
 export declare interface PercentageToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.PercentageTokenType}
      */
     typ: EnumToken.PercentageTokenType;
     /**
@@ -230,7 +245,7 @@ export declare interface PercentageToken extends BaseToken {
  */
 export declare interface FlexToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.FlexTokenType}
      */
     typ: EnumToken.FlexTokenType;
     /**
@@ -274,7 +289,7 @@ export declare interface FunctionToken extends BaseToken {
  */
 export declare interface GridTemplateFuncToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.GridTemplateFuncTokenType}
      */
     typ: EnumToken.GridTemplateFuncTokenType;
     /**
@@ -292,7 +307,7 @@ export declare interface GridTemplateFuncToken extends BaseToken {
  */
 export declare interface FunctionURLToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.UrlFunctionTokenType}
      */
     typ: EnumToken.UrlFunctionTokenType;
     /**
@@ -310,7 +325,7 @@ export declare interface FunctionURLToken extends BaseToken {
  */
 export declare interface FunctionImageToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ImageFunctionTokenType}
      */
     typ: EnumToken.ImageFunctionTokenType;
     /**
@@ -337,7 +352,7 @@ export declare interface FunctionImageToken extends BaseToken {
  */
 export declare interface TimingFunctionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.TimingFunctionTokenType}
      */
     typ: EnumToken.TimingFunctionTokenType;
     /**
@@ -355,7 +370,7 @@ export declare interface TimingFunctionToken extends BaseToken {
  */
 export declare interface TimelineFunctionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.TimelineFunctionTokenType}
      */
     typ: EnumToken.TimelineFunctionTokenType;
     /**
@@ -373,7 +388,7 @@ export declare interface TimelineFunctionToken extends BaseToken {
  */
 export declare interface StringToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.StringTokenType}
      */
     typ: EnumToken.StringTokenType;
     /**
@@ -387,7 +402,7 @@ export declare interface StringToken extends BaseToken {
  */
 export declare interface BadStringToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BadStringTokenType}
      */
     typ: EnumToken.BadStringTokenType;
     /**
@@ -401,7 +416,7 @@ export declare interface BadStringToken extends BaseToken {
  */
 export declare interface UnclosedStringToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.UnclosedStringTokenType}
      */
     typ: EnumToken.UnclosedStringTokenType;
     /**
@@ -415,7 +430,7 @@ export declare interface UnclosedStringToken extends BaseToken {
  */
 export declare interface DimensionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DimensionTokenType}
      */
     typ: EnumToken.DimensionTokenType;
     /**
@@ -433,7 +448,7 @@ export declare interface DimensionToken extends BaseToken {
  */
 export declare interface LengthToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.LengthTokenType}
      */
     typ: EnumToken.LengthTokenType;
     /**
@@ -451,7 +466,7 @@ export declare interface LengthToken extends BaseToken {
  */
 export declare interface AngleToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AngleTokenType}
      */
     typ: EnumToken.AngleTokenType;
     /**
@@ -469,7 +484,7 @@ export declare interface AngleToken extends BaseToken {
  */
 export declare interface TimeToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.TimeTokenType}
      */
     typ: EnumToken.TimeTokenType;
     /**
@@ -487,7 +502,7 @@ export declare interface TimeToken extends BaseToken {
  */
 export declare interface FrequencyToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.FrequencyTokenType}
      */
     typ: EnumToken.FrequencyTokenType;
     /**
@@ -505,7 +520,7 @@ export declare interface FrequencyToken extends BaseToken {
  */
 export declare interface ResolutionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ResolutionTokenType}
      */
     typ: EnumToken.ResolutionTokenType;
     /**
@@ -523,7 +538,7 @@ export declare interface ResolutionToken extends BaseToken {
  */
 export declare interface HashToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.HashTokenType}
      */
     typ: EnumToken.HashTokenType;
     /**
@@ -537,7 +552,7 @@ export declare interface HashToken extends BaseToken {
  */
 export declare interface BlockStartToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BlockStartTokenType}
      */
     typ: EnumToken.BlockStartTokenType;
 }
@@ -547,7 +562,7 @@ export declare interface BlockStartToken extends BaseToken {
  */
 export declare interface BlockEndToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BlockEndTokenType}
      */
     typ: EnumToken.BlockEndTokenType;
 }
@@ -557,7 +572,7 @@ export declare interface BlockEndToken extends BaseToken {
  */
 export declare interface AttrStartToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AttrStartTokenType}
      */
     typ: EnumToken.AttrStartTokenType;
     /**
@@ -571,7 +586,7 @@ export declare interface AttrStartToken extends BaseToken {
  */
 export declare interface AttrEndToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AttrEndTokenType}
      */
     typ: EnumToken.AttrEndTokenType;
 }
@@ -581,7 +596,7 @@ export declare interface AttrEndToken extends BaseToken {
  */
 export declare interface ParensStartToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.StartParensTokenType}
      */
     typ: EnumToken.StartParensTokenType;
 }
@@ -591,7 +606,7 @@ export declare interface ParensStartToken extends BaseToken {
  */
 export declare interface ParensEndToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.EndParensTokenType}
      */
     typ: EnumToken.EndParensTokenType;
 }
@@ -601,7 +616,7 @@ export declare interface ParensEndToken extends BaseToken {
  */
 export declare interface ParensToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ParensTokenType}
      */
     typ: EnumToken.ParensTokenType;
     /**
@@ -615,7 +630,7 @@ export declare interface ParensToken extends BaseToken {
  */
 export declare interface WhitespaceToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.WhitespaceTokenType}
      */
     typ: EnumToken.WhitespaceTokenType;
     /**
@@ -629,7 +644,7 @@ export declare interface WhitespaceToken extends BaseToken {
  */
 export declare interface CommentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CommentTokenType}
      */
     typ: EnumToken.CommentTokenType;
     /**
@@ -643,7 +658,7 @@ export declare interface CommentToken extends BaseToken {
  */
 export declare interface BadCommentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BadCommentTokenType}
      */
     typ: EnumToken.BadCommentTokenType;
     /**
@@ -657,7 +672,7 @@ export declare interface BadCommentToken extends BaseToken {
  */
 export declare interface CDOCommentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CDOCOMMTokenType}
      */
     typ: EnumToken.CDOCOMMTokenType;
     /**
@@ -671,7 +686,7 @@ export declare interface CDOCommentToken extends BaseToken {
  */
 export declare interface BadCDOCommentToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BadCdoTokenType}
      */
     typ: EnumToken.BadCdoTokenType;
     /**
@@ -685,7 +700,7 @@ export declare interface BadCDOCommentToken extends BaseToken {
  */
 export declare interface IncludeMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.IncludeMatchTokenType}
      */
     typ: EnumToken.IncludeMatchTokenType;
     // val: '~=';
@@ -696,7 +711,7 @@ export declare interface IncludeMatchToken extends BaseToken {
  */
 export declare interface DashMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DashMatchTokenType}
      */
     typ: EnumToken.DashMatchTokenType;
     // val: '|=';
@@ -707,7 +722,7 @@ export declare interface DashMatchToken extends BaseToken {
  */
 export declare interface EqualMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.EqualMatchTokenType}
      */
     typ: EnumToken.EqualMatchTokenType;
     // val: '|=';
@@ -718,7 +733,7 @@ export declare interface EqualMatchToken extends BaseToken {
  */
 export declare interface StartMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.StartMatchTokenType}
      */
     typ: EnumToken.StartMatchTokenType;
     // val: '^=';
@@ -729,7 +744,7 @@ export declare interface StartMatchToken extends BaseToken {
  */
 export declare interface EndMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.EndMatchTokenType}
      */
     typ: EnumToken.EndMatchTokenType;
     // val: '|=';
@@ -740,7 +755,7 @@ export declare interface EndMatchToken extends BaseToken {
  */
 export declare interface ContainMatchToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ContainMatchTokenType}
      */
     typ: EnumToken.ContainMatchTokenType;
     // val: '|=';
@@ -751,7 +766,7 @@ export declare interface ContainMatchToken extends BaseToken {
  */
 export declare interface LessThanToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.LtTokenType}
      */
     typ: EnumToken.LtTokenType;
 }
@@ -761,7 +776,7 @@ export declare interface LessThanToken extends BaseToken {
  */
 export declare interface LessThanOrEqualToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.LteTokenType}
      */
     typ: EnumToken.LteTokenType;
 }
@@ -771,7 +786,7 @@ export declare interface LessThanOrEqualToken extends BaseToken {
  */
 export declare interface GreaterThanToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.GtTokenType}
      */
     typ: EnumToken.GtTokenType;
 }
@@ -781,7 +796,7 @@ export declare interface GreaterThanToken extends BaseToken {
  */
 export declare interface GreaterThanOrEqualToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.GteTokenType}
      */
     typ: EnumToken.GteTokenType;
 }
@@ -791,7 +806,7 @@ export declare interface GreaterThanOrEqualToken extends BaseToken {
  */
 export declare interface ColumnCombinatorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ColumnCombinatorTokenType}
      */
     typ: EnumToken.ColumnCombinatorTokenType;
 }
@@ -801,7 +816,7 @@ export declare interface ColumnCombinatorToken extends BaseToken {
  */
 export declare interface PseudoClassToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.PseudoClassTokenType}
      */
     typ: EnumToken.PseudoClassTokenType;
     /**
@@ -815,7 +830,7 @@ export declare interface PseudoClassToken extends BaseToken {
  */
 export declare interface PseudoElementToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.PseudoElementTokenType}
      */
     typ: EnumToken.PseudoElementTokenType;
     /**
@@ -829,7 +844,7 @@ export declare interface PseudoElementToken extends BaseToken {
  */
 export declare interface PseudoPageToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.PseudoPageTokenType}
      */
     typ: EnumToken.PseudoPageTokenType;
     /**
@@ -843,7 +858,7 @@ export declare interface PseudoPageToken extends BaseToken {
  */
 export declare interface PseudoClassFunctionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.PseudoClassFuncTokenType}
      */
     typ: EnumToken.PseudoClassFuncTokenType;
     /**
@@ -861,7 +876,7 @@ export declare interface PseudoClassFunctionToken extends BaseToken {
  */
 export declare interface DelimToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DelimTokenType}
      */
     typ: EnumToken.DelimTokenType;
 }
@@ -871,7 +886,7 @@ export declare interface DelimToken extends BaseToken {
  */
 export declare interface BadUrlToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BadUrlTokenType}
      */
     typ: EnumToken.BadUrlTokenType;
     /**
@@ -885,7 +900,7 @@ export declare interface BadUrlToken extends BaseToken {
  */
 export declare interface UrlToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.UrlTokenTokenType}
      */
     typ: EnumToken.UrlTokenTokenType;
     /**
@@ -899,7 +914,7 @@ export declare interface UrlToken extends BaseToken {
  */
 export declare interface EOFToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.EOFTokenType}
      */
     typ: EnumToken.EOFTokenType;
 }
@@ -909,7 +924,7 @@ export declare interface EOFToken extends BaseToken {
  */
 export declare interface ImportantToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ImportantTokenType}
      */
     typ: EnumToken.ImportantTokenType;
 }
@@ -919,7 +934,7 @@ export declare interface ImportantToken extends BaseToken {
  */
 export declare interface ColorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ColorTokenType}
      */
     typ: EnumToken.ColorTokenType;
     /**
@@ -945,7 +960,7 @@ export declare interface ColorToken extends BaseToken {
  */
 export declare interface AttrToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AttrTokenType}
      */
     typ: EnumToken.AttrTokenType;
     /**
@@ -959,7 +974,7 @@ export declare interface AttrToken extends BaseToken {
  */
 export declare interface ChildCombinatorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ChildCombinatorTokenType}
      */
     typ: EnumToken.ChildCombinatorTokenType;
 }
@@ -969,7 +984,7 @@ export declare interface ChildCombinatorToken extends BaseToken {
  */
 export declare interface MediaFeatureToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.MediaFeatureTokenType}
      */
     typ: EnumToken.MediaFeatureTokenType;
     /**
@@ -983,7 +998,7 @@ export declare interface MediaFeatureToken extends BaseToken {
  */
 export declare interface NotToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NotTokenType}
      */
     typ: EnumToken.NotTokenType;
     /**
@@ -997,7 +1012,7 @@ export declare interface NotToken extends BaseToken {
  */
 export declare interface MediaFeatureOnlyToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.OnlyTokenType}
      */
     typ: EnumToken.OnlyTokenType;
     /**
@@ -1011,7 +1026,7 @@ export declare interface MediaFeatureOnlyToken extends BaseToken {
  */
 export declare interface AndToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.AndTokenType}
      */
     typ: EnumToken.AndTokenType;
 }
@@ -1021,7 +1036,7 @@ export declare interface AndToken extends BaseToken {
  */
 export declare interface OrToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.OrTokenType}
      */
     typ: EnumToken.OrTokenType;
 }
@@ -1031,7 +1046,7 @@ export declare interface OrToken extends BaseToken {
  */
 export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.MediaQueryUnaryFeatureTokenType}
      */
     typ: EnumToken.MediaQueryUnaryFeatureTokenType;
     /**
@@ -1044,77 +1059,92 @@ export declare interface MediaQueryUnaryFeatureToken extends BaseToken {
     r: PlainToken[];
 }
 
+/**
+ * `@supports` unary condition: `not (display: grid)`
+ */
 export declare interface SupportsQueryUnaryConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.SupportsQueryUnaryConditionTokenType}
      */
     typ: EnumToken.SupportsQueryUnaryConditionTokenType;
     /**
-     * Media feature
+     * the operator: `not`
      */
     l: PlainToken;
     /**
-     * Media feature
+     * the negated condition
      */
     r: PlainToken[];
 }
 
+/**
+ * `@supports` condition: `(display: grid) and (gap: 1rem)`
+ */
 export declare interface SupportsQueryConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.SupportsQueryConditionTokenType}
      */
     typ: EnumToken.SupportsQueryConditionTokenType;
     /**
-     * Media feature
+     * logical operator
      */
     op: AndToken | OrToken;
     /**
-     * Media feature
+     * left operand
      */
     l: PlainToken[];
     /**
-     * Media feature
+     * right operand
      */
     r: PlainToken[];
 }
 
+/**
+ * `@when` / `@else` condition: `media(width >= 400px) and supports(display: grid)`
+ */
 export declare interface WhenElseQueryConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.WhenElseQueryConditionTokenType}
      */
     typ: EnumToken.WhenElseQueryConditionTokenType;
     /**
-     * Media feature
+     * logical operator
      */
     op: AndToken | OrToken;
     /**
-     * Media feature
+     * left operand
      */
     l: PlainToken[];
     /**
-     * Media feature
+     * right operand
      */
     r: PlainToken[];
 }
 
+/**
+ * `@when` / `@else` unary condition: `not media(width >= 400px)`
+ */
 export declare interface WhenElseUnaryConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.WhenElseUnaryConditionTokenType}
      */
     typ: EnumToken.WhenElseUnaryConditionTokenType;
     /**
-     * Media feature
+     * the operator: `not`
      */
     l: PlainToken;
     /**
-     * Media feature
+     * the negated condition
      */
     r: PlainToken[];
 }
 
+/**
+ * media query condition: `(min-width: 400px)`, `(width > 400px)`, `(hover) and (pointer: fine)`
+ */
 export declare interface MediaQueryConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.MediaQueryConditionTokenType}
      */
     typ: EnumToken.MediaQueryConditionTokenType;
     /**
@@ -1139,9 +1169,12 @@ export declare interface MediaQueryConditionToken extends BaseToken {
     r: PlainToken[];
 }
 
+/**
+ * condition of an `if()` function branch: `media(width >= 400px): 1rem`
+ */
 export declare interface IfConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.IfConditionTokenType}
      */
     typ: EnumToken.IfConditionTokenType;
     /**
@@ -1154,9 +1187,12 @@ export declare interface IfConditionToken extends BaseToken {
     r: PlainToken[];
 }
 
+/**
+ * `if()` function branch with an `else` fallback: `media(width >= 400px): 1rem; else: 2rem`
+ */
 export declare interface IfElseConditionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.IfElseConditionTokenType}
      */
     typ: EnumToken.IfElseConditionTokenType;
     /**
@@ -1169,9 +1205,12 @@ export declare interface IfElseConditionToken extends BaseToken {
     r: IfConditionToken;
 }
 
+/**
+ * range of a `@container style()` query: `style(--size > 10px)`
+ */
 export declare interface ContainerStyleRangeToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ContainerStyleRangeTokenType}
      */
     typ: EnumToken.ContainerStyleRangeTokenType;
     /**
@@ -1188,13 +1227,12 @@ export declare interface ContainerStyleRangeToken extends BaseToken {
     r: PlainToken[];
 }
 
-// (20px <= width < 30px)
 /**
- * @inheritdoc
+ * media range query: `(20px <= width < 30px)`
  */
 export declare interface MediaRangeQueryToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.MediaRangeQueryTokenType}
      */
     typ: EnumToken.MediaRangeQueryTokenType;
     /**
@@ -1224,7 +1262,7 @@ export declare interface MediaRangeQueryToken extends BaseToken {
  */
 export declare interface DescendantCombinatorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.DescendantCombinatorTokenType}
      */
     typ: EnumToken.DescendantCombinatorTokenType;
 }
@@ -1234,7 +1272,7 @@ export declare interface DescendantCombinatorToken extends BaseToken {
  */
 export declare interface NextSiblingCombinatorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NextSiblingCombinatorTokenType}
      */
     typ: EnumToken.NextSiblingCombinatorTokenType;
 }
@@ -1244,7 +1282,7 @@ export declare interface NextSiblingCombinatorToken extends BaseToken {
  */
 export declare interface SubsequentCombinatorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.SubsequentSiblingCombinatorTokenType}
      */
     typ: EnumToken.SubsequentSiblingCombinatorTokenType;
 }
@@ -1254,7 +1292,7 @@ export declare interface SubsequentCombinatorToken extends BaseToken {
  */
 export declare interface AddToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.Add}
      */
     typ: EnumToken.Add;
 }
@@ -1264,7 +1302,7 @@ export declare interface AddToken extends BaseToken {
  */
 export declare interface SubToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.Sub}
      */
     typ: EnumToken.Sub;
 }
@@ -1274,7 +1312,7 @@ export declare interface SubToken extends BaseToken {
  */
 export declare interface DivToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.Div}
      */
     typ: EnumToken.Div;
 }
@@ -1284,7 +1322,7 @@ export declare interface DivToken extends BaseToken {
  */
 export declare interface MulToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.Mul}
      */
     typ: EnumToken.Mul;
 }
@@ -1294,7 +1332,7 @@ export declare interface MulToken extends BaseToken {
  */
 export declare interface WrappedValuesToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.WrappedValuesTokenType}
      */
     typ: EnumToken.WrappedValuesTokenType;
     /**
@@ -1308,7 +1346,7 @@ export declare interface WrappedValuesToken extends BaseToken {
  */
 export declare interface UnaryExpression extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.UnaryExpressionTokenType}
      */
     typ: EnumToken.UnaryExpressionTokenType;
     /**
@@ -1326,7 +1364,7 @@ export declare interface UnaryExpression extends BaseToken {
  */
 export declare interface FractionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.FractionTokenType}
      */
     typ: EnumToken.FractionTokenType;
     /**
@@ -1344,7 +1382,7 @@ export declare interface FractionToken extends BaseToken {
  */
 export declare interface BinaryExpressionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.BinaryExpressionTokenType}
      */
     typ: EnumToken.BinaryExpressionTokenType;
     /**
@@ -1366,7 +1404,7 @@ export declare interface BinaryExpressionToken extends BaseToken {
  */
 export declare interface MatchExpressionToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.MatchExpressionTokenType}
      */
     typ: EnumToken.MatchExpressionTokenType;
     /**
@@ -1392,7 +1430,7 @@ export declare interface MatchExpressionToken extends BaseToken {
  */
 export declare interface NameSpaceAttributeToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.NameSpaceAttributeTokenType}
      */
     typ: EnumToken.NameSpaceAttributeTokenType;
     /**
@@ -1410,7 +1448,7 @@ export declare interface NameSpaceAttributeToken extends BaseToken {
  */
 export declare interface ListToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ListToken}
      */
     typ: EnumToken.ListToken;
     /**
@@ -1424,9 +1462,9 @@ export declare interface ListToken extends BaseToken {
  */
 export declare interface ComposesSelectorToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.ComposesSelectorNodeType}
      */
-    typ: EnumToken.ComposesSelectorTokenType;
+    typ: EnumToken.ComposesSelectorNodeType;
 
     /**
      * Left handle
@@ -1443,7 +1481,7 @@ export declare interface ComposesSelectorToken extends BaseToken {
  */
 export declare interface CssVariableToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CssVariableTokenType}
      */
     typ: EnumToken.CssVariableTokenType;
     /**
@@ -1461,7 +1499,7 @@ export declare interface CssVariableToken extends BaseToken {
  */
 export declare interface CssVariableImportTokenType extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CssVariableImportTokenType}
      */
     typ: EnumToken.CssVariableImportTokenType;
     /**
@@ -1479,7 +1517,7 @@ export declare interface CssVariableImportTokenType extends BaseToken {
  */
 export declare interface CssVariableMapTokenType extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.CssVariableDeclarationMapTokenType}
      */
     typ: EnumToken.CssVariableDeclarationMapTokenType;
     /**
@@ -1497,10 +1535,10 @@ export declare interface CssVariableMapTokenType extends BaseToken {
  */
 export declare interface FunctionDefToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: one of the function definition token types
      */
     typ:
-        | EnumToken.FunctionDefTokenType
+        | EnumToken.FunctionTokenDefType
         | EnumToken.UrlFunctionTokenDefType
         | EnumToken.GridTemplateFuncTokenDefType
         | EnumToken.ImageFunctionTokenDefType
@@ -1523,9 +1561,9 @@ export declare interface FunctionDefToken extends BaseToken {
 /**
  * Raw node token
  */
-export declare interface RawNodeToken extends BaseToken, EnumAstNodeStatus {
+export declare interface RawNodeToken extends BaseToken {
     /**
-     * @inheritdoc
+     * token type: {@link EnumToken.RawNodeTokenType}
      */
     typ: EnumToken.RawNodeTokenType;
     /**

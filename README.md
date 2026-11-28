@@ -26,6 +26,37 @@ from jsr
 $ deno add @tbela99/css-parser
 ```
 
+### Native and WebAssembly builds
+
+The library is also ported to Rust, in two builds with the same API and the same output as the TypeScript library,
+faster:
+
+| Package | Runs in | Speed |
+|---------|---------|-------|
+| [`@tbela99/rust-css-parser-napi`](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) | Node.js on macOS and Linux | up to 2.1x faster than TypeScript |
+| [`@tbela99/rust-css-parser-wasm`](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) | Node.js and the browsers | up to 1.9x faster than TypeScript |
+
+The WebAssembly build is **only 2.5 MB (865 KB gzipped)**, with no native dependency: it runs anywhere WebAssembly
+runs. The native build is compiled from its Rust sources when it is installed (requires the
+[Rust toolchain](https://rustup.rs)).
+
+```shell
+$ npm install @tbela99/rust-css-parser-wasm
+$ npm install @tbela99/rust-css-parser-napi
+```
+
+Switching build only changes the import:
+
+```javascript
+import {transformSync} from '@tbela99/rust-css-parser-wasm';
+
+const result = transformSync('.a { color: #ff0000; width: calc(100px + 20px) }');
+console.debug(result.code); // .a{color:red;width:120px}
+```
+
+It is also available as a Rust library on crates.io: [`rust-css-parser`](https://crates.io/crates/rust-css-parser)
+(`cargo add rust-css-parser`), see [Rust crate](https://tbela99.github.io/css-parser/docs/documents/Guide.Rust_crate.html).
+
 ## Features
 
 * **Zero dependencies** — lightweight and easy to integrate into any project.
@@ -49,6 +80,7 @@ $ deno add @tbela99/css-parser
 * **Binary input** — the css can be a string, an `ArrayBuffer` or an `ArrayBufferView` (utf-8 bytes, `Uint8Array`, `Buffer`): an ASCII buffer is tokenized without copy.
 * **Experimental**: evaluate @mixin and @function
 * **51.5kb** once minified and gzipped.
+* **Native and WebAssembly builds** — the same API ported to Rust: an N-API addon for Node.js, and a WebAssembly build of **only 2.5 MB** (865 KB gzipped) for Node.js and the browsers.
 
 ## Vendor prefix removal
 **Vendor prefix cleanup** to modernize generated CSS.
@@ -57,8 +89,8 @@ $ deno add @tbela99/css-parser
 CSS-Parser can transform these modern CSS features into lower-level CSS syntax:
 * **Nested CSS transpilation** to legacy-compatible syntax.
 * **`if()` function transpilation** for broader browser compatibility.
-* **CSS mixins and custom functions evaluation** (experimental, enabled with `{evaluateMixins: true}`) the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result, see [syntax lowering](https://tbela99.github.io/css-parser/docs/documents/Guide.Syntax_Lowering.html).
 * **`color-mix()` function conversion** convert new color-mix() syntax to any of the supported colors.
+* **CSS mixins and custom functions evaluation** (experimental, enabled with `{evaluateMixins: true}`) the `@apply` rules are replaced by the mixin body, the custom function calls are replaced by their result.
   
 ## Benchmark
 
@@ -72,9 +104,9 @@ A sample result:
 | ------------------------------ | ------------- | ------------- |
 | tailwind.css - 2380419 bytes   | 1864728 bytes | 1624148 bytes |
 | bootstrap-4.css - 200078 bytes | 153616 bytes  | 144391 bytes  |
-| bootstrap-5.css - 205481 bytes | 159987 bytes  | 150764 bytes  |
+| bootstrap-5.css - 205484 bytes | 159987 bytes  | 150764 bytes  |
 
-On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,158,698 bytes, compared to 2,494,113 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
+On the [complete benchmark suite](https://tbela99.github.io/css-parser/benchmark/index.html), css-parser generated a total output size of 2,157,410 bytes, compared to 2,426,883 bytes for Lightning CSS and larger outputs for all other tested minifiers. 
 While some tools prioritize raw execution speed, css-parser focuses on maximizing compression while preserving stylesheet semantics, resulting in consistently smaller production bundles.
 
 ## Minification performance vs execution speed
@@ -89,7 +121,7 @@ The parser provides settings that let you choose the balance between minificatio
 
 However, the available settings allow you to shift the balance toward execution speed when minimizing runtime is more important than performing every available minification optimization.
 
-The example below demonstrates a balanced configuration that improves execution speed by disabling advanced minification features.
+The example below demonstrates a balanced configuration that improves execution speed by disabling the expensive minification features and keeping the inexpensive ones.
 
 ```ts
 
@@ -97,41 +129,39 @@ import {transformSync} from "@tbela99/css-parser";
 
 const css = `...`;
 
-const result = transformSync({
-                  input: css,
-                  minify: false,
-                  beautify: false,
-                  removeEmpty: true,
-                  removeComments: true,
-                  convertColor: true,
-                  minifyValues: true,
-                });
+// the ast is not minified, the rules are not merged
+const result = transformSync(css, {fastMode: true});
 
 console.debug(result.code);
 console.debug(result.stats);
 ```
 
+`fastMode: true` sets `minify: false` and `mergeRules: MergeRulesEnum.None`: the ast is not minified, the rules are not
+merged, the values are minified when they are rendered. An option given explicitly takes precedence: `{fastMode: true,
+minify: true}` minifies the ast without merging the rules.
+
 Compared with lightningcss and esbuild: the 12 files of the [benchmark](https://tbela99.github.io/css-parser/benchmark/index.html)
-(3.1 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "Fast settings" are the settings of
-the example above, "default settings" are the defaults (full minification). The
+(3.0 MB), total of the median times and of the output sizes (Apple M2, Node.js 27). "fastMode" is the setting of
+the example above, "default settings" are the defaults (the safe minifications). The
 [native](https://tbela99.github.io/css-parser/docs/documents/Guide.Native_build_%28N-API%29.html) and the
 [WebAssembly](https://tbela99.github.io/css-parser/docs/documents/Guide.WebAssembly_build.html) builds produce the
 same output as the TypeScript library, faster.
 
 | Library | Time | Output | Output vs lightningcss |
 |---------|-----:|-------:|-----------------------:|
-| lightningcss | 59.6 ms | 2370 KB | |
-| esbuild | 113.1 ms | 2487 KB | +4.9% |
-| N-API, default settings | 136.7 ms | 2098 KB | **-11.5%** |
-| WebAssembly, default settings | 166.3 ms | 2098 KB | **-11.5%** |
-| TypeScript, default settings | 292.8 ms | 2098 KB | **-11.5%** |
-| N-API, fast settings | 65.9 ms | 2404 KB | +1.4% |
-| WebAssembly, fast settings | 94.1 ms | 2404 KB | +1.4% |
-| TypeScript, fast settings | 176.7 ms | 2404 KB | +1.4% |
+| N-API, fastMode | 55.8 ms | 2413 KB | +1.8% |
+| lightningcss | 59.2 ms | 2370 KB |  |
+| WebAssembly, fastMode | 68.4 ms | 2413 KB | +1.8% |
+| esbuild | 119.8 ms | 2487 KB | +4.9% |
+| N-API, default settings | 124.4 ms | 2107 KB | **-11.1%** |
+| TypeScript, fastMode | 136.1 ms | 2413 KB | +1.8% |
+| WebAssembly, default settings | 142.0 ms | 2107 KB | **-11.1%** |
+| TypeScript, default settings | 243.9 ms | 2107 KB | **-11.1%** |
 
-- With the default settings, the output is 11.5% smaller than lightningcss. Lightningcss is about 2.3 times faster
+- With the default settings, the output is 11.1% smaller than lightningcss. Lightningcss is about 2.1 times faster
   than the N-API build.
-- With the fast settings, the N-API build is about as fast as lightningcss, with an output 1.4% larger.
+- With `fastMode`, the N-API build is faster than lightningcss (6% faster), and its output is 1.8% larger. It is
+  smaller than the output of esbuild.
 
 See [Performance](https://tbela99.github.io/css-parser/docs/documents/Guide.Performance.html) for the details.
 

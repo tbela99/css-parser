@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { EnumToken, EnumAstNodeStatus, ColorType } from './types.js';
@@ -128,8 +128,9 @@ class AstArenaNode {
      */
     [ARENAID];
     /**
-     * @param arena
-     * @param id
+     * create a view of a node of the arena. the view reads and writes the arena: it holds no data
+     * @param arena the arena that holds the node
+     * @param id the node or token id
      */
     constructor(arena, id) {
         this[ARENA] = arena;
@@ -141,6 +142,9 @@ class AstArenaNode {
     get typ() {
         return this[ARENA].dataTypes[this[ARENAID]];
     }
+    /**
+     * Set the node or token type
+     */
     set typ(typ) {
         this[ARENA].dataTypes[this[ARENAID]] = typ;
     }
@@ -159,6 +163,7 @@ class AstArenaNode {
         return arena.name[id] === 0 ? undefined : arena.resolveString(arena.name[id]);
     }
     /**
+     * Set the at-rule / declaration name, token name. undefined for the other nodes
      *
      * @param nam
      */
@@ -177,6 +182,7 @@ class AstArenaNode {
             : undefined;
     }
     /**
+     * Set the rule selector. undefined for the other nodes
      *
      * @param sel
      */
@@ -225,6 +231,7 @@ class AstArenaNode {
             : undefined;
     }
     /**
+     * Set the value, see the getter: a string, a number, a token or a list of tokens depending on the type of the node
      *
      * @param val
      */
@@ -279,6 +286,8 @@ class AstArenaNode {
         return listViews(arena, arena.firstToken[id]);
     }
     /**
+     * Set the children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function
+     * token (arguments), a parentheses token, ... undefined when the node has no children
      *
      * @param chi
      */
@@ -316,6 +325,7 @@ class AstArenaNode {
             : listViews(arena, arena.firstToken[id]);
     }
     /**
+     * Set the prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
      *
      * @param tokens
      */
@@ -334,6 +344,7 @@ class AstArenaNode {
             : arena.resolveString(arena.unit[id]);
     }
     /**
+     * Set the unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
      *
      * @param unit
      */
@@ -350,6 +361,9 @@ class AstArenaNode {
             ? undefined
             : arena.resolveString(arena.unit[id]);
     }
+    /**
+     * Set the color space of a color
+     */
     set cal(cal) {
         this[ARENA].setUnitString(this[ARENAID], cal ?? null);
     }
@@ -363,6 +377,9 @@ class AstArenaNode {
             ? undefined
             : arena.resolveString(arena.unit[id]);
     }
+    /**
+     * Set the attribute of a match expression
+     */
     set attr(attr) {
         this[ARENA].setUnitString(this[ARENAID], attr ?? null);
     }
@@ -376,6 +393,9 @@ class AstArenaNode {
             ? undefined
             : arena.colorType[id];
     }
+    /**
+     * Set the color type of a color token
+     */
     set kin(kin) {
         this[ARENA].colorType[this[ARENAID]] = kin ?? ColorType.NONE;
     }
@@ -388,6 +408,7 @@ class AstArenaNode {
         return arena.dataTypes[id] === EnumToken.UnaryExpressionTokenType ? arena.numericValue[id] : undefined;
     }
     /**
+     * Set the sign of a unary expression
      *
      * @param sign
      */
@@ -405,6 +426,7 @@ class AstArenaNode {
             : this.getField("op");
     }
     /**
+     * Set the operator: the operator of a binary expression, the operator tokens of a structured token
      *
      * @param op
      */
@@ -425,6 +447,7 @@ class AstArenaNode {
         return this.getField("op1");
     }
     /**
+     * Set the first operator of a media range query
      *
      * @param op
      */
@@ -438,6 +461,7 @@ class AstArenaNode {
         return this.getField("op2");
     }
     /**
+     * Set the second operator of a media range query
      *
      * @param op
      */
@@ -456,6 +480,7 @@ class AstArenaNode {
         return this.getField("l");
     }
     /**
+     * Set the left hand side of a structured token, numerator of a fraction
      *
      * @param l
      */
@@ -485,6 +510,7 @@ class AstArenaNode {
         return this.getField("r");
     }
     /**
+     * Set the right hand side of a structured token, denominator of a fraction
      *
      * @param r
      */
@@ -511,6 +537,7 @@ class AstArenaNode {
         return loc == null ? null : Object.freeze(loc);
     }
     /**
+     * Set the source location. null when the node has no location
      *
      * @param loc
      */
@@ -524,6 +551,7 @@ class AstArenaNode {
         return this[ARENA].flags[this[ARENAID]] & EnumAstNodeStatus.StateMask;
     }
     /**
+     * Set the validation state
      *
      * @param state
      */
@@ -539,6 +567,7 @@ class AstArenaNode {
         return errors == null ? null : Object.freeze(errors.slice());
     }
     /**
+     * Set the validation errors. null when the node has no errors
      *
      * @param errors
      */

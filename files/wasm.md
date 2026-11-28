@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Web assembly build
 
 `@tbela99/rust-css-parser-wasm` is the WebAssembly build of CSS-Parser: the library ported to Rust and compiled to
 WebAssembly. It has the same API as `@tbela99/css-parser`, produces the same output, and runs in Node.js and in the
@@ -87,7 +87,7 @@ WebAssembly module is fetched when the import is evaluated, then `transformSync(
 <pre id="output"></pre>
 
 <script type="module">
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.1/dist/web.js';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.2/dist/web.js';
 
     const input = document.getElementById('input');
     const output = document.getElementById('output');
@@ -120,7 +120,7 @@ name of the package to its url: the modules import `@tbela99/rust-css-parser-was
 <script type="importmap">
     {
         "imports": {
-            "@tbela99/rust-css-parser-wasm": "https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.1/dist/web.js"
+            "@tbela99/rust-css-parser-wasm": "https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.2/dist/web.js"
         }
     }
 </script>
@@ -163,4 +163,4 @@ The WebAssembly module is loaded when the package is imported (top-level `await`
   renders an empty string.
 
 ------
-[← Native build](./native.md) | [Performance →](./performance.md)
+[← Native build](./native.md) | [Rust crate →](./rust.md)

@@ -90,11 +90,20 @@ export interface StringTableData {
      */
     count: number;
     /**
-     * hash, source, start and end of each string
+     * hash of each string
      */
     hashes: Int32Array;
+    /**
+     * source of each string: the index of its text in {@link texts}
+     */
     sources: Int32Array;
+    /**
+     * start offset of each string in its source
+     */
     starts: Int32Array;
+    /**
+     * end offset of each string in its source
+     */
     ends: Int32Array;
     /**
      * text of each source, by source index
@@ -111,12 +120,30 @@ export interface StringTableData {
 }
 
 /**
+ * code units of a short string, see {@link fromCodes}
+ */
+const shortCodes: number[] = [];
+
+/**
  * string of a range of code units
  * @param codes
  * @param start
  * @param end
  */
-function fromCodes(codes: Uint16Array, start: number, end: number): string {
+function fromCodes(codes: CodeUnits, start: number, end: number): string {
+    const length: number = end - start;
+
+    // a short string: the code units are copied to an array, a subarray is slower to create
+    if (length <= 256) {
+        shortCodes.length = length;
+
+        for (let i: number = 0; i < length; i++) {
+            shortCodes[i] = codes[start + i];
+        }
+
+        return String.fromCharCode.apply(null, shortCodes);
+    }
+
     let result: string = "";
 
     // String.fromCharCode() with a limited number of arguments
@@ -305,6 +332,21 @@ export class StringTable {
     setText(source: number, text: string, codes: CodeUnits | null = null): void {
         this.texts[source] = text;
         this.codes[source] = codes ?? undefined;
+    }
+
+    /**
+     * code unit of the text of a source, NaN after its end
+     * @param source source index
+     * @param offset
+     */
+    sourceCodeAt(source: number, offset: number): number {
+        const text: string | undefined = this.texts[source];
+
+        if (text !== undefined && offset < text.length) {
+            return text.charCodeAt(offset);
+        }
+
+        return this.codes[source]?.[offset] ?? NaN;
     }
 
     /**

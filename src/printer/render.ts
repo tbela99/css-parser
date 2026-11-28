@@ -2365,9 +2365,12 @@ function renderToken(
                                         key === "top left" ||
                                         key === "left top"
                                     ) {
+                                        // a single value is centered vertically: both values are kept
                                         positions.splice(
                                             0,
                                             positions.length,
+                                            arena.createToken(EnumToken.PercentageTokenType, 0),
+                                            arena.createToken(EnumToken.WhitespaceTokenType),
                                             arena.createToken(EnumToken.PercentageTokenType, 0),
                                         );
                                     } else if (
@@ -2415,7 +2418,9 @@ function renderToken(
                                         positions.splice(
                                             0,
                                             positions.length,
-                                            arena.createToken(EnumToken.IdenTokenType, "bottom"),
+                                            arena.createToken(EnumToken.PercentageTokenType, 0),
+                                            arena.createToken(EnumToken.WhitespaceTokenType),
+                                            arena.createToken(EnumToken.PercentageTokenType, 100),
                                         );
                                     } else if (
                                         key === "50% 100%" ||
@@ -2436,9 +2441,9 @@ function renderToken(
                                             0,
                                             positions.length,
                                             arena.createToken(EnumToken.PercentageTokenType, 100),
+                                            arena.createToken(EnumToken.WhitespaceTokenType),
+                                            arena.createToken(EnumToken.PercentageTokenType, 100),
                                         );
-                                    } else if (position1 === position2) {
-                                        positions.splice(0, positions.length, positions[k]);
                                     }
                                 }
                             }

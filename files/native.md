@@ -4,7 +4,7 @@ group: Documents
 category: Guides
 ---
 
-## About
+## Native build
 
 `@tbela99/rust-css-parser-napi` is the native build of CSS-Parser: the library ported to Rust, loaded by Node.js as an
 [N-API](https://nodejs.org/api/n-api.html) addon. It has the same API as `@tbela99/css-parser` and produces the
@@ -21,7 +21,7 @@ The source code is in the [rust-css-parser](https://github.com/tbela99/rust-css-
 
 ## Performance
 
-The N-API build is the fastest build: up to 2.4 times faster than the TypeScript library, with the same output. See
+The N-API build is the fastest build: up to 2.1 times faster than the TypeScript library, with the same output. See
 [Performance](./performance.md) for the measures and a comparison with lightningcss and esbuild.
 
 ## Installation

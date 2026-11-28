@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 (function (global, factory) {
@@ -1014,6 +1014,26 @@
          */
         WalkerEvent[WalkerEvent["Leave"] = 2] = "Leave";
     })(exports.WalkerEvent || (exports.WalkerEvent = {}));
+    /**
+     * Merge of the adjacent rules, see {@link ParserOptions.mergeRules}. `true` is a shortcut for
+     * {@link MergeRulesEnum.All}, `false` for {@link MergeRulesEnum.None}
+     */
+    exports.MergeRulesEnum = void 0;
+    (function (MergeRulesEnum) {
+        /**
+         * the rules are not merged
+         */
+        MergeRulesEnum[MergeRulesEnum["None"] = 0] = "None";
+        /**
+         * only the rules that have the same declarations are merged, the size of the output is not computed:
+         * `.a{color:red}.b{color:red}` is merged into `.a,.b{color:red}`
+         */
+        MergeRulesEnum[MergeRulesEnum["Identical"] = 1] = "Identical";
+        /**
+         * the rules that share declarations are merged when the output is smaller
+         */
+        MergeRulesEnum[MergeRulesEnum["All"] = 2] = "All";
+    })(exports.MergeRulesEnum || (exports.MergeRulesEnum = {}));
 
     /**
      * push the direct value tokens of a token onto a stack, from the linked lists: the token list, then the fields (the
@@ -1419,8 +1439,9 @@
          */
         [ARENAID];
         /**
-         * @param arena
-         * @param id
+         * create a view of a node of the arena. the view reads and writes the arena: it holds no data
+         * @param arena the arena that holds the node
+         * @param id the node or token id
          */
         constructor(arena, id) {
             this[ARENA] = arena;
@@ -1432,6 +1453,9 @@
         get typ() {
             return this[ARENA].dataTypes[this[ARENAID]];
         }
+        /**
+         * Set the node or token type
+         */
         set typ(typ) {
             this[ARENA].dataTypes[this[ARENAID]] = typ;
         }
@@ -1450,6 +1474,7 @@
             return arena.name[id] === 0 ? undefined : arena.resolveString(arena.name[id]);
         }
         /**
+         * Set the at-rule / declaration name, token name. undefined for the other nodes
          *
          * @param nam
          */
@@ -1468,6 +1493,7 @@
                 : undefined;
         }
         /**
+         * Set the rule selector. undefined for the other nodes
          *
          * @param sel
          */
@@ -1516,6 +1542,7 @@
                 : undefined;
         }
         /**
+         * Set the value, see the getter: a string, a number, a token or a list of tokens depending on the type of the node
          *
          * @param val
          */
@@ -1570,6 +1597,8 @@
             return listViews(arena, arena.firstToken[id]);
         }
         /**
+         * Set the children: the child nodes of a stylesheet, a rule or an at-rule with a block, the tokens of a function
+         * token (arguments), a parentheses token, ... undefined when the node has no children
          *
          * @param chi
          */
@@ -1607,6 +1636,7 @@
                 : listViews(arena, arena.firstToken[id]);
         }
         /**
+         * Set the prelude tokens of an at-rule, selector tokens of a rule. null when the node has no prelude tokens
          *
          * @param tokens
          */
@@ -1625,6 +1655,7 @@
                 : arena.resolveString(arena.unit[id]);
         }
         /**
+         * Set the unit of a dimension, calendar (`cal`) of a color, attribute (`attr`) of a match expression
          *
          * @param unit
          */
@@ -1641,6 +1672,9 @@
                 ? undefined
                 : arena.resolveString(arena.unit[id]);
         }
+        /**
+         * Set the color space of a color
+         */
         set cal(cal) {
             this[ARENA].setUnitString(this[ARENAID], cal ?? null);
         }
@@ -1654,6 +1688,9 @@
                 ? undefined
                 : arena.resolveString(arena.unit[id]);
         }
+        /**
+         * Set the attribute of a match expression
+         */
         set attr(attr) {
             this[ARENA].setUnitString(this[ARENAID], attr ?? null);
         }
@@ -1667,6 +1704,9 @@
                 ? undefined
                 : arena.colorType[id];
         }
+        /**
+         * Set the color type of a color token
+         */
         set kin(kin) {
             this[ARENA].colorType[this[ARENAID]] = kin ?? exports.ColorType.NONE;
         }
@@ -1679,6 +1719,7 @@
             return arena.dataTypes[id] === exports.EnumToken.UnaryExpressionTokenType ? arena.numericValue[id] : undefined;
         }
         /**
+         * Set the sign of a unary expression
          *
          * @param sign
          */
@@ -1696,6 +1737,7 @@
                 : this.getField("op");
         }
         /**
+         * Set the operator: the operator of a binary expression, the operator tokens of a structured token
          *
          * @param op
          */
@@ -1716,6 +1758,7 @@
             return this.getField("op1");
         }
         /**
+         * Set the first operator of a media range query
          *
          * @param op
          */
@@ -1729,6 +1772,7 @@
             return this.getField("op2");
         }
         /**
+         * Set the second operator of a media range query
          *
          * @param op
          */
@@ -1747,6 +1791,7 @@
             return this.getField("l");
         }
         /**
+         * Set the left hand side of a structured token, numerator of a fraction
          *
          * @param l
          */
@@ -1776,6 +1821,7 @@
             return this.getField("r");
         }
         /**
+         * Set the right hand side of a structured token, denominator of a fraction
          *
          * @param r
          */
@@ -1802,6 +1848,7 @@
             return loc == null ? null : Object.freeze(loc);
         }
         /**
+         * Set the source location. null when the node has no location
          *
          * @param loc
          */
@@ -1815,6 +1862,7 @@
             return this[ARENA].flags[this[ARENAID]] & exports.EnumAstNodeStatus.StateMask;
         }
         /**
+         * Set the validation state
          *
          * @param state
          */
@@ -1830,6 +1878,7 @@
             return errors == null ? null : Object.freeze(errors.slice());
         }
         /**
+         * Set the validation errors. null when the node has no errors
          *
          * @param errors
          */
@@ -8472,7 +8521,7 @@
     };
 
     /**
-     * Used by the validation parser
+     * key of the position of a validation token in the syntax, see {@link ValidationToken}
      */
     const LOC = Symbol.for("loc");
     /**
@@ -9458,7 +9507,7 @@
     }
     function hwb2oklchvalues(arena, token) {
         const values = hwb2oklabvalues(arena, token);
-        return labvalues2lchvalues(values[0], values[1], values[2], values[3]);
+        return values == null ? null : labvalues2lchvalues(values[0], values[1], values[2], values[3]);
     }
     function cmyk2oklchvalues(arena, token) {
         const values = cmyk2srgbvalues(arena, token);
@@ -10037,11 +10086,17 @@
         return arena.createColor("hwb", exports.ColorType.HWB, chi);
     }
     function rgb2hwbvalues(arena, token) {
-        const values = getColorComponents(arena, token).map((t, index) => {
+        const components = getColorComponents(arena, token);
+        // the components cannot be computed: var(), ...
+        if (components == null) {
+            return null;
+        }
+        const values = components.map((t, index) => {
             if (index === 3) {
                 return getNumber(arena, t);
             }
-            return getNumber(arena, t) / 255;
+            // the components are from 0 to 255: 100% is 255
+            return ((arena.dataTypes[t] === exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, t)) / 255;
         });
         // @ts-ignore
         return srgb2hwb(values[0], values[1], values[2], values[3]);
@@ -10252,8 +10307,9 @@
     }
     function hwb2srgbvalues(arena, token) {
         const { h, w, b, a } = hwbvalues(arena, token) ?? {};
+        // the components cannot be computed: var(), ...
         if (h == null || w == null || b == null) {
-            return [];
+            return null;
         }
         const rgb = hwb2srgb(h, w, b);
         if (a != null && a !== 1) {
@@ -10861,6 +10917,14 @@
         }
         return arena.createColor("hsl", exports.ColorType.HSL, chi);
     }
+    /**
+     * value of a red, green or blue component of an `rgb()` color, from 0 to 255: `100%` is 255
+     * @param arena
+     * @param token
+     */
+    function rgbChannel(arena, token) {
+        return (arena.dataTypes[token] === exports.EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, token);
+    }
     function rgb2hslvalues(arena, token) {
         const chi = getColorComponents(arena, token);
         if (chi == null || chi.length < 3) {
@@ -10869,15 +10933,15 @@
         // @ts-ignore
         let t = chi[0];
         // @ts-ignore
-        let r = getNumber(arena, t);
+        let r = rgbChannel(arena, t);
         // @ts-ignore
         t = chi[1];
         // @ts-ignore
-        let g = getNumber(arena, t);
+        let g = rgbChannel(arena, t);
         // @ts-ignore
         t = chi[2];
         // @ts-ignore
-        let b = getNumber(arena, t);
+        let b = rgbChannel(arena, t);
         // @ts-ignore
         let a = null;
         if (chi.length === 4) {
@@ -12851,7 +12915,10 @@
         return arena.createColor("device-cmyk", exports.ColorType.DEVICE_CMYK, chi);
     }
 
-    var ValidationTokenEnum;
+    /**
+     * type of a validation token: a node of the parsed value definition syntax, see {@link parseSyntax}
+     */
+    exports.ValidationTokenEnum = void 0;
     (function (ValidationTokenEnum) {
         ValidationTokenEnum[ValidationTokenEnum["Root"] = 0] = "Root";
         ValidationTokenEnum[ValidationTokenEnum["Keyword"] = 1] = "Keyword";
@@ -12926,7 +12993,7 @@
         ValidationTokenEnum[ValidationTokenEnum["Dimension"] = 45] = "Dimension";
         ValidationTokenEnum[ValidationTokenEnum["DisallowWhitespace"] = 46] = "DisallowWhitespace";
         ValidationTokenEnum[ValidationTokenEnum["Colon"] = 47] = "Colon";
-    })(ValidationTokenEnum || (ValidationTokenEnum = {}));
+    })(exports.ValidationTokenEnum || (exports.ValidationTokenEnum = {}));
     /**
      * Keys of the validation config object
      */
@@ -12961,37 +13028,37 @@
     })(MediaFeatureType || (MediaFeatureType = {}));
 
     const SymbolsMapTokens = {
-        "&&": ValidationTokenEnum.Ampersand,
-        "|": ValidationTokenEnum.Pipe,
-        "† ": ValidationTokenEnum.DisallowWhitespace,
-        "||": ValidationTokenEnum.Column,
-        "*": ValidationTokenEnum.Star,
-        ",": ValidationTokenEnum.Comma,
-        "/": ValidationTokenEnum.Separator,
-        "+": ValidationTokenEnum.Plus,
-        ";": ValidationTokenEnum.SemiColon,
-        "(": ValidationTokenEnum.OpenParenthesis,
-        ")": ValidationTokenEnum.CloseParenthesis,
-        "[": ValidationTokenEnum.OpenBracket,
-        "]": ValidationTokenEnum.CloseBracket,
-        "{": ValidationTokenEnum.OpenCurlyBrace,
-        "}": ValidationTokenEnum.CloseCurlyBrace,
-        "?": ValidationTokenEnum.QuestionMark,
-        "!": ValidationTokenEnum.Exclamation,
-        "#": ValidationTokenEnum.HashMark,
-        "<": ValidationTokenEnum.LessThan,
-        ">": ValidationTokenEnum.GreaterThan,
-        " ": ValidationTokenEnum.Whitespace,
-        "\t": ValidationTokenEnum.Whitespace,
-        "\r": ValidationTokenEnum.Whitespace,
-        "\n": ValidationTokenEnum.Whitespace,
-        "\f": ValidationTokenEnum.Whitespace,
+        "&&": exports.ValidationTokenEnum.Ampersand,
+        "|": exports.ValidationTokenEnum.Pipe,
+        "† ": exports.ValidationTokenEnum.DisallowWhitespace,
+        "||": exports.ValidationTokenEnum.Column,
+        "*": exports.ValidationTokenEnum.Star,
+        ",": exports.ValidationTokenEnum.Comma,
+        "/": exports.ValidationTokenEnum.Separator,
+        "+": exports.ValidationTokenEnum.Plus,
+        ";": exports.ValidationTokenEnum.SemiColon,
+        "(": exports.ValidationTokenEnum.OpenParenthesis,
+        ")": exports.ValidationTokenEnum.CloseParenthesis,
+        "[": exports.ValidationTokenEnum.OpenBracket,
+        "]": exports.ValidationTokenEnum.CloseBracket,
+        "{": exports.ValidationTokenEnum.OpenCurlyBrace,
+        "}": exports.ValidationTokenEnum.CloseCurlyBrace,
+        "?": exports.ValidationTokenEnum.QuestionMark,
+        "!": exports.ValidationTokenEnum.Exclamation,
+        "#": exports.ValidationTokenEnum.HashMark,
+        "<": exports.ValidationTokenEnum.LessThan,
+        ">": exports.ValidationTokenEnum.GreaterThan,
+        " ": exports.ValidationTokenEnum.Whitespace,
+        "\t": exports.ValidationTokenEnum.Whitespace,
+        "\r": exports.ValidationTokenEnum.Whitespace,
+        "\n": exports.ValidationTokenEnum.Whitespace,
+        "\f": exports.ValidationTokenEnum.Whitespace,
         // '∞'
-        "\u221e": ValidationTokenEnum.InfinityToken,
+        "\u221e": exports.ValidationTokenEnum.InfinityToken,
     };
     const makeBinaryOp = new Map([
-        [ValidationTokenEnum.Column, ValidationTokenEnum.ColumnToken],
-        [ValidationTokenEnum.Ampersand, ValidationTokenEnum.AmpersandToken],
+        [exports.ValidationTokenEnum.Column, exports.ValidationTokenEnum.ColumnToken],
+        [exports.ValidationTokenEnum.Ampersand, exports.ValidationTokenEnum.AmpersandToken],
     ]);
     /**
      * single character symbols, by character code
@@ -13078,7 +13145,7 @@
     function getTokenType(token, loc) {
         if (token === "<an+b>") {
             return {
-                typ: ValidationTokenEnum.PropertyType,
+                typ: exports.ValidationTokenEnum.PropertyType,
                 val: token.slice(1, -1),
                 [LOC]: loc,
             };
@@ -13087,7 +13154,7 @@
         // " or '
         if (first === 34 || first === 39) {
             return {
-                typ: ValidationTokenEnum.StringToken,
+                typ: exports.ValidationTokenEnum.StringToken,
                 val: token,
                 [LOC]: loc,
             };
@@ -13095,7 +13162,7 @@
         // integer, optionally negative: range bounds such as `<integer [-∞,-1]>`
         if (isDigits(token) || (first === 45 && isDigits(token.slice(1)))) {
             return {
-                typ: ValidationTokenEnum.Number,
+                typ: exports.ValidationTokenEnum.Number,
                 val: Number(token),
                 [LOC]: loc,
             };
@@ -13104,7 +13171,7 @@
         if (dimension) {
             // @ts-expect-error
             return {
-                typ: ValidationTokenEnum.Dimension,
+                typ: exports.ValidationTokenEnum.Dimension,
                 unit: exports.EnumToken[dimension.typ],
                 val: dimension.val,
                 unitText: dimension.unit,
@@ -13113,7 +13180,7 @@
         }
         if (isPseudo(token)) {
             return {
-                typ: ValidationTokenEnum.PseudoClassToken,
+                typ: exports.ValidationTokenEnum.PseudoClassToken,
                 val: token,
                 [LOC]: loc,
             };
@@ -13121,31 +13188,31 @@
         // @
         if (first === 64 && isIdent(token.slice(1))) {
             return {
-                typ: ValidationTokenEnum.AtRule,
+                typ: exports.ValidationTokenEnum.AtRule,
                 val: token.slice(1),
                 [LOC]: loc,
             };
         }
         return {
-            typ: ValidationTokenEnum.Keyword,
+            typ: exports.ValidationTokenEnum.Keyword,
             val: token,
             [LOC]: loc,
         };
     }
     function trimSyntaxArray(tokens) {
-        while (tokens[0]?.typ === ValidationTokenEnum.Whitespace) {
+        while (tokens[0]?.typ === exports.ValidationTokenEnum.Whitespace) {
             tokens.shift();
         }
-        while (tokens[tokens.length - 1]?.typ === ValidationTokenEnum.Whitespace) {
+        while (tokens[tokens.length - 1]?.typ === exports.ValidationTokenEnum.Whitespace) {
             tokens.pop();
         }
         let i = 0;
         for (; i < tokens.length; i++) {
-            if (tokens[i].typ === ValidationTokenEnum.Comma) {
-                if (i + 1 < tokens.length && tokens[i + 1].typ === ValidationTokenEnum.Whitespace) {
+            if (tokens[i].typ === exports.ValidationTokenEnum.Comma) {
+                if (i + 1 < tokens.length && tokens[i + 1].typ === exports.ValidationTokenEnum.Whitespace) {
                     tokens.splice(i + 1, 1);
                 }
-                if (i > 0 && tokens[i - 1].typ === ValidationTokenEnum.Whitespace) {
+                if (i > 0 && tokens[i - 1].typ === exports.ValidationTokenEnum.Whitespace) {
                     tokens.splice(--i, 1);
                 }
             }
@@ -13256,9 +13323,9 @@
             }
             type = symbolTypes.get(code) ?? null;
             if (type != null) {
-                if (type === ValidationTokenEnum.Whitespace) {
+                if (type === exports.ValidationTokenEnum.Whitespace) {
                     let k = i;
-                    while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === ValidationTokenEnum.Whitespace) {
+                    while (k + 1 < length && symbolTypes.get(syntax.charCodeAt(k + 1)) === exports.ValidationTokenEnum.Whitespace) {
                         k++;
                     }
                     if (k !== i) {
@@ -13288,7 +13355,7 @@
                         clear();
                     }
                     tokens.push({
-                        typ: ValidationTokenEnum.Colon,
+                        typ: exports.ValidationTokenEnum.Colon,
                         [LOC]: loc,
                     });
                     break;
@@ -13321,7 +13388,7 @@
             tokens.push(getTokenType(buffer(), startToken()));
         }
         tokens.push({
-            typ: ValidationTokenEnum.EOF,
+            typ: exports.ValidationTokenEnum.EOF,
             [LOC]: { ind: posInd, lin: posLin, col: posCol },
         });
         position.ind = posInd;
@@ -13347,30 +13414,30 @@
         for (const token of iterator) {
             tokens.push(token);
             switch (token.typ) {
-                case ValidationTokenEnum.EOF:
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                case exports.ValidationTokenEnum.EOF:
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                         stack.pop();
                     }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.ColumnToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.ColumnToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
                     tokens.pop();
                     break;
-                case ValidationTokenEnum.Pipe:
+                case exports.ValidationTokenEnum.Pipe:
                     {
-                        while (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken ||
-                            stack.at(-1)?.typ === ValidationTokenEnum.ColumnToken) {
+                        while (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken ||
+                            stack.at(-1)?.typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
-                            if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                            if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                                 stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                             }
                             else {
@@ -13379,9 +13446,9 @@
                             stack.pop();
                         }
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
-                        if (stack.at(-1)?.typ !== ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1)?.typ !== exports.ValidationTokenEnum.PipeToken) {
                             stack.push(Object.assign(token, {
-                                typ: ValidationTokenEnum.PipeToken,
+                                typ: exports.ValidationTokenEnum.PipeToken,
                                 chi: [trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2))],
                             }));
                             break;
@@ -13390,11 +13457,11 @@
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
                     }
                     break;
-                case ValidationTokenEnum.Ampersand:
+                case exports.ValidationTokenEnum.Ampersand:
                     {
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
                         if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
-                            if (token.typ === ValidationTokenEnum.Ampersand) {
+                            if (token.typ === exports.ValidationTokenEnum.Ampersand) {
                                 stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                                 stack.pop();
                                 stack.push(Object.assign(token, {
@@ -13426,7 +13493,7 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.Column:
+                case exports.ValidationTokenEnum.Column:
                     {
                         let index = stack.length === 0 ? -1 : tokens.lastIndexOf(stack.at(-1));
                         if (stack.at(-1)?.typ === makeBinaryOp.get(token.typ)) {
@@ -13449,18 +13516,18 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.OpenParenthesis:
-                    if (tokens.at(-2)?.typ === ValidationTokenEnum.Keyword) {
+                case exports.ValidationTokenEnum.OpenParenthesis:
+                    if (tokens.at(-2)?.typ === exports.ValidationTokenEnum.Keyword) {
                         stack.push(Object.assign(tokens.at(-2), {
-                            typ: ValidationTokenEnum.Function,
+                            typ: exports.ValidationTokenEnum.Function,
                             chi: [],
                         }));
                         tokens.pop();
                         break;
                     }
-                    if (tokens.at(-2)?.typ === ValidationTokenEnum.PseudoClassToken) {
+                    if (tokens.at(-2)?.typ === exports.ValidationTokenEnum.PseudoClassToken) {
                         stack.push(Object.assign(tokens.at(-2), {
-                            typ: ValidationTokenEnum.PseudoClassFunctionToken,
+                            typ: exports.ValidationTokenEnum.PseudoClassFunctionToken,
                             chi: [],
                         }));
                         tokens.pop();
@@ -13468,14 +13535,14 @@
                     }
                     stack.push(token);
                     break;
-                case ValidationTokenEnum.CloseParenthesis:
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                case exports.ValidationTokenEnum.CloseParenthesis:
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                         stack.pop();
                     }
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.OpenParenthesis ||
-                        (stack.at(-1)?.typ === ValidationTokenEnum.PropertyType &&
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.OpenParenthesis ||
+                        (stack.at(-1)?.typ === exports.ValidationTokenEnum.PropertyType &&
                             stack.at(-1).val === "function-token")) {
                         stack.pop();
                     }
@@ -13486,13 +13553,13 @@
                     //     );
                     //     stack.pop();
                     // }
-                    else if (stack.at(-1)?.typ === ValidationTokenEnum.AmpersandToken) {
+                    else if (stack.at(-1)?.typ === exports.ValidationTokenEnum.AmpersandToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                         stack.pop();
                     }
-                    if (stack.at(-1)?.typ === ValidationTokenEnum.Function ||
-                        stack.at(-1)?.typ === ValidationTokenEnum.PseudoClassFunctionToken) {
+                    if (stack.at(-1)?.typ === exports.ValidationTokenEnum.Function ||
+                        stack.at(-1)?.typ === exports.ValidationTokenEnum.PseudoClassFunctionToken) {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         tokens.pop();
                         stack.at(-1).chi =
@@ -13500,11 +13567,11 @@
                         stack.pop();
                     }
                     break;
-                case ValidationTokenEnum.GreaterThan:
-                    if (tokens[tokens.length - 3]?.typ === ValidationTokenEnum.LessThan) {
-                        if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Keyword) {
+                case exports.ValidationTokenEnum.GreaterThan:
+                    if (tokens[tokens.length - 3]?.typ === exports.ValidationTokenEnum.LessThan) {
+                        if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.Keyword) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.PropertyType,
+                                typ: exports.ValidationTokenEnum.PropertyType,
                                 val: tokens[tokens.length - 2].val,
                             });
                             if ("range" in tokens[tokens.length - 2]) {
@@ -13516,40 +13583,40 @@
                                 stack.push(tokens.at(-1));
                             }
                         }
-                        else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.StringToken) {
+                        else if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.StringToken) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.DeclarationType,
+                                typ: exports.ValidationTokenEnum.DeclarationType,
                                 val: tokens[tokens.length - 2].val.slice(1, -1),
                             });
                             tokens.splice(tokens.length - 2, 2);
                         }
-                        else if (tokens[tokens.length - 2]?.typ === ValidationTokenEnum.Function) {
+                        else if (tokens[tokens.length - 2]?.typ === exports.ValidationTokenEnum.Function) {
                             Object.assign(tokens[tokens.length - 3], {
-                                typ: ValidationTokenEnum.FunctionDefinition,
+                                typ: exports.ValidationTokenEnum.FunctionDefinition,
                                 val: tokens[tokens.length - 2].val,
                             });
                             tokens.splice(tokens.length - 2, 2);
                         }
                     }
                     break;
-                case ValidationTokenEnum.OpenBracket:
+                case exports.ValidationTokenEnum.OpenBracket:
                     stack.push(token);
                     break;
-                case ValidationTokenEnum.CloseBracket:
+                case exports.ValidationTokenEnum.CloseBracket:
                     while (true) {
-                        if (stack.at(-1).typ === ValidationTokenEnum.AmpersandToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.AmpersandToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).r = trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2));
                             stack.pop();
                             continue;
                         }
-                        else if (stack.at(-1).typ === ValidationTokenEnum.ColumnToken) {
+                        else if (stack.at(-1).typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
                             continue;
                         }
-                        if (stack.at(-1).typ === ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.PipeToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
@@ -13565,24 +13632,24 @@
                     {
                         let index = tokens.lastIndexOf(stack.at(-1));
                         // the lower bound of a range may be '-∞': <integer [-∞,-1]>
-                        const isNegativeInfinity = tokens[index + 1]?.typ === ValidationTokenEnum.Keyword &&
+                        const isNegativeInfinity = tokens[index + 1]?.typ === exports.ValidationTokenEnum.Keyword &&
                             tokens[index + 1].val === "-" &&
-                            tokens[index + 2]?.typ === ValidationTokenEnum.InfinityToken;
+                            tokens[index + 2]?.typ === exports.ValidationTokenEnum.InfinityToken;
                         if (isNegativeInfinity &&
-                            (tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
-                                tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
-                            tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
-                            tokens[index + 3]?.typ === ValidationTokenEnum.Comma &&
-                            (tokens[index + 4]?.typ === ValidationTokenEnum.Number ||
-                                tokens[index + 4]?.typ === ValidationTokenEnum.Dimension ||
-                                tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken) &&
-                            tokens[index + 5]?.typ === ValidationTokenEnum.CloseBracket) {
+                            (tokens[index - 2]?.typ === exports.ValidationTokenEnum.Keyword ||
+                                tokens[index - 2]?.typ === exports.ValidationTokenEnum.StringToken) &&
+                            tokens[index - 1]?.typ === exports.ValidationTokenEnum.Whitespace &&
+                            tokens[index + 3]?.typ === exports.ValidationTokenEnum.Comma &&
+                            (tokens[index + 4]?.typ === exports.ValidationTokenEnum.Number ||
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.Dimension ||
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.InfinityToken) &&
+                            tokens[index + 5]?.typ === exports.ValidationTokenEnum.CloseBracket) {
                             stack.pop();
                             // a null bound is unbounded
                             Object.assign(tokens[index - 2], {
                                 range: {
                                     min: null,
-                                    max: tokens[index + 4]?.typ === ValidationTokenEnum.InfinityToken
+                                    max: tokens[index + 4]?.typ === exports.ValidationTokenEnum.InfinityToken
                                         ? null
                                         : tokens[index + 4],
                                 },
@@ -13590,11 +13657,11 @@
                             tokens.splice(index - 1, 8);
                             break;
                         }
-                        if ((tokens[index - 2]?.typ === ValidationTokenEnum.Keyword ||
-                            tokens[index - 2]?.typ === ValidationTokenEnum.StringToken) &&
-                            tokens[index - 1]?.typ === ValidationTokenEnum.Whitespace &&
-                            (tokens[index + 1]?.typ === ValidationTokenEnum.Number ||
-                                tokens[index + 1]?.typ === ValidationTokenEnum.Dimension)) {
+                        if ((tokens[index - 2]?.typ === exports.ValidationTokenEnum.Keyword ||
+                            tokens[index - 2]?.typ === exports.ValidationTokenEnum.StringToken) &&
+                            tokens[index - 1]?.typ === exports.ValidationTokenEnum.Whitespace &&
+                            (tokens[index + 1]?.typ === exports.ValidationTokenEnum.Number ||
+                                tokens[index + 1]?.typ === exports.ValidationTokenEnum.Dimension)) {
                             // if (tokens[index + 2]?.typ === ValidationTokenEnum.CloseBracket) {
                             //     stack.pop();
                             //     Object.assign(tokens[index - 2], {
@@ -13606,10 +13673,10 @@
                             //     tokens.splice(index - 1, 5);
                             //     break;
                             // }
-                            if (tokens[index + 2]?.typ === ValidationTokenEnum.Comma &&
+                            if (tokens[index + 2]?.typ === exports.ValidationTokenEnum.Comma &&
                                 (tokens[index + 3]?.typ === tokens[index + 1]?.typ ||
-                                    tokens[index + 3]?.typ === ValidationTokenEnum.InfinityToken) &&
-                                tokens[index + 4]?.typ === ValidationTokenEnum.CloseBracket) {
+                                    tokens[index + 3]?.typ === exports.ValidationTokenEnum.InfinityToken) &&
+                                tokens[index + 4]?.typ === exports.ValidationTokenEnum.CloseBracket) {
                                 stack.pop();
                                 Object.assign(tokens[index - 2], {
                                     range: {
@@ -13628,17 +13695,17 @@
                     startIndex = tokens.lastIndexOf(currentToken);
                     endIndex = tokens.indexOf(token);
                     Object.assign(currentToken, {
-                        typ: ValidationTokenEnum.Bracket,
+                        typ: exports.ValidationTokenEnum.Bracket,
                         chi: trimSyntaxArray(tokens.slice(startIndex + 1, endIndex)),
                     });
                     tokens.splice(startIndex + 1, tokens.length);
                     break;
                 // {
-                case ValidationTokenEnum.OpenCurlyBrace:
+                case exports.ValidationTokenEnum.OpenCurlyBrace:
                     stack.push(token);
                     break;
                 // }
-                case ValidationTokenEnum.CloseCurlyBrace:
+                case exports.ValidationTokenEnum.CloseCurlyBrace:
                     while (true) {
                         // if ((stack.at(-1) as ValidationToken).typ == ValidationTokenEnum.AmpersandToken) {
                         //     let index: number = tokens.lastIndexOf(stack.at(-1) as ValidationToken);
@@ -13648,13 +13715,13 @@
                         //     stack.pop();
                         //     continue;
                         // } else
-                        if (stack.at(-1).typ === ValidationTokenEnum.ColumnToken) {
+                        if (stack.at(-1).typ === exports.ValidationTokenEnum.ColumnToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
                             continue;
                         }
-                        if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+                        if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                             let index = tokens.lastIndexOf(stack.at(-1));
                             stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 2)));
                             stack.pop();
@@ -13669,7 +13736,7 @@
                         let index = tokens.lastIndexOf(stack.at(-1));
                         const slice = tokens.slice(index + 1, -1);
                         if (slice.length === 1 || slice.length === 3) {
-                            if (slice[0].typ === ValidationTokenEnum.Number) {
+                            if (slice[0].typ === exports.ValidationTokenEnum.Number) {
                                 Object.assign(tokens[index - 1], {
                                     match: {
                                         min: slice[0],
@@ -13691,7 +13758,7 @@
                                     Object.assign(tokens[index - 1], {
                                         match: {
                                             min: slice[0],
-                                            max: slice[2].typ === ValidationTokenEnum.InfinityToken
+                                            max: slice[2].typ === exports.ValidationTokenEnum.InfinityToken
                                                 ? Number.POSITIVE_INFINITY
                                                 : slice[2],
                                         },
@@ -13705,11 +13772,11 @@
                     }
                     stack.pop();
                     break;
-                case ValidationTokenEnum.Star:
+                case exports.ValidationTokenEnum.Star:
                     tokens.pop();
                     tokens.at(-1).isRepeatable = true;
                     break;
-                case ValidationTokenEnum.QuestionMark:
+                case exports.ValidationTokenEnum.QuestionMark:
                     tokens.pop();
                     // if the previous token is a comma, we wrap them in a virtual group and mark the group as optional
                     {
@@ -13719,14 +13786,14 @@
                         //     sliceIndex = tokens.length - 2;
                         // } else
                         // {
-                        isGroup = tokens.at(-3)?.typ === ValidationTokenEnum.Comma;
+                        isGroup = tokens.at(-3)?.typ === exports.ValidationTokenEnum.Comma;
                         if (isGroup) {
                             sliceIndex = tokens.length - 3;
                         }
                         // }
                         if (isGroup) {
                             tokens.splice(sliceIndex, tokens.length - sliceIndex, {
-                                typ: ValidationTokenEnum.OptionalGroupToken,
+                                typ: exports.ValidationTokenEnum.OptionalGroupToken,
                                 chi: trimSyntaxArray(tokens.slice(sliceIndex)),
                                 isOptional: true,
                             });
@@ -13736,15 +13803,15 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.Comma:
+                case exports.ValidationTokenEnum.Comma:
                     {
                         let sliceIndex = -1;
                         // if (tokens.at(-2)?.isOptional && tokens.at(-2)!.typ !== ValidationTokenEnum.OptionalGroupToken) {
                         //     sliceIndex = tokens.length - 2;
                         // } else
-                        if (tokens.at(-2).typ === ValidationTokenEnum.Whitespace &&
+                        if (tokens.at(-2).typ === exports.ValidationTokenEnum.Whitespace &&
                             tokens.at(-3)?.isOptional &&
-                            tokens.at(-3).typ !== ValidationTokenEnum.OptionalGroupToken) {
+                            tokens.at(-3).typ !== exports.ValidationTokenEnum.OptionalGroupToken) {
                             sliceIndex = tokens.length - 3;
                         }
                         if (sliceIndex !== -1) {
@@ -13752,7 +13819,7 @@
                                 tokens.pop();
                             }
                             tokens.splice(sliceIndex, tokens.length - sliceIndex, {
-                                typ: ValidationTokenEnum.OptionalGroupToken,
+                                typ: exports.ValidationTokenEnum.OptionalGroupToken,
                                 chi: trimSyntaxArray(tokens.slice(sliceIndex).map((t) => {
                                     delete t.isOptional;
                                     return t;
@@ -13762,22 +13829,22 @@
                         }
                     }
                     break;
-                case ValidationTokenEnum.HashMark:
+                case exports.ValidationTokenEnum.HashMark:
                     tokens.pop();
                     tokens.at(-1).isList = true;
                     break;
-                case ValidationTokenEnum.Exclamation:
+                case exports.ValidationTokenEnum.Exclamation:
                     tokens.pop();
                     tokens.at(-1).isMandatatoryGroup = true;
                     break;
-                case ValidationTokenEnum.Plus:
+                case exports.ValidationTokenEnum.Plus:
                     tokens.pop();
                     tokens.at(-1).isRepeatableAtLeastOnce = true;
                     break;
             }
         }
         if (stack.length > 0) {
-            if (stack.at(-1)?.typ === ValidationTokenEnum.PipeToken) {
+            if (stack.at(-1)?.typ === exports.ValidationTokenEnum.PipeToken) {
                 let index = tokens.lastIndexOf(stack.at(-1));
                 stack.at(-1).chi.push(trimSyntaxArray(tokens.splice(index + 1, tokens.length - index - 1)));
                 stack.pop();
@@ -13977,8 +14044,8 @@
         let blockEnd = -1;
         let i;
         for (i = 0; i < syntaxRules.length; i++) {
-            if (syntaxRules[i].typ === ValidationTokenEnum.OpenCurlyBrace ||
-                syntaxRules[i].typ === ValidationTokenEnum.SemiColon) {
+            if (syntaxRules[i].typ === exports.ValidationTokenEnum.OpenCurlyBrace ||
+                syntaxRules[i].typ === exports.ValidationTokenEnum.SemiColon) {
                 blockStart = i;
                 break;
             }
@@ -13986,7 +14053,7 @@
         if (blockStart !== -1) {
             i = syntaxRules.length;
             while (i--) {
-                if (syntaxRules[i].typ === ValidationTokenEnum.CloseCurlyBrace) {
+                if (syntaxRules[i].typ === exports.ValidationTokenEnum.CloseCurlyBrace) {
                     blockEnd = i;
                     break;
                 }
@@ -14007,14 +14074,14 @@
         let optionalBody = false;
         if (block == null || block.length === 0) {
             let k = prelude.length - 1;
-            if (ValidationTokenEnum.SemiColon === prelude[k].typ) {
+            if (exports.ValidationTokenEnum.SemiColon === prelude[k].typ) {
                 k--;
             }
-            if (k >= 0 && ValidationTokenEnum.Bracket === prelude[k].typ) {
+            if (k >= 0 && exports.ValidationTokenEnum.Bracket === prelude[k].typ) {
                 if (prelude[k].chi[0].typ ===
-                    ValidationTokenEnum.OpenCurlyBrace &&
+                    exports.ValidationTokenEnum.OpenCurlyBrace &&
                     prelude[k].chi.at(-1).typ ===
-                        ValidationTokenEnum.CloseCurlyBrace) {
+                        exports.ValidationTokenEnum.CloseCurlyBrace) {
                     block = prelude[k].chi.slice(1, -1);
                     optionalBody = prelude[k].isOptional ?? false;
                 }
@@ -14041,7 +14108,7 @@
      * @param syntax
      */
     function isNullable(syntax) {
-        if (syntax.typ === ValidationTokenEnum.Whitespace) {
+        if (syntax.typ === exports.ValidationTokenEnum.Whitespace) {
             return true;
         }
         // `[ <a>? <b>? ]!`: at least one token
@@ -14054,13 +14121,13 @@
         let nullable = nullableSyntaxes.get(syntax);
         if (nullable == null) {
             switch (syntax.typ) {
-                case ValidationTokenEnum.Bracket:
+                case exports.ValidationTokenEnum.Bracket:
                     nullable = syntax.chi.every(isNullable);
                     break;
-                case ValidationTokenEnum.PipeToken:
+                case exports.ValidationTokenEnum.PipeToken:
                     nullable = syntax.chi.some((syntaxes) => syntaxes.every(isNullable));
                     break;
-                case ValidationTokenEnum.AmpersandToken:
+                case exports.ValidationTokenEnum.AmpersandToken:
                     nullable =
                         syntax.l.every(isNullable) &&
                             syntax.r.every(isNullable);
@@ -14299,71 +14366,71 @@
         let nullable = false;
         let first;
         switch (syntax.typ) {
-            case ValidationTokenEnum.Whitespace:
+            case exports.ValidationTokenEnum.Whitespace:
                 nullable = true;
                 break;
-            case ValidationTokenEnum.Keyword:
+            case exports.ValidationTokenEnum.Keyword:
                 set.keywords.add(lowercase(syntax.val));
                 break;
-            case ValidationTokenEnum.Comma:
+            case exports.ValidationTokenEnum.Comma:
                 set.types.add(exports.EnumToken.CommaTokenType);
                 break;
-            case ValidationTokenEnum.Colon:
+            case exports.ValidationTokenEnum.Colon:
                 set.types.add(exports.EnumToken.ColonTokenType);
                 break;
-            case ValidationTokenEnum.Separator:
+            case exports.ValidationTokenEnum.Separator:
                 set.types.add(exports.EnumToken.LiteralTokenType);
                 break;
-            case ValidationTokenEnum.OpenParenthesis:
+            case exports.ValidationTokenEnum.OpenParenthesis:
                 set.types.add(exports.EnumToken.StartParensTokenType);
                 break;
-            case ValidationTokenEnum.CloseParenthesis:
+            case exports.ValidationTokenEnum.CloseParenthesis:
                 set.types.add(exports.EnumToken.EndParensTokenType);
                 break;
-            case ValidationTokenEnum.OpenCurlyBrace:
+            case exports.ValidationTokenEnum.OpenCurlyBrace:
                 set.types.add(exports.EnumToken.BlockStartTokenType);
                 break;
-            case ValidationTokenEnum.Number:
+            case exports.ValidationTokenEnum.Number:
                 set.types.add(exports.EnumToken.NumberTokenType);
                 break;
-            case ValidationTokenEnum.Dimension:
+            case exports.ValidationTokenEnum.Dimension:
                 set.types.add(exports.EnumToken[syntax.unit]);
                 break;
-            case ValidationTokenEnum.StringToken:
+            case exports.ValidationTokenEnum.StringToken:
                 // `'+'`, `'-'`, `'/'`
                 set.types.add(exports.EnumToken.Add);
                 set.types.add(exports.EnumToken.Sub);
                 set.types.add(exports.EnumToken.LiteralTokenType);
                 set.types.add(exports.EnumToken.Plus);
                 break;
-            case ValidationTokenEnum.Function:
-            case ValidationTokenEnum.FunctionDefinition:
+            case exports.ValidationTokenEnum.Function:
+            case exports.ValidationTokenEnum.FunctionDefinition:
                 set.functions.add(lowercase(syntax.val));
                 break;
-            case ValidationTokenEnum.Bracket:
+            case exports.ValidationTokenEnum.Bracket:
                 first = firstOfSequence(syntax.chi);
                 merge(set, first);
                 nullable = first.nullable;
                 break;
-            case ValidationTokenEnum.OptionalGroupToken:
+            case exports.ValidationTokenEnum.OptionalGroupToken:
                 // the group is skipped when it does not match
                 merge(set, firstOfSequence(syntax.chi));
                 nullable = true;
                 break;
-            case ValidationTokenEnum.PipeToken:
+            case exports.ValidationTokenEnum.PipeToken:
                 for (const syntaxes of syntax.chi) {
                     first = firstOfSequence(syntaxes);
                     merge(set, first);
                     nullable ||= first.nullable;
                 }
                 break;
-            case ValidationTokenEnum.ColumnToken:
+            case exports.ValidationTokenEnum.ColumnToken:
                 // one or more operands, in any order: at least one token
                 for (const syntaxes of syntax.chi) {
                     merge(set, firstOfSequence(syntaxes));
                 }
                 break;
-            case ValidationTokenEnum.AmpersandToken:
+            case exports.ValidationTokenEnum.AmpersandToken:
                 // all the operands, in any order
                 nullable = true;
                 for (const syntaxes of [syntax.l, syntax.r]) {
@@ -14372,12 +14439,12 @@
                     nullable &&= first.nullable;
                 }
                 break;
-            case ValidationTokenEnum.DeclarationType:
+            case exports.ValidationTokenEnum.DeclarationType:
                 first = firstOfSequence(getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntax.val));
                 merge(set, first);
                 nullable = first.nullable;
                 break;
-            case ValidationTokenEnum.PropertyType: {
+            case exports.ValidationTokenEnum.PropertyType: {
                 const name = syntax.val;
                 if (builtinTypes.has(name)) {
                     const types = builtinTypes.get(name);
@@ -16528,7 +16595,7 @@
             return interpreted;
         }
         const property = {
-            typ: ValidationTokenEnum.PropertyType,
+            typ: exports.ValidationTokenEnum.PropertyType,
             val: name,
         };
         const fast = numericTypes[name] ?? null;
@@ -17014,6 +17081,71 @@
             tokens.pop();
         }
         return tokens;
+    }
+    /**
+     * true if the token is a simple selector without arguments: a type (`a`), an id (`#a`), a class (`.a`), a
+     * pseudo-class (`:hover`) or a pseudo-element (`::before`)
+     * @param type
+     */
+    function isSimpleSelectorToken(type) {
+        return (type === exports.EnumToken.ClassSelectorTokenType ||
+            type === exports.EnumToken.IdenTokenType ||
+            type === exports.EnumToken.PseudoElementTokenType ||
+            type === exports.EnumToken.PseudoClassTokenType ||
+            type === exports.EnumToken.HashTokenType);
+    }
+    /**
+     * match a selector made of simple selectors (see {@link isSimpleSelectorToken}), separated by whitespace (the
+     * descendant combinator) and by commas: `.a:hover`, `.a .b`, `.a, #b`. such a selector is valid: the whitespace
+     * around the commas is removed, the tokens are the tokens produced by {@link matchSelectorSyntax}. the tokens of
+     * another selector are not changed
+     * @param arena
+     * @param tokens
+     * @returns true if the selector is made of simple selectors
+     */
+    function matchSimpleSelector(arena, tokens) {
+        const length = tokens.length;
+        // a simple selector is expected: at the start of the selector and after a comma
+        let expected = true;
+        let commaWhitespace = false;
+        for (let i = 0; i < length; i++) {
+            const type = arena.dataTypes[tokens[i]];
+            if (isSimpleSelectorToken(type)) {
+                expected = false;
+                continue;
+            }
+            if (type === exports.EnumToken.WhitespaceTokenType) {
+                // leading whitespace
+                if (i === 0) {
+                    return false;
+                }
+                // whitespace after a comma or before a comma
+                if (expected || arena.dataTypes[tokens[i + 1]] === exports.EnumToken.CommaTokenType) {
+                    commaWhitespace = true;
+                }
+                continue;
+            }
+            if (type !== exports.EnumToken.CommaTokenType || expected) {
+                return false;
+            }
+            expected = true;
+        }
+        if (expected) {
+            return false;
+        }
+        if (commaWhitespace) {
+            let write = 0;
+            for (let i = 0; i < length; i++) {
+                if (arena.dataTypes[tokens[i]] === exports.EnumToken.WhitespaceTokenType &&
+                    (arena.dataTypes[tokens[i - 1]] === exports.EnumToken.CommaTokenType ||
+                        arena.dataTypes[tokens[i + 1]] === exports.EnumToken.CommaTokenType)) {
+                    continue;
+                }
+                tokens[write++] = tokens[i];
+            }
+            tokens.length = write;
+        }
+        return true;
     }
     /**
      *
@@ -18210,9 +18342,9 @@
      */
     function countItemCommas(syntax) {
         let count = 0;
-        if (syntax.typ === ValidationTokenEnum.Bracket) {
+        if (syntax.typ === exports.ValidationTokenEnum.Bracket) {
             for (const token of syntax.chi) {
-                if (token.typ === ValidationTokenEnum.Comma) {
+                if (token.typ === exports.ValidationTokenEnum.Comma) {
                     count++;
                 }
             }
@@ -18374,7 +18506,7 @@
         if (arena.hasFraction(token) || arena.numericValue[token] !== syntax.val) {
             return false;
         }
-        if (syntax.typ === ValidationTokenEnum.Number) {
+        if (syntax.typ === exports.ValidationTokenEnum.Number) {
             return arena.dataTypes[token] === exports.EnumToken.NumberTokenType;
         }
         const type = exports.EnumToken[syntax.unit];
@@ -18398,7 +18530,7 @@
         const range = syntax.range;
         // a null lower bound is -∞
         let success = !arena.hasFraction(token) && (range.min == null || arena.numericValue[token] >= range.min.val);
-        if (range.min?.typ === ValidationTokenEnum.Dimension) {
+        if (range.min?.typ === exports.ValidationTokenEnum.Dimension) {
             success =
                 arena.dataTypes[token] ===
                     exports.EnumToken[
@@ -18416,8 +18548,12 @@
      * @param token
      */
     function functionSyntax(arena, token) {
+        const previousSyntaxArena = syntaxArena;
         syntaxArena = arena;
-        return arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+        const syntax = arena.stringDerived(arena.stringValue[token], 0 /* StringDerived.FunctionSyntax */, computeFunctionSyntax);
+        // the arena is not kept after the parse: the previous arena is restored (a nested call)
+        syntaxArena = previousSyntaxArena;
+        return syntax;
     }
     /**
      * the arena of the function names read by {@link computeFunctionSyntax} and {@link computeSelectorFunctionSyntax}:
@@ -18444,8 +18580,12 @@
      * @param token
      */
     function selectorFunctionSyntax(arena, token) {
+        const previousSyntaxArena = syntaxArena;
         syntaxArena = arena;
-        return arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+        const syntax = arena.stringDerived(arena.stringValue[token], 1 /* StringDerived.SelectorFunctionSyntax */, computeSelectorFunctionSyntax);
+        // the arena is not kept after the parse: the previous arena is restored (a nested call)
+        syntaxArena = previousSyntaxArena;
+        return syntax;
     }
     /**
      * the wildcard functions being matched with a syntax, see {@link matchWildCardFunction}
@@ -18472,12 +18612,12 @@
         let errors = noErrors;
         const candidates = [];
         // the function is a part of the syntax. a keyword, a comma, ... is matched by the function
-        if (syntaxes[index].typ !== ValidationTokenEnum.Keyword &&
-            syntaxes[index].typ !== ValidationTokenEnum.Comma &&
-            syntaxes[index].typ !== ValidationTokenEnum.Separator &&
-            syntaxes[index].typ !== ValidationTokenEnum.StringToken &&
-            syntaxes[index].typ !== ValidationTokenEnum.OpenParenthesis &&
-            syntaxes[index].typ !== ValidationTokenEnum.CloseParenthesis) {
+        if (syntaxes[index].typ !== exports.ValidationTokenEnum.Keyword &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.Comma &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.Separator &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.StringToken &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.OpenParenthesis &&
+            syntaxes[index].typ !== exports.ValidationTokenEnum.CloseParenthesis) {
             const previous = wildCardProbes.get(token);
             let probe;
             wildCardProbes.set(token, syntaxes[index]);
@@ -18576,7 +18716,7 @@
             return setMatch(out, true, true, context.peek(), context, null, noErrors);
         }
         while (++i < syntaxes.length) {
-            if (syntaxes[i].typ === ValidationTokenEnum.Whitespace) {
+            if (syntaxes[i].typ === exports.ValidationTokenEnum.Whitespace) {
                 continue;
             }
             isOptional =
@@ -18695,7 +18835,7 @@
             success = false;
             try {
                 switch (syntaxes[i].typ) {
-                    case ValidationTokenEnum.Colon:
+                    case exports.ValidationTokenEnum.Colon:
                         // `<ident-token> : <declaration-value>?`
                         if (arena.dataTypes[token] === exports.EnumToken.ColonTokenType) {
                             success = true;
@@ -18706,7 +18846,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Comma:
+                    case exports.ValidationTokenEnum.Comma:
                         if (arena.dataTypes[token] === exports.EnumToken.CommaTokenType) {
                             success = true;
                             visitedSyntaxes[visit] = null;
@@ -18714,7 +18854,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Keyword:
+                    case exports.ValidationTokenEnum.Keyword:
                         if (arena.dataTypes[token] === exports.EnumToken.IdenTokenType &&
                             lowercase(arena.resolveString(arena.stringValue[token])) ===
                                 lowercase(syntaxes[i].val)) {
@@ -18727,7 +18867,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.DeclarationType:
+                    case exports.ValidationTokenEnum.DeclarationType:
                         result = matchSyntax(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Declarations, syntaxes[i].val), context, options, out);
                         if (result.success) {
                             success = true;
@@ -18746,7 +18886,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
-                    case ValidationTokenEnum.OptionalGroupToken: {
+                    case exports.ValidationTokenEnum.OptionalGroupToken: {
                         const chi = syntaxes[i].chi;
                         // `<bg-layer>#? , <final-bg-layer>` (the group of the optional list, the comma is the list separator) is
                         // matched as `[ <bg-layer> , ]* <final-bg-layer>`: the last item is left to the next syntax
@@ -18754,7 +18894,7 @@
                             const { isList, isOptional, match, ...item } = chi[0];
                             const group = [
                                 item,
-                                { typ: ValidationTokenEnum.Comma },
+                                { typ: exports.ValidationTokenEnum.Comma },
                             ];
                             while (context.peek() != null) {
                                 const tmp = matchSyntax(arena, group, context.slice(), options);
@@ -18781,7 +18921,7 @@
                         }
                         break;
                     }
-                    case ValidationTokenEnum.StringToken:
+                    case exports.ValidationTokenEnum.StringToken:
                         if (arena.dataTypes[token] === exports.EnumToken.Add) {
                             success = syntaxes[i].val.slice(1, -1) === "+";
                         }
@@ -18804,7 +18944,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.PropertyType:
+                    case exports.ValidationTokenEnum.PropertyType:
                         result = matchProperty(arena, syntaxes[i], context, options);
                         if (!result.success) {
                             if (isOptional) {
@@ -18825,7 +18965,7 @@
                             context.update(result.context.current());
                         }
                         break;
-                    case ValidationTokenEnum.PipeToken:
+                    case exports.ValidationTokenEnum.PipeToken:
                         {
                             // each alternative is matched in the same scratch result, the best match is copied
                             const scratch = createMatch();
@@ -18871,7 +19011,7 @@
                                 syntax: syntaxes[i],
                             },
                         ]);
-                    case ValidationTokenEnum.Bracket:
+                    case exports.ValidationTokenEnum.Bracket:
                         result = matchSyntax(arena, syntaxes[i].chi, context.slice(), options, out);
                         if (result.success) {
                             success = true;
@@ -18889,7 +19029,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.ColumnToken:
+                    case exports.ValidationTokenEnum.ColumnToken:
                         result = matchColumnSyntax(arena, syntaxes[i], context.slice(), options);
                         if (result.success) {
                             success = true;
@@ -18904,7 +19044,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.AmpersandToken:
+                    case exports.ValidationTokenEnum.AmpersandToken:
                         result = matchAmpersandSyntax(arena, syntaxes[i], context.slice(), options);
                         if (result.success) {
                             success = true;
@@ -18919,7 +19059,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Function:
+                    case exports.ValidationTokenEnum.Function:
                         if ((!isFunctionDefType(arena.dataTypes[token]) &&
                             !funcLike.includes(arena.dataTypes[token]) &&
                             !funcTypes.includes(arena.dataTypes[token])) ||
@@ -18951,8 +19091,8 @@
                             }
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], result.errors);
-                    case ValidationTokenEnum.Number:
-                    case ValidationTokenEnum.Dimension:
+                    case exports.ValidationTokenEnum.Number:
+                    case exports.ValidationTokenEnum.Dimension:
                         // a literal number or dimension: `-moz-force-broken-image-icon: 0 | 1`,
                         // `glyph-orientation-vertical: auto | 0deg | 90deg | 0 | 90`
                         if (isLiteralNumber(arena, token, syntaxes[i])) {
@@ -18965,7 +19105,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.Separator:
+                    case exports.ValidationTokenEnum.Separator:
                         if (arena.dataTypes[token] === exports.EnumToken.LiteralTokenType &&
                             arena.resolveString(arena.stringValue[token]) === "/") {
                             visitedSyntaxes[visit] = null;
@@ -18973,7 +19113,7 @@
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.FunctionDefinition:
+                    case exports.ValidationTokenEnum.FunctionDefinition:
                         if (arena.resolveString(arena.stringValue[token]) &&
                             equalsIgnoreCase(arena.resolveString(arena.stringValue[token]), syntaxes[i].val)) {
                             if (isFunctionDefType(arena.dataTypes[token])) {
@@ -18997,21 +19137,21 @@
                             }
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.OpenParenthesis:
+                    case exports.ValidationTokenEnum.OpenParenthesis:
                         if (arena.dataTypes[token] === exports.EnumToken.StartParensTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.OpenCurlyBrace:
+                    case exports.ValidationTokenEnum.OpenCurlyBrace:
                         if (arena.dataTypes[token] === exports.EnumToken.BlockStartTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
                             break;
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
-                    case ValidationTokenEnum.CloseParenthesis:
+                    case exports.ValidationTokenEnum.CloseParenthesis:
                         if (arena.dataTypes[token] === exports.EnumToken.EndParensTokenType) {
                             visitedSyntaxes[visit] = null;
                             context.next();
@@ -19019,7 +19159,7 @@
                         }
                         return setMatch(out, false, true, token, context, syntaxes[i], noErrors);
                     default:
-                        throw new Error(`Unexpected syntax ${ValidationTokenEnum[syntaxes[i].typ]}`);
+                        throw new Error(`Unexpected syntax ${exports.ValidationTokenEnum[syntaxes[i].typ]}`);
                 }
             }
             finally {
@@ -19157,9 +19297,9 @@
      */
     function ampersandOperands(syntax, operands = []) {
         for (const side of [syntax.l, syntax.r]) {
-            const tokens = side.filter((token) => token.typ !== ValidationTokenEnum.Whitespace);
+            const tokens = side.filter((token) => token.typ !== exports.ValidationTokenEnum.Whitespace);
             if (tokens.length === 1 &&
-                tokens[0].typ === ValidationTokenEnum.AmpersandToken &&
+                tokens[0].typ === exports.ValidationTokenEnum.AmpersandToken &&
                 !tokens[0].isOptional &&
                 !tokens[0].isRepeatable &&
                 !tokens[0].isRepeatableAtLeastOnce &&
@@ -22144,6 +22284,7 @@
          */
         #codeLength;
         /**
+         * create a render result
          * @param write rendered css, encoded as UTF-8
          * @param errors
          * @param stats
@@ -22208,6 +22349,7 @@
          */
         arena;
         /**
+         * create a transform result from the parse result and the render result
          * @param parseResult
          * @param renderResult
          * @param stats
@@ -23945,7 +24087,8 @@
                                             key === "0 0" ||
                                             key === "top left" ||
                                             key === "left top") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0));
+                                            // a single value is centered vertically: both values are kept
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 0));
                                         }
                                         else if (key === "50% 0%" ||
                                             key === "50% 0" ||
@@ -23969,7 +24112,7 @@
                                             key === "0% 100%" ||
                                             key === "left bottom" ||
                                             key === "bottom left") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.IdenTokenType, "bottom"));
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 0), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 100));
                                         }
                                         else if (key === "50% 100%" ||
                                             key === "center bottom" ||
@@ -23979,10 +24122,7 @@
                                         else if (key === "100% 100%" ||
                                             key === "right bottom" ||
                                             key === "bottom right") {
-                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 100));
-                                        }
-                                        else if (position1 === position2) {
-                                            positions.splice(0, positions.length, positions[k]);
+                                            positions.splice(0, positions.length, arena.createToken(exports.EnumToken.PercentageTokenType, 100), arena.createToken(exports.EnumToken.WhitespaceTokenType), arena.createToken(exports.EnumToken.PercentageTokenType, 100));
                                         }
                                     }
                                 }
@@ -30415,7 +30555,8 @@
          */
         options = { removeDuplicateDeclarations: true, computeShorthand: true };
         /**
-         * declarations
+         * declarations, by property name
+         * @ignore
          */
         declarations;
         /**
@@ -30432,8 +30573,8 @@
          */
         descriptors;
         /**
-         *
-         * @param arena
+         * create an empty declaration list
+         * @param arena the arena the declarations are stored in
          * @param options
          * @param memo keys shared by the lists that use the same arena
          * @param descriptors syntaxes of the descriptors of the at-rule that contains the declarations
@@ -30612,6 +30753,8 @@
             return this;
         }
         /**
+         * Normalize the values of a declaration with the mapping of its property: the values are reordered by the patterns
+         * of the mapping, the keywords are replaced by their mapped value
          *
          * @param declaration
          * @param mapping
@@ -30676,7 +30819,7 @@
             }
         }
         /**
-         *
+         * iterate over the declarations, the shorthands are expanded into their declarations
          * @returns
          */
         [Symbol.iterator]() {
@@ -31986,8 +32129,12 @@
      * @param id interned string id
      */
     function transformKind(arena, id) {
+        const previousKindArena = kindArena;
         kindArena = arena;
-        return arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+        const kind = arena.stringDerived(id, 2 /* StringDerived.TransformKind */, computeTransformKind);
+        // the arena is not kept after the transformation: the previous arena is restored (a nested call)
+        kindArena = previousKindArena;
+        return kind;
     }
     /**
      * numeric arguments of a transform function (the first 16 arguments), reused
@@ -33060,12 +33207,25 @@
         StringDerived[StringDerived["AtRuleAcceptsRules"] = 3] = "AtRuleAcceptsRules";
     })(StringDerived || (StringDerived = {}));
     /**
+     * code units of a short string, see {@link fromCodes}
+     */
+    const shortCodes = [];
+    /**
      * string of a range of code units
      * @param codes
      * @param start
      * @param end
      */
     function fromCodes(codes, start, end) {
+        const length = end - start;
+        // a short string: the code units are copied to an array, a subarray is slower to create
+        if (length <= 256) {
+            shortCodes.length = length;
+            for (let i = 0; i < length; i++) {
+                shortCodes[i] = codes[start + i];
+            }
+            return String.fromCharCode.apply(null, shortCodes);
+        }
         let result = "";
         // String.fromCharCode() with a limited number of arguments
         while (start < end) {
@@ -33236,6 +33396,18 @@
         setText(source, text, codes = null) {
             this.texts[source] = text;
             this.codes[source] = codes ?? undefined;
+        }
+        /**
+         * code unit of the text of a source, NaN after its end
+         * @param source source index
+         * @param offset
+         */
+        sourceCodeAt(source, offset) {
+            const text = this.texts[source];
+            if (text !== undefined && offset < text.length) {
+                return text.charCodeAt(offset);
+            }
+            return this.codes[source]?.[offset] ?? NaN;
         }
         /**
          * drop the code units of a source: the source is no longer tokenized, see {@link setText}
@@ -34145,6 +34317,22 @@
      *
      * @private
      */
+    /**
+     * Merge the adjacent rules without minifying the ast: `minify: false` with {@link ParserOptions.mergeRules}. The style
+     * rules that have the same selector, the keyframes rules that have the same selector, the at-rules that have the same
+     * name and prelude (not `@font-face`) and, depending on `mergeRules`, the rules that share declarations are merged. Of
+     * the `@keyframes` that have the same name, the last one is kept. The other minifications are not applied
+     * @param arena
+     * @param ast
+     * @param options
+     *
+     * @private
+     */
+    function mergeRules(arena, ast, options) {
+        return doMinify(arena, ast, { ...options, nestingRules: false, optimizeSelectors: false }, true, undefined, false, {
+            mergeOnly: true,
+        });
+    }
     function doMinify(arena, ast, options = {}, recursive = false, errors, nestingContent, context = {}) {
         if (!("nodes" in context)) {
             context.nodes = new Set();
@@ -34195,7 +34383,7 @@
                     }
                     // there is no early return: the result that precedes the conditional rules is moved after them.
                     // the conditional rules are never removed
-                    if (equalsIgnoreCase(nam, "function")) {
+                    if (!context.mergeOnly && equalsIgnoreCase(nam, "function")) {
                         moveResult(arena, node);
                     }
                 }
@@ -34222,7 +34410,8 @@
                         cursor = arena.nextSibling[previous];
                         continue;
                     }
-                    let k = arena.firstChild[node];
+                    // merge only (see mergeRules()): the declarations are not removed
+                    let k = context.mergeOnly ? 0 : arena.firstChild[node];
                     while (k !== 0) {
                         const next = arena.nextSibling[k];
                         if (arena.dataTypes[k] === exports.EnumToken.DeclarationNodeType) {
@@ -34255,7 +34444,8 @@
                                 (index + 3 < arr.length || arena.dataTypes[arr[index + 2]] === exports.EnumToken.WhitespaceTokenType))
                             ? ""
                             : renderValue(arena, curr));
-                    if (nam === "apply") {
+                    if (context.mergeOnly) ;
+                    else if (nam === "apply") {
                         // `@apply --mixin()` is equivalent to `@apply --mixin`
                         minifyApplyPrelude(arena, node);
                     }
@@ -34297,9 +34487,11 @@
                             arena.stringValue[node] = arena.internString(trimArray(arena, tokens).reduce(renderPrelude, ""));
                         }
                     }
-                    else if (arena.dataTypes[ast] === nodeType &&
+                    if (arena.dataTypes[ast] === nodeType &&
                         arena.name[ast] === arena.name[node] &&
-                        arena.stringValue[ast] === arena.stringValue[node]) {
+                        arena.stringValue[ast] === arena.stringValue[node] &&
+                        // the at-rules handled above are not replaced when the ast is minified
+                        (context.mergeOnly || (nam !== "apply" && nam !== "media" && !(nam === "import" && tokens != null)))) {
                         // the node is replaced by its children
                         cursor = arena.firstChild[node] || arena.nextSibling[node];
                         arena.moveChildren(node, ast, node);
@@ -34331,8 +34523,9 @@
                 }
                 else if (nodeType === exports.EnumToken.RuleNodeType) {
                     // a single selector that does not end with a combinator is not reduced (see isSimpleSelector()): the
-                    // selector is not read
-                    if (!isSimpleSelector(arena, arena.name[node])) {
+                    // selector is not read. the nesting reads the reduced selectors: optimizeSelectors only applies without it
+                    if ((options.optimizeSelectors !== false || options.nestingRules) &&
+                        !isSimpleSelector(arena, arena.name[node])) {
                         reduceRuleSelector(arena, node);
                     }
                     let wrapper = null;
@@ -34498,7 +34691,9 @@
                                     cursor = arena.nextSibling[node];
                                     continue;
                                 }
-                                else if (nodeType === previousType &&
+                                else if (options.mergeRules !== false &&
+                                    options.mergeRules !== exports.MergeRulesEnum.None &&
+                                    nodeType === previousType &&
                                     [exports.EnumToken.KeyframesRuleNodeType, exports.EnumToken.RuleNodeType].includes(nodeType)) {
                                     const intersect = diff(arena, previous, node, options, context);
                                     if (intersect != null) {
@@ -34541,6 +34736,7 @@
                     }
                 }
                 if (!nestingContent &&
+                    !context.mergeOnly &&
                     previous != null &&
                     arena.dataTypes[previous] === exports.EnumToken.RuleNodeType &&
                     arena.stringIndexOf(arena.name[previous], 0x26) !== -1) {
@@ -34558,6 +34754,7 @@
                 }
             }
             if (!nestingContent &&
+                !context.mergeOnly &&
                 node != null &&
                 arena.dataTypes[node] === exports.EnumToken.RuleNodeType &&
                 arena.stringIndexOf(arena.name[node], 0x26) !== -1) {
@@ -35151,24 +35348,38 @@
      *
      * @private
      */
-    function diff(arena, n1, n2, options, context) {
-        // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
-        // the declarations that follow it override them
-        if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
-            return null;
+    /**
+     * the number of declarations of a rule: its children that are not comments
+     * @param arena
+     * @param node
+     */
+    function declarationCount(arena, node) {
+        let count = 0;
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            if (arena.dataTypes[child] !== exports.EnumToken.CommentNodeType) {
+                count++;
+            }
         }
-        if (!("cache" in options)) {
-            options.cache = new Map();
+        return count;
+    }
+    /**
+     * clear the matched flag of the children of a rule
+     * @param arena
+     * @param node
+     */
+    function clearMatched(arena, node) {
+        for (let child = arena.firstChild[node]; child !== 0; child = arena.nextSibling[child]) {
+            arena.flags[child] &= ~exports.EnumAstNodeStatus.Matched;
         }
-        let node1 = n1;
-        let node2 = n2;
-        let exchanged = false;
-        if (arena.childCount(node1) > arena.childCount(node2)) {
-            const t = node1;
-            node1 = node2;
-            node2 = t;
-            exchanged = true;
-        }
+    }
+    /**
+     * the selectors of both rules have the same vendor prefixes: the rules that do not are not merged (a browser drops a
+     * selector list that contains a pseudo class with an unknown prefix)
+     * @param arena
+     * @param node1
+     * @param node2
+     */
+    function samePrefixes(arena, node1, node2) {
         const raw1 = arena.raw.get(node1);
         const raw2 = arena.raw.get(node2);
         if (raw1 == null || raw2 == null) {
@@ -35177,11 +35388,11 @@
             const prefixes1 = raw1 == null ? selectorPrefixes(arena, arena.name[node1]) : rawSelectorPrefixes(raw1);
             const prefixes2 = raw2 == null ? selectorPrefixes(arena, arena.name[node2]) : rawSelectorPrefixes(raw2);
             if (prefixes1.size !== prefixes2.size) {
-                return null;
+                return false;
             }
             for (const prefix of prefixes1) {
                 if (!prefixes2.has(prefix)) {
-                    return null;
+                    return false;
                 }
             }
         }
@@ -35223,13 +35434,38 @@
                 }
             }
             if (prefixes1.size !== prefixes2.size) {
-                return null;
+                return false;
             }
             for (const prefix of prefixes1) {
                 if (!prefixes2.has(prefix)) {
-                    return null;
+                    return false;
                 }
             }
+        }
+        return true;
+    }
+    function diff(arena, n1, n2, options, context) {
+        // the declarations of a rule that applies a mixin are not moved: `@apply` inserts declarations at its position,
+        // the declarations that follow it override them
+        if (hasAtRuleStatement(arena, n1) || hasAtRuleStatement(arena, n2)) {
+            return null;
+        }
+        // only the rules that have the same declarations are merged: the rules that have a different number of
+        // declarations are not compared
+        if (options.mergeRules === exports.MergeRulesEnum.Identical && declarationCount(arena, n1) !== declarationCount(arena, n2)) {
+            return null;
+        }
+        if (!("cache" in options)) {
+            options.cache = new Map();
+        }
+        let node1 = n1;
+        let node2 = n2;
+        let exchanged = false;
+        if (arena.childCount(node1) > arena.childCount(node2)) {
+            const t = node1;
+            node1 = node2;
+            node2 = t;
+            exchanged = true;
         }
         // match the declarations of both rules, from the last to the first
         let matches = 0;
@@ -35249,8 +35485,29 @@
                     break;
                 }
             }
+            // a declaration without a match: the rules are not identical
+            if (options.mergeRules === exports.MergeRulesEnum.Identical && !(arena.flags[child1] & exports.EnumAstNodeStatus.Matched)) {
+                clearMatched(arena, node1);
+                clearMatched(arena, node2);
+                return null;
+            }
         }
         if (matches === 0 && (arena.firstChild[node1] !== 0 || arena.firstChild[node2] !== 0)) {
+            return null;
+        }
+        // every declaration of both rules is matched: the merged rule replaces both rules, it is always smaller, the sizes
+        // are not computed
+        const identical = matches === declarationCount(arena, node1) && matches === declarationCount(arena, node2);
+        if (!identical && options.mergeRules === exports.MergeRulesEnum.Identical) {
+            // the rules are not merged: the matched declarations are released
+            clearMatched(arena, node1);
+            clearMatched(arena, node2);
+            return null;
+        }
+        // the vendor prefixes are compared once the rules share declarations
+        if (!samePrefixes(arena, node1, node2)) {
+            clearMatched(arena, node1);
+            clearMatched(arena, node2);
             return null;
         }
         // the rules are rendered with the same options during the minification: the options are resolved once and
@@ -35267,7 +35524,7 @@
             return arena.firstChild[node] === 0 ? 0 : size;
         };
         // size of the original nodes
-        const size = renderedSize(n1, true) + renderedSize(n2, true);
+        const size = identical ? 0 : renderedSize(n1, true) + renderedSize(n2, true);
         // the shared declarations are moved into the result node
         const result = arena.cloneNode(node1);
         // the distinct selectors of both rules: built from the code units of the selectors when they are normalized
@@ -35309,7 +35566,9 @@
         // the merge is kept when the output is smaller, or when it has the same size and removes a rule (an emptied rule is
         // removed, its size is 0). the other rule keeps its selector, which is repeated in the merged selector: the merge of
         // `html{margin:0}` and `body,div,...{margin:0;font:inherit}` is larger than the rules
-        const mergedSize = renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
+        const mergedSize = identical
+            ? 0
+            : renderedSize(node1, false) + renderedSize(node2, false) + renderedSize(result, false);
         if (size < mergedSize ||
             (size === mergedSize && arena.firstChild[node1] !== 0 && arena.firstChild[node2] !== 0)) {
             // restore the nodes: undo the moves in reverse order
@@ -35333,7 +35592,7 @@
         if (arena.optimized.get(result) != null) {
             arena.optimized.set(result, null);
         }
-        const optimized = optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
+        const optimized = options.optimizeSelectors === false ? null : optimizeSelector(splitRule(arena.resolveString(arena.name[result])));
         if (optimized?.match) {
             const sel = factorSelector(optimized);
             if (sel != null && sel.length < arena.resolveString(arena.name[result]).length) {
@@ -35684,8 +35943,12 @@
      * @param id selector string id
      */
     function isSimpleSelector(arena, id) {
+        const previousSelectorArena = selectorArena;
         selectorArena = arena;
-        return arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+        const simple = arena.stringFlagId(id, 1 /* StringFlag.SimpleSelector */, computeSimpleSelector);
+        // the arena is not kept after the minification: the previous arena is restored (a nested call)
+        selectorArena = previousSelectorArena;
+        return simple;
     }
     /**
      * the arena of the selector read by {@link computeSimpleSelector} and {@link hasVendorPrefix}: the functions passed to
@@ -35780,8 +36043,12 @@
      */
     function selectorPrefixes(arena, id) {
         // the selectors without `:-` are skipped: computed once per string id
+        const previousSelectorArena = selectorArena;
         selectorArena = arena;
-        if (!arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix)) {
+        const prefixed = arena.stringFlagId(id, 2 /* StringFlag.VendorPrefix */, hasVendorPrefix);
+        // the arena is not kept after the minification: the previous arena is restored (a nested call)
+        selectorArena = previousSelectorArena;
+        if (!prefixed) {
             return emptyPrefixes;
         }
         const prefixes = new Set();
@@ -36212,6 +36479,10 @@
          * the high word holds the 24 high bits of the start position and the source
          */
         spans32;
+        /**
+         * create an empty arena
+         * @param size initial number of nodes the columns can hold. the columns grow when they are full
+         */
         constructor(size = 4096) {
             this.dataTypes = new Uint8Array(size);
             this.capacity = size;
@@ -36276,6 +36547,9 @@
             arena.importProperties(properties, transferables);
             return arena;
         }
+        /**
+         * Allocate a node or a token: a released id is reused, the columns grow when the arena is full. Returns the new id
+         */
         allocate() {
             let id = this.freeList;
             if (id !== 0) {
@@ -36303,7 +36577,9 @@
             this.unit[id] = 0;
             this.flags[id] = 0;
             this.colorType[id] = 0;
-            this.spans[id] = 0n;
+            // the 32 bits view: no bigint
+            this.spans32[id << 1] = 0;
+            this.spans32[(id << 1) + 1] = 0;
             if (this.errors.size > 0) {
                 this.errors.delete(id);
             }
@@ -36345,6 +36621,14 @@
          */
         setSourceText(source, text, codes = null) {
             this.stringTable.setText(source, text, codes);
+        }
+        /**
+         * code unit of the text of a source, NaN after its end. no string is created
+         * @param source source index (see {@link getSourceId})
+         * @param offset
+         */
+        sourceCodeAt(source, offset) {
+            return this.stringTable.sourceCodeAt(source, offset);
         }
         /**
          * drop the code units of a source set by {@link setSourceText}: the source is no longer tokenized
@@ -36432,6 +36716,7 @@
          * @param id
          * @param flag
          * @param compute computes the property from the string
+         * @ignore
          */
         stringFlag(id, flag, compute) {
             return this.stringTable.flag(id, flag, compute);
@@ -36441,6 +36726,7 @@
          * @param id
          * @param flag
          * @param compute computes the property from the string id
+         * @ignore
          */
         stringFlagId(id, flag, compute) {
             return this.stringTable.flagId(id, flag, compute);
@@ -36450,6 +36736,7 @@
          * @param id
          * @param slot
          * @param compute computes the value from the string id
+         * @ignore
          */
         stringDerived(id, slot, compute) {
             return this.stringTable.derived(id, slot, compute);
@@ -36487,6 +36774,7 @@
             return this.stringTable.epoch;
         }
         /**
+         * Type of a node or a token, see {@link EnumToken}
          *
          * @param id
          */
@@ -36501,6 +36789,7 @@
             return id == null ? null : this.dataTypes[id];
         }
         /**
+         * Set the type of a node or a token, see {@link EnumToken}
          *
          * @param id
          * @param type
@@ -36509,6 +36798,7 @@
             this.dataTypes[id] = type;
         }
         /**
+         * Set the name of a node or a token: `nameId` is a string table id, see {@link AstArena.internString}
          *
          * @param id
          * @param nameId
@@ -36517,6 +36807,7 @@
             this.name[id] = nameId;
         }
         /**
+         * Name of a node or a token: the name of an at-rule, a declaration, a function, ...
          *
          * @param id
          */
@@ -36524,6 +36815,7 @@
             return this.resolveString(this.name[id]) ?? null;
         }
         /**
+         * Set the value of a node or a token: `valueId` is a string table id, see {@link AstArena.internString}
          *
          * @param id
          * @param valueId
@@ -36532,6 +36824,7 @@
             this.stringValue[id] = valueId;
         }
         /**
+         * Value of a node or a token: the value of an identifier, a string, a hash, ...
          *
          * @param id
          */
@@ -36539,6 +36832,7 @@
             return this.resolveString(this.stringValue[id]) ?? null;
         }
         /**
+         * Set the numeric value of a token
          *
          * @param id
          * @param numericValue
@@ -36547,6 +36841,7 @@
             this.numericValue[id] = numericValue;
         }
         /**
+         * Set the unit of a dimension token: `unit` is a string table id
          *
          * @param id
          * @param unit
@@ -36555,6 +36850,7 @@
             this.unit[id] = unit;
         }
         /**
+         * Unit of a dimension token
          *
          * @param id
          */
@@ -36562,6 +36858,7 @@
             return this.resolveString(this.unit[id]) ?? null;
         }
         /**
+         * Numeric value of a token: number, dimension, percentage, ...
          *
          * @param id
          */
@@ -36569,6 +36866,8 @@
             return this.numericValue[id];
         }
         /**
+         * Set the parent id of a node. The node is not moved: use {@link AstArena.appendChild} or {@link
+         * AstArena.insertBefore} to move it
          *
          * @param id
          * @param parentId
@@ -36651,6 +36950,7 @@
             }
         }
         /**
+         * Last child of a node. 0 when the node has no children
          *
          * @param id
          */
@@ -36733,6 +37033,7 @@
             }
         }
         /**
+         * Set the color type of a color token, see {@link ColorType}
          *
          * @param id
          * @param colorType
@@ -36741,6 +37042,7 @@
             this.colorType[id] = colorType;
         }
         /**
+         * Color type of a color token, see {@link ColorType}
          *
          * @param id
          */
@@ -36748,6 +37050,7 @@
             return this.colorType[id];
         }
         /**
+         * Replace the flags of a node, see {@link EnumAstNodeStatus}
          *
          * @param id
          * @param flags
@@ -36756,6 +37059,7 @@
             this.flags[id] = flags;
         }
         /**
+         * Flags of a node, see {@link EnumAstNodeStatus}
          *
          * @param id
          */
@@ -36763,6 +37067,7 @@
             return this.flags[id];
         }
         /**
+         * `true` when a node has all the given flags, see {@link EnumAstNodeStatus}
          *
          * @param id
          * @param flag
@@ -36771,6 +37076,7 @@
             return (this.flags[id] & flag) === flag;
         }
         /**
+         * The child of a node at a position (0 based). null when the position is out of range
          *
          * @param id
          * @param index
@@ -36892,6 +37198,7 @@
             this.appendTokenList(this.fieldList(id, field), tokens);
         }
         /**
+         * Replace the tokens of the left hand side of a structured token
          *
          * @param id
          * @param children
@@ -36901,6 +37208,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.L), children);
         }
         /**
+         * Tokens of the left hand side of a structured token (numerator of a fraction, ...). null when it is not set
          *
          * @param id
          */
@@ -36908,15 +37216,17 @@
             return this.getChildAt(id, exports.TokenField.L) == null ? null : this.fieldTokens(id, exports.TokenField.L);
         }
         /**
+         * Replace the tokens of the right hand side of a structured token. null removes them
          *
-         * @param id
-         * @param rightId
+         * @param id the structured token
+         * @param rightId the tokens, or null
          */
         setRight(id, ...rightId) {
             // inlined: this.setField(id, TokenField.R, ...(rightId == null || rightId[0] == null ? [] : (rightId as number[])))
             this.setTokenList(this.fieldList(id, exports.TokenField.R), rightId == null || rightId[0] == null ? [] : rightId);
         }
         /**
+         * Tokens of the right hand side of a structured token (denominator of a fraction, ...). null when it is not set
          *
          * @param id
          */
@@ -36924,6 +37234,7 @@
             return this.getChildAt(id, exports.TokenField.R) == null ? null : this.fieldTokens(id, exports.TokenField.R);
         }
         /**
+         * Set the operator token of a structured token
          *
          * @param id
          * @param opId
@@ -36933,6 +37244,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.Op), [opId]);
         }
         /**
+         * Operator token of a structured token: the operator of a binary expression, ...
          *
          * @param id
          */
@@ -36940,6 +37252,7 @@
             return this.field(id, exports.TokenField.Op);
         }
         /**
+         * Set the second operator token of a structured token: the second operator of a media range query
          *
          * @param id
          * @param op2Id
@@ -36949,6 +37262,7 @@
             this.setTokenList(this.fieldList(id, exports.TokenField.Op2), [op2Id]);
         }
         /**
+         * Second operator token of a structured token: the second operator of a media range query
          *
          * @param id
          */
@@ -36956,6 +37270,7 @@
             return this.field(id, exports.TokenField.Op2);
         }
         /**
+         * Set the location of a node or a token: the id of its source file and its start and end offsets
          *
          * @param id
          * @param sourceId
@@ -36984,6 +37299,7 @@
             this.spans32[t + 1] = this.spans32[s + 1];
         }
         /**
+         * Id of the source file of a node or a token, see {@link getSpanStart} and {@link getSpanEnd}
          *
          * @param id
          */
@@ -36994,6 +37310,7 @@
             return Number((this.spans[id] >> 56n) & 0xffn);
         }
         /**
+         * Start offset of a node or a token in its source file
          *
          * @param id
          */
@@ -37006,6 +37323,7 @@
         }
         // ---- spans ---------------------------------------------------------------------
         /**
+         * Set the start offset of a node or a token in its source file
          *
          * @param id
          * @param start
@@ -37014,6 +37332,7 @@
             this.setSpan(id, this.getSourceId(id), start, this.getSpanEnd(id));
         }
         /**
+         * End offset of a node or a token in its source file
          *
          * @param id
          */
@@ -37024,6 +37343,7 @@
             return Number(this.spans[id] & 0xfffffffn);
         }
         /**
+         * Set the end offset of a node or a token in its source file
          *
          * @param id
          * @param end
@@ -37032,6 +37352,7 @@
             this.setSpan(id, this.getSourceId(id), this.getSpanStart(id), end);
         }
         /**
+         * Parent of a node. 0 when the node has no parent
          *
          * @param id
          */
@@ -37039,6 +37360,7 @@
             return this.parents[id];
         }
         /**
+         * The string of a string table id. The string is created the first time it is read
          *
          * @param id
          */
@@ -37381,6 +37703,7 @@
             return result;
         }
         /**
+         * The first child of a node for which the predicate returns `true`. null when there is none
          *
          * @param id
          * @param predicate
@@ -37476,6 +37799,7 @@
             return count;
         }
         /**
+         * Replace the children of a node
          *
          * @param id
          * @param children
@@ -37502,6 +37826,7 @@
             this.appendChildList(id, children);
         }
         /**
+         * Replace the tokens of a node or a token
          *
          * @param id
          * @param children
@@ -37551,6 +37876,7 @@
             }
         }
         /**
+         * Append children to a node
          *
          * @param id
          * @param children
@@ -37589,6 +37915,7 @@
             }
         }
         /**
+         * Append tokens to a node or a token
          *
          * @param id
          * @param children
@@ -37693,6 +38020,8 @@
             }
         }
         /**
+         * Compare the name (`"nam"`) or the value (`"val"`) of a node with a string, ignoring the case. The string of the
+         * node is not created
          *
          * @param node
          * @param key
@@ -37703,6 +38032,8 @@
             return this.stringTable.equalsIgnoreCase(key === "nam" ? this.name[node] : this.stringValue[node], string);
         }
         /**
+         * `true` when the name (`"nam"`) or the value (`"val"`) of a node starts with a string. The string of the node is
+         * not created
          *
          * @param node
          * @param key
@@ -37713,6 +38044,7 @@
             return this.stringTable.startsWith(key === "nam" ? this.name[node] : this.stringValue[node], string);
         }
         /**
+         * Grow the columns of the arena so they hold `newSize` ids. The columns are never shrunk
          *
          * @param newSize
          */
@@ -37980,6 +38312,7 @@
             return this.compact(errors);
         }
         /**
+         * Set the validation errors of a node. null or an empty list removes them
          *
          * @param id
          * @param errors
@@ -37994,6 +38327,7 @@
             }
         }
         /**
+         * Validation errors of a node. null when the node has no errors
          *
          * @param id
          */
@@ -38104,8 +38438,8 @@
          */
         inputLengths = [];
         /**
-         *
-         * @param size
+         * create an arena that holds an empty stylesheet
+         * @param size initial number of nodes the columns can hold. the columns grow when they are full
          */
         constructor(size = 4096) {
             super(size);
@@ -38114,7 +38448,10 @@
             this.flags[this.root] = exports.EnumAstNodeStatus.HasChildren;
         }
         /**
-         * @inheritDoc
+         * release nodes: detach them and drop their data (interned strings, errors) and their minification caches. node
+         * ids are never reused: the memory is reclaimed by {@link trim}
+         * @param id the node to release. every marked node (and its descendants) is released when omitted
+         * @param deep release the children and the tokens too
          */
         release(id, deep = false) {
             super.release(id, deep);
@@ -38132,7 +38469,11 @@
             }
         }
         /**
-         * @inheritDoc
+         * drop the nodes that are not reachable from the root and renumber the remaining nodes in document order.
+         * the node ids change: ids obtained before the call (from visitors for instance) are no longer valid.
+         * the unused strings and the minification caches are dropped too
+         * @param errors error descriptions whose `node` is remapped
+         * @returns mapping of the old ids to the new ids (0 when the node was dropped)
          */
         compact(errors) {
             const mapping = super.compact(errors);
@@ -39070,7 +39411,7 @@
             return tokens.reduce((acc, curr) => acc + renderValue(this, curr), "");
         }
         /**
-         * @inheritDoc
+         * structured-cloneable properties of the arena, the sources and the minification caches included
          */
         exportProperties() {
             return {
@@ -39083,7 +39424,10 @@
             };
         }
         /**
-         * @inheritDoc
+         * initialize the arena from exported properties and column buffers, the sources and the minification caches
+         * included
+         * @param properties
+         * @param transferables
          */
         importProperties(properties, transferables) {
             super.importProperties(properties, transferables);
@@ -39491,6 +39835,7 @@
             }
         }
         /**
+         * Replace the nesting selectors (`&`) of a compound selector with a selector
          *
          * @param selector
          * @param replace
@@ -41081,7 +41426,30 @@
      */
     const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
     const decoder = new TextDecoder();
-    const nonAscii = /[^\x00-\x7f]/;
+    /**
+     * true if the bytes are ascii. the bytes are read 4 at a time when they are aligned: 5 times faster than a regular
+     * expression on the decoded text
+     * @param bytes
+     */
+    function isAscii(bytes) {
+        const length = bytes.length;
+        let bits = 0;
+        let i = 0;
+        if ((bytes.byteOffset & 3) === 0) {
+            const words = new Uint32Array(bytes.buffer, bytes.byteOffset, length >>> 2);
+            for (let k = 0; k < words.length; k++) {
+                bits |= words[k];
+            }
+            if ((bits & 0x80808080) !== 0) {
+                return false;
+            }
+            i = words.length << 2;
+        }
+        for (; i < length; i++) {
+            bits |= bytes[i];
+        }
+        return (bits & 0x80) === 0;
+    }
     const empty = new Uint8Array(0);
     /**
      * true if the input is an ArrayBuffer or a view of an ArrayBuffer
@@ -41144,10 +41512,45 @@
         const bytes = bytesOf(input);
         const text = decoder.decode(bytes);
         // the text of an ascii input has a character for each byte. the byte order mark is removed by the decoder
-        if (text.length === bytes.length && !nonAscii.test(text)) {
+        if (text.length === bytes.length && isAscii(bytes)) {
             return { codes: bytes, text };
         }
         return { codes: codeUnitsOf(text), text };
+    }
+    /**
+     * the size of the css of the streams, in bytes, when it is known (a file, a response with a content length)
+     */
+    const streamSizes = new WeakMap();
+    /**
+     * record the size of the css of a stream, in bytes: the parser allocates the code units and the arena once, like for
+     * an ArrayBuffer, instead of growing them as the stream is read. 0: the size is not known
+     * @param stream
+     * @param size
+     */
+    function setStreamSize(stream, size) {
+        if (size > 0) {
+            streamSizes.set(stream, size);
+        }
+        return stream;
+    }
+    /**
+     * the size of the css of a stream, in bytes, see {@link setStreamSize}. 0: the size is not known
+     * @param stream
+     */
+    function getStreamSize(stream) {
+        return stream == null ? 0 : (streamSizes.get(stream) ?? 0);
+    }
+    /**
+     * the size of the body of a response: its content length, 0 when it is not known or when the body is compressed (the
+     * content length is the size of the compressed body)
+     * @param response
+     */
+    function responseSize(response) {
+        if (response.headers.get("content-encoding") != null) {
+            return 0;
+        }
+        const length = Number(response.headers.get("content-length"));
+        return Number.isFinite(length) && length > 0 ? length : 0;
     }
 
     /**
@@ -41805,16 +42208,51 @@
         state = null;
         parseInfo;
         /**
+         * true when the whole css is in {@link ParseInfo.codes}: the input is not a stream, or the stream is read to its end
+         */
+        streamDone = true;
+        /**
+         * the last call of {@link next} reached the end of the code units read from the stream: the token may continue in
+         * the next chunk. no token is returned, the stream must be read ({@link read}) before {@link next} is called again
+         */
+        waiting = false;
+        /**
+         * reader of the stream
+         */
+        reader = null;
+        /**
+         * decoder of the chunks of the stream: a character can be split between two chunks
+         */
+        decoder = null;
+        /**
+         * the code units read from the stream: {@link ParseInfo.codes} is a view of its first {@link ParseInfo.length}
+         * code units. the buffer doubles when it is full, the code units are copied once per doubling
+         */
+        buffer = new Uint8Array(0);
+        /**
+         * the size of the css of the stream, in bytes, when it is known (see {@link setStreamSize}). 0: not known
+         */
+        expectedLength = 0;
+        /**
          * @param parseInfo the parse info, or the css: a string, an ArrayBuffer or a view of an ArrayBuffer
          * @param input a stream of css
          */
         constructor(parseInfo, input = null) {
             this.input = input;
+            if (input != null) {
+                this.streamDone = false;
+                this.expectedLength = getStreamSize(input);
+                // the size of the stream is known: the code units are allocated once. the size in bytes is not less than
+                // the number of utf-16 code units
+                if (this.expectedLength > 0) {
+                    this.buffer = new Uint8Array(this.expectedLength);
+                }
+            }
             if (isCssInput(parseInfo)) {
                 this.parseInfo = createParseInfo(parseInfo, new SourceFile("", [], ""));
             }
             else {
-                // the parse info of a stream is loaded by tokenizeStream()
+                // the code units of a stream are appended chunk by chunk, see read()
                 if (parseInfo.codes == null && input == null) {
                     Tokenizer.load(parseInfo, parseInfo.source.content);
                 }
@@ -42712,9 +43150,37 @@
             return this.typ === exports.EnumToken.EOF;
         }
         /**
-         * Tokenize CSS string
+         * read the next token. when the input is a stream that is not read to its end, a token that ends near the end of
+         * the code units read so far may continue in the next chunk (an identifier, a number, a string, a comment, ...): the
+         * token is not returned, {@link waiting} is true and the stream must be read ({@link read}) before the next call
          */
-        next( /* parseInfo: ParseInfo | string, yieldEOFToken: boolean = true */) {
+        next() {
+            if (this.streamDone) {
+                return this.nextToken();
+            }
+            const parseInfo = this.parseInfo;
+            const position = parseInfo.position;
+            const currentPosition = parseInfo.currentPosition;
+            const state = this.state;
+            const lineStarts = parseInfo.source.lineStarts.lineStarts;
+            const lineCount = lineStarts.length;
+            this.nextToken();
+            // the tokenizer reads at most a few code units after the end of a token: the token is complete when the
+            // stream has more code units after it
+            if (parseInfo.currentPosition + STREAM_LOOKAHEAD > parseInfo.length) {
+                parseInfo.position = position;
+                parseInfo.currentPosition = currentPosition;
+                this.state = state;
+                lineStarts.length = lineCount;
+                this.typ = null;
+                this.waiting = true;
+            }
+            return this;
+        }
+        /**
+         * read the next token from the code units of the input
+         */
+        nextToken() {
             const parseInfo = this.parseInfo;
             this.source = parseInfo.source;
             let charCode;
@@ -43141,27 +43607,106 @@
             return this.makeToken(parseInfo, exports.EnumToken.EOFTokenType);
         }
         /**
-         * tokenize readable stream
+         * start reading the stream: the first chunk is read. the next chunks are read when the tokenizer reaches the end
+         * of the code units read so far, see {@link next} and {@link read}
          */
         async tokenizeStream() {
-            const decoder = new TextDecoder("utf-8");
-            const reader = this.input.getReader();
-            let parseInfo = this.parseInfo;
-            while (true) {
-                const { done, value } = await reader.read();
-                const stream = ArrayBuffer.isView(value) ? decoder.decode(value, { stream: true }) : value;
-                if (!done) {
-                    // inlined: parseInfo.source.append(stream as string)
-                    parseInfo.source.content += stream;
-                }
-                else {
+            if (!this.streamDone && this.reader == null) {
+                await this.read();
+            }
+            return this;
+        }
+        /**
+         * read the next chunk of the stream and append it to the css: the text of the source file and the code units.
+         * the code units stay a view of the bytes while the css is ascii, they are utf-16 code units otherwise
+         */
+        async read() {
+            if (this.streamDone) {
+                this.waiting = false;
+                return;
+            }
+            if (this.reader == null) {
+                this.reader = this.input.getReader();
+                this.decoder = new TextDecoder("utf-8");
+            }
+            // the chunks are appended together: at least 64 KB, or half of the css read so far. the text of the css is copied
+            // when it is read after a chunk is appended (a string is not appended in place): the batches grow with the css,
+            // the text is copied a few times instead of once per chunk
+            const batch = Math.max(STREAM_BATCH, this.parseInfo.length >> 1);
+            const texts = [];
+            let length = 0;
+            while (length < batch) {
+                const { done, value } = await this.reader.read();
+                if (done) {
+                    // the end of a character split between the last chunks
+                    texts.push(this.decoder.decode());
+                    this.streamDone = true;
+                    this.reader.releaseLock();
                     break;
                 }
+                const text = typeof value === "string" ? value : this.decoder.decode(value, { stream: true });
+                texts.push(text);
+                length += text.length;
             }
-            Tokenizer.load(parseInfo, parseInfo.source.content);
-            return this; // .next();
+            const text = texts.length === 1 ? texts[0] : texts.join("");
+            if (text.length > 0) {
+                this.append(text);
+            }
+            this.waiting = false;
+        }
+        /**
+         * append the text of a chunk to the css
+         * @param text
+         */
+        append(text) {
+            const parseInfo = this.parseInfo;
+            const length = parseInfo.length;
+            const required = length + text.length;
+            parseInfo.source.content += text;
+            if (required > this.buffer.length) {
+                let capacity = this.buffer.length > 0 ? this.buffer.length * 2 : 1 << 16;
+                while (capacity < required) {
+                    capacity *= 2;
+                }
+                const buffer = this.buffer instanceof Uint8Array ? new Uint8Array(capacity) : new Uint16Array(capacity);
+                buffer.set(this.buffer.subarray(0, length));
+                this.buffer = buffer;
+            }
+            let ascii = false;
+            if (this.buffer instanceof Uint8Array) {
+                // an ascii text has a byte for each character
+                const { read, written } = streamEncoder.encodeInto(text, this.buffer.subarray(length, required));
+                ascii = read === text.length && written === text.length;
+                if (!ascii) {
+                    // the css is not ascii: the code units are utf-16 code units from now on
+                    const buffer = new Uint16Array(this.buffer.length);
+                    buffer.set(this.buffer.subarray(0, length));
+                    this.buffer = buffer;
+                }
+            }
+            if (!ascii) {
+                const buffer = this.buffer;
+                for (let i = 0; i < text.length; i++) {
+                    buffer[length + i] = text.charCodeAt(i);
+                }
+            }
+            parseInfo.length = required;
+            parseInfo.codes = this.buffer.subarray(0, required);
         }
     }
+    /**
+     * number of code units the tokenizer may read after the end of a token (escape sequences, unicode ranges, `<!--`,
+     * ...): a token read from a stream is complete when the stream has more code units after it, see {@link Tokenizer.next}
+     */
+    const STREAM_LOOKAHEAD = 32;
+    /**
+     * minimum number of code units appended to the css when a stream is read, see {@link Tokenizer.read}
+     */
+    const STREAM_BATCH = 1 << 16;
+    /**
+     * encoder of the chunks of a stream, see {@link Tokenizer.append}
+     */
+    const streamEncoder = new TextEncoder();
 
     /**
      * response type
@@ -43464,6 +44009,58 @@
         }
     }
     /**
+     * true if the token is a keyframe selector: `from`, `to` or a percentage between 0 and 100
+     * @param arena
+     * @param token
+     */
+    function isKeyframeSelectorToken(arena, token) {
+        if (token === undefined) {
+            return false;
+        }
+        if (arena.dataTypes[token] === exports.EnumToken.PercentageTokenType) {
+            return arena.numericValue[token] >= 0 && arena.numericValue[token] <= 100;
+        }
+        if (arena.dataTypes[token] !== exports.EnumToken.IdenTokenType) {
+            return false;
+        }
+        const id = arena.stringValue[token];
+        const length = arena.stringLength(id);
+        // `from` and `to`, case-insensitive
+        return length === 4
+            ? (arena.stringCodeAt(id, 0) | 0x20) === 0x66 &&
+                (arena.stringCodeAt(id, 1) | 0x20) === 0x72 &&
+                (arena.stringCodeAt(id, 2) | 0x20) === 0x6f &&
+                (arena.stringCodeAt(id, 3) | 0x20) === 0x6d
+            : length === 2 && (arena.stringCodeAt(id, 0) | 0x20) === 0x74 && (arena.stringCodeAt(id, 1) | 0x20) === 0x6f;
+    }
+    /**
+     * true if the selector of a keyframe is a list of `from`, `to` and percentages between 0 and 100, separated by commas
+     * and whitespace: it matches the `keyframe-selectors` syntax
+     * @param arena
+     * @param tokens
+     */
+    function isSimpleKeyframeSelector(arena, tokens) {
+        // a keyframe selector is expected
+        let selector = true;
+        let i = 0;
+        for (; i < tokens.length; i++) {
+            const type = arena.dataTypes[tokens[i]];
+            if (type === exports.EnumToken.WhitespaceTokenType) {
+                continue;
+            }
+            if (selector) {
+                if (!isKeyframeSelectorToken(arena, tokens[i])) {
+                    return false;
+                }
+            }
+            else if (type !== exports.EnumToken.CommaTokenType) {
+                return false;
+            }
+            selector = !selector;
+        }
+        return !selector;
+    }
+    /**
      * parse selector
      * @param arena
      * @param tokens
@@ -43475,7 +44072,10 @@
         const contextType = context == null ? null : arena.dataTypes[context];
         splitUnicodeRanges(arena, tokens);
         if (contextType === exports.EnumToken.KeyframesAtRuleNodeType) {
-            const result = matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
+            // `from`, `to` and the percentages are valid: the syntax is not matched
+            const result = isSimpleKeyframeSelector(arena, tokens)
+                ? { success: true, errors: [] }
+                : matchAllSyntaxes(arena, getParsedSyntax(ValidationSyntaxGroupEnum.Syntaxes, "keyframe-selectors"), createValidationContext(arena, tokens), options);
             const parts = splitTokenList(arena, tokens);
             for (const part of parts) {
                 trimArray(arena, part);
@@ -43523,8 +44123,11 @@
             allowed = false;
             if (contextType === exports.EnumToken.AtRuleNodeType) {
                 // computed once per at-rule name: the name is not concatenated for each selector
+                const previousAtRuleArena = atRuleArena;
                 atRuleArena = arena;
                 allowed = arena.stringDerived(arena.name[context], 3 /* StringDerived.AtRuleAcceptsRules */, atRuleAcceptsRules);
+                // the arena is not kept after the parse: the previous arena is restored (a nested call)
+                atRuleArena = previousAtRuleArena;
             }
         }
         while (parent != null && parent > 0) {
@@ -43625,9 +44228,11 @@
             }
             tokens.length = write;
         }
-        const result = matchSelectorSyntax(arena, tokens, errors, options, nested);
+        // a selector made of simple selectors is valid, it has no attribute selector and no function
+        const simple = matchSimpleSelector(arena, tokens);
+        const result = simple ? simpleSelectorMatch : matchSelectorSyntax(arena, tokens, errors, options, nested);
         trimArray(arena, tokens);
-        if (result.success) {
+        if (result.success && !simple) {
             for (let i = 0; i < tokens.length; i++) {
                 const token = tokens[i];
                 switch (arena.dataTypes[token]) {
@@ -43680,7 +44285,7 @@
                 }
             }
         }
-        const node = arena.createRule(exports.EnumToken.RuleNodeType, renderSelector(arena, tokens), tokens, result.success && allowed
+        const node = arena.createRule(exports.EnumToken.RuleNodeType, simple ? renderSimpleSelector(arena, tokens) : renderSelector(arena, tokens), tokens, result.success && allowed
             ? exports.EnumAstNodeStatus.Validated
             : allowed
                 ? exports.EnumAstNodeStatus.Invalid
@@ -43689,6 +44294,13 @@
         arena.setLocation(node, arena.sources[arena.getSourceId(tokens[0])] ?? 0, arena.getSpanStart(tokens[0]), arena.getSpanEnd(tokens[tokens.length - 1]));
         return node;
     }
+    /**
+     * result of the validation of a simple selector, see {@link matchSimpleSelector}
+     */
+    const simpleSelectorMatch = Object.freeze({
+        success: true,
+        errors: Object.freeze([]),
+    });
     // options of the rendering of the selector tokens
     const selectorRenderOptions = { minify: false };
     /**
@@ -43712,7 +44324,7 @@
         const rules = syntaxRule?.getBlockRules?.();
         if (rules != null) {
             for (const rule of rules) {
-                if (ValidationTokenEnum.PropertyType === rule.typ &&
+                if (exports.ValidationTokenEnum.PropertyType === rule.typ &&
                     ("block-contents" === rule.val ||
                         "rule-list" === rule.val)) {
                     return true;
@@ -43954,6 +44566,31 @@
         return selectors + 1;
     }
     /**
+     * selector of a rule made of simple selectors (see {@link matchSimpleSelector}), without the leading and the trailing
+     * whitespace: the string of a single token is used as is, a compound or a complex selector is built without
+     * {@link renderSelector}. a selector list is rendered with {@link renderSelector}: the duplicate selectors are removed
+     * @param arena
+     * @param tokens
+     * @returns the interned string id of the selector
+     */
+    function renderSimpleSelector(arena, tokens) {
+        if (tokens.length === 1) {
+            const type = arena.dataTypes[tokens[0]];
+            // rendered as their string by appendSelectorToken()
+            if (type !== exports.EnumToken.PseudoElementTokenType) {
+                return arena.stringValue[tokens[0]];
+            }
+        }
+        selectorBuilder.reset();
+        for (let index = 0; index < tokens.length; index++) {
+            if (arena.dataTypes[tokens[index]] === exports.EnumToken.CommaTokenType) {
+                return renderSelector(arena, tokens);
+            }
+            appendSelectorToken(arena, tokens[index], selectorBuilder);
+        }
+        return arena.internBuilder(selectorBuilder);
+    }
+    /**
      * selector of a rule: the distinct comma separated selectors, the whitespace around the combinators is removed.
      * a universal selector is removed before a compound selector. the selector is built from the code units of the
      * tokens and interned: no string is created
@@ -44163,7 +44800,7 @@
             // else
             if (syntaxRules == null ||
                 (syntaxRules.length === 1 &&
-                    syntaxRules[0].typ === ValidationTokenEnum.PropertyType &&
+                    syntaxRules[0].typ === exports.ValidationTokenEnum.PropertyType &&
                     (syntaxRules[0].val === "declaration-list" ||
                         syntaxRules[0].val === "declaration-rule-list" ||
                         syntaxRules[0].val === "block-contents"))) {
@@ -44532,7 +45169,47 @@
                     i++;
                 }
                 // [not | only] <media-type> [ and <media-condition-without-or>  ]?
-                if (i < stream.length) {
+                let modifier = null;
+                if (i < stream.length && arena.dataTypes[stream[i]] === exports.EnumToken.IdenTokenType) {
+                    const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
+                    if (val === "not" || val === "only") {
+                        modifier = val;
+                        tokens.push(stream[i]);
+                        i++;
+                        while (i < stream.length &&
+                            (arena.dataTypes[stream[i]] === exports.EnumToken.WhitespaceTokenType ||
+                                arena.dataTypes[stream[i]] === exports.EnumToken.CommentTokenType)) {
+                            tokens.push(stream[i]);
+                            i++;
+                        }
+                    }
+                }
+                if (modifier != null && i === stream.length) {
+                    success = false;
+                    errors.push({
+                        action: "drop",
+                        message: `expecting '<media-type>'`,
+                        node: stream[i - 1],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i - 1])),
+                        ],
+                    });
+                }
+                else if (modifier === "only" && arena.dataTypes[stream[i]] !== exports.EnumToken.IdenTokenType) {
+                    // only is followed by a media type
+                    success = false;
+                    errors.push({
+                        action: "drop",
+                        message: `expecting '<media-type>'`,
+                        node: stream[i],
+                        location: [
+                            options.source.file,
+                            ...options.source.lineStarts.getOffsets(arena.getSpanStart(stream[i])),
+                        ],
+                    });
+                }
+                else if (i < stream.length) {
                     if (arena.dataTypes[stream[i]] === exports.EnumToken.IdenTokenType) {
                         const val = arena.resolveString(arena.stringValue[stream[i]]).toLowerCase();
                         if (mediaTypes.includes(val)) {
@@ -46145,7 +46822,8 @@
      * @param tokenizer
      */
     function arenaCapacity(tokenizer) {
-        const length = tokenizer.streamLength;
+        // a stream: the size of the css when it is known, the arena is allocated as for an ArrayBuffer
+        const length = Math.max(tokenizer.streamLength, tokenizer.expectedLength);
         // small inputs (css modules, inline styles, ...) do not allocate a large arena, the arena grows when needed
         return length === 0 ? 4096 : Math.min(1 << 25, Math.ceil(length / 4) + 1024);
     }
@@ -46188,6 +46866,29 @@
         return item;
     }
     /**
+     * allocate a whitespace token
+     * @param arena
+     * @param sourceIndex index of the source in the arena sources table
+     * @param start
+     * @param end
+     */
+    function allocateWhitespace(arena, sourceIndex, start, end) {
+        const item = arena.allocate();
+        arena.dataTypes[item] = exports.EnumToken.WhitespaceTokenType;
+        arena.setTokenLocation(item, sourceIndex, start, end);
+        return item;
+    }
+    /**
+     * true if the token ends a statement or a block: the whitespace that precedes it is not significant
+     * @param type
+     */
+    function isStatementEnd(type) {
+        return (type === exports.EnumToken.SemiColonTokenType ||
+            type === exports.EnumToken.BlockStartTokenType ||
+            type === exports.EnumToken.BlockEndTokenType ||
+            type === exports.EnumToken.EOFTokenType);
+    }
+    /**
      * recycle the tokens of a statement that were not attached to the tree: their ids are reused by the next allocations.
      * the tokens referenced by the errors or the invalid nodes of the statement are kept
      * @param arena
@@ -46198,6 +46899,8 @@
      * @param invalidStart index of the first invalid node of the statement
      */
     function recycleStatementTokens(arena, tokens, errors, errorStart, invalidNodes, invalidStart) {
+        // the statement has errors or invalid nodes: the tokens they reference are kept
+        const references = errors.length > errorStart || invalidNodes.length > invalidStart;
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
             // already recycled (a token can be recorded twice), attached or holding other tokens
@@ -46205,6 +46908,10 @@
                 arena.parents[token] !== 0 ||
                 arena.firstChild[token] !== 0 ||
                 arena.firstToken[token] !== 0) {
+                continue;
+            }
+            if (!references) {
+                arena.recycle(token);
                 continue;
             }
             let referenced = invalidNodes.indexOf(token, invalidStart) !== -1;
@@ -46651,6 +47358,14 @@
         return result;
     }
     /**
+     * the settings of the fast mode (see {@link ParserOptions.fastMode}): the default values of these options when
+     * `fastMode` is `true`
+     */
+    const fastModeOptions = Object.freeze({
+        minify: false,
+        mergeRules: exports.MergeRulesEnum.None,
+    });
+    /**
      * Parse css string
      * @param tokenizer
      * @param options
@@ -46660,6 +47375,8 @@
      */
     function doParseSync(tokenizer, options = {}) {
         if (options.signal != null) {
+            // an aborted signal does not dispatch the abort event
+            options.signal.throwIfAborted();
             options.signal.addEventListener("abort", reject);
         }
         options = {
@@ -46684,6 +47401,7 @@
             removePrefix: false,
             validation: false,
             lenient: true,
+            ...(options.fastMode ? fastModeOptions : null),
             ...options,
         };
         options.validation = !!options.validation;
@@ -46735,13 +47453,34 @@
         // the strings of the tokens are ranges of the content of the source
         arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
         let itemType;
+        // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+        // is not allocated. the whitespace that follows a token is allocated when the next token is read
+        let whitespaceStart = -1;
+        let whitespaceEnd = 0;
         // inlined: tokenizer.done()
         while (!(tokenizer.typ === exports.EnumToken.EOF)) {
             tokenizer.next();
-            item = allocateToken(arena, tokenizer, sourceIndex);
             itemType = tokenizer.typ;
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
+            if (parensMatch === 0) {
+                if (itemType === exports.EnumToken.WhitespaceTokenType) {
+                    if (tokens.length > 0) {
+                        whitespaceStart = tokenizer.sta;
+                        whitespaceEnd = tokenizer.end;
+                    }
+                    continue;
+                }
+                if (whitespaceStart !== -1) {
+                    if (!isStatementEnd(itemType)) {
+                        item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                        tokens.push(item);
+                        statement.push(item);
+                    }
+                    whitespaceStart = -1;
+                }
+            }
+            item = allocateToken(arena, tokenizer, sourceIndex);
             if (isBadToken(itemType)) {
                 tokens.push(item);
                 statement.push(item);
@@ -47034,6 +47773,13 @@
                     minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
+        }
+        else if (options.mergeRules != null &&
+            options.mergeRules !== false &&
+            options.mergeRules !== exports.MergeRulesEnum.None &&
+            arena.firstChild[ast] !== 0) {
+            // the ast is not minified: the adjacent rules are merged
+            mergeRules(arena, ast, minifyOptions);
         }
         stats.bytesIn += stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
@@ -47590,6 +48336,8 @@
      */
     async function doParse(iter, options = {}) {
         if (options.signal != null) {
+            // an aborted signal does not dispatch the abort event
+            options.signal.throwIfAborted();
             options.signal.addEventListener("abort", reject);
         }
         options = {
@@ -47615,6 +48363,7 @@
             removePrefix: false,
             validation: false,
             lenient: true,
+            ...(options.fastMode ? fastModeOptions : null),
             ...options,
         };
         options.minifyAST ??= options.minify;
@@ -47671,13 +48420,41 @@
         // the strings of the tokens are ranges of the content of the source
         arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
         let itemType;
+        // whitespace outside of parentheses, at the start of a statement or before ';', '{' and '}' is not significant: it
+        // is not allocated. the whitespace that follows a token is allocated when the next token is read
+        let whitespaceStart = -1;
+        let whitespaceEnd = 0;
         // inlined: tokenizer.done()
         while (!(tokenizer.typ === exports.EnumToken.EOF)) {
             tokenizer.next();
-            item = allocateToken(arena, tokenizer, sourceIndex);
+            // a stream: the token may continue in the next chunk, the chunk is read and the token is read again
+            if (tokenizer.waiting) {
+                await tokenizer.read();
+                // the strings of the tokens are ranges of the content read so far
+                arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                continue;
+            }
             itemType = tokenizer.typ;
             stats.bytesIn = tokenizer.bytesIn;
             stats.tokensCount++;
+            if (parensMatch === 0) {
+                if (itemType === exports.EnumToken.WhitespaceTokenType) {
+                    if (tokens.length > 0) {
+                        whitespaceStart = tokenizer.sta;
+                        whitespaceEnd = tokenizer.end;
+                    }
+                    continue;
+                }
+                if (whitespaceStart !== -1) {
+                    if (!isStatementEnd(itemType)) {
+                        item = allocateWhitespace(arena, sourceIndex, whitespaceStart, whitespaceEnd);
+                        tokens.push(item);
+                        statement.push(item);
+                    }
+                    whitespaceStart = -1;
+                }
+            }
+            item = allocateToken(arena, tokenizer, sourceIndex);
             if (isBadToken(itemType)) {
                 tokens.push(item);
                 statement.push(item);
@@ -47739,6 +48516,11 @@
                     tokens.push(item);
                     do {
                         tokenizer.next();
+                        if (tokenizer.waiting) {
+                            await tokenizer.read();
+                            arena.setSourceText(sourceIndex, tokenizer.content, tokenizer.codes);
+                            continue;
+                        }
                         item = allocateToken(arena, tokenizer, sourceIndex);
                         itemType = tokenizer.typ;
                         tokens.push(item);
@@ -48030,6 +48812,13 @@
                     minify(arena, ast, minifyOptions, true, errors, false);
                 }
             }
+        }
+        else if (options.mergeRules != null &&
+            options.mergeRules !== false &&
+            options.mergeRules !== exports.MergeRulesEnum.None &&
+            arena.firstChild[ast] !== 0) {
+            // the ast is not minified: the adjacent rules are merged
+            mergeRules(arena, ast, minifyOptions);
         }
         stats.bytesIn += stats.importedBytesIn;
         // the source is no longer tokenized: the code units are not kept
@@ -48994,10 +49783,7 @@
                 if (stream.length === 0 ||
                     arena.dataTypes[stream[0]] !== exports.EnumToken.WhitespaceTokenType ||
                     arena.getSpanEnd(stream[0]) - arena.getSpanStart(stream[0]) !== 1 ||
-                    // inlined: arena.getSource(stream[0]), options.sourcesMap?.get(...)?.getContent()
-                    options.sourcesMap
-                        ?.get(arena.sources[arena.getSourceId(stream[0])] ?? 0)
-                        ?.content.charCodeAt(arena.getSpanStart(stream[0])) !== 0x20) {
+                    arena.sourceCodeAt(arena.getSourceId(stream[0]), arena.getSpanStart(stream[0])) !== 0x20) {
                     success = false;
                     errors.push({
                         action: "drop",
@@ -49405,8 +50191,7 @@
                             }
                             else {
                                 context = createValidationContext(arena, stream, index);
-                                // @ts-ignore
-                                range = context.peekRange((t) => arena.dataTypes[t] === exports.EnumToken.EndParensTokenType);
+                                range = context.peekRange(exports.EnumToken.EndParensTokenType);
                                 // inlined: arena.typeOf(range.at(-1))
                                 if (arena.dataTypes[range.at(-1)] !== exports.EnumToken.EndParensTokenType) {
                                     errors.push({
@@ -50121,7 +50906,7 @@
     /**
      * Version number
      */
-    const version = "2.3.1";
+    const version = "2.3.2";
 
     /**
      * Load file or url
@@ -50163,7 +50948,10 @@
             if (responseType === exports.ResponseType.JSON) {
                 return response.json();
             }
-            return responseType === exports.ResponseType.ReadableStream ? response.body : response.text();
+            // the size of the body: the parser allocates its buffers once
+            return responseType === exports.ResponseType.ReadableStream
+                ? setStreamSize(response.body, responseSize(response))
+                : response.text();
         });
     }
     /**
@@ -50300,7 +51088,8 @@
             validateSyncArguments(options);
         }
         // the options of the caller are not modified: they may be reused
-        options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+        // the fast mode sets the default value of minify (see fastModeOptions)
+        options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
         const startTime = performance.now();
         const parseResult = parseSyncInput(stream, options);
         let mapping = null;
@@ -50447,7 +51236,8 @@
                 stream = input;
             }
         }
-        options = { minify: true, removeEmpty: true, removeCharset: true, ...options };
+        // the fast mode sets the default value of minify (see fastModeOptions)
+        options = { ...(options?.fastMode ? null : { minify: true }), removeEmpty: true, removeCharset: true, ...options };
         const startTime = performance.now();
         return parseInput(stream, options).then((parseResult) => {
             let mapping = null;
@@ -50478,6 +51268,7 @@
     exports.Arena = Arena;
     exports.AstArena = AstArena;
     exports.AstArenaNode = AstArenaNode;
+    exports.LOC = LOC;
     exports.PropertyList = PropertyList;
     exports.RenderResult = RenderResult;
     exports.SourceMap = SourceMap;

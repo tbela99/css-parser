@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { color2srgbvalues, getNumber } from './color.js';
@@ -93,6 +93,14 @@ function hslToken(arena, values) {
     }
     return arena.createColor("hsl", ColorType.HSL, chi);
 }
+/**
+ * value of a red, green or blue component of an `rgb()` color, from 0 to 255: `100%` is 255
+ * @param arena
+ * @param token
+ */
+function rgbChannel(arena, token) {
+    return (arena.dataTypes[token] === EnumToken.PercentageTokenType ? 255 : 1) * getNumber(arena, token);
+}
 function rgb2hslvalues(arena, token) {
     const chi = getColorComponents(arena, token);
     if (chi == null || chi.length < 3) {
@@ -101,15 +109,15 @@ function rgb2hslvalues(arena, token) {
     // @ts-ignore
     let t = chi[0];
     // @ts-ignore
-    let r = getNumber(arena, t);
+    let r = rgbChannel(arena, t);
     // @ts-ignore
     t = chi[1];
     // @ts-ignore
-    let g = getNumber(arena, t);
+    let g = rgbChannel(arena, t);
     // @ts-ignore
     t = chi[2];
     // @ts-ignore
-    let b = getNumber(arena, t);
+    let b = rgbChannel(arena, t);
     // @ts-ignore
     let a = null;
     if (chi.length === 4) {

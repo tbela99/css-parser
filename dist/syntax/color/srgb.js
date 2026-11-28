@@ -2,7 +2,7 @@
 	CSS parser, minifier and validator for node, deno, bun and the browser
 
 	Author(s): Thierry Bela
-	Version: 2.3.1
+	Version: 2.3.2
 	License: MIT
  */
 import { getColorComponents } from './utils/components.js';
@@ -94,8 +94,9 @@ function xyz2srgb(x, y, z, alpha = null) {
 }
 function hwb2srgbvalues(arena, token) {
     const { h, w, b, a } = hwbvalues(arena, token) ?? {};
+    // the components cannot be computed: var(), ...
     if (h == null || w == null || b == null) {
-        return [];
+        return null;
     }
     const rgb = hwb2srgb(h, w, b);
     if (a != null && a !== 1) {
