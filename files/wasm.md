@@ -87,7 +87,7 @@ WebAssembly module is fetched when the import is evaluated, then `transformSync(
 <pre id="output"></pre>
 
 <script type="module">
-    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.1/dist/web.js';
+    import {transformSync, ColorType} from 'https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.2/dist/web.js';
 
     const input = document.getElementById('input');
     const output = document.getElementById('output');
@@ -120,7 +120,7 @@ name of the package to its url: the modules import `@tbela99/rust-css-parser-was
 <script type="importmap">
     {
         "imports": {
-            "@tbela99/rust-css-parser-wasm": "https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.1/dist/web.js"
+            "@tbela99/rust-css-parser-wasm": "https://unpkg.com/@tbela99/rust-css-parser-wasm@2.3.2/dist/web.js"
         }
     }
 </script>
